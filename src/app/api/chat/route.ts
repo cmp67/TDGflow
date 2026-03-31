@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
-import { createClient } from '@supabase/supabase-js'
+import { sql } from '@vercel/postgres'
 import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
@@ -40,14 +40,14 @@ Para cada hotel recomendado, use este formato:
 const tools: Anthropic.Tool[] = [
   {
     name: 'search_hotels',
-    description: 'Busca hotéis no catálogo TDG por destino, perfil de cliente, tipo de viagem ou amenidades.',
+    description: 'Busca hotéis no catálogo TDG por destino, perfil de cliente ou tipo de viagem.',
     input_schema: {
       type: 'object' as const,
       properties: {
         tags: {
           type: 'array',
           items: { type: 'string' },
-          description: 'Tags: beach, surf, family, honeymoon, romance, spa, wine, nature, all-inclusive, etc.'
+          description: 'Tags: beach, surf, family, honeymoon, romance, spa, wine, nature, all-inclusive'
         },
         region: { type: 'string', description: 'Região: Europa, Ásia, Américas, África, Oceania' },
         country: { type: 'string', description: 'País específico' }
@@ -61,15 +61,14 @@ const tools: Anthropic.Tool[] = [
     input_schema: {
       type: 'object' as const,
       properties: {
-        hotel_id: { type: 'string', description: 'UUID do hotel (opcional)' },
-        travel_month: { type: 'string', description: 'Mês de viagem ex: agosto (opcional)' }
+        hotel_id: { type: 'string', description: 'UUID do hotel (opcional)' }
       },
       required: []
     }
   },
   {
     name: 'get_hotel_full_details',
-    description: 'Busca todos os detalhes de um hotel: contratos TDG, vantagens e promoções ativas.',
+    description: 'Busca todos os detalhes de um hotel: contratos TDG, vantagens e promoções.',
     input_schema: {
       type: 'object' as const,
       properties: {
@@ -80,45 +79,50 @@ const tools: Anthropic.Tool[] = [
   }
 ]
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function processToolCall(toolName: string, toolInput: Record<string, unknown>, db: any) {
+async function processToolCall(toolName: string, toolInput: Record<string, unknown>) {
   if (toolName === 'search_hotels') {
     const { tags, region, country } = toolInput as {
       tags?: string[]; region?: string; country?: string
     }
-    let query = db.from('tdg_hotels').select('*')
-    if (region) query = query.ilike('region', `%${region}%`)
-    if (country) query = query.ilike('country', `%${country}%`)
-    if (tags?.length) query = query.overlaps('tags', tags)
-    const { data } = await query.limit(10)
-    return data || []
+    let query = 'SELECT * FROM tdg_hotels WHERE 1=1'
+    const params: unknown[] = []
+    let i = 1
+    if (region) { query += ` AND region ILIKE $${i++}`; params.push(`%${region}%`) }
+    if (country) { query += ` AND country ILIKE $${i++}`; params.push(`%${country}%`) }
+    if (tags?.length) { query += ` AND tags && $${i++}`; params.push(tags) }
+    query += ' LIMIT 10'
+    const { rows } = await sql.query(query, params)
+    return rows
   }
 
   if (toolName === 'get_active_promotions') {
     const { hotel_id } = toolInput as { hotel_id?: string }
-    let query = db
-      .from('tdg_promotions')
-      .select('*, tdg_hotels(name, location, country)')
-      .eq('is_active', true)
-      .gte('booking_deadline', new Date().toISOString().split('T')[0])
-      .order('commission_rate', { ascending: false })
-    if (hotel_id) query = query.eq('hotel_id', hotel_id)
-    const { data } = await query.limit(20)
-    return data || []
+    if (hotel_id) {
+      const { rows } = await sql`
+        SELECT p.*, h.name as hotel_name, h.location, h.country
+        FROM tdg_promotions p JOIN tdg_hotels h ON h.id = p.hotel_id
+        WHERE p.is_active = true
+          AND p.booking_deadline >= CURRENT_DATE
+          AND p.hotel_id = ${hotel_id}
+        ORDER BY p.commission_rate DESC LIMIT 20`
+      return rows
+    }
+    const { rows } = await sql`
+      SELECT p.*, h.name as hotel_name, h.location, h.country
+      FROM tdg_promotions p JOIN tdg_hotels h ON h.id = p.hotel_id
+      WHERE p.is_active = true AND p.booking_deadline >= CURRENT_DATE
+      ORDER BY p.commission_rate DESC LIMIT 20`
+    return rows
   }
 
   if (toolName === 'get_hotel_full_details') {
     const { hotel_id } = toolInput as { hotel_id: string }
-    const [hotelRes, contractsRes, promotionsRes] = await Promise.all([
-      db.from('tdg_hotels').select('*').eq('id', hotel_id).single(),
-      db.from('tdg_contracts').select('*').eq('hotel_id', hotel_id),
-      db.from('tdg_promotions').select('*').eq('hotel_id', hotel_id).eq('is_active', true)
+    const [hotel, contracts, promotions] = await Promise.all([
+      sql`SELECT * FROM tdg_hotels WHERE id = ${hotel_id}`,
+      sql`SELECT * FROM tdg_contracts WHERE hotel_id = ${hotel_id}`,
+      sql`SELECT * FROM tdg_promotions WHERE hotel_id = ${hotel_id} AND is_active = true`
     ])
-    return {
-      hotel: hotelRes.data,
-      contracts: contractsRes.data || [],
-      promotions: promotionsRes.data || []
-    }
+    return { hotel: hotel.rows[0], contracts: contracts.rows, promotions: promotions.rows }
   }
 
   return { error: 'Tool not found' }
@@ -126,12 +130,8 @@ async function processToolCall(toolName: string, toolInput: Record<string, unkno
 
 export async function POST(req: NextRequest) {
   const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-  const db = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
-
   const { messages } = await req.json()
+
   const anthropicMessages: Anthropic.MessageParam[] = messages.map(
     (m: { role: string; content: string }) => ({
       role: m.role as 'user' | 'assistant',
@@ -153,16 +153,8 @@ export async function POST(req: NextRequest) {
     )
     const toolResults: Anthropic.ToolResultBlockParam[] = await Promise.all(
       toolUseBlocks.map(async (toolUse) => {
-        const result = await processToolCall(
-          toolUse.name,
-          toolUse.input as Record<string, unknown>,
-          db
-        )
-        return {
-          type: 'tool_result' as const,
-          tool_use_id: toolUse.id,
-          content: JSON.stringify(result)
-        }
+        const result = await processToolCall(toolUse.name, toolUse.input as Record<string, unknown>)
+        return { type: 'tool_result' as const, tool_use_id: toolUse.id, content: JSON.stringify(result) }
       })
     )
     anthropicMessages.push({ role: 'assistant', content: response.content })
@@ -176,8 +168,6 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  const textBlock = response.content.find(
-    (block): block is Anthropic.TextBlock => block.type === 'text'
-  )
+  const textBlock = response.content.find((b): b is Anthropic.TextBlock => b.type === 'text')
   return NextResponse.json({ content: textBlock?.text || '' })
 }

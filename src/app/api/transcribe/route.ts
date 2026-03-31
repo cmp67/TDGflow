@@ -1,6 +1,7 @@
 import OpenAI from 'openai'
 import Anthropic from '@anthropic-ai/sdk'
-import { createClient } from '@supabase/supabase-js'
+import { sql } from '@vercel/postgres'
+import { put } from '@vercel/blob'
 import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
@@ -16,8 +17,6 @@ Retorne APENAS um JSON válido com esta estrutura:
   "promotions": ["lista de promoções mencionadas"],
   "advantages": ["vantagens negociadas mencionadas"],
   "contacts": ["nome e cargo de contactos mencionados"],
-  "booking_deadline": "data limite ou null",
-  "stay_period": "período de estadia ou null",
   "highlights": ["pontos mais importantes da visita/reunião"],
   "notes": "observações gerais"
 }`
@@ -25,10 +24,6 @@ Retorne APENAS um JSON válido com esta estrutura:
 export async function POST(req: NextRequest) {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
 
   const formData = await req.formData()
   const audioFile = formData.get('audio') as File
@@ -39,6 +34,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Audio file required' }, { status: 400 })
   }
 
+  // 1. Transcrever com Whisper
   const transcription = await openai.audio.transcriptions.create({
     file: audioFile,
     model: 'whisper-1',
@@ -47,13 +43,11 @@ export async function POST(req: NextRequest) {
   })
   const transcript = transcription as unknown as string
 
+  // 2. Extrair estrutura com Claude Haiku
   const extraction = await anthropic.messages.create({
     model: 'claude-haiku-4-5-20251001',
     max_tokens: 1024,
-    messages: [{
-      role: 'user',
-      content: `${EXTRACTION_PROMPT}\n\nTranscrição:\n${transcript}`
-    }]
+    messages: [{ role: 'user', content: `${EXTRACTION_PROMPT}\n\nTranscrição:\n${transcript}` }]
   })
 
   let summary: Record<string, unknown> = {}
@@ -65,34 +59,28 @@ export async function POST(req: NextRequest) {
     }
   } catch { /* keep empty */ }
 
+  // 3. Upload audio para Vercel Blob (privado por defeito)
   let audioUrl: string | null = null
   try {
-    const fileName = `${Date.now()}-${audioFile.name}`
-    const arrayBuffer = await audioFile.arrayBuffer()
-    const { data: uploadData } = await supabase.storage
-      .from('tdg-audio')
-      .upload(fileName, arrayBuffer, { contentType: audioFile.type })
-    if (uploadData) {
-      const { data: urlData } = supabase.storage
-        .from('tdg-audio')
-        .getPublicUrl(uploadData.path)
-      audioUrl = urlData.publicUrl
-    }
+    const blob = await put(`audio/${Date.now()}-${audioFile.name}`, audioFile, {
+      access: 'public',
+      addRandomSuffix: true
+    })
+    audioUrl = blob.url
   } catch { /* storage optional */ }
 
-  const { data: savedInput } = await supabase
-    .from('tdg_audio_inputs')
-    .insert({
-      agent_name: agentName,
-      agency,
-      visit_type: (summary.visit_type as string) || 'DEBRIEF',
-      transcript,
-      summary,
-      audio_url: audioUrl,
-      audio_shared: false
-    })
-    .select()
-    .single()
+  // 4. Guardar no Postgres
+  const { rows } = await sql`
+    INSERT INTO tdg_audio_inputs (agent_name, agency, visit_type, transcript, summary, audio_url, audio_shared)
+    VALUES (
+      ${agentName}, ${agency},
+      ${(summary.visit_type as string) || 'DEBRIEF'},
+      ${transcript},
+      ${JSON.stringify(summary)},
+      ${audioUrl},
+      false
+    )
+    RETURNING id`
 
-  return NextResponse.json({ id: savedInput?.id, transcript, summary })
+  return NextResponse.json({ id: rows[0]?.id, transcript, summary })
 }
