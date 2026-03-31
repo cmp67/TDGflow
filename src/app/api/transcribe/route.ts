@@ -3,12 +3,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+export const dynamic = 'force-dynamic'
 
 const EXTRACTION_PROMPT = `Analise esta transcrição de um agente de viagens e extraia as informações estruturadas.
 
@@ -28,26 +23,30 @@ Retorne APENAS um JSON válido com esta estrutura:
 }`
 
 export async function POST(req: NextRequest) {
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
   const formData = await req.formData()
   const audioFile = formData.get('audio') as File
-  const agentName = formData.get('agent_name') as string || 'Agente TDG'
-  const agency = formData.get('agency') as string || ''
+  const agentName = (formData.get('agent_name') as string) || 'Agente TDG'
+  const agency = (formData.get('agency') as string) || ''
 
   if (!audioFile) {
     return NextResponse.json({ error: 'Audio file required' }, { status: 400 })
   }
 
-  // 1. Transcrever com Whisper
   const transcription = await openai.audio.transcriptions.create({
     file: audioFile,
     model: 'whisper-1',
     language: 'pt',
     response_format: 'text'
   })
-
   const transcript = transcription as unknown as string
 
-  // 2. Extrair estrutura com Claude
   const extraction = await anthropic.messages.create({
     model: 'claude-haiku-4-5-20251001',
     max_tokens: 1024,
@@ -60,13 +59,12 @@ export async function POST(req: NextRequest) {
   let summary: Record<string, unknown> = {}
   try {
     const textContent = extraction.content.find(b => b.type === 'text')
-    if (textContent && textContent.type === 'text') {
+    if (textContent?.type === 'text') {
       const jsonMatch = textContent.text.match(/\{[\s\S]*\}/)
       if (jsonMatch) summary = JSON.parse(jsonMatch[0])
     }
-  } catch { /* keep empty summary */ }
+  } catch { /* keep empty */ }
 
-  // 3. Upload audio para Supabase Storage
   let audioUrl: string | null = null
   try {
     const fileName = `${Date.now()}-${audioFile.name}`
@@ -82,13 +80,12 @@ export async function POST(req: NextRequest) {
     }
   } catch { /* storage optional */ }
 
-  // 4. Guardar no Supabase (sem confirmar ainda — aguarda agente)
   const { data: savedInput } = await supabase
     .from('tdg_audio_inputs')
     .insert({
       agent_name: agentName,
       agency,
-      visit_type: summary.visit_type || 'DEBRIEF',
+      visit_type: (summary.visit_type as string) || 'DEBRIEF',
       transcript,
       summary,
       audio_url: audioUrl,
@@ -97,9 +94,5 @@ export async function POST(req: NextRequest) {
     .select()
     .single()
 
-  return NextResponse.json({
-    id: savedInput?.id,
-    transcript,
-    summary
-  })
+  return NextResponse.json({ id: savedInput?.id, transcript, summary })
 }
