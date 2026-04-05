@@ -1,0 +1,148 @@
+import { sql } from '@vercel/postgres'
+import { auth } from '@/auth'
+import { NextRequest, NextResponse } from 'next/server'
+import Anthropic from '@anthropic-ai/sdk'
+
+export const dynamic = 'force-dynamic'
+
+/* ── GET — list reviews grouped by hotel ─────────────────────── */
+export async function GET(req: NextRequest) {
+  const session = await auth()
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const agentEmail = session.user?.email ?? ''
+  const { searchParams } = new URL(req.url)
+  const hotel = searchParams.get('hotel')
+
+  // Get agent id for favorites lookup
+  const { rows: userRows } = await sql`
+    SELECT id FROM tdg_users WHERE email = ${agentEmail} LIMIT 1
+  `
+  const agentId = userRows[0]?.id ?? null
+
+  let reviewRows
+  if (hotel) {
+    const { rows } = await sql`
+      SELECT r.*,
+             CASE WHEN f.review_id IS NOT NULL THEN true ELSE false END AS is_favorite
+      FROM tdg_hotel_reviews r
+      LEFT JOIN tdg_review_favorites f
+        ON f.review_id = r.id AND f.agent_id = ${agentId}
+      WHERE r.hotel_name ILIKE ${`%${hotel}%`}
+      ORDER BY r.visit_date DESC NULLS LAST
+    `
+    reviewRows = rows
+  } else {
+    // Group: one row per hotel (latest review), with count
+    const { rows } = await sql`
+      SELECT DISTINCT ON (r.hotel_name)
+        r.*,
+        COUNT(*) OVER (PARTITION BY r.hotel_name) AS visit_count,
+        AVG(r.overall_rating) OVER (PARTITION BY r.hotel_name) AS avg_rating,
+        CASE WHEN f.review_id IS NOT NULL THEN true ELSE false END AS is_favorite
+      FROM tdg_hotel_reviews r
+      LEFT JOIN tdg_review_favorites f
+        ON f.review_id = r.id AND f.agent_id = ${agentId}
+      ORDER BY r.hotel_name, r.visit_date DESC NULLS LAST
+    `
+    reviewRows = rows
+  }
+
+  return NextResponse.json({ reviews: reviewRows })
+}
+
+/* ── POST — submit a new review (with AI extraction) ─────────── */
+export async function POST(req: NextRequest) {
+  const session = await auth()
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const body = await req.json()
+  const {
+    hotel_name, country, visit_date, visit_type,
+    overall_rating, rooms_rating, service_rating, food_rating, location_rating,
+    raw_answers,
+  } = body
+
+  // AI extraction of structured fields
+  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+
+  const prompt = `Você é um assistente especializado em turismo de luxo. Com base nas respostas do travel advisor abaixo sobre uma visita a um hotel, extraia as informações estruturadas.
+
+Respostas do advisor:
+${Object.entries(raw_answers as Record<string, string>).map(([k, v]) => `${k}: ${v}`).join('\n')}
+
+Retorne APENAS um JSON válido com esta estrutura:
+{
+  "highlights": ["array de 3 a 5 pontos mais relevantes — específicos, úteis para vender ao cliente"],
+  "client_profile": "perfil ideal em 1-2 frases — quem deve ir a este hotel?",
+  "must_experience": "UMA experiência obrigatória no hotel",
+  "heads_up": "ressalva ou informação importante (ou null se não houver)"
+}`
+
+  const extraction = await anthropic.messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 800,
+    messages: [{ role: 'user', content: prompt }],
+  })
+
+  let structured: { highlights?: string[]; client_profile?: string; must_experience?: string; heads_up?: string } = {}
+  try {
+    const textBlock = extraction.content.find(b => b.type === 'text')
+    if (textBlock?.type === 'text') {
+      const match = textBlock.text.match(/\{[\s\S]*\}/)
+      if (match) structured = JSON.parse(match[0])
+    }
+  } catch { /* keep empty */ }
+
+  const { rows: userRows } = await sql`
+    SELECT id, name, agency_name FROM tdg_users WHERE email = ${session.user?.email ?? ''} LIMIT 1
+  `
+  const user = userRows[0]
+
+  const { rows } = await sql`
+    INSERT INTO tdg_hotel_reviews
+      (hotel_name, country, agent_id, agent_name, agency_name, visit_date, visit_type,
+       overall_rating, rooms_rating, service_rating, food_rating, location_rating,
+       highlights, client_profile, must_experience, heads_up, raw_answers)
+    VALUES (
+      ${hotel_name}, ${country || null}, ${user.id}, ${user.name}, ${user.agency_name},
+      ${visit_date || null}, ${visit_type || null},
+      ${overall_rating}, ${rooms_rating || null}, ${service_rating || null},
+      ${food_rating || null}, ${location_rating || null},
+      ${JSON.stringify(structured.highlights ?? [])}, ${structured.client_profile ?? null},
+      ${structured.must_experience ?? null}, ${structured.heads_up ?? null},
+      ${JSON.stringify(raw_answers)}
+    )
+    RETURNING *
+  `
+
+  return NextResponse.json({ review: rows[0] })
+}
+
+/* ── PATCH — toggle favorite ──────────────────────────────────── */
+export async function PATCH(req: NextRequest) {
+  const session = await auth()
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { review_id, action } = await req.json() // action: 'add' | 'remove'
+
+  const { rows: userRows } = await sql`
+    SELECT id FROM tdg_users WHERE email = ${session.user?.email ?? ''} LIMIT 1
+  `
+  const agentId = userRows[0]?.id
+  if (!agentId) return NextResponse.json({ error: 'User not found' }, { status: 404 })
+
+  if (action === 'add') {
+    await sql`
+      INSERT INTO tdg_review_favorites (agent_id, review_id)
+      VALUES (${agentId}, ${review_id})
+      ON CONFLICT DO NOTHING
+    `
+  } else {
+    await sql`
+      DELETE FROM tdg_review_favorites WHERE agent_id = ${agentId} AND review_id = ${review_id}
+    `
+  }
+
+  return NextResponse.json({ ok: true })
+}

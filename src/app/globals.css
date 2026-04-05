@@ -1,26 +1,353 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
+/* ── Design System — TDG Flow ───────────────────────────────────────────── */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Backgrounds — warm ivory / parchment */
+  --bg:           #F6F1EB;
+  --surface:      #FDFCFA;
+  --surface-high: #EEE7DE;
+  --border:       #E4D9CE;
+  --border-light: #D2C5B8;
+
+  /* Gold — TDG Brand (deeper for light bg contrast) */
+  --gold:         #A87C4F;
+  --gold-hover:   #BF9260;
+  --gold-dim:     #8C6436;
+  --gold-subtle:  rgba(168, 124, 79, 0.10);
+  --gold-ring:    rgba(168, 124, 79, 0.22);
+
+  /* Text — high contrast warm tones (WCAG AA+) */
+  --text-primary:   #0D0A07;
+  --text-secondary: #2C1F14;
+  --text-muted:     #5C4B3C;
+
+  /* Functional */
+  --success: #2E7D4F;
+  --warning: #B45309;
+  --error:   #C0392B;
+
+  /* Easing */
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Colors available as Tailwind utilities */
+  --color-bg:           var(--bg);
+  --color-surface:      var(--surface);
+  --color-surface-high: var(--surface-high);
+  --color-border:       var(--border);
+  --color-border-light: var(--border-light);
+  --color-gold:         var(--gold);
+  --color-gold-hover:   var(--gold-hover);
+  --color-gold-dim:     var(--gold-dim);
+  --color-gold-subtle:  var(--gold-subtle);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted:   var(--text-muted);
+  --color-success:      var(--success);
+  --color-warning:      var(--warning);
+  --color-error:        var(--error);
+
+  /* Typography */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+
+  /* Radius */
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  14px;
+  --radius-xl:  20px;
+  --radius-full: 9999px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ── Base ────────────────────────────────────────────────────────────────── */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Scrollbar ───────────────────────────────────────────────────────────── */
+
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ── Selection ───────────────────────────────────────────────────────────── */
+
+::selection { background: var(--gold-ring); color: var(--text-primary); }
+
+/* ── Focus ring ──────────────────────────────────────────────────────────── */
+
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ── Typography ──────────────────────────────────────────────────────────── */
+
+h1, h2, h3, h4 {
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+p, span, li { line-height: 1.6; }
+
+/* ── Gold button ─────────────────────────────────────────────────────────── */
+
+.btn-gold {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: var(--gold);
+  color: #FDFCFA;
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 10px 18px;
+  border-radius: var(--radius-md);
+  border: none;
+  cursor: pointer;
+  transition: background 150ms var(--ease-smooth), transform 100ms var(--ease-smooth), opacity 150ms;
+}
+.btn-gold:hover  { background: var(--gold-hover); transform: translateY(-1px); }
+.btn-gold:active { background: var(--gold-dim); transform: scale(0.98); }
+.btn-gold:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+/* ── Ghost button ────────────────────────────────────────────────────────── */
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 0.875rem;
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 150ms var(--ease-smooth);
+}
+.btn-ghost:hover  { color: var(--text-primary); border-color: var(--border-light); background: var(--surface-high); }
+.btn-ghost:active { transform: scale(0.98); }
+.btn-ghost:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* ── Input ───────────────────────────────────────────────────────────────── */
+
+.input {
+  width: 100%;
+  background: var(--surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  font-size: 0.875rem;
+  font-family: var(--font-sans);
+  transition: border-color 150ms, box-shadow 150ms;
+  outline: none;
+}
+.input::placeholder { color: var(--text-muted); }
+.input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px var(--gold-ring);
+}
+
+/* ── Card ────────────────────────────────────────────────────────────────── */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  transition: border-color 200ms, box-shadow 200ms;
+}
+.card:hover {
+  border-color: var(--border-light);
+  box-shadow: 0 6px 20px rgba(90, 60, 30, 0.10);
+}
+.card-gold {
+  border-top: 2px solid var(--gold);
+}
+
+/* ── Badge ───────────────────────────────────────────────────────────────── */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+}
+.badge-gold    { background: rgba(168,124,79,.12); color: var(--gold); }
+.badge-success { background: rgba(46,125,79,.10); color: var(--success); }
+.badge-muted   { background: var(--surface-high); color: var(--text-muted); }
+.badge-warning { background: rgba(180,83,9,.10); color: var(--warning); }
+
+/* ── Divider ─────────────────────────────────────────────────────────────── */
+
+.divider { height: 1px; background: var(--border); margin: 0; }
+
+/* ── Prose (markdown) ────────────────────────────────────────────────────── */
+
+.prose-dark h1, .prose-dark h2, .prose-dark h3 { color: var(--text-primary); margin-top: 1.2em; }
+.prose-dark p  { color: var(--text-secondary); margin-bottom: 0.8em; }
+.prose-dark strong { color: var(--text-primary); font-weight: 600; }
+.prose-dark ul, .prose-dark ol { color: var(--text-secondary); padding-left: 1.2em; }
+.prose-dark li { margin-bottom: 0.3em; }
+.prose-dark hr { border-color: var(--border); margin: 1em 0; }
+.prose-dark code { background: var(--surface-high); color: var(--gold); padding: 2px 6px; border-radius: 4px; font-size: 0.85em; border: 1px solid var(--border); }
+
+/* ── Animations ──────────────────────────────────────────────────────────── */
+
+@keyframes pulse-gold {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 var(--gold-ring); }
+  50%       { opacity: 0.8; box-shadow: 0 0 0 6px transparent; }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin-slow { to { transform: rotate(360deg); } }
+
+.animate-pulse-gold { animation: pulse-gold 2s ease-in-out infinite; }
+.animate-fade-up    { animation: fade-up 300ms var(--ease-smooth) forwards; }
+.animate-spin-slow  { animation: spin-slow 2s linear infinite; }
+
+/* ── Recording pulse ─────────────────────────────────────────────────────── */
+
+.recording-ring {
+  position: relative;
+}
+.recording-ring::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid var(--error);
+  animation: pulse-gold 1.5s ease-in-out infinite;
+}
+
+/* ── Display heading (ultra-light, Apple-style) ───────────────────────── */
+
+/* ── Gold rule divider ───────────────────────────────────────────────────── */
+
+.gold-rule {
+  width: 80px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--gold-dim) 50%, transparent 100%);
+  margin: 0 auto;
+}
+
+/* ── Two-tier section heading ────────────────────────────────────────────── */
+
+.section-label {
+  font-family: var(--font-sans);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold-dim);
+}
+
+.section-heading {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: clamp(2rem, 4vw, 3.25rem);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  color: var(--text-primary);
+}
+
+/* ── Grain texture overlay ───────────────────────────────────────────────── */
+
+.grain::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  opacity: 0.025;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Property card ───────────────────────────────────────────────────────── */
+
+.prop-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.prop-card-img {
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  transition: transform 0.5s cubic-bezier(0.4,0,0.2,1);
+}
+
+.prop-card:hover .prop-card-img { transform: scale(1.025); }
+
+.prop-card-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(28, 20, 16, 0.72) 0%, transparent 55%);
+  transition: opacity 0.3s;
+}
+
+/* ── Responsive helpers (explicit, not relying solely on Tailwind) ───────── */
+
+.mobile-only {
+  display: flex !important;
+}
+
+@media (min-width: 768px) {
+  .mobile-only {
+    display: none !important;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+.desktop-only {
+  display: none !important;
+}
+
+@media (min-width: 768px) {
+  .desktop-only {
+    display: flex !important;
+  }
+}
+
+/* ── Nav scroll effect handled via JS class ─────────────────────────────── */
+
+.nav-opaque {
+  background: rgba(246, 241, 235, 0.92) !important;
+  backdrop-filter: blur(12px);
+  border-bottom-color: var(--border) !important;
 }
