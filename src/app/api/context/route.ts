@@ -10,6 +10,11 @@ export async function GET() {
 
   const agentName = session.user?.name ?? 'Agente'
 
+  // Ensure avatar column exists and fetch it
+  await sql`ALTER TABLE tdg_users ADD COLUMN IF NOT EXISTS avatar_url TEXT`
+  const avatarRes = await sql`SELECT avatar_url FROM tdg_users WHERE email = ${session.user?.email ?? ''} LIMIT 1`
+  const avatarUrl: string | null = avatarRes.rows[0]?.avatar_url ?? null
+
   const [pendingRes, reviewsRes, promotionsRes, lastReviewRes] = await Promise.all([
     // Gravações pendentes de transcrição
     sql`
@@ -44,6 +49,7 @@ export async function GET() {
 
   return NextResponse.json({
     agent_name: agentName,
+    avatar_url: avatarUrl,
     pending_recordings: pendingRes.rows[0]?.count ?? 0,
     reviews_this_week: reviewsRes.rows[0]?.count ?? 0,
     expiring_promotions: promotionsRes.rows,

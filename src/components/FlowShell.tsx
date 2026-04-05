@@ -14,6 +14,7 @@ import { type Lang, LANG_LABELS } from '@/lib/i18n'
 import { sounds } from '@/lib/sounds'
 import { ToastProvider } from '@/contexts/ToastContext'
 import NotificationBell from '@/components/NotificationBell'
+import UserAvatar from '@/components/UserAvatar'
 
 interface NavItem {
   href: string
@@ -47,7 +48,7 @@ const SECONDARY_NAV_ADMIN: NavItem[] = [
 
 interface Props {
   children: React.ReactNode
-  user: { name: string; agency: string; role: string }
+  user: { name: string; agency: string; role: string; avatar_url?: string | null }
 }
 
 export default function FlowShell({ children, user }: Props) {
@@ -192,9 +193,7 @@ function FlowShellInner({ children, user }: Props) {
           </div>
 
           <div className="flex items-center gap-2.5 mb-3">
-            <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--surface-high)', border: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6875rem', fontWeight: 600, color: 'var(--text-secondary)', flexShrink: 0 }}>
-              {initial}
-            </div>
+            <UserAvatar name={user.name} avatarUrl={user.avatar_url} size={28} editable />
             <div className="min-w-0">
               <p style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {user.name || 'Agente'}
@@ -229,9 +228,7 @@ function FlowShellInner({ children, user }: Props) {
           </div>
           <div className="flex items-center gap-2">
             <NotificationBell />
-            <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--surface-high)', border: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6875rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-              {initial}
-            </div>
+            <UserAvatar name={user.name} avatarUrl={user.avatar_url} size={28} />
           </div>
         </div>
 

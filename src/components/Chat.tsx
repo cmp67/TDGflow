@@ -6,6 +6,7 @@ import ReactMarkdown from 'react-markdown'
 import { motion, AnimatePresence } from 'framer-motion'
 // ReactMarkdown kept for assistant conversation messages
 import AudioRecord from './AudioRecord'
+import UserAvatar from './UserAvatar'
 
 /** Renders text with **bold** markers as actual bold spans — avoids ReactMarkdown CSS conflicts */
 function GoldBoldText({ text }: { text: string }) {
@@ -35,6 +36,7 @@ interface Message {
 
 interface AgentContext {
   agent_name: string
+  avatar_url: string | null
   pending_recordings: number
   reviews_this_week: number
   expiring_promotions: { hotel_name: string; title: string; booking_deadline: string; commission_rate: number }[]
@@ -330,16 +332,18 @@ export default function Chat() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25 }}
-              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} max-w-3xl mx-auto w-full`}
+              className={`flex items-end gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'} max-w-3xl mx-auto w-full`}
             >
+              {/* Assistant avatar */}
               {msg.role === 'assistant' && (
                 <div
-                  className="w-7 h-7 rounded-lg flex items-center justify-center font-bold mr-3 mt-1 shrink-0"
+                  className="w-7 h-7 rounded-lg flex items-center justify-center font-bold shrink-0"
                   style={{ background: 'var(--gold)', color: '#1A1918', fontSize: '0.5625rem', letterSpacing: '0.05em' }}
                 >
                   TDG
                 </div>
               )}
+
               <div
                 className="px-4 py-3 rounded-2xl max-w-[85%] text-sm leading-relaxed"
                 style={
@@ -356,6 +360,11 @@ export default function Chat() {
                   msg.content
                 )}
               </div>
+
+              {/* User avatar */}
+              {msg.role === 'user' && (
+                <UserAvatar name={ctx?.agent_name ?? ''} avatarUrl={ctx?.avatar_url} size={28} />
+              )}
             </motion.div>
           ))}
 
