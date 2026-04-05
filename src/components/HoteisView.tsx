@@ -27,8 +27,27 @@ interface Hotel {
   image_url: string
   dot: string
   tags: string[]
+  profiles: string[]   // advisor-facing filter categories
   gallery: { label: string; url: string }[]
 }
+
+/* ── Filter definitions ─────────────────────────────────────────── */
+const REGIONS = ['Todos', 'Algarve', 'Lisboa', 'Maldivas']
+
+const PROFILES: { key: string; label: string; emoji: string }[] = [
+  { key: 'Família',     label: 'Família',     emoji: '👨‍👩‍👧' },
+  { key: 'Casais',      label: 'Casais',       emoji: '💑' },
+  { key: 'Praia',       label: 'Praia',        emoji: '🏖️' },
+  { key: 'Urban',       label: 'Urban',        emoji: '🏙️' },
+  { key: 'Resort',      label: 'Resort',       emoji: '🌴' },
+  { key: 'Boutique',    label: 'Boutique',     emoji: '🏛️' },
+  { key: 'Golf',        label: 'Golf',         emoji: '⛳' },
+  { key: 'Villas',      label: 'Villas',       emoji: '🏡' },
+  { key: 'Overwater',   label: 'Overwater',    emoji: '🏝️' },
+  { key: 'Ultra Luxury',label: 'Ultra Luxury', emoji: '💎' },
+  { key: 'Natureza',    label: 'Natureza',     emoji: '🌿' },
+  { key: 'Negócios',    label: 'Negócios',     emoji: '💼' },
+]
 
 interface HotelContact {
   id: string
@@ -60,6 +79,7 @@ const HOTELS: Hotel[] = [
     image_url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=900&q=80&auto=format&fit=crop',
     dot: '#7aaa5a',
     tags: ['Beach Resort', 'Família', '5 Estrelas', 'Villas'],
+    profiles: ['Família', 'Resort', 'Praia', 'Villas', 'Natureza'],
     gallery: [
       { label: 'Acomodações', url: '#' },
       { label: 'Atividades Família', url: '#' },
@@ -81,6 +101,7 @@ const HOTELS: Hotel[] = [
     image_url: 'https://images.unsplash.com/photo-1555881400-74d7acaacd8b?w=900&q=80&auto=format&fit=crop',
     dot: '#8080c8',
     tags: ['Urban Luxury', 'Família', 'Apartamentos', 'Histórico'],
+    profiles: ['Família', 'Urban', 'Boutique', 'Casais', 'Negócios'],
     gallery: [
       { label: 'Acomodações', url: '#' },
       { label: 'Bar 1855', url: '#' },
@@ -102,6 +123,7 @@ const HOTELS: Hotel[] = [
     image_url: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=900&q=80&auto=format&fit=crop',
     dot: '#4a8abe',
     tags: ['Urban Luxury', 'Apartamentos', 'Riverside', 'Moderno'],
+    profiles: ['Família', 'Urban', 'Casais', 'Negócios'],
     gallery: [
       { label: 'Acomodações', url: '#' },
       { label: 'Spa & Piscina', url: '#' },
@@ -123,6 +145,7 @@ const HOTELS: Hotel[] = [
     image_url: 'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=900&q=80&auto=format&fit=crop',
     dot: '#c8a060',
     tags: ['Golf', 'Família', 'Villas', 'Quinta do Lago'],
+    profiles: ['Família', 'Golf', 'Resort', 'Villas', 'Casais'],
     gallery: [
       { label: 'Villas', url: '#' },
       { label: 'Atividades Família', url: '#' },
@@ -144,6 +167,7 @@ const HOTELS: Hotel[] = [
     image_url: 'https://images.unsplash.com/photo-1514282401047-d79a71a590e8?w=900&q=80&auto=format&fit=crop',
     dot: '#4a9bbe',
     tags: ['Private Island', 'Ultra Luxury', 'Overwater', 'Maldivas'],
+    profiles: ['Casais', 'Ultra Luxury', 'Overwater', 'Resort', 'Natureza'],
     gallery: [
       { label: 'Acomodações', url: '#' },
       { label: 'Aragu Restaurant', url: '#' },
@@ -151,8 +175,6 @@ const HOTELS: Hotel[] = [
     ],
   },
 ]
-
-const REGIONS = ['Todos', 'Algarve', 'Lisboa', 'Maldivas']
 
 /* ── Hotel card ─────────────────────────────────────────────────── */
 function HotelCard({ hotel, onClick }: { hotel: Hotel; onClick: () => void }) {
@@ -162,83 +184,60 @@ function HotelCard({ hotel, onClick }: { hotel: Hotel; onClick: () => void }) {
       animate={{ opacity: 1, y: 0 }}
       onClick={onClick}
       className="w-full text-left rounded-2xl overflow-hidden group"
-      style={{
-        background: 'var(--surface)',
-        border: '1px solid var(--border)',
-        cursor: 'pointer',
-      }}
-      whileHover={{ scale: 1.012, boxShadow: '0 8px 28px rgba(90,60,30,0.12)' }}
-      whileTap={{ scale: 0.99 }}
-      transition={{ duration: 0.18 }}
+      style={{ background: 'var(--surface)', border: '1px solid var(--border)', cursor: 'pointer' }}
+      whileHover={{ scale: 1.015, boxShadow: '0 6px 20px rgba(90,60,30,0.12)' }}
+      whileTap={{ scale: 0.985 }}
+      transition={{ duration: 0.16 }}
     >
-      {/* Cover photo */}
-      <div style={{ width: '100%', height: 160, overflow: 'hidden', position: 'relative', flexShrink: 0 }}>
+      {/* Cover photo — compact height */}
+      <div style={{ width: '100%', height: 118, overflow: 'hidden', position: 'relative', flexShrink: 0 }}>
         <img
           src={hotel.image_url}
           alt={hotel.name}
-          style={{
-            width: '100%', height: '100%', objectFit: 'cover',
-            transition: 'transform 0.5s cubic-bezier(0.4,0,0.2,1)',
-          }}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s cubic-bezier(0.4,0,0.2,1)' }}
           className="group-hover:scale-105"
           loading="lazy"
         />
-        {/* Gradient overlay */}
         <div style={{
           position: 'absolute', inset: 0,
-          background: 'linear-gradient(to top, rgba(15,10,5,0.62) 0%, rgba(15,10,5,0.1) 55%, transparent 100%)',
+          background: 'linear-gradient(to top, rgba(10,7,3,0.70) 0%, rgba(10,7,3,0.08) 55%, transparent 100%)',
         }} />
-        {/* Name + group overlay on photo */}
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '10px 16px 12px' }}>
+        {/* Name overlay */}
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '8px 12px 10px' }}>
           {hotel.group && (
-            <p style={{ fontSize: '0.575rem', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)', marginBottom: 3 }}>
+            <p style={{ fontSize: '0.525rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.55)', marginBottom: 2 }}>
               {hotel.group}
             </p>
           )}
-          <h3 style={{ fontSize: '1.0625rem', fontWeight: 600, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1.15 }}>
+          <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1.15 }}>
             {hotel.name}
           </h3>
         </div>
-        {/* Dot color accent — top right chip */}
-        <div style={{
-          position: 'absolute', top: 10, right: 10,
-          width: 8, height: 8, borderRadius: '50%',
-          background: hotel.dot, boxShadow: `0 0 0 2px rgba(255,255,255,0.3)`,
-        }} />
+        <div style={{ position: 'absolute', top: 8, right: 8, width: 7, height: 7, borderRadius: '50%', background: hotel.dot, boxShadow: '0 0 0 2px rgba(255,255,255,0.3)' }} />
       </div>
 
-      {/* Card body */}
-      <div style={{ padding: '12px 16px 14px', borderTop: `2px solid ${hotel.dot}` }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <MapPin size={11} style={{ color: hotel.dot, flexShrink: 0 }} />
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 400 }}>{hotel.location}</span>
-          </div>
-          <ChevronRight size={14} style={{ color: 'var(--text-muted)' }} className="group-hover:translate-x-0.5 transition-transform" />
+      {/* Card body — tight */}
+      <div style={{ padding: '10px 12px 12px', borderTop: `2px solid ${hotel.dot}` }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 8 }}>
+          <MapPin size={10} style={{ color: hotel.dot, flexShrink: 0 }} />
+          <span style={{ fontSize: '0.6875rem', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{hotel.location}</span>
         </div>
-
-        {/* Tags */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 10 }}>
-          {hotel.tags.slice(0, 3).map(tag => (
-            <span key={tag} style={{
-              fontSize: '0.575rem', fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase',
-              padding: '3px 8px', borderRadius: 999,
-              background: 'var(--surface-high)', border: '1px solid var(--border)',
-              color: 'var(--text-muted)',
-            }}>
-              {tag}
-            </span>
-          ))}
+        {/* Profile pills */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+          {hotel.profiles.slice(0, 3).map(p => {
+            const def = PROFILES.find(x => x.key === p)
+            return (
+              <span key={p} style={{
+                fontSize: '0.5625rem', fontWeight: 500, letterSpacing: '0.04em',
+                padding: '2px 7px', borderRadius: 999,
+                background: 'var(--surface-high)', border: '1px solid var(--border)',
+                color: 'var(--text-muted)',
+              }}>
+                {def?.emoji} {p}
+              </span>
+            )
+          })}
         </div>
-
-        {/* Description */}
-        <p style={{
-          fontSize: '0.78125rem', color: 'var(--text-secondary)', lineHeight: 1.55, fontWeight: 400,
-          marginTop: 9,
-          overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-        }}>
-          {hotel.description}
-        </p>
       </div>
     </motion.button>
   )
@@ -785,92 +784,119 @@ function HotelDetail({ hotel, onClose }: { hotel: Hotel; onClose: () => void }) 
 export default function HoteisView() {
   const [search, setSearch] = useState('')
   const [region, setRegion] = useState('Todos')
+  const [activeProfiles, setActiveProfiles] = useState<Set<string>>(new Set())
   const [selected, setSelected] = useState<Hotel | null>(null)
+
+  function toggleProfile(key: string) {
+    setActiveProfiles(prev => {
+      const next = new Set(prev)
+      next.has(key) ? next.delete(key) : next.add(key)
+      return next
+    })
+  }
 
   const filtered = useMemo(() => {
     return HOTELS.filter(h => {
-      const matchSearch = !search || h.name.toLowerCase().includes(search.toLowerCase()) || h.location.toLowerCase().includes(search.toLowerCase())
+      const q = search.toLowerCase()
+      const matchSearch = !search || h.name.toLowerCase().includes(q) || h.location.toLowerCase().includes(q)
       const matchRegion = region === 'Todos' || h.region === region
-      return matchSearch && matchRegion
+      const matchProfile = activeProfiles.size === 0 || [...activeProfiles].some(p => h.profiles.includes(p))
+      return matchSearch && matchRegion && matchProfile
     })
-  }, [search, region])
+  }, [search, region, activeProfiles])
 
-  const martinhalGroup = filtered.filter(h => h.group === 'Martinhal')
-  const standalone = filtered.filter(h => !h.group)
+  const activeCount = (region !== 'Todos' ? 1 : 0) + activeProfiles.size
+
+  function clearAll() {
+    setRegion('Todos')
+    setActiveProfiles(new Set())
+    setSearch('')
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Header */}
-      <div style={{ flexShrink: 0, padding: '16px 20px 0', borderBottom: '1px solid var(--border)' }}>
-        <div style={{ marginBottom: 14 }}>
-          <h2 style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>Hotéis Parceiros</h2>
-          <p style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', marginTop: 1 }}>{HOTELS.length} propriedades na rede</p>
+
+      {/* ── Filter header ──────────────────────────────────────────── */}
+      <div style={{ flexShrink: 0, padding: '14px 16px 0', borderBottom: '1px solid var(--border)' }}>
+
+        {/* Title row */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <div>
+            <h2 style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>Hotéis Parceiros</h2>
+            <p style={{ fontSize: '0.625rem', color: 'var(--text-muted)', marginTop: 1 }}>
+              {filtered.length} de {HOTELS.length} propriedades
+            </p>
+          </div>
+          {activeCount > 0 && (
+            <button onClick={clearAll} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.6875rem', color: 'var(--gold)', padding: '4px 0' }}>
+              <X size={11} /> Limpar ({activeCount})
+            </button>
+          )}
         </div>
 
         {/* Search */}
-        <div style={{ position: 'relative', marginBottom: 12 }}>
-          <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
+        <div style={{ position: 'relative', marginBottom: 10 }}>
+          <Search size={13} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
           <input
             className="input"
-            style={{ paddingLeft: 34 }}
-            placeholder="Buscar hotel ou destino..."
+            style={{ paddingLeft: 32, fontSize: '0.8125rem', padding: '8px 32px 8px 32px' }}
+            placeholder="Buscar hotel ou destino…"
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
           {search && (
             <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}>
-              <X size={12} style={{ color: 'var(--text-muted)' }} />
+              <X size={11} style={{ color: 'var(--text-muted)' }} />
             </button>
           )}
         </div>
 
-        {/* Region filters */}
-        <div style={{ display: 'flex', gap: 6, paddingBottom: 14, overflowX: 'auto' }}>
+        {/* Destino chips */}
+        <div style={{ display: 'flex', gap: 5, overflowX: 'auto', paddingBottom: 8, scrollbarWidth: 'none' }}>
           {REGIONS.map(r => (
             <button key={r} onClick={() => setRegion(r)} style={{
-              padding: '5px 12px', borderRadius: 999, whiteSpace: 'nowrap',
-              fontSize: '0.75rem', fontWeight: region === r ? 500 : 400, cursor: 'pointer', transition: 'all 0.15s',
+              padding: '4px 11px', borderRadius: 999, whiteSpace: 'nowrap', flexShrink: 0,
+              fontSize: '0.6875rem', fontWeight: region === r ? 600 : 400, cursor: 'pointer', transition: 'all 0.15s',
               background: region === r ? 'var(--gold-subtle)' : 'transparent',
-              border: `1px solid ${region === r ? 'var(--gold-ring)' : 'var(--border)'}`,
-              color: region === r ? 'var(--gold)' : 'var(--text-muted)',
+              border: `1px solid ${region === r ? 'var(--gold)' : 'var(--border)'}`,
+              color: region === r ? 'var(--gold-dim)' : 'var(--text-muted)',
             }}>
               {r}
             </button>
           ))}
         </div>
+
+        {/* Perfil chips */}
+        <div style={{ display: 'flex', gap: 5, overflowX: 'auto', paddingBottom: 12, scrollbarWidth: 'none' }}>
+          {PROFILES.map(({ key, label, emoji }) => {
+            const on = activeProfiles.has(key)
+            return (
+              <button key={key} onClick={() => toggleProfile(key)} style={{
+                padding: '4px 10px', borderRadius: 999, whiteSpace: 'nowrap', flexShrink: 0,
+                fontSize: '0.6875rem', fontWeight: on ? 600 : 400, cursor: 'pointer', transition: 'all 0.15s',
+                background: on ? 'var(--gold-subtle)' : 'transparent',
+                border: `1px solid ${on ? 'var(--gold)' : 'var(--border)'}`,
+                color: on ? 'var(--gold-dim)' : 'var(--text-muted)',
+                display: 'flex', alignItems: 'center', gap: 4,
+              }}>
+                <span style={{ fontSize: '0.7rem' }}>{emoji}</span> {label}
+              </button>
+            )
+          })}
+        </div>
       </div>
 
-      {/* List */}
-      <div style={{ flex: 1, overflow: 'hidden auto', padding: '16px 20px' }}>
+      {/* ── Grid ───────────────────────────────────────────────────── */}
+      <div style={{ flex: 1, overflow: 'hidden auto', padding: '14px 16px' }}>
         {filtered.length === 0 ? (
           <div style={{ textAlign: 'center', paddingTop: 60 }}>
             <Building2 size={28} style={{ color: 'var(--text-muted)', margin: '0 auto 12px' }} />
-            <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Nenhum hotel encontrado.</p>
+            <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: 8 }}>Nenhum hotel encontrado.</p>
+            <button onClick={clearAll} className="btn-ghost" style={{ fontSize: '0.75rem' }}>Limpar filtros</button>
           </div>
         ) : (
-          <div style={{ maxWidth: 640, margin: '0 auto' }}>
-            {martinhalGroup.length > 0 && (
-              <div style={{ marginBottom: 24 }}>
-                <p style={{ fontSize: '0.575rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 10 }}>
-                  Grupo Martinhal — {martinhalGroup.length} propriedades
-                </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {martinhalGroup.map(h => <HotelCard key={h.id} hotel={h} onClick={() => setSelected(h)} />)}
-                </div>
-              </div>
-            )}
-            {standalone.length > 0 && (
-              <div>
-                {martinhalGroup.length > 0 && (
-                  <p style={{ fontSize: '0.575rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 10 }}>
-                    Outros parceiros
-                  </p>
-                )}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {standalone.map(h => <HotelCard key={h.id} hotel={h} onClick={() => setSelected(h)} />)}
-                </div>
-              </div>
-            )}
+          <div style={{ maxWidth: 720, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+            {filtered.map(h => <HotelCard key={h.id} hotel={h} onClick={() => setSelected(h)} />)}
           </div>
         )}
       </div>
