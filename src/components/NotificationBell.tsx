@@ -32,7 +32,7 @@ const ICON: Record<string, React.ReactNode> = {
 }
 
 const ICON_COLOR: Record<string, string> = {
-  offer:     'var(--gold)',
+  offer:     '#008C94',
   review:    '#7DD3FC',
   recording: '#86EFAC',
 }
@@ -135,7 +135,7 @@ export default function NotificationBell() {
         style={{
           position: 'relative',
           background: 'none', border: 'none', cursor: 'pointer',
-          padding: 6, color: 'var(--text-muted)',
+          padding: 6, color: '#4A7580',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           borderRadius: 8,
           transition: 'color 150ms',
@@ -180,10 +180,10 @@ export default function NotificationBell() {
           >
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px 10px' }}>
-              <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+              <p style={{ fontSize: '0.75rem', fontWeight: 600, color: '#112630', letterSpacing: '-0.01em' }}>
                 Notificações
               </p>
-              <button onClick={() => setOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 2 }}>
+              <button onClick={() => setOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#4A7580', padding: 2 }}>
                 <X size={13} />
               </button>
             </div>
@@ -193,8 +193,8 @@ export default function NotificationBell() {
             {/* Items */}
             {notifications.length === 0 ? (
               <div style={{ padding: '24px 16px', textAlign: 'center' }}>
-                <Bell size={20} style={{ color: 'var(--border-light)', margin: '0 auto 8px' }} />
-                <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Sem notificações</p>
+                <Bell size={20} style={{ color: '#B8D0D5', margin: '0 auto 8px' }} />
+                <p style={{ fontSize: '0.8125rem', color: '#4A7580' }}>Sem notificações</p>
               </div>
             ) : (
               <div>
@@ -217,14 +217,14 @@ export default function NotificationBell() {
                       {ICON[n.type]}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>
+                      <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#112630', marginBottom: 2 }}>
                         {n.title}
                       </p>
-                      <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                      <p style={{ fontSize: '0.75rem', color: '#104C64', lineHeight: 1.4 }}>
                         {n.body}
                       </p>
                     </div>
-                    <span style={{ fontSize: '0.625rem', color: 'var(--text-muted)', flexShrink: 0, paddingTop: 2 }}>
+                    <span style={{ fontSize: '0.625rem', color: '#4A7580', flexShrink: 0, paddingTop: 2 }}>
                       {timeAgo(n.time)}
                     </span>
                   </div>

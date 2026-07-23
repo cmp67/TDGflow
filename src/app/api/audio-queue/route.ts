@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
-import OpenAI from 'openai'
+import Groq from 'groq-sdk'
 import { sql } from '@vercel/postgres'
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -56,10 +56,10 @@ export async function POST(req: NextRequest) {
     const fileName = audioUrl.split('/').pop() || 'audio.webm'
     const audioFile = new File([audioBlob], fileName)
 
-    // Transcrever com Whisper
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-    const transcription = await openai.audio.transcriptions.create({
-      file: audioFile, model: 'whisper-1', language: 'pt', response_format: 'text'
+    // Transcrever com Groq Whisper (whisper-large-v3-turbo)
+    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
+    const transcription = await groq.audio.transcriptions.create({
+      file: audioFile, model: 'whisper-large-v3-turbo', language: 'pt', response_format: 'text'
     })
     const transcript = transcription as unknown as string
 

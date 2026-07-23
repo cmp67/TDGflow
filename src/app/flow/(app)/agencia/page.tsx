@@ -8,17 +8,41 @@ export default async function AgenciaPage() {
   if (!session) redirect('/flow/login')
 
   const agency = session.user?.agency ?? ''
-  const { rows: members } = await sql`
-    SELECT id, name, email, role, created_at
-    FROM tdg_users
-    WHERE agency_name = ${agency} AND active = true
-    ORDER BY created_at ASC
-  `
+  const email  = session.user?.email  ?? ''
+
+  // Fetch user's own profile row (avatar, etc.)
+  let profile: { avatar_url: string | null } = { avatar_url: null }
+  let members: { id: string; name: string; email: string; role: string; created_at: string }[] = []
+
+  try {
+    const { rows } = await sql`
+      SELECT avatar_url FROM tdg_users WHERE email = ${email} LIMIT 1
+    `
+    if (rows[0]) profile = { avatar_url: rows[0].avatar_url ?? null }
+  } catch { /* non-blocking */ }
+
+  if (agency) {
+    try {
+      const { rows } = await sql`
+        SELECT id, name, email, role, created_at
+        FROM tdg_users
+        WHERE agency_name = ${agency} AND active = true
+        ORDER BY created_at ASC
+      `
+      members = rows as typeof members
+    } catch { /* non-blocking */ }
+  }
 
   return (
     <AgenciaView
-      user={{ name: session.user?.name ?? '', agency, role: session.user?.role ?? 'agent' }}
-      members={members as { id: string; name: string; email: string; role: string; created_at: string }[]}
+      user={{
+        name:       session.user?.name   ?? '',
+        email,
+        agency,
+        role:       session.user?.role   ?? 'agent',
+        avatar_url: profile.avatar_url,
+      }}
+      members={members}
     />
   )
 }

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { Mic, Upload, CheckCircle, X, Square, Circle } from 'lucide-react'
+import InsufficientBalanceModal from './InsufficientBalanceModal'
 
 interface AudioSummary {
   hotel_name?: string
@@ -28,6 +29,7 @@ export default function AudioUpload({ onClose }: { onClose: () => void }) {
   const [agentName, setAgentName] = useState('')
   const [agency, setAgency] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showBalanceModal, setShowBalanceModal] = useState(false)
   const [result, setResult] = useState<TranscribeResult | null>(null)
   const [audioShared, setAudioShared] = useState(false)
 
@@ -98,9 +100,10 @@ export default function AudioUpload({ onClose }: { onClose: () => void }) {
     setLoading(true)
     const fd = new FormData()
     fd.append('audio', activeFile)
-    fd.append('agent_name', agentName || 'Agente TDG')
+    fd.append('agent_name', agentName || 'Stella')
     fd.append('agency', agency)
     const res = await fetch('/api/transcribe', { method: 'POST', body: fd })
+    if (res.status === 402) { setShowBalanceModal(true); setLoading(false); return }
     const data = await res.json()
     setResult(data)
     setStep('review')
@@ -121,6 +124,7 @@ export default function AudioUpload({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+      {showBalanceModal && <InsufficientBalanceModal onClose={() => setShowBalanceModal(false)} />}
       <div className="bg-white rounded-2xl w-full max-w-xl shadow-2xl">
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-lg font-semibold text-gray-900">Registar Audio</h2>

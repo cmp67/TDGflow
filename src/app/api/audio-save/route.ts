@@ -9,7 +9,7 @@ export const maxDuration = 30
 export async function POST(req: NextRequest) {
   const fd = await req.formData()
   const audioFile = fd.get('audio') as File
-  const agentName = (fd.get('agent_name') as string) || 'Agente TDG'
+  const agentName = (fd.get('agent_name') as string) || 'Stella'
   const agency = (fd.get('agency') as string) || ''
   const interlocutorName = (fd.get('interlocutor_name') as string) || ''
   const interlocutorCompany = (fd.get('interlocutor_company') as string) || ''

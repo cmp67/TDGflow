@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { Loader2, ArrowRight } from 'lucide-react'
+import { Loader2, ArrowRight, Eye, EyeOff } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 export default function LoginPage() {
@@ -12,6 +12,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -45,14 +46,14 @@ export default function LoginPage() {
         <div className="text-center mb-10">
           <div
             className="w-12 h-12 rounded-xl flex items-center justify-center font-semibold text-sm mx-auto mb-5"
-            style={{ background: 'var(--gold)', color: '#1A1918', letterSpacing: '0.04em' }}
+            style={{ background: 'var(--gold)', color: '#FFFFFF', letterSpacing: '0.04em' }}
           >
             TDG
           </div>
-          <h1 className="text-lg font-semibold" style={{ color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+          <h1 className="text-lg font-semibold" style={{ color: '#112630', letterSpacing: '-0.02em' }}>
             TDG Flow
           </h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-sm mt-1" style={{ color: '#4A7580' }}>
             Acesso exclusivo para agências credenciadas
           </p>
         </div>
@@ -60,7 +61,7 @@ export default function LoginPage() {
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
-            <label className="text-xs font-medium uppercase tracking-wider block mb-1.5" style={{ color: 'var(--text-muted)' }}>
+            <label className="text-xs font-medium uppercase tracking-wider block mb-1.5" style={{ color: '#4A7580' }}>
               Email
             </label>
             <input
@@ -74,22 +75,38 @@ export default function LoginPage() {
             />
           </div>
           <div>
-            <label className="text-xs font-medium uppercase tracking-wider block mb-1.5" style={{ color: 'var(--text-muted)' }}>
+            <label className="text-xs font-medium uppercase tracking-wider block mb-1.5" style={{ color: '#4A7580' }}>
               Senha
             </label>
-            <input
-              className="input"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-            />
+            <div style={{ position: 'relative' }}>
+              <input
+                className="input"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="••••••••"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+                style={{ paddingRight: '40px' }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(v => !v)}
+                style={{
+                  position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                  color: '#4A7580', display: 'flex', alignItems: 'center',
+                }}
+                tabIndex={-1}
+                aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
           </div>
 
           {error && (
-            <p className="text-xs text-center" style={{ color: 'var(--error)' }}>{error}</p>
+            <p className="text-xs text-center" style={{ color: '#C0392B' }}>{error}</p>
           )}
 
           <button
@@ -105,7 +122,7 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className="text-center text-xs mt-8" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-center text-xs mt-8" style={{ color: '#4A7580' }}>
           Acesso restrito — Travel Designers Group
         </p>
       </motion.div>

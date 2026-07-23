@@ -1,31 +1,31 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@200;300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 /* ── Design System — TDG Flow ───────────────────────────────────────────── */
 
 :root {
-  /* Backgrounds — warm ivory / parchment */
-  --bg:           #F6F1EB;
-  --surface:      #FDFCFA;
-  --surface-high: #EEE7DE;
-  --border:       #E4D9CE;
-  --border-light: #D2C5B8;
+  /* Backgrounds — cool neutral */
+  --bg:           #F3F7F8;
+  --surface:      #FFFFFF;
+  --surface-high: #E8F0F2;
+  --border:       #D0E2E5;
+  --border-light: #B8D0D5;
 
-  /* Gold — TDG Brand (deeper for light bg contrast) */
-  --gold:         #A87C4F;
-  --gold-hover:   #BF9260;
-  --gold-dim:     #8C6436;
-  --gold-subtle:  rgba(168, 124, 79, 0.10);
-  --gold-ring:    rgba(168, 124, 79, 0.22);
+  /* Teal — TDG Brand Primary (#008C94) */
+  --gold:         #008C94;
+  --gold-hover:   #00A0A9;
+  --gold-dim:     #006B72;
+  --gold-subtle:  rgba(0, 140, 148, 0.10);
+  --gold-ring:    rgba(0, 140, 148, 0.22);
 
-  /* Text — high contrast warm tones (WCAG AA+) */
-  --text-primary:   #0D0A07;
-  --text-secondary: #2C1F14;
-  --text-muted:     #5C4B3C;
+  /* Text — TDG navy tones (WCAG AA+) */
+  --text-primary:   #112630;
+  --text-secondary: #104C64;
+  --text-muted:     #4A7580;
 
   /* Functional */
   --success: #2E7D4F;
-  --warning: #B45309;
+  --warning: #B6410F;
   --error:   #C0392B;
 
   /* Easing */
@@ -52,7 +52,7 @@
   --color-error:        var(--error);
 
   /* Typography */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  --font-sans: 'Raleway', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
   --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
 
   /* Radius */
@@ -88,6 +88,16 @@ html, body {
 /* ── Selection ───────────────────────────────────────────────────────────── */
 
 ::selection { background: var(--gold-ring); color: var(--text-primary); }
+
+/* ── Autofill override (prevent browser blue/yellow overriding colors) ───── */
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text-primary);
+  -webkit-box-shadow: 0 0 0px 1000px var(--surface) inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
 
 /* ── Focus ring ──────────────────────────────────────────────────────────── */
 
@@ -154,8 +164,11 @@ p, span, li { line-height: 1.6; }
 
 .input {
   width: 100%;
-  background: var(--surface);
-  color: var(--text-primary);
+  background: #FFFFFF;
+  background-color: #FFFFFF;
+  color: #112630;
+  -webkit-text-fill-color: #112630;
+  caret-color: #112630;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 10px 14px;
@@ -164,7 +177,11 @@ p, span, li { line-height: 1.6; }
   transition: border-color 150ms, box-shadow 150ms;
   outline: none;
 }
-.input::placeholder { color: var(--text-muted); }
+.input::placeholder {
+  color: #4A7580;
+  -webkit-text-fill-color: #4A7580;
+  opacity: 1;
+}
 .input:focus {
   border-color: var(--gold);
   box-shadow: 0 0 0 3px var(--gold-ring);
@@ -211,13 +228,24 @@ p, span, li { line-height: 1.6; }
 
 /* ── Prose (markdown) ────────────────────────────────────────────────────── */
 
-.prose-dark h1, .prose-dark h2, .prose-dark h3 { color: var(--text-primary); margin-top: 1.2em; }
-.prose-dark p  { color: var(--text-secondary); margin-bottom: 0.8em; }
-.prose-dark strong { color: var(--text-primary); font-weight: 600; }
-.prose-dark ul, .prose-dark ol { color: var(--text-secondary); padding-left: 1.2em; }
-.prose-dark li { margin-bottom: 0.3em; }
-.prose-dark hr { border-color: var(--border); margin: 1em 0; }
-.prose-dark code { background: var(--surface-high); color: var(--gold); padding: 2px 6px; border-radius: 4px; font-size: 0.85em; border: 1px solid var(--border); }
+.prose-dark { color: #104C64; }
+.prose-dark h1, .prose-dark h2, .prose-dark h3 { color: #112630; margin-top: 1.2em; }
+.prose-dark p  { color: #104C64; margin-bottom: 0.8em; }
+.prose-dark strong, .prose-dark b { color: #112630; font-weight: 600; }
+.prose-dark em, .prose-dark i { color: #104C64; }
+.prose-dark ul, .prose-dark ol { color: #104C64; padding-left: 1.2em; }
+.prose-dark li { color: #104C64; margin-bottom: 0.3em; }
+.prose-dark hr { border-color: #D0E2E5; margin: 1em 0; }
+.prose-dark code {
+  background: #E8F0F2;
+  color: #008C94;
+  -webkit-text-fill-color: #008C94;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.85em;
+  border: 1px solid #D0E2E5;
+}
+.prose-dark a { color: #008C94; text-decoration: underline; }
 
 /* ── Animations ──────────────────────────────────────────────────────────── */
 

@@ -53,7 +53,7 @@ export default function UserAvatar({ name, avatarUrl: initialUrl, size = 28, edi
           background: url ? 'transparent' : 'var(--surface-high)',
           border: `1px solid ${hover && editable ? 'var(--gold)' : 'var(--border-light)'}`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize, fontWeight: 600, color: 'var(--text-secondary)',
+          fontSize, fontWeight: 600, color: '#104C64',
           cursor: editable ? 'pointer' : 'default',
           transition: 'border-color 150ms',
           position: 'relative',

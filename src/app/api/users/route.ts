@@ -17,9 +17,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const { name, email, agency_name, password, role } = await req.json()
-  if (!name || !email || !agency_name || !password) {
-    return NextResponse.json({ error: 'Campos obrigatórios faltando.' }, { status: 400 })
+  const { name, email, agency_name, password, role, whatsapp } = await req.json()
+  if (!name || !email || !agency_name || !password || !whatsapp) {
+    return NextResponse.json({ error: 'Campos obrigatórios faltando (incluindo WhatsApp).' }, { status: 400 })
+  }
+
+  // Normalize whatsapp: digits only with country code (e.g. 5511999920122)
+  const whatsappNorm = String(whatsapp).replace(/\D/g, '')
+  if (whatsappNorm.length < 10) {
+    return NextResponse.json({ error: 'WhatsApp inválido — informe com código do país (ex: 5511999920122).' }, { status: 400 })
   }
 
   const passwordHash = await hash(password, 12)
@@ -27,9 +33,11 @@ export async function POST(req: NextRequest) {
 
   try {
     const { rows } = await sql`
-      INSERT INTO tdg_users (name, email, agency_name, password_hash, role)
-      VALUES (${name}, ${email}, ${agency_name}, ${passwordHash}, ${safeRole})
-      RETURNING id, name, email, agency_name, role, active, created_at
+      INSERT INTO tdg_users (name, email, agency_name, password_hash, role, whatsapp,
+                             agent_interaction_id)
+      VALUES (${name}, ${email}, ${agency_name}, ${passwordHash}, ${safeRole}, ${whatsappNorm},
+              UPPER(LEFT(REPLACE(gen_random_uuid()::text, '-', ''), 8)))
+      RETURNING id, name, email, agency_name, role, active, whatsapp, agent_interaction_id, created_at
     `
     return NextResponse.json({ user: rows[0] })
   } catch (e: unknown) {

@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 // ReactMarkdown kept for assistant conversation messages
 import AudioRecord from './AudioRecord'
 import UserAvatar from './UserAvatar'
+import InsufficientBalanceModal from './InsufficientBalanceModal'
 
 /** Renders text with **bold** markers as actual bold spans — avoids ReactMarkdown CSS conflicts */
 function GoldBoldText({ text }: { text: string }) {
@@ -16,7 +17,7 @@ function GoldBoldText({ text }: { text: string }) {
       {parts.map((part, i) => {
         if (part.startsWith('**') && part.endsWith('**')) {
           return (
-            <strong key={i} style={{ color: 'var(--text-primary)', fontWeight: 700 }}>
+            <strong key={i} style={{ color: '#008C94', fontWeight: 700 }}>
               {part.slice(2, -2)}
             </strong>
           )
@@ -123,6 +124,7 @@ export default function Chat() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showBalanceModal, setShowBalanceModal] = useState(false)
   const [showAudio, setShowAudio] = useState(false)
   const [showQueue, setShowQueue] = useState(false)
   const [queueCount, setQueueCount] = useState(0)
@@ -173,6 +175,13 @@ export default function Chat() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: newMessages })
       })
+      if (res.status === 402) {
+        setMessages(newMessages.slice(0, -1)) // remove user message
+        setInput(content)
+        setShowBalanceModal(true)
+        setLoading(false)
+        return
+      }
       const data = await res.json()
       sounds.reply()
       setMessages([...newMessages, { role: 'assistant', content: data.content }])
@@ -187,6 +196,7 @@ export default function Chat() {
 
   return (
     <div className="flex flex-col h-full" style={{ background: 'var(--bg)' }}>
+      {showBalanceModal && <InsufficientBalanceModal onClose={() => setShowBalanceModal(false)} />}
 
       {/* ── Header ─────────────────────────────────────────────────── */}
       <div
@@ -194,8 +204,8 @@ export default function Chat() {
         style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}
       >
         <div>
-          <h1 style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>Assistente TDG</h1>
-          <p style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', marginTop: 1 }}>Recomendações · Promoções · Orientação</p>
+          <h1 style={{ fontSize: '0.875rem', fontWeight: 500, color: '#112630', letterSpacing: '-0.01em' }}>Modo Flow</h1>
+          <p style={{ fontSize: '0.6875rem', color: '#4A7580', marginTop: 1 }}>Recomendações · Promoções · Orientação</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -214,7 +224,7 @@ export default function Chat() {
             {queueCount > 0 && (
               <span
                 className="absolute -top-1.5 -right-1.5 flex items-center justify-center font-bold rounded-full"
-                style={{ width: 16, height: 16, background: 'var(--gold)', color: '#1A1918', fontSize: '0.5625rem' }}
+                style={{ width: 16, height: 16, background: 'var(--gold)', color: '#FFFFFF', fontSize: '0.5625rem' }}
               >
                 {queueCount}
               </span>
@@ -241,7 +251,7 @@ export default function Chat() {
               <div className="flex justify-start mb-5">
                 <div
                   className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold mr-3 mt-1 shrink-0"
-                  style={{ background: 'var(--gold)', color: '#1A1918', fontSize: '0.5625rem', letterSpacing: '0.05em' }}
+                  style={{ background: 'var(--gold)', color: '#FFFFFF', fontSize: '0.5625rem', letterSpacing: '0.05em' }}
                 >
                   TDG
                 </div>
@@ -250,7 +260,7 @@ export default function Chat() {
                   style={{
                     background: 'var(--surface)',
                     border: '1px solid var(--border)',
-                    color: 'var(--text-secondary)',
+                    color: '#104C64',
                     borderRadius: '4px 18px 18px 18px',
                     minHeight: 52,
                   }}
@@ -274,7 +284,7 @@ export default function Chat() {
                       transition={{ duration: 0.4 }}
                     >
                       {greeting.split('\n\n').map((line, i) => (
-                        <p key={i} style={{ margin: i === 0 ? 0 : '0.6em 0 0', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
+                        <p key={i} style={{ margin: i === 0 ? 0 : '0.6em 0 0', color: '#104C64', lineHeight: 1.55 }}>
                           <GoldBoldText text={line} />
                         </p>
                       ))}
@@ -311,13 +321,13 @@ export default function Chat() {
                         ;(e.currentTarget as HTMLElement).style.background = card.urgent ? 'rgba(212,165,116,0.06)' : 'var(--surface)'
                       }}
                     >
-                      <div className="flex items-center gap-2 mb-1" style={{ color: card.urgent ? 'var(--gold)' : 'var(--text-muted)' }}>
+                      <div className="flex items-center gap-2 mb-1" style={{ color: card.urgent ? '#008C94' : '#4A7580' }}>
                         {card.icon}
-                        <span style={{ fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.01em', color: card.urgent ? 'var(--gold)' : 'var(--text-primary)' }}>
+                        <span style={{ fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.01em', color: card.urgent ? '#008C94' : '#112630' }}>
                           {card.label}
                         </span>
                       </div>
-                      <p style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>{card.sublabel}</p>
+                      <p style={{ fontSize: '0.6875rem', color: '#4A7580', lineHeight: 1.4 }}>{card.sublabel}</p>
                     </button>
                   ))}
                 </motion.div>
@@ -338,7 +348,7 @@ export default function Chat() {
               {msg.role === 'assistant' && (
                 <div
                   className="w-7 h-7 rounded-lg flex items-center justify-center font-bold shrink-0"
-                  style={{ background: 'var(--gold)', color: '#1A1918', fontSize: '0.5625rem', letterSpacing: '0.05em' }}
+                  style={{ background: 'var(--gold)', color: '#FFFFFF', fontSize: '0.5625rem', letterSpacing: '0.05em' }}
                 >
                   TDG
                 </div>
@@ -348,8 +358,8 @@ export default function Chat() {
                 className="px-4 py-3 rounded-2xl max-w-[85%] text-sm leading-relaxed"
                 style={
                   msg.role === 'user'
-                    ? { background: 'var(--gold)', color: '#1A1918', borderRadius: '18px 18px 4px 18px' }
-                    : { background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)', borderRadius: '4px 18px 18px 18px' }
+                    ? { background: 'var(--gold)', color: '#FFFFFF', borderRadius: '18px 18px 4px 18px' }
+                    : { background: 'var(--surface)', border: '1px solid var(--border)', color: '#104C64', borderRadius: '4px 18px 18px 18px' }
                 }
               >
                 {msg.role === 'assistant' ? (
@@ -377,7 +387,7 @@ export default function Chat() {
               className="flex justify-start max-w-3xl mx-auto w-full"
             >
               <div className="w-7 h-7 rounded-lg flex items-center justify-center font-bold mr-3 mt-1 shrink-0"
-                style={{ background: 'var(--gold)', color: '#1A1918', fontSize: '0.5625rem', letterSpacing: '0.05em' }}>
+                style={{ background: 'var(--gold)', color: '#FFFFFF', fontSize: '0.5625rem', letterSpacing: '0.05em' }}>
                 TDG
               </div>
               <div className="px-4 py-3 rounded-2xl" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '4px 18px 18px 18px' }}>
@@ -416,7 +426,7 @@ export default function Chat() {
               disabled={loading}
             />
             {input.length > 0 && (
-              <Sparkles size={13} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--gold-dim)' }} />
+              <Sparkles size={13} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: '#006B72' }} />
             )}
           </div>
           <button

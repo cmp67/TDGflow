@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Users, Plus, Crown, UserCheck, UserX, Loader, Check, X } from 'lucide-react'
+import { Users, Plus, Crown, UserCheck, UserX, Loader, Check, X, Eye, EyeOff } from 'lucide-react'
 
 interface TdgUser {
   id: string
@@ -10,6 +10,8 @@ interface TdgUser {
   agency_name: string
   role: string
   active: boolean
+  whatsapp?: string
+  agent_interaction_id?: string
   created_at: string
 }
 
@@ -22,15 +24,18 @@ export default function GestaoView({ users: initial }: Props) {
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
   const [togglingId, setTogglingId] = useState<string | null>(null)
-  const [form, setForm] = useState({ name: '', email: '', agency_name: '', password: '', role: 'agent' })
+  const [form, setForm] = useState({ name: '', email: '', agency_name: '', password: '', role: 'agent', whatsapp: '' })
   const [error, setError] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
 
-  // Group by agency
-  const byAgency = users.reduce<Record<string, TdgUser[]>>((acc, u) => {
-    if (!acc[u.agency_name]) acc[u.agency_name] = []
-    acc[u.agency_name].push(u)
-    return acc
-  }, {})
+  // Group by agency — hide Bemgsy internal accounts from the list
+  const byAgency = users
+    .filter(u => u.agency_name.toLowerCase() !== 'bemgsy')
+    .reduce<Record<string, TdgUser[]>>((acc, u) => {
+      if (!acc[u.agency_name]) acc[u.agency_name] = []
+      acc[u.agency_name].push(u)
+      return acc
+    }, {})
 
   async function toggleActive(user: TdgUser) {
     setTogglingId(user.id)
@@ -46,8 +51,8 @@ export default function GestaoView({ users: initial }: Props) {
   }
 
   async function createUser() {
-    if (!form.name || !form.email || !form.agency_name || !form.password) {
-      setError('Preencha todos os campos.')
+    if (!form.name || !form.email || !form.agency_name || !form.password || !form.whatsapp) {
+      setError('Preencha todos os campos, incluindo WhatsApp.')
       return
     }
     setSaving(true)
@@ -60,7 +65,7 @@ export default function GestaoView({ users: initial }: Props) {
     const data = await res.json()
     if (data.user) {
       setUsers(prev => [...prev, data.user])
-      setForm({ name: '', email: '', agency_name: '', password: '', role: 'agent' })
+      setForm({ name: '', email: '', agency_name: '', password: '', role: 'agent', whatsapp: '' })
       setShowForm(false)
     } else {
       setError(data.error ?? 'Erro ao criar usuário.')
@@ -75,11 +80,11 @@ export default function GestaoView({ users: initial }: Props) {
       <div className="flex items-start justify-between">
         <div>
           <p className="section-label mb-1">Administração</p>
-          <h1 className="text-xl font-semibold" style={{ color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+          <h1 className="text-xl font-semibold" style={{ color: '#112630', letterSpacing: '-0.02em' }}>
             Gestão de Usuários
           </h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-            {users.length} usuário{users.length !== 1 ? 's' : ''} · {Object.keys(byAgency).length} agênci{Object.keys(byAgency).length !== 1 ? 'as' : 'a'}
+          <p className="text-sm mt-1" style={{ color: '#4A7580' }}>
+            {Object.values(byAgency).flat().length} usuário{Object.values(byAgency).flat().length !== 1 ? 's' : ''} · {Object.keys(byAgency).length} agênci{Object.keys(byAgency).length !== 1 ? 'as' : 'a'}
           </p>
         </div>
         <button
@@ -94,12 +99,35 @@ export default function GestaoView({ users: initial }: Props) {
       {/* Create form */}
       {showForm && (
         <div className="card space-y-3">
-          <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Novo usuário</h3>
+          <h3 className="text-sm font-semibold" style={{ color: '#112630' }}>Novo usuário</h3>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <input className="input" placeholder="Nome completo" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} />
             <input className="input" placeholder="Email" type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} />
             <input className="input" placeholder="Nome da agência" value={form.agency_name} onChange={e => setForm(p => ({ ...p, agency_name: e.target.value }))} />
-            <input className="input" placeholder="Senha provisória" type="password" value={form.password} onChange={e => setForm(p => ({ ...p, password: e.target.value }))} />
+            <input className="input" placeholder="WhatsApp (ex: 5511999920122)" value={form.whatsapp} onChange={e => setForm(p => ({ ...p, whatsapp: e.target.value }))} />
+            <div style={{ position: 'relative' }}>
+              <input
+                className="input"
+                placeholder="Senha provisória"
+                type={showPassword ? 'text' : 'password'}
+                value={form.password}
+                onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
+                style={{ paddingRight: '40px' }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(v => !v)}
+                style={{
+                  position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                  color: '#4A7580', display: 'flex', alignItems: 'center',
+                }}
+                tabIndex={-1}
+                aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <label className="flex items-center gap-2 cursor-pointer">
@@ -109,10 +137,10 @@ export default function GestaoView({ users: initial }: Props) {
                 onChange={e => setForm(p => ({ ...p, role: e.target.checked ? 'admin' : 'agent' }))}
                 style={{ accentColor: 'var(--gold)' }}
               />
-              <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Permissão de administrador</span>
+              <span className="text-sm" style={{ color: '#104C64' }}>Permissão de administrador</span>
             </label>
           </div>
-          {error && <p className="text-xs" style={{ color: 'var(--error)' }}>{error}</p>}
+          {error && <p className="text-xs" style={{ color: '#C0392B' }}>{error}</p>}
           <div className="flex gap-2">
             <button onClick={createUser} disabled={saving} className="btn-gold" style={{ padding: '7px 14px', fontSize: '0.8125rem' }}>
               {saving ? <Loader size={13} className="animate-spin" /> : <Check size={13} />} Criar
@@ -127,7 +155,7 @@ export default function GestaoView({ users: initial }: Props) {
       {/* Users by agency */}
       {Object.entries(byAgency).sort(([a], [b]) => a.localeCompare(b)).map(([agency, members]) => (
         <div key={agency}>
-          <p className="text-xs font-medium uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-xs font-medium uppercase tracking-wider mb-2" style={{ color: '#4A7580' }}>
             {agency} ({members.length})
           </p>
           <div className="space-y-2">
@@ -143,17 +171,25 @@ export default function GestaoView({ users: initial }: Props) {
               >
                 <div
                   className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0"
-                  style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
+                  style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: '#104C64' }}
                 >
                   {u.name[0].toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{u.name}</span>
-                    {u.role === 'admin' && <Crown size={11} style={{ color: 'var(--gold)' }} />}
+                    <span className="text-sm font-medium" style={{ color: '#112630' }}>{u.name}</span>
+                    {u.role === 'admin' && <Crown size={11} style={{ color: '#008C94' }} />}
                     {!u.active && <span className="badge badge-muted" style={{ fontSize: '0.6rem' }}>inativo</span>}
                   </div>
-                  <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{u.email}</p>
+                  <p className="text-xs truncate" style={{ color: '#4A7580' }}>{u.email}</p>
+                  <div className="flex items-center gap-3 flex-wrap mt-0.5">
+                    {u.whatsapp && (
+                      <span className="text-xs" style={{ color: '#4A7580' }}>📱 +{u.whatsapp}</span>
+                    )}
+                    {u.agent_interaction_id && (
+                      <span className="text-xs font-mono" style={{ color: '#008C94' }}>ID: {u.agent_interaction_id}</span>
+                    )}
+                  </div>
                 </div>
                 <button
                   onClick={() => toggleActive(u)}
@@ -164,7 +200,7 @@ export default function GestaoView({ users: initial }: Props) {
                 >
                   {togglingId === u.id
                     ? <Loader size={12} className="animate-spin" />
-                    : u.active ? <UserX size={13} style={{ color: 'var(--error)' }} /> : <UserCheck size={13} style={{ color: 'var(--success)' }} />
+                    : u.active ? <UserX size={13} style={{ color: '#C0392B' }} /> : <UserCheck size={13} style={{ color: '#2E7D4F' }} />
                   }
                   {u.active ? 'Desativar' : 'Ativar'}
                 </button>

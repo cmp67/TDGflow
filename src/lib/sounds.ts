@@ -103,6 +103,28 @@ export const sounds = {
     setTimeout(() => tone(587, 0.20, 'sine', 0.05), 130)
   },
 
+  // ── Sentiment slider — escala diatônica Dó maior, −5 a +5 ──────
+  // 11 notas consecutivas centradas no Dó central (C4 = neutro).
+  // Negativo desce: Si La Sol Fá Mi | Dó | Re Mi Fá Sol La positivo sobe
+  tick(value: number) {
+    const freqs: Record<number, number> = {
+      [-5]: 164.8,  // Mi3  (Mi)
+      [-4]: 174.6,  // Fá3  (Fá)
+      [-3]: 196.0,  // Sol3 (Sol)
+      [-2]: 220.0,  // Lá3  (Lá)
+      [-1]: 246.9,  // Si3  (Si)
+        [0]: 261.6, // Dó4  (Dó) — centro neutro
+        [1]: 293.7, // Ré4  (Ré)
+        [2]: 329.6, // Mi4  (Mi)
+        [3]: 349.2, // Fá4  (Fá)
+        [4]: 392.0, // Sol4 (Sol)
+        [5]: 440.0, // Lá4  (Lá)
+    }
+    const freq = freqs[value] ?? 261.6
+    tone(freq, 0.10, 'sine', 0.10)
+    setTimeout(() => tone(freq * 2, 0.06, 'sine', 0.03), 10)
+  },
+
   // ── Erro ──────────────────────────────────────────────────────
   // Erro — nota baixa, gentil
   error() {

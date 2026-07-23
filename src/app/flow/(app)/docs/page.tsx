@@ -1,12 +1,10 @@
-import SectionShell from '@/components/SectionShell'
-import { FileText } from 'lucide-react'
+import { auth } from '@/auth'
+import { redirect } from 'next/navigation'
+import DocsView from '@/components/DocsView'
 
-export default function DocsPage() {
-  return (
-    <SectionShell
-      title="Documentação"
-      description="Contratos, fichas técnicas, políticas e materiais de treinamento"
-      icon={FileText}
-    />
-  )
+export default async function DocsPage() {
+  const session = await auth()
+  if (!session) redirect('/flow/login')
+
+  return <DocsView />
 }

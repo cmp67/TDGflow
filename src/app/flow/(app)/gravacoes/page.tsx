@@ -18,8 +18,8 @@ export default function GravacoesPage() {
         style={{ borderBottom: '1px solid var(--border)' }}
       >
         <div>
-          <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Gravações</h2>
-          <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+          <h2 className="text-sm font-semibold" style={{ color: '#112630' }}>Gravações</h2>
+          <p className="text-xs mt-0.5" style={{ color: '#4A7580' }}>
             Reuniões gravadas, transcritas e sumarizadas pela IA
           </p>
         </div>
@@ -40,7 +40,7 @@ export default function GravacoesPage() {
             {queueCount > 0 && (
               <span
                 className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full flex items-center justify-center font-bold leading-none"
-                style={{ background: 'var(--gold)', color: '#1A1918', fontSize: '0.625rem' }}
+                style={{ background: 'var(--gold)', color: '#FFFFFF', fontSize: '0.625rem' }}
               >
                 {queueCount}
               </span>
@@ -51,7 +51,7 @@ export default function GravacoesPage() {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-6">
-        <p className="text-sm text-center py-16" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-sm text-center py-16" style={{ color: '#4A7580' }}>
           Clique em "Nova gravação" para registrar uma reunião.
         </p>
       </div>
