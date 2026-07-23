@@ -66,25 +66,51 @@ describe('checkAndDeductCredits (post agency_id-uuid migration)', () => {
   it('falls through to INSUFFICIENT_BALANCE once quota, pool and top-up are all exhausted', async () => {
     const period = currentPeriod()
 
-    // Ensure a cycle row exists, then zero it out so the quota step fails.
-    await sql`
-      INSERT INTO tdg_agency_cycles (agency_id, period, quota)
-      VALUES (${testAgencyId}, ${period}, 500)
-      ON CONFLICT (agency_id, period) DO NOTHING
+    // tdg_central_pool is GLOBAL, shared state (not scoped to our disposable
+    // test agency) — step 2 of the cascade would read from it. Capture
+    // whatever is there for this period and force it to 0 for the duration
+    // of this test, then restore it exactly afterwards, so this assertion
+    // can't (a) pass for the wrong reason because some other agency donated
+    // to the pool this month, or (b) spend real pooled credits as a side
+    // effect of running the test suite.
+    const { rows: poolRows } = await sql`
+      SELECT balance FROM tdg_central_pool WHERE period = ${period}
     `
+    const originalPoolBalance = poolRows[0]?.balance as number | undefined
+
     await sql`
-      UPDATE tdg_agency_cycles
-      SET quota = 0, consumed = 0
-      WHERE agency_id = ${testAgencyId} AND period = ${period}
+      INSERT INTO tdg_central_pool (period, balance) VALUES (${period}, 0)
+      ON CONFLICT (period) DO UPDATE SET balance = 0
     `
 
-    const result = await checkAndDeductCredits({
-      agencyId: testAgencyId,
-      action: 'chat',
-      userEmail: 'tdd-test@example.com',
-    })
+    try {
+      // Ensure a cycle row exists, then zero it out so the quota step fails.
+      await sql`
+        INSERT INTO tdg_agency_cycles (agency_id, period, quota)
+        VALUES (${testAgencyId}, ${period}, 500)
+        ON CONFLICT (agency_id, period) DO NOTHING
+      `
+      await sql`
+        UPDATE tdg_agency_cycles
+        SET quota = 0, consumed = 0
+        WHERE agency_id = ${testAgencyId} AND period = ${period}
+      `
 
-    expect(result).toEqual({ ok: false, reason: INSUFFICIENT_BALANCE })
+      const result = await checkAndDeductCredits({
+        agencyId: testAgencyId,
+        action: 'chat',
+        userEmail: 'tdd-test@example.com',
+      })
+
+      expect(result).toEqual({ ok: false, reason: INSUFFICIENT_BALANCE })
+    } finally {
+      // Restore the shared pool exactly as we found it.
+      if (originalPoolBalance === undefined) {
+        await sql`DELETE FROM tdg_central_pool WHERE period = ${period}`
+      } else {
+        await sql`UPDATE tdg_central_pool SET balance = ${originalPoolBalance} WHERE period = ${period}`
+      }
+    }
   })
 
   it('rejects an agency_id that does not exist in tdg_agencies (FK enforced)', async () => {
