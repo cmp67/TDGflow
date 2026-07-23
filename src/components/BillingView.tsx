@@ -1,0 +1,1004 @@
+'use client'
+
+import React, { useState, useEffect } from 'react'
+import {
+  Zap, Mic, Globe, Brain, Database, HardDrive, Bot,
+  Users, Coins, TrendingUp, AlertTriangle, CheckCircle2,
+  ChevronRight, ArrowUp, ArrowDown, Minus, LayoutGrid, Activity,
+  ChevronDown, ChevronUp, Sparkles, Scale, ArrowRightLeft,
+} from 'lucide-react'
+import { TIERS, CREDIT_COSTS, type TierId } from '@/lib/credits'
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function numFmt(n: number) {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`
+  return String(n)
+}
+
+// ── Data types ────────────────────────────────────────────────────────────────
+
+interface MyUsageData {
+  totalThisMonth: number
+  prevMonthTotal: number
+  byAction: { action_type: string; credits_used: number }[]
+  daily: { day: string; credits: number }[]
+}
+
+interface AgencyRow { agency: string; usedThisMonth: number }
+
+interface QuotaData {
+  quota: number; consumed: number; returned: number
+  remaining: number; topup: number; pool: number; period: string
+}
+
+interface CreditData {
+  // Self-service fields — present only when the caller has an agency_id of
+  // their own (see /api/credits GET). Admins without an agency (all 4
+  // existing admin accounts today) get these as `undefined`.
+  balance?: { balance: number; tier: TierId }
+  creditsThisMonth?: number
+  dailyUsage?: { day: string; requests: number }[]
+  byUser?: { advisor_name: string | null; user_email: string; credits_used: number }[]
+  purchases?: { amount: number; meta: { tier: string; note?: string }; created_at: string }[]
+  // Admin-only, cross-agency fields — independent of the caller's own agency.
+  lumiSettings: { mode: 'free' | 'equal'; equalTotal: number }
+  agencyBreakdown: AgencyRow[]
+}
+
+// ── Service definitions ───────────────────────────────────────────────────────
+
+type Service = {
+  id: string; name: string; icon: React.ElementType
+  color: string; bg: string; what: string
+  tier: string; tierColor: string; tierBg: string; soon?: boolean
+}
+type ServiceGroup = { label: string; services: Service[] }
+
+const SERVICE_GROUPS: ServiceGroup[] = [
+  {
+    label: 'Inteligências Artificiais',
+    services: [
+      { id: 'flow-ai', name: 'TDG Flow', icon: Brain, color: '#6B4FA0', bg: '#F3EEF9',
+        what: 'Assistente inteligente — respostas, sugestões e extração de insights',
+        tier: 'Por consumo', tierColor: '#C97B20', tierBg: '#FEF3E2' },
+      { id: 'transcription', name: 'Transcrição de Voz', icon: Mic, color: '#008C94', bg: '#E6F4F5',
+        what: 'Converte gravações em texto com alta precisão',
+        tier: 'Plano gratuito', tierColor: '#2E7D32', tierBg: '#E8F5E9' },
+      { id: 'travel-ai', name: 'Requisitos de Viagem', icon: Globe, color: '#004A7C', bg: '#E8F1F8',
+        what: 'Vistos, ETAs e condições de entrada em tempo real',
+        tier: 'Por consumo', tierColor: '#C97B20', tierBg: '#FEF3E2' },
+    ],
+  },
+  {
+    label: 'Infraestrutura',
+    services: [
+      { id: 'hosting', name: 'Hospedagem & Deploy', icon: Zap, color: '#000', bg: '#F5F5F5',
+        what: 'Disponibilidade global, atualizações instantâneas',
+        tier: 'Plano fixo', tierColor: '#4A7580', tierBg: '#EDF4F6' },
+      { id: 'database', name: 'Base de Dados', icon: Database, color: '#00B388', bg: '#E6FAF5',
+        what: 'Dicas, perfis, ofertas e histórico da rede TDG',
+        tier: 'Plano fixo', tierColor: '#4A7580', tierBg: '#EDF4F6' },
+      { id: 'storage', name: 'Armazenamento de Arquivos', icon: HardDrive, color: '#5C6BC0', bg: '#EEEFFD',
+        what: 'Áudios das gravações dos advisors',
+        tier: 'Por consumo', tierColor: '#C97B20', tierBg: '#FEF3E2' },
+    ],
+  },
+  {
+    label: 'Plataforma de Agentes',
+    services: [
+      { id: 'agents', name: 'Agentes Conversacionais', icon: Bot, color: '#E53935', bg: '#FFEBEE',
+        what: 'Atendimento automatizado via WhatsApp e outros canais',
+        tier: 'Em integração', tierColor: '#4A7580', tierBg: '#EDF4F6', soon: true },
+    ],
+  },
+]
+
+const ACTION_META: Record<string, { label: string; icon: React.ElementType; color: string }> = {
+  chat:              { label: 'Mensagens Flow',    icon: Brain,  color: '#6B4FA0' },
+  review_extraction: { label: 'Extração de dicas', icon: Zap,    color: '#C97B20' },
+  transcription:     { label: 'Transcrições',       icon: Mic,    color: '#008C94' },
+  travel_docs:       { label: 'Consultas de visto', icon: Globe,  color: '#004A7C' },
+  scan_card:         { label: 'Scan de cartão',     icon: Bot,    color: '#E53935' },
+}
+
+// ── Buy Modal ─────────────────────────────────────────────────────────────────
+
+function BuyModal({ currentTier, onClose, onSuccess }: {
+  currentTier: TierId; onClose: () => void; onSuccess: (t: TierId) => void
+}) {
+  const [selected, setSelected] = useState<TierId | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  async function handleBuy() {
+    if (!selected) return
+    setLoading(true); setError('')
+    try {
+      const res = await fetch('/api/credits', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tier: selected }),
+      })
+      if (!res.ok) throw new Error()
+      onSuccess(selected)
+    } catch { setError('Não foi possível processar. Tente novamente.') }
+    finally { setLoading(false) }
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(17,38,48,0.5)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 400, padding: 24, boxShadow: '0 24px 64px rgba(0,0,0,0.18)' }}>
+        <h2 style={{ fontSize: '1rem', fontWeight: 700, color: '#112630', margin: '0 0 4px' }}>Adicionar Lumis</h2>
+        <p style={{ fontSize: '0.75rem', color: '#7BA8B2', margin: '0 0 18px' }}>Selecione o pacote para o saldo da rede TDG.</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 18 }}>
+          {TIERS.filter(t => t.credits !== null).map(t => {
+            const active = selected === t.id
+            const current = t.id === currentTier
+            return (
+              <button key={t.id} onClick={() => setSelected(t.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 10, cursor: 'pointer', textAlign: 'left', border: active ? `2px solid ${t.color}` : '1.5px solid #D8E6EA', background: active ? t.bg : '#fff', transition: 'all 0.12s' }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#112630' }}>{t.name}</span>
+                    {current && <span style={{ fontSize: '0.5rem', fontWeight: 700, color: t.color, background: t.bg, borderRadius: 20, padding: '1px 6px' }}>atual</span>}
+                  </div>
+                  <p style={{ fontSize: '0.6875rem', color: '#7BA8B2', margin: '2px 0 0' }}>{t.label}</p>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <p style={{ fontSize: '1rem', fontWeight: 800, color: t.color, margin: 0 }}>{numFmt(t.credits!)}</p>
+                  <p style={{ fontSize: '0.5rem', color: '#7BA8B2', margin: '1px 0 0' }}>Lumis</p>
+                  <p style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#112630', margin: '3px 0 0' }}>{t.priceLabel}</p>
+                </div>
+              </button>
+            )
+          })}
+        </div>
+        {error && <p style={{ fontSize: '0.75rem', color: '#C62828', marginBottom: 10 }}>{error}</p>}
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={onClose} style={{ flex: 1, padding: 10, borderRadius: 8, border: '1.5px solid #D8E6EA', background: '#fff', fontSize: '0.875rem', color: '#4A7580', cursor: 'pointer', fontWeight: 500 }}>Cancelar</button>
+          <button onClick={handleBuy} disabled={!selected || loading} style={{ flex: 2, padding: 10, borderRadius: 8, border: 'none', background: selected && !loading ? '#008C94' : '#B8D0D5', color: '#fff', fontSize: '0.875rem', fontWeight: 600, cursor: selected && !loading ? 'pointer' : 'default', transition: 'background 0.12s' }}>
+            {loading ? 'Processando…' : 'Confirmar'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Card: O que são Lumis? ────────────────────────────────────────────────────
+
+function LumisExplainer() {
+  const [open, setOpen] = useState(() => {
+    try { return localStorage.getItem('lumis_explainer_closed') !== '1' } catch { return true }
+  })
+
+  function dismiss() {
+    setOpen(false)
+    try { localStorage.setItem('lumis_explainer_closed', '1') } catch { /* ignore */ }
+  }
+
+  const ACTION_COSTS = [
+    { icon: Brain, label: 'Mensagem para a Stella', cost: 9, color: '#6B4FA0' },
+    { icon: Zap,   label: 'Extração de dica',        cost: 5, color: '#C97B20' },
+    { icon: Mic,   label: 'Transcrição de áudio',   cost: 2, color: '#008C94' },
+    { icon: Globe, label: 'Consulta de visto',       cost: 2, color: '#004A7C' },
+  ]
+
+  return (
+    <div style={{
+      borderRadius: 14, overflow: 'hidden',
+      border: '1px solid #D8EEF0',
+      background: 'linear-gradient(135deg, #F0F9FA 0%, #FAFFFE 100%)',
+      flexShrink: 0,
+    }}>
+      {/* Header — sempre visível */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+          padding: '11px 14px', background: 'none', border: 'none', cursor: 'pointer',
+          textAlign: 'left',
+        }}
+      >
+        <div style={{ width: 28, height: 28, borderRadius: 8, background: '#E6F4F5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <Coins size={14} style={{ color: '#008C94' }} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#112630', margin: 0, lineHeight: 1.2 }}>
+            O que são Lumis?
+          </p>
+          <p style={{ fontSize: '0.6875rem', color: '#4A7580', margin: '1px 0 0' }}>
+            A moeda oficial da Bemgsy — toque para {open ? 'fechar' : 'entender'}
+          </p>
+        </div>
+        {open ? <ChevronUp size={14} style={{ color: '#7BA8B2', flexShrink: 0 }} /> : <ChevronDown size={14} style={{ color: '#7BA8B2', flexShrink: 0 }} />}
+      </button>
+
+      {/* Conteúdo expandido */}
+      {open && (
+        <div style={{ padding: '0 14px 14px', borderTop: '1px solid #D8EEF0' }}>
+
+          {/* Explicação lúdica */}
+          <div style={{ padding: '12px 0 10px' }}>
+            <p style={{ fontSize: '0.8125rem', color: '#104C64', lineHeight: 1.65, margin: '0 0 8px', fontWeight: 300 }}>
+              <strong style={{ fontWeight: 600 }}>Lumis</strong> é a moeda da <strong style={{ fontWeight: 600 }}>Bemgsy</strong> — cada ação no sistema debita Lumis do saldo da rede. Quando o saldo baixar, o admin recarrega.
+            </p>
+            <p style={{ fontSize: '0.75rem', color: '#7BA8B2', lineHeight: 1.55, margin: 0, fontWeight: 300 }}>
+              O saldo é compartilhado entre todos os advisors da rede. Consulte a tabela abaixo para saber o custo de cada ação.
+            </p>
+          </div>
+
+          {/* Tabela de consumo */}
+          <p style={{ fontSize: '0.55rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#7BA8B2', margin: '4px 0 8px' }}>
+            Quanto gasta cada ação
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 12 }}>
+            {ACTION_COSTS.map(({ icon: Icon, label, cost, color }) => (
+              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '7px 10px', background: '#fff', borderRadius: 8, border: '1px solid #E4EEF0' }}>
+                <Icon size={11} style={{ color, flexShrink: 0 }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: '0.625rem', color: '#4A7580', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</p>
+                </div>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#112630', flexShrink: 0 }}>{cost} lm</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Durabilidade */}
+          <div style={{ padding: '10px 12px', background: '#FEF9EE', borderRadius: 8, border: '1px solid #F5E4BA', marginBottom: 10 }}>
+            <p style={{ fontSize: '0.55rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#C97B20', margin: '0 0 5px' }}>
+              Quanto dura o saldo?
+            </p>
+            <p style={{ fontSize: '0.75rem', color: '#7A4F10', lineHeight: 1.6, margin: 0, fontWeight: 300 }}>
+              Um advisor ativo consome em média <strong style={{ fontWeight: 600 }}>~500 lm/mês</strong>. Cada agência recebe <strong style={{ fontWeight: 600 }}>500 lm de cota mensal</strong> — 1 lm equivale a R$0,006 de custo real de IA.
+            </p>
+          </div>
+
+          {/* Como comprar */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 10px', background: '#E6F4F5', borderRadius: 8, border: '1px solid #B8E0E3' }}>
+            <Coins size={11} style={{ color: '#008C94', flexShrink: 0 }} />
+            <p style={{ fontSize: '0.75rem', color: '#006B72', margin: 0, fontWeight: 300 }}>
+              Cada agência recebe uma <strong style={{ fontWeight: 600 }}>cota mensal</strong> de Lumis. Se precisar de mais, compre top-up diretamente com a Bemgsy pelo botão abaixo.
+            </p>
+          </div>
+
+          {/* Fechar e não mostrar mais */}
+          <button
+            onClick={dismiss}
+            style={{ marginTop: 10, width: '100%', padding: '6px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.625rem', color: '#B8D0D5', textDecoration: 'underline' }}
+          >
+            Entendi — não mostrar mais
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Tab: Meu uso ──────────────────────────────────────────────────────────────
+
+function TabMyUsage() {
+  const [data, setData]         = useState<MyUsageData | null>(null)
+  const [quota, setQuota]       = useState<QuotaData | null>(null)
+  const [loading, setLoading]   = useState(true)
+  const [showReturn, setShowReturn] = useState(false)
+  const [returnAmt, setReturnAmt]   = useState('')
+  const [returning, setReturning]   = useState(false)
+  const [returnDone, setReturnDone] = useState(0)
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/credits/me').then(r => r.json()),
+      fetch('/api/credits/quota').then(r => r.json()),
+    ]).then(([myData, quotaData]) => {
+      setData(myData); setQuota(quotaData); setLoading(false)
+    }).catch(() => setLoading(false))
+  }, [])
+
+  async function handleReturn() {
+    const amt = parseInt(returnAmt, 10)
+    if (!amt || amt <= 0) return
+    setReturning(true)
+    try {
+      const res = await fetch('/api/credits/quota', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: amt }),
+      })
+      const result = await res.json()
+      if (result.returned > 0) {
+        setReturnDone(result.returned); setReturnAmt(''); setShowReturn(false)
+        setQuota(q => q ? { ...q, remaining: q.remaining - result.returned, returned: q.returned + result.returned } : q)
+      }
+    } finally { setReturning(false) }
+  }
+
+  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}><p style={{ color: '#7BA8B2', fontSize: '0.875rem' }}>Carregando…</p></div>
+  if (!data) return null
+
+  const { totalThisMonth, prevMonthTotal, byAction, daily } = data
+  const quotaPct      = quota ? Math.min(100, Math.round((quota.consumed / quota.quota) * 100)) : 0
+  const quotaBarColor = quotaPct > 85 ? '#C62828' : quotaPct > 65 ? '#C97B20' : '#008C94'
+  const recentDays = [...daily].reverse().slice(-14)
+  const avgDay = daily.slice(0, 7).length > 0 ? Math.round(daily.slice(0, 7).reduce((s, d) => s + d.credits, 0) / daily.slice(0, 7).length) : 0
+  const projectedMonth = avgDay * 30
+  const diff = totalThisMonth - prevMonthTotal
+  const diffPct = prevMonthTotal > 0 ? Math.round(Math.abs(diff) / prevMonthTotal * 100) : null
+  const TrendIcon = diff > 0 ? ArrowUp : diff < 0 ? ArrowDown : Minus
+  const trendColor = diff > 0 ? '#C97B20' : diff < 0 ? '#2E7D32' : '#7BA8B2'
+  const sparkMax = Math.max(...recentDays.map(d => d.credits), 1)
+
+  return (
+    <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10, paddingBottom: 8 }}>
+
+      {/* Lumis explainer */}
+      <LumisExplainer />
+
+      {/* Cota mensal */}
+      {quota && (
+        <div style={{ background: '#fff', border: '1px solid #E4EEF0', borderRadius: 14, overflow: 'hidden' }}>
+          <div style={{ padding: '10px 16px', borderBottom: '1px solid #F0F5F7', background: '#F8FBFC', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Coins size={12} style={{ color: '#008C94' }} />
+            <p style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#7BA8B2', margin: 0, flex: 1 }}>
+              Cota mensal — {new Date(quota.period + 'T12:00:00').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+            </p>
+          </div>
+
+          <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+            {/* Barra de consumo */}
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                <span style={{ fontSize: '0.75rem', color: '#112630', fontWeight: 600 }}>{quota.consumed} lm usados</span>
+                <span style={{ fontSize: '0.75rem', color: '#7BA8B2' }}>cota: {quota.quota} lm</span>
+              </div>
+              <div style={{ height: 6, borderRadius: 3, background: '#EDF4F6', overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${quotaPct}%`, background: quotaBarColor, borderRadius: 3, transition: 'width 0.4s ease' }} />
+              </div>
+            </div>
+
+            {/* Status pills */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+              {[
+                { label: 'restantes', value: quota.remaining, color: quota.remaining > 0 ? '#008C94' : '#C62828', bg: quota.remaining > 0 ? '#E6F4F5' : '#FFEBEE' },
+                { label: 'pool central', value: quota.pool, color: quota.pool > 0 ? '#4A7580' : '#B8D0D5', bg: quota.pool > 0 ? '#EDF4F6' : '#F8FBFC' },
+                { label: 'top-up', value: quota.topup, color: quota.topup > 0 ? '#C97B20' : '#B8D0D5', bg: quota.topup > 0 ? '#FEF3E2' : '#F8FBFC' },
+              ].map(({ label, value, color, bg }) => (
+                <div key={label} style={{ padding: '8px 10px', background: bg, borderRadius: 8, textAlign: 'center' }}>
+                  <p style={{ fontSize: '1.0625rem', fontWeight: 800, color, margin: 0, lineHeight: 1 }}>{value}</p>
+                  <p style={{ fontSize: '0.5rem', color: '#7BA8B2', margin: '3px 0 0' }}>{label}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Ações */}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <a
+                href={`mailto:carla@bemgsy.com?subject=Solicitar%20top-up%20de%20Lumis&body=Olá%20Carla%2C%20gostaria%20de%20comprar%20top-up%20de%20Lumis%20(R%240%2C012%2Flm).%20Quantidade%20desejada%3A%20`}
+                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px 12px', borderRadius: 9, background: '#C97B20', color: '#fff', fontSize: '0.75rem', fontWeight: 600, textDecoration: 'none' }}
+              >
+                <Coins size={12} />
+                Comprar top-up
+              </a>
+              {quota.remaining > 0 && (
+                <button
+                  onClick={() => setShowReturn(r => !r)}
+                  style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px 12px', borderRadius: 9, border: '1.5px solid #D8E6EA', background: showReturn ? '#EDF4F6' : '#fff', color: '#4A7580', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}
+                >
+                  <ArrowRightLeft size={12} />
+                  Devolver ao pool
+                </button>
+              )}
+            </div>
+
+            {/* Formulário de devolução */}
+            {showReturn && quota.remaining > 0 && (
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '10px 12px', background: '#F8FBFC', borderRadius: 9, border: '1px solid #E4EEF0' }}>
+                <span style={{ fontSize: '0.6875rem', color: '#7BA8B2', flexShrink: 0 }}>Devolver</span>
+                <input
+                  type="number" value={returnAmt} onChange={e => setReturnAmt(e.target.value)}
+                  max={quota.remaining} min={1} placeholder={`máx ${quota.remaining} lm`}
+                  style={{ flex: 1, padding: '6px 8px', borderRadius: 7, border: '1.5px solid #D8E6EA', fontSize: '0.875rem', color: '#112630', outline: 'none' }}
+                />
+                <span style={{ fontSize: '0.6875rem', color: '#7BA8B2', flexShrink: 0 }}>lm ao pool</span>
+                <button
+                  onClick={handleReturn} disabled={returning || !returnAmt}
+                  style={{ padding: '6px 12px', borderRadius: 7, border: 'none', background: '#008C94', color: '#fff', fontSize: '0.6875rem', fontWeight: 600, cursor: 'pointer', opacity: returning ? 0.6 : 1 }}
+                >
+                  {returning ? '…' : 'OK'}
+                </button>
+              </div>
+            )}
+
+            {returnDone > 0 && (
+              <p style={{ fontSize: '0.75rem', color: '#2E7D32', background: '#E8F5E9', borderRadius: 7, padding: '6px 10px', margin: 0 }}>
+                ✓ {returnDone} lm devolvidos ao pool central da rede.
+              </p>
+            )}
+
+            <p style={{ fontSize: '0.5625rem', color: '#B8D0D5', margin: 0, lineHeight: 1.5 }}>
+              Top-up: R$0,012/lm · 1 lm = R$0,006 custo real · Ciclo: 1 ao último dia do mês
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Stat cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <div style={{ background: '#fff', border: '1px solid #E4EEF0', borderRadius: 14, padding: '16px 18px' }}>
+          <p style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#7BA8B2', margin: '0 0 8px' }}>Este mês</p>
+          <p style={{ fontSize: '2rem', fontWeight: 800, color: '#112630', margin: 0, letterSpacing: '-0.03em', lineHeight: 1 }}>
+            {numFmt(totalThisMonth)}<span style={{ fontSize: '0.75rem', fontWeight: 500, color: '#7BA8B2', marginLeft: 4 }}>lm</span>
+          </p>
+          {diffPct !== null && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginTop: 6 }}>
+              <TrendIcon size={10} style={{ color: trendColor }} />
+              <span style={{ fontSize: '0.6875rem', color: trendColor }}>{diffPct}% vs mês anterior</span>
+            </div>
+          )}
+          {diffPct === null && <p style={{ fontSize: '0.6875rem', color: '#B8D0D5', marginTop: 6, margin: '6px 0 0' }}>primeiro mês</p>}
+        </div>
+
+        <div style={{ background: '#F8FBFC', border: '1px solid #E4EEF0', borderRadius: 14, padding: '16px 18px' }}>
+          <p style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#7BA8B2', margin: '0 0 8px' }}>Projeção mensal</p>
+          <p style={{ fontSize: '2rem', fontWeight: 800, color: '#112630', margin: 0, letterSpacing: '-0.03em', lineHeight: 1 }}>
+            {projectedMonth > 0 ? numFmt(projectedMonth) : '—'}
+            {projectedMonth > 0 && <span style={{ fontSize: '0.75rem', fontWeight: 500, color: '#7BA8B2', marginLeft: 4 }}>lm</span>}
+          </p>
+          <p style={{ fontSize: '0.6875rem', color: '#7BA8B2', marginTop: 6, margin: '6px 0 0' }}>
+            {avgDay > 0 ? `~${avgDay} lm/dia` : 'sem dados recentes'}
+          </p>
+        </div>
+      </div>
+
+      {/* Sparkline */}
+      {recentDays.length > 1 && (
+        <div style={{ background: '#fff', border: '1px solid #E4EEF0', borderRadius: 14, padding: '14px 16px' }}>
+          <p style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#7BA8B2', margin: '0 0 10px' }}>Últimos 14 dias</p>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 32 }}>
+            {recentDays.map((d, i) => {
+              const h = Math.max(3, Math.round((d.credits / sparkMax) * 32))
+              const isLast = i === recentDays.length - 1
+              return (
+                <div key={d.day} title={`${new Date(d.day).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}: ${d.credits} lm`}
+                  style={{ flex: 1, height: h, borderRadius: 3, background: isLast ? '#008C94' : '#B8D0D5', transition: 'height 0.3s ease' }} />
+              )
+            })}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5 }}>
+            <span style={{ fontSize: '0.5rem', color: '#B8D0D5' }}>
+              {recentDays[0] ? new Date(recentDays[0].day).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) : ''}
+            </span>
+            <span style={{ fontSize: '0.5rem', color: '#008C94', fontWeight: 700 }}>hoje</span>
+          </div>
+        </div>
+      )}
+
+      {/* By action */}
+      {byAction.length > 0 ? (
+        <div style={{ background: '#fff', border: '1px solid #E4EEF0', borderRadius: 14, overflow: 'hidden' }}>
+          <div style={{ padding: '10px 16px', borderBottom: '1px solid #F0F5F7', background: '#F8FBFC' }}>
+            <p style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#7BA8B2', margin: 0 }}>Por tipo de uso</p>
+          </div>
+          <div>
+            {byAction.map((row, i) => {
+              const meta = ACTION_META[row.action_type] ?? { label: row.action_type, icon: Zap, color: '#4A7580' }
+              const Icon = meta.icon
+              const pct = totalThisMonth > 0 ? Math.round(row.credits_used / totalThisMonth * 100) : 0
+              const cost = CREDIT_COSTS[row.action_type] ?? 1
+              return (
+                <div key={i} style={{ padding: '10px 16px', borderBottom: i < byAction.length - 1 ? '1px solid #F0F5F7' : 'none' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+                    <Icon size={12} style={{ color: meta.color, flexShrink: 0 }} />
+                    <span style={{ flex: 1, fontSize: '0.8125rem', color: '#112630' }}>{meta.label}</span>
+                    <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#112630' }}>{numFmt(row.credits_used)} lm</span>
+                    <span style={{ fontSize: '0.6875rem', color: '#7BA8B2', width: 28, textAlign: 'right' }}>{pct}%</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ flex: 1, height: 4, borderRadius: 2, background: '#EDF4F6', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${pct}%`, background: meta.color, borderRadius: 2, transition: 'width 0.4s ease' }} />
+                    </div>
+                    <span style={{ fontSize: '0.5625rem', color: '#B8D0D5', flexShrink: 0, width: 60, textAlign: 'right' }}>
+                      {Math.round(row.credits_used / cost)} {cost === 2 ? 'consultas' : cost === 10 ? 'gravações' : 'ações'}
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      ) : (
+        <div style={{ padding: '24px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F8FBFC', borderRadius: 14, border: '1px dashed #D8E6EA' }}>
+          <p style={{ fontSize: '0.8125rem', color: '#B8D0D5', textAlign: 'center', margin: 0 }}>Nenhum consumo registrado este mês.</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Tab: Infraestrutura ───────────────────────────────────────────────────────
+
+function TabInfra() {
+  return (
+    <div style={{ flex: 1, overflowY: 'auto', paddingRight: 2 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {SERVICE_GROUPS.map(group => (
+          <div key={group.label}>
+            <p style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#7BA8B2', margin: '0 0 7px' }}>
+              {group.label}
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {group.services.map(s => {
+                const Icon = s.icon
+                return (
+                  <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', background: '#fff', border: '1px solid #E4EEF0', borderRadius: 12, opacity: s.soon ? 0.65 : 1 }}>
+                    <div style={{ width: 30, height: 30, borderRadius: 8, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Icon size={13} style={{ color: s.color }} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#112630' }}>{s.name}</span>
+                        <span style={{ fontSize: '0.5rem', fontWeight: 600, background: s.tierBg, color: s.tierColor, borderRadius: 20, padding: '1px 6px' }}>{s.tier}</span>
+                        {s.soon && <span style={{ fontSize: '0.5rem', color: '#7BA8B2', fontStyle: 'italic' }}>em breve</span>}
+                      </div>
+                      <p style={{ fontSize: '0.6875rem', color: '#7BA8B2', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.what}</p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        ))}
+
+        <div style={{ padding: '10px 14px', background: '#F8FBFC', borderRadius: 10, border: '1px solid #E4EEF0' }}>
+          <p style={{ fontSize: '0.6875rem', color: '#7BA8B2', lineHeight: 1.6, margin: 0 }}>
+            <strong style={{ color: '#112630' }}>Plano fixo</strong> — custo mensal independente do uso ·{' '}
+            <strong style={{ color: '#112630' }}>Por consumo</strong> — proporcional ao volume ·{' '}
+            <strong style={{ color: '#112630' }}>Gratuito</strong> — sem custo nos limites atuais
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Lumi Distribution Panel (admin) ──────────────────────────────────────────
+
+function LumiDistribution({
+  settings, breakdown, totalBalance, onRefresh,
+}: {
+  settings:     { mode: 'free' | 'equal'; equalTotal: number }
+  breakdown:    AgencyRow[]
+  totalBalance: number
+  onRefresh:    () => void
+}) {
+  const [mode,           setModeLocal]   = useState<'free' | 'equal'>(settings.mode)
+  const [equalTotal,     setEqualTotal]  = useState(settings.equalTotal || totalBalance)
+  const [distribution,   setDistrib]     = useState<{ agencies: string[]; quotaEach: number } | null>(null)
+  const [contributing,   setContrib]     = useState<string | null>(null)  // agency name being contributed
+  const [contribAmt,     setContribAmt]  = useState('')
+  const [saving,         setSaving]      = useState(false)
+  const [feedback,       setFeedback]    = useState('')
+
+  const agencyCount = breakdown.length
+
+  async function handleSetMode(m: 'free' | 'equal') {
+    setSaving(true)
+    await fetch('/api/credits', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'set_mode', mode: m }) })
+    setModeLocal(m)
+    setSaving(false)
+  }
+
+  async function handleDistribute() {
+    if (!equalTotal || equalTotal <= 0) return
+    setSaving(true)
+    const res = await fetch('/api/credits', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'distribute', total: equalTotal }) })
+    const data = await res.json()
+    if (data.ok) { setDistrib(data); setFeedback(`${data.agencies.length} agências · ${data.quotaEach} lm cada`) }
+    setSaving(false)
+  }
+
+  async function handleContribute(agency: string) {
+    const amt = parseInt(contribAmt, 10)
+    if (!amt || amt <= 0) return
+    setSaving(true)
+    await fetch('/api/credits', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'contribute', agencyName: agency, amount: amt }) })
+    setContrib(null); setContribAmt(''); setFeedback(`+${amt} lm contribuídos pela ${agency}`)
+    onRefresh()
+    setSaving(false)
+  }
+
+  const quotaEach = distribution?.quotaEach ?? (agencyCount > 0 && equalTotal > 0 ? Math.floor(equalTotal / agencyCount) : 0)
+
+  return (
+    <div style={{ background: '#fff', border: '1px solid #E4EEF0', borderRadius: 14, overflow: 'hidden' }}>
+      {/* Header */}
+      <div style={{ padding: '10px 16px', borderBottom: '1px solid #F0F5F7', background: '#F8FBFC', display: 'flex', alignItems: 'center', gap: 6 }}>
+        <Scale size={12} style={{ color: '#6B4FA0' }} />
+        <p style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#6B4FA0', margin: 0, flex: 1 }}>Distribuição de Lumis</p>
+        {feedback && <span style={{ fontSize: '0.5625rem', color: '#2E7D32', background: '#E8F5E9', borderRadius: 20, padding: '2px 8px' }}>{feedback}</span>}
+      </div>
+
+      <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+        {/* Mode toggle */}
+        <div>
+          <p style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#7BA8B2', margin: '0 0 8px' }}>Modo de consumo</p>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {([
+              { id: 'free',  label: 'Livre',        desc: 'Pool comum — quem chegar consome' },
+              { id: 'equal', label: 'Igualitário',   desc: 'Quota igual por agência' },
+            ] as const).map(m => (
+              <button
+                key={m.id}
+                onClick={() => handleSetMode(m.id)}
+                disabled={saving}
+                style={{
+                  flex: 1, padding: '9px 12px', borderRadius: 10, cursor: 'pointer', textAlign: 'left',
+                  border: mode === m.id ? '2px solid #6B4FA0' : '1.5px solid #D8E6EA',
+                  background: mode === m.id ? '#F3EEF9' : '#fff',
+                  transition: 'all 0.12s',
+                }}
+              >
+                <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#112630', margin: 0 }}>{m.label}</p>
+                <p style={{ fontSize: '0.5625rem', color: '#7BA8B2', margin: '2px 0 0' }}>{m.desc}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Equal mode config */}
+        {mode === 'equal' && (
+          <>
+            <div>
+              <p style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#7BA8B2', margin: '0 0 8px' }}>
+                Total a distribuir · {agencyCount} agências ativas
+              </p>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <input
+                  type="number"
+                  value={equalTotal}
+                  onChange={e => setEqualTotal(Number(e.target.value))}
+                  min={0}
+                  style={{ flex: 1, padding: '7px 10px', borderRadius: 8, border: '1.5px solid #D8E6EA', fontSize: '0.875rem', color: '#112630', outline: 'none' }}
+                />
+                <span style={{ fontSize: '0.75rem', color: '#7BA8B2', whiteSpace: 'nowrap' }}>lm</span>
+                <button
+                  onClick={handleDistribute}
+                  disabled={saving || equalTotal <= 0}
+                  style={{ padding: '7px 14px', borderRadius: 8, border: 'none', background: '#6B4FA0', color: '#fff', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', opacity: saving ? 0.6 : 1 }}
+                >
+                  Distribuir
+                </button>
+              </div>
+              {quotaEach > 0 && (
+                <p style={{ fontSize: '0.6875rem', color: '#4A7580', margin: '5px 0 0' }}>
+                  → <strong>{quotaEach} lm</strong> por agência
+                </p>
+              )}
+            </div>
+
+            {/* Per-agency breakdown + contribute */}
+            {breakdown.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <p style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#7BA8B2', margin: '0 0 4px' }}>Por agência — este mês</p>
+                {breakdown.map(row => {
+                  const pct = quotaEach > 0 ? Math.min(100, Math.round((row.usedThisMonth / quotaEach) * 100)) : 0
+                  const over = quotaEach > 0 && row.usedThisMonth > quotaEach
+                  const remaining = Math.max(0, quotaEach - row.usedThisMonth)
+                  return (
+                    <div key={row.agency} style={{ borderRadius: 10, border: '1px solid #EDF4F6', overflow: 'hidden' }}>
+                      <div style={{ padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#112630', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.agency}</span>
+                            {over && <span style={{ fontSize: '0.5rem', color: '#C62828', background: '#FFEBEE', borderRadius: 20, padding: '1px 5px', flexShrink: 0 }}>excedeu</span>}
+                          </div>
+                          <div style={{ height: 4, borderRadius: 2, background: '#EDF4F6', overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${pct}%`, background: over ? '#C62828' : pct > 75 ? '#C97B20' : '#008C94', borderRadius: 2, transition: 'width 0.3s' }} />
+                          </div>
+                          <p style={{ fontSize: '0.5625rem', color: '#7BA8B2', margin: '3px 0 0' }}>
+                            {numFmt(row.usedThisMonth)} usados {quotaEach > 0 ? `· quota ${numFmt(quotaEach)} lm` : ''}
+                          </p>
+                        </div>
+                        {remaining > 0 && (
+                          <button
+                            onClick={() => { setContrib(contributing === row.agency ? null : row.agency); setContribAmt('') }}
+                            title="Contribuir saldo não usado para o pool"
+                            style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 8px', borderRadius: 7, border: '1px solid #D8E6EA', background: '#F8FBFC', cursor: 'pointer', flexShrink: 0 }}
+                          >
+                            <ArrowRightLeft size={10} style={{ color: '#4A7580' }} />
+                            <span style={{ fontSize: '0.5625rem', color: '#4A7580', fontWeight: 600 }}>Contribuir</span>
+                          </button>
+                        )}
+                      </div>
+                      {contributing === row.agency && (
+                        <div style={{ padding: '8px 12px', background: '#F8FBFC', borderTop: '1px solid #EDF4F6', display: 'flex', gap: 6, alignItems: 'center' }}>
+                          <span style={{ fontSize: '0.6875rem', color: '#7BA8B2', flexShrink: 0 }}>Contribuir</span>
+                          <input
+                            type="number"
+                            value={contribAmt}
+                            onChange={e => setContribAmt(e.target.value)}
+                            max={remaining}
+                            min={1}
+                            placeholder={`máx ${remaining} lm`}
+                            style={{ flex: 1, padding: '5px 8px', borderRadius: 7, border: '1.5px solid #D8E6EA', fontSize: '0.75rem', color: '#112630', outline: 'none' }}
+                          />
+                          <span style={{ fontSize: '0.6875rem', color: '#7BA8B2', flexShrink: 0 }}>lm ao pool</span>
+                          <button
+                            onClick={() => handleContribute(row.agency)}
+                            disabled={saving || !contribAmt}
+                            style={{ padding: '5px 10px', borderRadius: 7, border: 'none', background: '#008C94', color: '#fff', fontSize: '0.6875rem', fontWeight: 600, cursor: 'pointer', opacity: saving ? 0.6 : 1 }}
+                          >
+                            OK
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Free mode — just explain */}
+        {mode === 'free' && (
+          <p style={{ fontSize: '0.75rem', color: '#7BA8B2', lineHeight: 1.6, margin: 0 }}>
+            No modo <strong style={{ color: '#112630' }}>Livre</strong>, todos os advisors compartilham o saldo comum sem restrição por agência — quem usar primeiro consome. Para definir quotas por agência, mude para <strong style={{ color: '#6B4FA0' }}>Igualitário</strong>.
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── Tab: Rede TDG (admin) ─────────────────────────────────────────────────────
+
+function TabNetwork() {
+  const [data, setData]       = useState<CreditData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError]     = useState('')
+  const [showBuy, setShowBuy] = useState(false)
+  const [bought, setBought]   = useState(false)
+
+  function load() {
+    setLoading(true)
+    fetch('/api/credits').then(r => r.json()).then(d => { setData(d); setLoading(false) }).catch(() => { setError('Erro ao carregar'); setLoading(false) })
+  }
+
+  useEffect(() => { load() }, [])
+
+  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}><p style={{ color: '#7BA8B2', fontSize: '0.875rem' }}>Carregando…</p></div>
+  if (error || !data) return <p style={{ color: '#C62828', fontSize: '0.875rem' }}>{error}</p>
+
+  const { balance, creditsThisMonth, dailyUsage, byUser, purchases } = data
+
+  // Admins have no agency_id of their own today (see /api/credits GET), so
+  // `balance` and everything derived from it come back undefined. The
+  // network-wide sections below (breakdown, distribution settings) are
+  // admin-only and independent of agency — they always render.
+  let tierDef, avgPerDay = 0, daysLeft: number | null = null
+  let alertLevel: 'critical' | 'low' | 'medium' | 'ok' = 'ok'
+  let pct = 100, barColor = '#008C94'
+
+  if (balance) {
+    tierDef = TIERS.find(t => t.id === balance.tier) ?? TIERS[0]
+    const recentDays = (dailyUsage ?? []).slice(0, 7)
+    avgPerDay = recentDays.length > 0 ? Math.round(recentDays.reduce((s, d) => s + d.requests, 0) / recentDays.length * 1.5) : 0
+    daysLeft = avgPerDay > 0 && balance.balance > 0 ? Math.round(balance.balance / avgPerDay) : null
+    alertLevel = balance.balance < 0 ? 'critical' : tierDef.credits && balance.balance < tierDef.credits * 0.15 ? 'low' : tierDef.credits && balance.balance < tierDef.credits * 0.40 ? 'medium' : 'ok'
+    pct = tierDef.credits ? Math.max(0, Math.min(100, (balance.balance / tierDef.credits) * 100)) : 100
+    barColor = pct > 40 ? '#008C94' : pct > 15 ? '#C97B20' : '#C62828'
+  }
+
+  const alertConf = {
+    critical: { color: '#C62828', bg: '#FFEBEE', icon: AlertTriangle, label: 'Saldo negativo — adicione Lumis urgente' },
+    low:      { color: '#C97B20', bg: '#FEF3E2', icon: AlertTriangle, label: 'Saldo baixo — considere recarregar' },
+    medium:   { color: '#C97B20', bg: '#FEF3E2', icon: TrendingUp,   label: 'Consumo crescendo — monitore o saldo' },
+    ok:       { color: '#2E7D32', bg: '#E8F5E9', icon: CheckCircle2, label: 'Saldo saudável' },
+  }
+  const alert = alertConf[alertLevel]
+  const AlertIcon = alert.icon
+
+  return (
+    <>
+      {showBuy && balance && <BuyModal currentTier={balance.tier} onClose={() => setShowBuy(false)} onSuccess={() => { setShowBuy(false); setBought(true); setTimeout(() => setBought(false), 3500); load() }} />}
+
+      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
+
+        {!balance && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 14px', background: '#F0F5F7', borderRadius: 9, border: '1px solid #E4EEF0', flexShrink: 0 }}>
+            <Users size={13} style={{ color: '#7BA8B2', flexShrink: 0 }} />
+            <p style={{ fontSize: '0.75rem', color: '#4A7580', margin: 0 }}>Este admin não está vinculado a uma agência — sem saldo individual.</p>
+          </div>
+        )}
+
+        {balance && tierDef && (
+          <>
+            {/* Balance hero */}
+            <div style={{ background: '#112630', borderRadius: 16, padding: '18px 20px', flexShrink: 0 }}>
+              {bought && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(0,140,148,0.2)', borderRadius: 8, padding: '6px 10px', marginBottom: 10 }}>
+                  <CheckCircle2 size={12} style={{ color: '#4DD0E1' }} />
+                  <span style={{ fontSize: '0.75rem', color: '#4DD0E1' }}>Lumis adicionados.</span>
+                </div>
+              )}
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <Coins size={13} style={{ color: '#4DD0E1' }} />
+                    <span style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#4DD0E1' }}>Saldo da rede</span>
+                    <span style={{ fontSize: '0.5rem', fontWeight: 700, color: '#112630', background: '#4DD0E1', borderRadius: 20, padding: '1px 7px' }}>{tierDef.name}</span>
+                    {tierDef.priceReais && (
+                      <span style={{ fontSize: '0.5rem', fontWeight: 600, color: '#7BA8B2', background: 'rgba(255,255,255,0.08)', borderRadius: 20, padding: '1px 7px' }}>
+                        R${tierDef.priceReais}/mês
+                      </span>
+                    )}
+                  </div>
+                  <p style={{ fontSize: '2.5rem', fontWeight: 800, color: balance.balance < 0 ? '#F48FB1' : '#fff', margin: 0, letterSpacing: '-0.04em', lineHeight: 1 }}>
+                    {numFmt(balance.balance)}<span style={{ fontSize: '0.875rem', fontWeight: 400, color: '#7BA8B2', marginLeft: 5 }}>Lumis</span>
+                  </p>
+                  {tierDef.credits && (
+                    <div style={{ marginTop: 10 }}>
+                      <div style={{ height: 5, borderRadius: 3, background: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${pct}%`, background: barColor, borderRadius: 3, transition: 'width 0.5s ease' }} />
+                      </div>
+                      <p style={{ fontSize: '0.5625rem', color: '#4A7580', marginTop: 4, margin: '4px 0 0' }}>
+                        {numFmt(Math.max(0, balance.balance))} de {numFmt(tierDef.credits)} Lumis disponíveis
+                      </p>
+                    </div>
+                  )}
+                </div>
+                <button onClick={() => setShowBuy(true)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 9, border: 'none', background: '#008C94', color: '#fff', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', flexShrink: 0, marginLeft: 12 }}>
+                  + Adicionar<ChevronRight size={11} />
+                </button>
+              </div>
+            </div>
+
+            {/* Alert */}
+            {alertLevel !== 'ok' && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 14px', background: alert.bg, borderRadius: 9, border: `1px solid ${alert.color}33`, flexShrink: 0 }}>
+                <AlertIcon size={13} style={{ color: alert.color, flexShrink: 0 }} />
+                <p style={{ fontSize: '0.75rem', color: alert.color, margin: 0 }}>{alert.label}</p>
+              </div>
+            )}
+
+            {/* Stats row */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, flexShrink: 0 }}>
+              {[
+                { label: 'Consumido este mês', value: `${numFmt(creditsThisMonth ?? 0)} lm` },
+                { label: 'Ritmo diário', value: avgPerDay > 0 ? `${avgPerDay} lm/dia` : '—' },
+                { label: 'Saldo estimado', value: daysLeft ? `~${daysLeft} dias` : '—' },
+              ].map(({ label, value }) => (
+                <div key={label} style={{ background: '#fff', border: '1px solid #E4EEF0', borderRadius: 12, padding: '12px 14px' }}>
+                  <p style={{ fontSize: '0.9375rem', fontWeight: 800, color: '#112630', margin: 0, lineHeight: 1 }}>{value}</p>
+                  <p style={{ fontSize: '0.5625rem', color: '#7BA8B2', margin: '5px 0 0' }}>{label}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Bottom 2-col */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 10 }}>
+
+              {/* By advisor */}
+              <div style={{ background: '#fff', border: '1px solid #E4EEF0', borderRadius: 14, overflow: 'hidden' }}>
+                <div style={{ padding: '9px 14px', borderBottom: '1px solid #F0F5F7', background: '#F8FBFC', display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <Users size={11} style={{ color: '#7BA8B2' }} />
+                  <p style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#7BA8B2', margin: 0 }}>Por advisor — este mês</p>
+                </div>
+                <div>
+                  {!byUser || byUser.length === 0 ? (
+                    <p style={{ padding: '16px', fontSize: '0.75rem', color: '#B8D0D5' }}>Nenhum consumo registrado.</p>
+                  ) : byUser.map((row, i) => {
+                    const maxCredits = byUser[0]?.credits_used ?? 1
+                    const w = Math.round((row.credits_used / maxCredits) * 100)
+                    return (
+                      <div key={i} style={{ padding: '9px 14px', borderBottom: i < byUser.length - 1 ? '1px solid #F8FBFC' : 'none' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                          <span style={{ flex: 1, fontSize: '0.8125rem', color: '#112630', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {row.advisor_name ?? row.user_email}
+                          </span>
+                          <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#112630', flexShrink: 0 }}>{numFmt(row.credits_used)} lm</span>
+                        </div>
+                        <div style={{ height: 3, borderRadius: 2, background: '#EDF4F6', overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${w}%`, background: '#008C94', borderRadius: 2 }} />
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Custo por ação + recargas */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: 168 }}>
+                <div style={{ background: '#F8FBFC', border: '1px solid #E4EEF0', borderRadius: 14, padding: '12px 14px' }}>
+                  <p style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#7BA8B2', margin: '0 0 8px' }}>Custo por ação</p>
+                  {Object.entries(CREDIT_COSTS).map(([action, cost]) => {
+                    const labels: Record<string, string> = { chat: 'Msg Flow', review_extraction: 'Ext. dica', transcription: 'Transcrição', travel_docs: 'Consulta visto', scan_card: 'Scan cartão' }
+                    return (
+                      <div key={action} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+                        <span style={{ fontSize: '0.6875rem', color: '#4A7580' }}>{labels[action] ?? action}</span>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#112630' }}>{cost} lm</span>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {purchases && purchases.length > 0 && (
+                  <div style={{ background: '#fff', border: '1px solid #E4EEF0', borderRadius: 14, padding: '12px 14px', flex: 1 }}>
+                    <p style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#7BA8B2', margin: '0 0 8px' }}>Recargas</p>
+                    {purchases.map((p, i) => (
+                      <div key={i} style={{ marginBottom: i < purchases.length - 1 ? 7 : 0 }}>
+                        <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#112630', margin: 0 }}>+{numFmt(p.amount)} lm</p>
+                        <p style={{ fontSize: '0.5625rem', color: '#7BA8B2', margin: '1px 0 0' }}>
+                          {p.meta?.tier} · {new Date(p.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Lumi distribution — admin-only, cross-agency, independent of the caller's own balance */}
+        <LumiDistribution
+          settings={data.lumiSettings}
+          breakdown={data.agencyBreakdown}
+          totalBalance={balance?.balance ?? 0}
+          onRefresh={load}
+        />
+
+      </div>
+    </>
+  )
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
+
+type Tab = 'usage' | 'infra' | 'network'
+
+export default function BillingView({ userRole }: { userRole: string }) {
+  const isAdmin = userRole === 'admin'
+  const [tab, setTab] = useState<Tab>('usage')
+
+  const allTabs: { id: Tab; label: string; icon: React.ElementType; adminOnly?: boolean }[] = [
+    { id: 'usage',   label: 'Meu uso',       icon: Activity },
+    { id: 'infra',   label: 'Infraestrutura', icon: LayoutGrid },
+    { id: 'network', label: 'Rede TDG',       icon: Users, adminOnly: true },
+  ]
+  const tabs = allTabs.filter(t => !t.adminOnly || isAdmin)
+
+  return (
+    <div className="flex-1 overflow-hidden flex flex-col p-4 md:p-5" style={{ height: '100%', maxWidth: 680, margin: '0 auto', width: '100%' }}>
+
+      {/* Header */}
+      <div style={{ marginBottom: 14, flexShrink: 0 }}>
+        <p style={{ fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#7BA8B2', margin: '0 0 2px' }}>Infraestrutura</p>
+        <h1 style={{ fontSize: '1.0625rem', fontWeight: 800, color: '#112630', letterSpacing: '-0.02em', margin: 0 }}>Serviços & Custos</h1>
+      </div>
+
+      {/* Tab bar */}
+      <div style={{ display: 'flex', gap: 4, marginBottom: 14, background: '#F0F5F7', borderRadius: 11, padding: 4, flexShrink: 0 }}>
+        {tabs.map(t => {
+          const Icon = t.icon
+          const active = tab === t.id
+          return (
+            <button key={t.id} onClick={() => setTab(t.id)} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '7px 10px', borderRadius: 8, border: 'none', cursor: 'pointer', background: active ? '#fff' : 'transparent', color: active ? '#112630' : '#7BA8B2', fontWeight: active ? 600 : 500, fontSize: '0.75rem', boxShadow: active ? '0 1px 4px rgba(0,0,0,0.08)' : 'none', transition: 'all 0.15s' }}>
+              <Icon size={12} />
+              {t.label}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Tab content — fills remaining space */}
+      <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        {tab === 'usage'   && <TabMyUsage />}
+        {tab === 'infra'   && <TabInfra />}
+        {tab === 'network' && isAdmin && <TabNetwork />}
+      </div>
+    </div>
+  )
+}
