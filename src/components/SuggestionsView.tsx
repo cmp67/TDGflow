@@ -1,0 +1,403 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { ChevronUp, Plus, X, Clock, CheckCircle2, Zap, MessageSquarePlus, Sparkles, Wrench } from 'lucide-react'
+import { useLanguage } from '@/contexts/LanguageContext'
+
+interface Suggestion {
+  id: number
+  title: string
+  description: string
+  type: 'improvement' | 'new_feature'
+  impact: number
+  status: 'pending' | 'in_progress' | 'done'
+  votes: number
+  voted: boolean
+  created_at: string
+}
+
+const STATUS_CONFIG = {
+  pending:     { color: '#4A7580', bg: '#EDF4F6', icon: Clock },
+  in_progress: { color: '#008C94', bg: '#E6F4F5', icon: Zap },
+  done:        { color: '#2E7D32', bg: '#E8F5E9', icon: CheckCircle2 },
+} as const
+
+const TYPE_CONFIG = {
+  improvement: { color: '#6B4FA0', bg: '#F3EEF9', icon: Wrench },
+  new_feature: { color: '#C97B20', bg: '#FEF3E2', icon: Sparkles },
+} as const
+
+function ImpactDots({ value, interactive, onChange }: { value: number; interactive?: boolean; onChange?: (v: number) => void }) {
+  return (
+    <div className="flex items-center gap-1">
+      {[1, 2, 3, 4, 5].map(n => (
+        <button
+          key={n}
+          type="button"
+          onClick={() => interactive && onChange?.(n)}
+          style={{
+            width: 10, height: 10, borderRadius: '50%',
+            background: n <= value ? '#008C94' : '#D8E6EA',
+            border: 'none', padding: 0,
+            cursor: interactive ? 'pointer' : 'default',
+            transition: 'background 150ms',
+            flexShrink: 0,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+function timeAgo(dateStr: string, lang: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const days  = Math.floor(diff / 86400000)
+  const hours = Math.floor(diff / 3600000)
+  const mins  = Math.floor(diff / 60000)
+  if (lang === 'en') {
+    if (days > 30) return `${Math.floor(days / 30)}mo ago`
+    if (days > 0)  return `${days}d ago`
+    if (hours > 0) return `${hours}h ago`
+    return `${mins}m ago`
+  }
+  if (days > 30) return `há ${Math.floor(days / 30)} mês`
+  if (days > 0)  return `há ${days}d`
+  if (hours > 0) return `há ${hours}h`
+  return `há ${mins}m`
+}
+
+export default function SuggestionsView({ userRole }: { userRole: string }) {
+  const { lang } = useLanguage()
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([])
+  const [loading, setLoading]   = useState(true)
+  const [tab, setTab]           = useState<'board' | 'roadmap'>('board')
+  const [showForm, setShowForm] = useState(false)
+  const [title, setTitle]       = useState('')
+  const [description, setDescription] = useState('')
+  const [type, setType]         = useState<'improvement' | 'new_feature'>('improvement')
+  const [impact, setImpact]     = useState(3)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError]       = useState('')
+  const [votingId, setVotingId] = useState<number | null>(null)
+  const [statusUpdating, setStatusUpdating] = useState<number | null>(null)
+
+  const isAdmin = userRole === 'admin'
+
+  const L = {
+    pt: {
+      title: 'Sugestões de Melhoria',
+      subtitle: 'Vote em ideias e veja o que está sendo priorizado',
+      board: 'Todas as ideias',
+      roadmap: 'Roadmap',
+      suggest: 'Sugerir melhoria',
+      formTitle: 'Nova sugestão de melhoria',
+      titleLabel: 'Título',
+      titlePh: 'Resumo da sua ideia',
+      descLabel: 'Descrição',
+      descPh: 'Que problema resolve? Que contexto tem?',
+      typeLabel: 'Tipo',
+      improvement: 'Melhoria de funcionalidade',
+      new_feature: 'Nova funcionalidade',
+      impactLabel: 'Impacto no seu dia a dia',
+      impactHint: (v: number) => ['', 'Quase sem impacto', 'Pouco impacto', 'Impacto moderado', 'Alto impacto', 'Mudaria tudo'][v],
+      cancel: 'Cancelar',
+      submit: 'Enviar sugestão',
+      empty: 'Nenhuma sugestão ainda. Seja o primeiro!',
+      emptyRoadmap: 'Nada em andamento ainda.',
+      votes: 'votos',
+      impactScore: 'Impacto',
+      statusPending: 'Sugerido',
+      statusProgress: 'Em curso',
+      statusDone: 'Concluído',
+    },
+    en: {
+      title: 'Improvement Suggestions',
+      subtitle: 'Vote on ideas and see what is being prioritized',
+      board: 'All ideas',
+      roadmap: 'Roadmap',
+      suggest: 'Suggest',
+      formTitle: 'New suggestion',
+      titleLabel: 'Title',
+      titlePh: 'Brief summary of your idea',
+      descLabel: 'Description',
+      descPh: 'What problem does it solve?',
+      typeLabel: 'Type',
+      improvement: 'Feature improvement',
+      new_feature: 'New feature',
+      impactLabel: 'Impact on your workflow',
+      impactHint: (v: number) => ['', 'Minimal impact', 'Low impact', 'Moderate impact', 'High impact', 'Game changer'][v],
+      cancel: 'Cancel',
+      submit: 'Submit',
+      empty: 'No suggestions yet. Be the first!',
+      emptyRoadmap: 'Nothing in progress yet.',
+      votes: 'votes',
+      impactScore: 'Impact',
+      statusPending: 'Suggested',
+      statusProgress: 'In progress',
+      statusDone: 'Done',
+    },
+  }
+  const lx = lang === 'en' ? L.en : L.pt
+
+  const statusLabel = (s: string) => s === 'in_progress' ? lx.statusProgress : s === 'done' ? lx.statusDone : lx.statusPending
+
+  useEffect(() => {
+    fetch('/api/suggestions')
+      .then(r => r.json())
+      .then(d => { setSuggestions(d.suggestions ?? []); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [])
+
+  async function handleVote(id: number) {
+    if (votingId) return
+    setVotingId(id)
+    try {
+      const res  = await fetch('/api/suggestions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, action: 'vote' }) })
+      const data = await res.json()
+      if (res.ok) setSuggestions(prev => prev.map(s => s.id === id ? { ...s, votes: data.suggestion.votes, voted: data.voted } : s))
+    } finally { setVotingId(null) }
+  }
+
+  async function handleStatusChange(id: number, status: string) {
+    setStatusUpdating(id)
+    try {
+      const res  = await fetch('/api/suggestions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, action: 'status', status }) })
+      const data = await res.json()
+      if (res.ok) setSuggestions(prev => prev.map(s => s.id === id ? { ...s, status: data.suggestion.status } : s))
+    } finally { setStatusUpdating(null) }
+  }
+
+  async function handleSubmit() {
+    if (!title.trim() || !description.trim()) return
+    setSubmitting(true); setError('')
+    try {
+      const res  = await fetch('/api/suggestions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, description, type, impact }) })
+      const data = await res.json()
+      if (res.ok) {
+        setSuggestions(prev => [data.suggestion, ...prev])
+        setTitle(''); setDescription(''); setType('improvement'); setImpact(3); setShowForm(false)
+      } else { setError(data.error ?? 'Erro ao enviar') }
+    } finally { setSubmitting(false) }
+  }
+
+  const board   = suggestions.filter(s => s.status === 'pending')
+  const roadmap = suggestions.filter(s => s.status === 'in_progress' || s.status === 'done')
+  const displayed = tab === 'board' ? board : roadmap
+
+  return (
+    <div className="flex flex-col h-full overflow-hidden" style={{ background: '#F5F8FA' }}>
+
+      {/* Header */}
+      <div className="flex-shrink-0" style={{ background: '#ffffff', borderBottom: '1px solid #D8E6EA', padding: '24px 28px 0' }}>
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <h1 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#112630', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+              {lx.title}
+            </h1>
+            <p style={{ fontSize: '0.8125rem', color: '#4A7580', marginTop: 4 }}>{lx.subtitle}</p>
+          </div>
+          <button
+            onClick={() => { setShowForm(true); setError('') }}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#008C94', color: '#ffffff', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 600, flexShrink: 0 }}
+          >
+            <Plus size={14} />{lx.suggest}
+          </button>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex">
+          {(['board', 'roadmap'] as const).map(t => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              style={{ padding: '10px 18px', background: 'none', border: 'none', borderBottom: tab === t ? '2px solid #008C94' : '2px solid transparent', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: tab === t ? 600 : 400, color: tab === t ? '#008C94' : '#4A7580', transition: 'all 150ms', marginBottom: -1 }}
+            >
+              {t === 'board' ? lx.board : lx.roadmap}
+              <span style={{ marginLeft: 6, fontSize: '0.65rem', background: tab === t ? '#E6F4F5' : '#EDF4F6', color: tab === t ? '#008C94' : '#4A7580', borderRadius: 10, padding: '1px 6px', fontWeight: 600 }}>
+                {t === 'board' ? board.length : roadmap.length}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Submit form modal */}
+      {showForm && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(17,38,48,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ background: '#ffffff', borderRadius: 16, width: '100%', maxWidth: 500, padding: 28, boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2">
+                <MessageSquarePlus size={18} style={{ color: '#008C94' }} />
+                <h2 style={{ fontSize: '1rem', fontWeight: 700, color: '#112630', letterSpacing: '-0.02em' }}>{lx.formTitle}</h2>
+              </div>
+              <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#4A7580', padding: 4 }}><X size={16} /></button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {/* Title */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 600, color: '#4A7580', marginBottom: 6, letterSpacing: '0.06em', textTransform: 'uppercase' }}>{lx.titleLabel}</label>
+                <input
+                  value={title} onChange={e => setTitle(e.target.value)} placeholder={lx.titlePh} maxLength={120}
+                  style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #D8E6EA', borderRadius: 8, padding: '10px 12px', fontSize: '0.9375rem', color: '#112630', background: '#F8FBFC', outline: 'none' }}
+                />
+              </div>
+
+              {/* Description */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 600, color: '#4A7580', marginBottom: 6, letterSpacing: '0.06em', textTransform: 'uppercase' }}>{lx.descLabel}</label>
+                <textarea
+                  value={description} onChange={e => setDescription(e.target.value)} placeholder={lx.descPh} rows={3}
+                  style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #D8E6EA', borderRadius: 8, padding: '10px 12px', fontSize: '0.9375rem', color: '#112630', background: '#F8FBFC', outline: 'none', resize: 'vertical' }}
+                />
+              </div>
+
+              {/* Type */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 600, color: '#4A7580', marginBottom: 8, letterSpacing: '0.06em', textTransform: 'uppercase' }}>{lx.typeLabel}</label>
+                <div className="flex gap-2">
+                  {(['improvement', 'new_feature'] as const).map(t => {
+                    const cfg = TYPE_CONFIG[t]
+                    const Icon = cfg.icon
+                    const selected = type === t
+                    return (
+                      <button
+                        key={t} type="button" onClick={() => setType(t)}
+                        style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 7, padding: '9px 12px', borderRadius: 8, border: selected ? `1.5px solid ${cfg.color}` : '1.5px solid #D8E6EA', background: selected ? cfg.bg : '#F8FBFC', cursor: 'pointer', transition: 'all 150ms' }}
+                      >
+                        <Icon size={13} style={{ color: cfg.color, flexShrink: 0 }} />
+                        <span style={{ fontSize: '0.8125rem', fontWeight: selected ? 600 : 400, color: selected ? cfg.color : '#4A7580', lineHeight: 1.3 }}>
+                          {t === 'improvement' ? lx.improvement : lx.new_feature}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Impact */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 600, color: '#4A7580', marginBottom: 8, letterSpacing: '0.06em', textTransform: 'uppercase' }}>{lx.impactLabel}</label>
+                <div className="flex items-center gap-3">
+                  <ImpactDots value={impact} interactive onChange={setImpact} />
+                  <span style={{ fontSize: '0.8125rem', color: '#4A7580', fontStyle: 'italic' }}>{lx.impactHint(impact)}</span>
+                </div>
+                <p style={{ fontSize: '0.6875rem', color: '#7BA8B2', marginTop: 6 }}>
+                  {lang === 'en' ? '1 = minimal · 5 = game changer' : '1 = pouco · 5 = mudaria tudo'}
+                </p>
+              </div>
+
+              {error && <p style={{ fontSize: '0.8125rem', color: '#C62828' }}>{error}</p>}
+
+              <div className="flex gap-2 justify-end">
+                <button onClick={() => setShowForm(false)} style={{ padding: '9px 18px', borderRadius: 8, border: '1px solid #D8E6EA', background: 'none', cursor: 'pointer', fontSize: '0.875rem', color: '#4A7580' }}>
+                  {lx.cancel}
+                </button>
+                <button
+                  onClick={handleSubmit} disabled={submitting || !title.trim() || !description.trim()}
+                  style={{ padding: '9px 20px', borderRadius: 8, border: 'none', background: submitting || !title.trim() || !description.trim() ? '#B8D0D5' : '#008C94', color: '#ffffff', cursor: submitting ? 'not-allowed' : 'pointer', fontSize: '0.875rem', fontWeight: 600 }}
+                >
+                  {submitting ? '…' : lx.submit}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* List */}
+      <div className="flex-1 overflow-y-auto" style={{ padding: '20px 28px' }}>
+        {loading ? (
+          <div style={{ textAlign: 'center', paddingTop: 60, color: '#4A7580', fontSize: '0.875rem' }}>Carregando…</div>
+        ) : displayed.length === 0 ? (
+          <div style={{ textAlign: 'center', paddingTop: 60, color: '#4A7580', fontSize: '0.875rem' }}>{tab === 'board' ? lx.empty : lx.emptyRoadmap}</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 680, margin: '0 auto' }}>
+            {displayed.map((s, idx) => {
+              const sCfg = STATUS_CONFIG[s.status]
+              const tCfg = TYPE_CONFIG[s.type] ?? TYPE_CONFIG.improvement
+              const StatusIcon = sCfg.icon
+              const TypeIcon   = tCfg.icon
+              const isTop = tab === 'board' && idx === 0 && s.votes > 0
+              return (
+                <div
+                  key={s.id}
+                  style={{
+                    background: '#ffffff',
+                    borderRadius: 12,
+                    border: isTop ? '1.5px solid #008C94' : '1px solid #D8E6EA',
+                    padding: '16px 18px',
+                    display: 'flex',
+                    gap: 14,
+                    position: 'relative',
+                    transition: 'box-shadow 150ms',
+                  }}
+                >
+                  {isTop && (
+                    <div style={{ position: 'absolute', top: -1, left: 16, background: '#008C94', color: '#fff', fontSize: '0.55rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '2px 8px', borderRadius: '0 0 6px 6px' }}>
+                      {lang === 'en' ? 'Top voted' : 'Mais votado'}
+                    </div>
+                  )}
+
+                  {/* Vote */}
+                  <div className="flex-shrink-0" style={{ marginTop: isTop ? 10 : 0 }}>
+                    <button
+                      onClick={() => handleVote(s.id)} disabled={votingId === s.id}
+                      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, padding: '8px 10px', borderRadius: 8, border: s.voted ? '1.5px solid #008C94' : '1.5px solid #D8E6EA', background: s.voted ? '#E6F4F5' : '#F8FBFC', cursor: votingId === s.id ? 'not-allowed' : 'pointer', transition: 'all 150ms', minWidth: 44 }}
+                    >
+                      <ChevronUp size={14} style={{ color: s.voted ? '#008C94' : '#4A7580' }} />
+                      <span style={{ fontSize: '0.875rem', fontWeight: 700, color: s.voted ? '#008C94' : '#112630', lineHeight: 1 }}>{s.votes}</span>
+                    </button>
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 min-w-0" style={{ marginTop: isTop ? 10 : 0 }}>
+                    <div className="flex items-start justify-between gap-2 mb-1.5">
+                      <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: '#112630', lineHeight: 1.3, margin: 0 }}>{s.title}</h3>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        {/* Type badge */}
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 3, background: tCfg.bg, color: tCfg.color, borderRadius: 20, padding: '3px 8px', fontSize: '0.625rem', fontWeight: 600, letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>
+                          <TypeIcon size={9} />
+                          {s.type === 'new_feature' ? lx.new_feature : lx.improvement}
+                        </span>
+                        {/* Status badge */}
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 3, background: sCfg.bg, color: sCfg.color, borderRadius: 20, padding: '3px 8px', fontSize: '0.625rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                          <StatusIcon size={9} />
+                          {statusLabel(s.status)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <p style={{ fontSize: '0.8125rem', color: '#4A7580', lineHeight: 1.5, margin: '0 0 10px' }}>{s.description}</p>
+
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <ImpactDots value={s.impact} />
+                        <span style={{ fontSize: '0.6875rem', color: '#7BA8B2' }}>
+                          {lx.impactScore} {s.impact}/5
+                        </span>
+                        <span style={{ fontSize: '0.6875rem', color: '#B8D0D5' }}>·</span>
+                        <span style={{ fontSize: '0.6875rem', color: '#7BA8B2' }}>{timeAgo(s.created_at, lang)}</span>
+                      </div>
+                      {isAdmin && (
+                        <select
+                          value={s.status} disabled={statusUpdating === s.id}
+                          onChange={e => handleStatusChange(s.id, e.target.value)}
+                          style={{ fontSize: '0.6875rem', color: '#4A7580', background: '#F8FBFC', border: '1px solid #D8E6EA', borderRadius: 6, padding: '3px 6px', cursor: 'pointer' }}
+                        >
+                          <option value="pending">{lx.statusPending}</option>
+                          <option value="in_progress">{lx.statusProgress}</option>
+                          <option value="done">{lx.statusDone}</option>
+                        </select>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
