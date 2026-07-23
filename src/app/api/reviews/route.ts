@@ -2,6 +2,9 @@ import { sql } from '@vercel/postgres'
 import { auth } from '@/auth'
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { logUsage } from '@/lib/usage-log'
+import { checkAndDeductCredits } from '@/lib/credits'
+import { getAgencyId } from '@/lib/agency'
 
 export const dynamic = 'force-dynamic'
 
@@ -56,17 +59,56 @@ export async function POST(req: NextRequest) {
   const session = await auth()
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const body = await req.json()
-  const {
-    hotel_name, country, visit_date, visit_type,
-    overall_rating, rooms_rating, service_rating, food_rating, location_rating,
-    raw_answers,
-  } = body
+  try {
+    const body = await req.json()
+    const {
+      hotel_name, country, visit_date, visit_type,
+      overall_rating, rooms_rating, service_rating, food_rating, location_rating,
+      raw_answers, sentiment_map,
+    } = body
 
-  // AI extraction of structured fields
-  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+    if (!hotel_name || overall_rating == null) {
+      return NextResponse.json({ error: 'hotel_name e overall_rating são obrigatórios' }, { status: 400 })
+    }
 
-  const prompt = `Você é um assistente especializado em turismo de luxo. Com base nas respostas do travel advisor abaixo sobre uma visita a um hotel, extraia as informações estruturadas.
+    // Ensure country column exists (idempotent migration)
+    await sql`ALTER TABLE tdg_hotel_reviews ADD COLUMN IF NOT EXISTS country TEXT`
+
+    // Add sentiment_map column (idempotent)
+    await sql`ALTER TABLE tdg_hotel_reviews ADD COLUMN IF NOT EXISTS sentiment_map JSONB`
+
+    // Migrate highlights from TEXT[] to JSONB (idempotent via column type check)
+    await sql`
+      ALTER TABLE tdg_hotel_reviews
+        ALTER COLUMN highlights TYPE JSONB
+        USING to_jsonb(highlights)
+    `.catch(() => { /* already JSONB — ignore */ })
+
+    // Widen rating columns to accept −5..+5 (drop old 1-5 check constraints)
+    await sql`ALTER TABLE tdg_hotel_reviews DROP CONSTRAINT IF EXISTS tdg_hotel_reviews_overall_rating_check`
+    await sql`ALTER TABLE tdg_hotel_reviews DROP CONSTRAINT IF EXISTS tdg_hotel_reviews_rooms_rating_check`
+    await sql`ALTER TABLE tdg_hotel_reviews DROP CONSTRAINT IF EXISTS tdg_hotel_reviews_service_rating_check`
+    await sql`ALTER TABLE tdg_hotel_reviews DROP CONSTRAINT IF EXISTS tdg_hotel_reviews_food_rating_check`
+    await sql`ALTER TABLE tdg_hotel_reviews DROP CONSTRAINT IF EXISTS tdg_hotel_reviews_location_rating_check`
+
+    // Lookup user — fail clearly if not found
+    const { rows: userRows } = await sql`
+      SELECT id, name, agency_name FROM tdg_users WHERE email = ${session.user?.email ?? ''} LIMIT 1
+    `
+    const user = userRows[0]
+    if (!user) return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 })
+
+    // AI extraction — check balance first; if insufficient, skip extraction but still save the review
+    let structured: { highlights?: string[]; client_profile?: string; must_experience?: string; heads_up?: string } = {}
+    const agencyId = await getAgencyId(session.user?.email ?? '')
+    const creditCheck = await checkAndDeductCredits({ agencyId, action: 'review_extraction', userEmail: session.user?.email ?? 'unknown' })
+    // Extraction is best-effort: if credits are unavailable for any reason
+    // (insufficient balance or no agency assigned), skip it — the review is
+    // still saved below. Do NOT fail-open on unexpected reasons.
+    try {
+      if (!creditCheck.ok) throw new Error(creditCheck.reason)
+      const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+      const prompt = `Você é um assistente especializado em turismo de luxo. Com base nas respostas do travel advisor abaixo sobre uma visita a um hotel, extraia as informações estruturadas.
 
 Respostas do advisor:
 ${Object.entries(raw_answers as Record<string, string>).map(([k, v]) => `${k}: ${v}`).join('\n')}
@@ -78,45 +120,42 @@ Retorne APENAS um JSON válido com esta estrutura:
   "must_experience": "UMA experiência obrigatória no hotel",
   "heads_up": "ressalva ou informação importante (ou null se não houver)"
 }`
+      const extraction = await anthropic.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 800,
+        messages: [{ role: 'user', content: prompt }],
+      })
+      const textBlock = extraction.content.find(b => b.type === 'text')
+      if (textBlock?.type === 'text') {
+        const match = textBlock.text.match(/\{[\s\S]*\}/)
+        if (match) structured = JSON.parse(match[0])
+      }
+      logUsage({ event_type: 'review_extraction', user_email: session.user?.email ?? 'unknown', meta: { hotel: hotel_name } })
+    } catch { /* AI failure is non-blocking — review saves without extraction */ }
 
-  const extraction = await anthropic.messages.create({
-    model: 'claude-haiku-4-5-20251001',
-    max_tokens: 800,
-    messages: [{ role: 'user', content: prompt }],
-  })
+    const { rows } = await sql`
+      INSERT INTO tdg_hotel_reviews
+        (hotel_name, country, agent_id, agent_name, agency_name, visit_date, visit_type,
+         overall_rating, rooms_rating, service_rating, food_rating, location_rating,
+         highlights, client_profile, must_experience, heads_up, raw_answers, sentiment_map)
+      VALUES (
+        ${hotel_name}, ${country || null}, ${user.id}, ${user.name}, ${user.agency_name},
+        ${visit_date || null}, ${visit_type || null},
+        ${overall_rating}, ${rooms_rating || null}, ${service_rating || null},
+        ${food_rating || null}, ${location_rating || null},
+        ${JSON.stringify(structured.highlights ?? [])}, ${structured.client_profile ?? null},
+        ${structured.must_experience ?? null}, ${structured.heads_up ?? null},
+        ${JSON.stringify(raw_answers)},
+        ${sentiment_map ? JSON.stringify(sentiment_map) : null}
+      )
+      RETURNING *
+    `
 
-  let structured: { highlights?: string[]; client_profile?: string; must_experience?: string; heads_up?: string } = {}
-  try {
-    const textBlock = extraction.content.find(b => b.type === 'text')
-    if (textBlock?.type === 'text') {
-      const match = textBlock.text.match(/\{[\s\S]*\}/)
-      if (match) structured = JSON.parse(match[0])
-    }
-  } catch { /* keep empty */ }
-
-  const { rows: userRows } = await sql`
-    SELECT id, name, agency_name FROM tdg_users WHERE email = ${session.user?.email ?? ''} LIMIT 1
-  `
-  const user = userRows[0]
-
-  const { rows } = await sql`
-    INSERT INTO tdg_hotel_reviews
-      (hotel_name, country, agent_id, agent_name, agency_name, visit_date, visit_type,
-       overall_rating, rooms_rating, service_rating, food_rating, location_rating,
-       highlights, client_profile, must_experience, heads_up, raw_answers)
-    VALUES (
-      ${hotel_name}, ${country || null}, ${user.id}, ${user.name}, ${user.agency_name},
-      ${visit_date || null}, ${visit_type || null},
-      ${overall_rating}, ${rooms_rating || null}, ${service_rating || null},
-      ${food_rating || null}, ${location_rating || null},
-      ${JSON.stringify(structured.highlights ?? [])}, ${structured.client_profile ?? null},
-      ${structured.must_experience ?? null}, ${structured.heads_up ?? null},
-      ${JSON.stringify(raw_answers)}
-    )
-    RETURNING *
-  `
-
-  return NextResponse.json({ review: rows[0] })
+    return NextResponse.json({ review: rows[0] })
+  } catch (e) {
+    console.error('[POST /api/reviews]', e)
+    return NextResponse.json({ error: String(e) }, { status: 500 })
+  }
 }
 
 /* ── PATCH — toggle favorite ──────────────────────────────────── */

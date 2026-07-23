@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "vitest run",
+    "deploy": "vercel deploy --prod 2>&1 | tee /tmp/vdeploy.log && DEPLOY_URL=$(grep -o 'https://tdg-flow-[^[:space:]]*\\.vercel\\.app' /tmp/vdeploy.log | head -1) && vercel alias set $DEPLOY_URL tdg-flow-carla-4643s-projects.vercel.app"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.81.0",
@@ -16,10 +18,10 @@
     "@vercel/postgres": "^0.10.0",
     "bcryptjs": "^3.0.3",
     "framer-motion": "^12.38.0",
+    "groq-sdk": "^1.1.2",
     "lucide-react": "^1.7.0",
     "next": "16.2.1",
     "next-auth": "^5.0.0-beta.30",
-    "openai": "^6.33.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-markdown": "^10.1.0"
@@ -32,6 +34,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "4.1.10"
   }
 }

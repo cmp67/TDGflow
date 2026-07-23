@@ -1,8 +1,12 @@
-import OpenAI from 'openai'
+import Groq from 'groq-sdk'
 import Anthropic from '@anthropic-ai/sdk'
 import { sql } from '@vercel/postgres'
 import { put } from '@vercel/blob'
 import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@/auth'
+import { logUsage } from '@/lib/usage-log'
+import { checkAndDeductCredits, INSUFFICIENT_BALANCE, NO_AGENCY } from '@/lib/credits'
+import { getAgencyId } from '@/lib/agency'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -23,24 +27,34 @@ Retorne APENAS um JSON válido com esta estrutura:
 }`
 
 export async function POST(req: NextRequest) {
-  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  const session = await auth()
+  const userEmail = session?.user?.email ?? 'unknown'
+
+  const agencyId = await getAgencyId(userEmail)
+  const credit = await checkAndDeductCredits({ agencyId, action: 'transcription', userEmail })
+  if (!credit.ok) {
+    if (credit.reason === NO_AGENCY) return NextResponse.json({ error: NO_AGENCY }, { status: 403 })
+    return NextResponse.json({ error: INSUFFICIENT_BALANCE }, { status: 402 })
+  }
+
+  const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
   const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
   const formData = await req.formData()
   const audioFile = formData.get('audio') as File
-  const agentName = (formData.get('agent_name') as string) || 'Agente TDG'
+  const agentName = (formData.get('agent_name') as string) || 'Stella'
   const agency = (formData.get('agency') as string) || ''
 
   if (!audioFile) {
     return NextResponse.json({ error: 'Audio file required' }, { status: 400 })
   }
 
-  // 1. Transcrever com Whisper
-  const transcription = await openai.audio.transcriptions.create({
+  // 1. Transcrever com Groq Whisper (whisper-large-v3-turbo — rápido e gratuito)
+  const transcription = await groq.audio.transcriptions.create({
     file: audioFile,
-    model: 'whisper-1',
+    model: 'whisper-large-v3-turbo',
     language: 'pt',
-    response_format: 'text'
+    response_format: 'text',
   })
   const transcript = transcription as unknown as string
 
@@ -82,6 +96,13 @@ export async function POST(req: NextRequest) {
       false
     )
     RETURNING id`
+
+  logUsage({
+    event_type: 'transcription',
+    user_email: userEmail,
+    meta: { file_size: audioFile.size, agent: agentName },
+  })
+  // Credit already deducted at start of request
 
   return NextResponse.json({ id: rows[0]?.id, transcript, summary })
 }

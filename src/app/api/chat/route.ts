@@ -1,6 +1,11 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { sql } from '@vercel/postgres'
 import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@/auth'
+import { checkTravelRequirements } from '@/lib/travel-docs'
+import { logUsage } from '@/lib/usage-log'
+import { deductCredits, checkAndDeductCredits, INSUFFICIENT_BALANCE, NO_AGENCY } from '@/lib/credits'
+import { getAgencyId } from '@/lib/agency'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -52,6 +57,23 @@ Se o consultor perguntar como registrar uma dica, gravar áudio, ou usar qualque
 - Gravações: botão "Gravar" no topo → após gravar, ir em "Fila" para transcrever
 - Hotéis: menu "Hotéis" → ver catálogo parceiro TDG com contatos e descrições
 
+## Documentação de viagem
+
+Quando o consultor mencionar um destino internacional, use check_travel_requirements para verificar automaticamente:
+- Requisito de visto para passaporte brasileiro
+- Se CIVP (certificado de febre amarela) é obrigatório
+- Nível de alerta de segurança do país
+- Qualquer ETA ou autorização eletrônica necessária
+
+Formato para documentação:
+📋 **Documentação — [País]**
+- Visto: [status]
+- CIVP: [Obrigatório / Não exigido]
+- Segurança: Nível [N]/4 — [label]
+- [Notas especiais se houver]
+
+Inclua esta seção ao recomendar hotéis num destino novo, ou quando o consultor perguntar sobre documentação.
+
 ## Regras
 
 - NUNCA invente dados — use somente informações das ferramentas
@@ -98,6 +120,20 @@ const tools: Anthropic.Tool[] = [
         hotel_id: { type: 'string', description: 'UUID do hotel' }
       },
       required: ['hotel_id']
+    }
+  },
+  {
+    name: 'check_travel_requirements',
+    description: 'Verifica requisitos de viagem para passaporte brasileiro: visto, CIVP (febre amarela), ETA e alertas de segurança. Usar sempre que um destino internacional for mencionado.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        destination: {
+          type: 'string',
+          description: 'Nome do país de destino em português (ex: "Japão", "África do Sul", "Reino Unido") ou código ISO 2 letras'
+        }
+      },
+      required: ['destination']
     }
   }
 ]
@@ -149,10 +185,26 @@ async function processToolCall(toolName: string, toolInput: Record<string, unkno
     return { hotel: hotel.rows[0], contracts: contracts.rows, promotions: promotions.rows, knowledge: knowledge.rows }
   }
 
+  if (toolName === 'check_travel_requirements') {
+    const { destination } = toolInput as { destination: string }
+    return await checkTravelRequirements(destination)
+  }
+
   return { error: 'Tool not found' }
 }
 
 export async function POST(req: NextRequest) {
+  const session = await auth()
+  const userEmail = session?.user?.email ?? 'unknown'
+
+  // Check balance BEFORE calling AI
+  const agencyId = await getAgencyId(userEmail)
+  const credit = await checkAndDeductCredits({ agencyId, action: 'chat', userEmail })
+  if (!credit.ok) {
+    if (credit.reason === NO_AGENCY) return NextResponse.json({ error: NO_AGENCY }, { status: 403 })
+    return NextResponse.json({ error: INSUFFICIENT_BALANCE }, { status: 402 })
+  }
+
   const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
   const { messages } = await req.json()
 
@@ -193,5 +245,16 @@ export async function POST(req: NextRequest) {
   }
 
   const textBlock = response.content.find((b): b is Anthropic.TextBlock => b.type === 'text')
+
+  // Log token usage + deduct credits (fire-and-forget)
+  logUsage({
+    event_type: 'chat',
+    user_email: userEmail,
+    tokens_in:  response.usage?.input_tokens,
+    tokens_out: response.usage?.output_tokens,
+    meta: { model: 'claude-sonnet-4-6' },
+  })
+  // Credit already deducted at start of request
+
   return NextResponse.json({ content: textBlock?.text || '' })
 }

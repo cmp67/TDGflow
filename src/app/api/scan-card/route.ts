@@ -1,6 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { auth } from '@/auth'
 import { NextRequest, NextResponse } from 'next/server'
+import { deductCredits } from '@/lib/credits'
+import { getAgencyId } from '@/lib/agency'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30
@@ -72,6 +74,14 @@ Retorne APENAS um JSON válido com esta estrutura (use null se não encontrar):
     const match = textBlock.text.match(/\{[\s\S]*\}/)
     if (!match) throw new Error('No JSON found')
     const card: CardData = JSON.parse(match[0])
+
+    deductCredits({
+      agencyId:  await getAgencyId(session.user?.email ?? ''),
+      action:    'scan_card',
+      userEmail: session.user?.email ?? '',
+      meta:      { name: card.name, company: card.company },
+    })
+
     return NextResponse.json({ card })
   } catch {
     return NextResponse.json({ error: 'Could not parse card data' }, { status: 422 })
