@@ -8,6 +8,7 @@ import {
   ChevronDown, ChevronUp, Sparkles, Scale, ArrowRightLeft,
 } from 'lucide-react'
 import { TIERS, CREDIT_COSTS, type TierId } from '@/lib/credits'
+import MyLumisTopUp from '@/components/billing/MyLumisTopUp'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -333,6 +334,9 @@ function TabMyUsage() {
       {/* Lumis explainer */}
       <LumisExplainer />
 
+      {/* Saldo comprado da agência (top-up self-service, via /api/credits) */}
+      <MyLumisTopUp />
+
       {/* Cota mensal */}
       {quota && (
         <div style={{ background: '#fff', border: '1px solid #E4EEF0', borderRadius: 14, overflow: 'hidden' }}>
@@ -356,12 +360,15 @@ function TabMyUsage() {
               </div>
             </div>
 
-            {/* Status pills */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+            {/* Status pills — "top-up" foi removido daqui de propósito: é o
+                mesmo saldo (tdg_credits_balance) já mostrado, sempre
+                atualizado, no card "Saldo comprado da agência" logo acima
+                (MyLumisTopUp). Mostrar os dois lado a lado duplicava o
+                número e um deles ficava desatualizado após uma compra. */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6 }}>
               {[
                 { label: 'restantes', value: quota.remaining, color: quota.remaining > 0 ? '#008C94' : '#C62828', bg: quota.remaining > 0 ? '#E6F4F5' : '#FFEBEE' },
                 { label: 'pool central', value: quota.pool, color: quota.pool > 0 ? '#4A7580' : '#B8D0D5', bg: quota.pool > 0 ? '#EDF4F6' : '#F8FBFC' },
-                { label: 'top-up', value: quota.topup, color: quota.topup > 0 ? '#C97B20' : '#B8D0D5', bg: quota.topup > 0 ? '#FEF3E2' : '#F8FBFC' },
               ].map(({ label, value, color, bg }) => (
                 <div key={label} style={{ padding: '8px 10px', background: bg, borderRadius: 8, textAlign: 'center' }}>
                   <p style={{ fontSize: '1.0625rem', fontWeight: 800, color, margin: 0, lineHeight: 1 }}>{value}</p>
@@ -370,16 +377,12 @@ function TabMyUsage() {
               ))}
             </div>
 
-            {/* Ações */}
-            <div style={{ display: 'flex', gap: 8 }}>
-              <a
-                href={`mailto:carla@bemgsy.com?subject=Solicitar%20top-up%20de%20Lumis&body=Olá%20Carla%2C%20gostaria%20de%20comprar%20top-up%20de%20Lumis%20(R%240%2C012%2Flm).%20Quantidade%20desejada%3A%20`}
-                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px 12px', borderRadius: 9, background: '#C97B20', color: '#fff', fontSize: '0.75rem', fontWeight: 600, textDecoration: 'none' }}
-              >
-                <Coins size={12} />
-                Comprar top-up
-              </a>
-              {quota.remaining > 0 && (
+            {/* Ações — compra real de top-up agora vive no card "Saldo comprado
+                da agência" abaixo (MyLumisTopUp), que chama a API de verdade
+                em vez do antigo link mailto. Aqui fica só a devolução ao pool,
+                que é uma ação distinta (cota central, não compra). */}
+            {quota.remaining > 0 && (
+              <div style={{ display: 'flex', gap: 8 }}>
                 <button
                   onClick={() => setShowReturn(r => !r)}
                   style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px 12px', borderRadius: 9, border: '1.5px solid #D8E6EA', background: showReturn ? '#EDF4F6' : '#fff', color: '#4A7580', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}
@@ -387,8 +390,8 @@ function TabMyUsage() {
                   <ArrowRightLeft size={12} />
                   Devolver ao pool
                 </button>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* Formulário de devolução */}
             {showReturn && quota.remaining > 0 && (
