@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Users, Plus, Crown, UserCheck, UserX, Loader, Check, X, Eye, EyeOff } from 'lucide-react'
+import { Users, Plus, Crown, UserCheck, UserX, Loader, Check, X, Eye, EyeOff, Link2 } from 'lucide-react'
+import AgencyInvitesPanel from '@/components/AgencyInvitesPanel'
 
 interface TdgUser {
   id: string
@@ -20,6 +21,7 @@ interface Props {
 }
 
 export default function GestaoView({ users: initial }: Props) {
+  const [tab, setTab] = useState<'users' | 'invites'>('users')
   const [users, setUsers] = useState<TdgUser[]>(initial)
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -81,23 +83,59 @@ export default function GestaoView({ users: initial }: Props) {
         <div>
           <p className="section-label mb-1">Administração</p>
           <h1 className="text-xl font-semibold" style={{ color: '#112630', letterSpacing: '-0.02em' }}>
-            Gestão de Usuários
+            {tab === 'users' ? 'Gestão de Usuários' : 'Convites de Agência'}
           </h1>
           <p className="text-sm mt-1" style={{ color: '#4A7580' }}>
-            {Object.values(byAgency).flat().length} usuário{Object.values(byAgency).flat().length !== 1 ? 's' : ''} · {Object.keys(byAgency).length} agênci{Object.keys(byAgency).length !== 1 ? 'as' : 'a'}
+            {tab === 'users'
+              ? `${Object.values(byAgency).flat().length} usuário${Object.values(byAgency).flat().length !== 1 ? 's' : ''} · ${Object.keys(byAgency).length} agênci${Object.keys(byAgency).length !== 1 ? 'as' : 'a'}`
+              : 'Links de auto-cadastro para as agências da rede'}
           </p>
         </div>
+        {tab === 'users' && (
+          <button
+            onClick={() => setShowForm(v => !v)}
+            className="btn-gold"
+            style={{ padding: '8px 14px', fontSize: '0.8125rem' }}
+          >
+            <Plus size={14} /> Novo usuário
+          </button>
+        )}
+      </div>
+
+      {/* Tabs */}
+      <div className="flex items-center gap-1" style={{ borderBottom: '1px solid var(--border)' }}>
         <button
-          onClick={() => setShowForm(v => !v)}
-          className="btn-gold"
-          style={{ padding: '8px 14px', fontSize: '0.8125rem' }}
+          onClick={() => setTab('users')}
+          className="flex items-center gap-1.5"
+          style={{
+            padding: '8px 12px', fontSize: '0.8125rem', fontWeight: tab === 'users' ? 600 : 400,
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: tab === 'users' ? '#006B72' : '#4A7580',
+            borderBottom: tab === 'users' ? '2px solid var(--gold)' : '2px solid transparent',
+            marginBottom: -1,
+          }}
         >
-          <Plus size={14} /> Novo usuário
+          <Users size={14} /> Usuários
+        </button>
+        <button
+          onClick={() => setTab('invites')}
+          className="flex items-center gap-1.5"
+          style={{
+            padding: '8px 12px', fontSize: '0.8125rem', fontWeight: tab === 'invites' ? 600 : 400,
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: tab === 'invites' ? '#006B72' : '#4A7580',
+            borderBottom: tab === 'invites' ? '2px solid var(--gold)' : '2px solid transparent',
+            marginBottom: -1,
+          }}
+        >
+          <Link2 size={14} /> Convites de Agência
         </button>
       </div>
 
+      {tab === 'invites' && <AgencyInvitesPanel />}
+
       {/* Create form */}
-      {showForm && (
+      {tab === 'users' && showForm && (
         <div className="card space-y-3">
           <h3 className="text-sm font-semibold" style={{ color: '#112630' }}>Novo usuário</h3>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -153,7 +191,7 @@ export default function GestaoView({ users: initial }: Props) {
       )}
 
       {/* Users by agency */}
-      {Object.entries(byAgency).sort(([a], [b]) => a.localeCompare(b)).map(([agency, members]) => (
+      {tab === 'users' && Object.entries(byAgency).sort(([a], [b]) => a.localeCompare(b)).map(([agency, members]) => (
         <div key={agency}>
           <p className="text-xs font-medium uppercase tracking-wider mb-2" style={{ color: '#4A7580' }}>
             {agency} ({members.length})

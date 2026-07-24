@@ -7,7 +7,7 @@ import { signOut } from 'next-auth/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Mail, Sparkles, Tag, Lightbulb, FileText, Building2,
-  Mic, LogOut, MoreHorizontal, X, Users, BriefcaseBusiness, BarChart2, MessageSquarePlus, CreditCard, Network
+  Mic, LogOut, MoreHorizontal, X, Users, BriefcaseBusiness, BarChart2, MessageSquarePlus, CreditCard, Network, UserPlus
 } from 'lucide-react'
 import { LanguageProvider, useLanguage } from '@/contexts/LanguageContext'
 import { APP_VERSION } from '@/lib/version'
@@ -48,6 +48,17 @@ const SECONDARY_NAV_ADMIN: NavItem[] = [
   { href: '/flow/inbox',     icon: Mail,                tkey: 'inbox', soon: true },
 ]
 
+// agency_admin: administers only its own agency's team (never cross-agency —
+// that stays exclusive to global admin via SECONDARY_NAV_ADMIN above).
+const SECONDARY_NAV_AGENCY_ADMIN: NavItem[] = [
+  { href: '/flow/analytics', icon: BarChart2,           tkey: 'analytics' },
+  { href: '/flow/equipe',    icon: UserPlus,            tkey: 'equipe' },
+  { href: '/flow/agencia',   icon: BriefcaseBusiness,   tkey: 'agencia' },
+  { href: '/flow/gravacoes', icon: Mic,                 tkey: 'gravacoes' },
+  { href: '/flow/docs',      icon: FileText,            tkey: 'docs' },
+  { href: '/flow/inbox',     icon: Mail,                tkey: 'inbox', soon: true },
+]
+
 interface Props {
   children: React.ReactNode
   user: { name: string; agency: string; role: string; avatar_url?: string | null }
@@ -69,7 +80,8 @@ function FlowShellInner({ children, user }: Props) {
   const { lang, setLang, tr } = useLanguage()
 
   const isAdmin = user.role === 'admin'
-  const SECONDARY_NAV = isAdmin ? SECONDARY_NAV_ADMIN : SECONDARY_NAV_AGENT
+  const isAgencyAdmin = user.role === 'agency_admin'
+  const SECONDARY_NAV = isAdmin ? SECONDARY_NAV_ADMIN : isAgencyAdmin ? SECONDARY_NAV_AGENCY_ADMIN : SECONDARY_NAV_AGENT
   const ALL_NAV = [...PRIMARY_NAV, ...SECONDARY_NAV]
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
