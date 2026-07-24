@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { TIERS, CREDIT_COSTS, type TierId } from '@/lib/credits'
 import MyLumisTopUp from '@/components/billing/MyLumisTopUp'
+import AgencySubscriptionCard from '@/components/billing/AgencySubscriptionCard'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -333,6 +334,9 @@ function TabMyUsage() {
 
       {/* Lumis explainer */}
       <LumisExplainer />
+
+      {/* Assinatura mensal da agência (Mercado Pago, plano Growth) */}
+      <AgencySubscriptionCard />
 
       {/* Saldo comprado da agência (top-up self-service, via /api/credits) */}
       <MyLumisTopUp />
