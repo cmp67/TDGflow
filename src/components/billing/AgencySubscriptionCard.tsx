@@ -10,6 +10,11 @@ function fmtDate(iso: string | null) {
   return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
 }
 
+function fmtAmount(n: number | null) {
+  if (n === null) return null
+  return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+}
+
 export default function AgencySubscriptionCard() {
   const [state, setState]     = useState<SubscriptionStatusResult>({ status: 'none' })
   const [loading, setLoading] = useState(true)
@@ -57,10 +62,11 @@ export default function AgencySubscriptionCard() {
       <div style={cardBase}>
         {header}
         <div style={{ padding: '14px 16px' }}>
-          <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#112630', margin: 0 }}>Plano Growth ativo</p>
-          {fmtDate(state.nextPaymentDate) && (
+          <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#112630', margin: 0 }}>Plano Growth ativo · Membro Fundador</p>
+          {state.transactionAmount !== null && (
             <p style={{ fontSize: '0.75rem', color: '#7BA8B2', margin: '4px 0 0' }}>
-              Próxima cobrança: {fmtDate(state.nextPaymentDate)}
+              {fmtAmount(state.transactionAmount)}/mês (fee de manutenção)
+              {fmtDate(state.nextPaymentDate) && <> · próxima cobrança: {fmtDate(state.nextPaymentDate)}</>}
             </p>
           )}
         </div>
@@ -98,6 +104,7 @@ export default function AgencySubscriptionCard() {
         <div>
           <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#112630', margin: 0 }}>Plano Growth — R$ 1.470/mês</p>
           <p style={{ fontSize: '0.75rem', color: '#7BA8B2', margin: '4px 0 0' }}>500 lm/mês de cota para a agência, cobrança recorrente via Mercado Pago.</p>
+          <p style={{ fontSize: '0.6875rem', color: '#2E7D32', margin: '6px 0 0', fontWeight: 600 }}>Fee de manutenção de Membro Fundador — sem valores adicionais, sem surpresas na fatura.</p>
         </div>
         {error && <p style={{ fontSize: '0.75rem', color: '#C62828', margin: 0 }}>{error}</p>}
         <button

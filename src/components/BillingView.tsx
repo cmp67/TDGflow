@@ -65,7 +65,7 @@ const SERVICE_GROUPS: ServiceGroup[] = [
       { id: 'flow-ai', name: 'TDG Flow', icon: Brain, color: '#6B4FA0', bg: '#F3EEF9',
         what: 'Assistente inteligente — respostas, sugestões e extração de insights',
         tier: 'Por consumo', tierColor: '#C97B20', tierBg: '#FEF3E2' },
-      { id: 'transcription', name: 'Transcrição de Voz', icon: Mic, color: '#008C94', bg: '#E6F4F5',
+      { id: 'transcription', name: 'Transcrição de Voz', icon: Mic, color: 'var(--gold)', bg: '#E6F4F5',
         what: 'Converte gravações em texto com alta precisão',
         tier: 'Plano gratuito', tierColor: '#2E7D32', tierBg: '#E8F5E9' },
       { id: 'travel-ai', name: 'Requisitos de Viagem', icon: Globe, color: '#004A7C', bg: '#E8F1F8',
@@ -78,10 +78,10 @@ const SERVICE_GROUPS: ServiceGroup[] = [
     services: [
       { id: 'hosting', name: 'Hospedagem & Deploy', icon: Zap, color: '#000', bg: '#F5F5F5',
         what: 'Disponibilidade global, atualizações instantâneas',
-        tier: 'Plano fixo', tierColor: '#4A7580', tierBg: '#EDF4F6' },
+        tier: 'Plano fixo', tierColor: 'var(--text-muted)', tierBg: '#EDF4F6' },
       { id: 'database', name: 'Base de Dados', icon: Database, color: '#00B388', bg: '#E6FAF5',
         what: 'Dicas, perfis, ofertas e histórico da rede TDG',
-        tier: 'Plano fixo', tierColor: '#4A7580', tierBg: '#EDF4F6' },
+        tier: 'Plano fixo', tierColor: 'var(--text-muted)', tierBg: '#EDF4F6' },
       { id: 'storage', name: 'Armazenamento de Arquivos', icon: HardDrive, color: '#5C6BC0', bg: '#EEEFFD',
         what: 'Áudios das gravações dos advisors',
         tier: 'Por consumo', tierColor: '#C97B20', tierBg: '#FEF3E2' },
@@ -92,7 +92,7 @@ const SERVICE_GROUPS: ServiceGroup[] = [
     services: [
       { id: 'agents', name: 'Agentes Conversacionais', icon: Bot, color: '#E53935', bg: '#FFEBEE',
         what: 'Atendimento automatizado via WhatsApp e outros canais',
-        tier: 'Em integração', tierColor: '#4A7580', tierBg: '#EDF4F6', soon: true },
+        tier: 'Em integração', tierColor: 'var(--text-muted)', tierBg: '#EDF4F6', soon: true },
     ],
   },
 ]
@@ -100,7 +100,7 @@ const SERVICE_GROUPS: ServiceGroup[] = [
 const ACTION_META: Record<string, { label: string; icon: React.ElementType; color: string }> = {
   chat:              { label: 'Mensagens Flow',    icon: Brain,  color: '#6B4FA0' },
   review_extraction: { label: 'Extração de dicas', icon: Zap,    color: '#C97B20' },
-  transcription:     { label: 'Transcrições',       icon: Mic,    color: '#008C94' },
+  transcription:     { label: 'Transcrições',       icon: Mic,    color: 'var(--gold)' },
   travel_docs:       { label: 'Consultas de visto', icon: Globe,  color: '#004A7C' },
   scan_card:         { label: 'Scan de cartão',     icon: Bot,    color: '#E53935' },
 }
@@ -130,18 +130,18 @@ function BuyModal({ currentTier, onClose, onSuccess }: {
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(17,38,48,0.5)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-      <div style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 400, padding: 24, boxShadow: '0 24px 64px rgba(0,0,0,0.18)' }}>
-        <h2 style={{ fontSize: '1rem', fontWeight: 700, color: '#112630', margin: '0 0 4px' }}>Adicionar Lumis</h2>
+      <div style={{ background: 'var(--surface)', borderRadius: 20, width: '100%', maxWidth: 400, padding: 24, boxShadow: '0 24px 64px rgba(0,0,0,0.18)' }}>
+        <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>Adicionar Lumis</h2>
         <p style={{ fontSize: '0.75rem', color: '#7BA8B2', margin: '0 0 18px' }}>Selecione o pacote para o saldo da rede TDG.</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 18 }}>
           {TIERS.filter(t => t.credits !== null).map(t => {
             const active = selected === t.id
             const current = t.id === currentTier
             return (
-              <button key={t.id} onClick={() => setSelected(t.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 10, cursor: 'pointer', textAlign: 'left', border: active ? `2px solid ${t.color}` : '1.5px solid #D8E6EA', background: active ? t.bg : '#fff', transition: 'all 0.12s' }}>
+              <button key={t.id} onClick={() => setSelected(t.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 10, cursor: 'pointer', textAlign: 'left', border: active ? `2px solid ${t.color}` : '1.5px solid #D8E6EA', background: active ? t.bg : 'var(--surface)', transition: 'all 0.12s' }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#112630' }}>{t.name}</span>
+                    <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>{t.name}</span>
                     {current && <span style={{ fontSize: '0.5rem', fontWeight: 700, color: t.color, background: t.bg, borderRadius: 20, padding: '1px 6px' }}>atual</span>}
                   </div>
                   <p style={{ fontSize: '0.6875rem', color: '#7BA8B2', margin: '2px 0 0' }}>{t.label}</p>
@@ -149,7 +149,7 @@ function BuyModal({ currentTier, onClose, onSuccess }: {
                 <div style={{ textAlign: 'right' }}>
                   <p style={{ fontSize: '1rem', fontWeight: 800, color: t.color, margin: 0 }}>{numFmt(t.credits!)}</p>
                   <p style={{ fontSize: '0.5rem', color: '#7BA8B2', margin: '1px 0 0' }}>Lumis</p>
-                  <p style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#112630', margin: '3px 0 0' }}>{t.priceLabel}</p>
+                  <p style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'var(--text-primary)', margin: '3px 0 0' }}>{t.priceLabel}</p>
                 </div>
               </button>
             )
@@ -157,8 +157,8 @@ function BuyModal({ currentTier, onClose, onSuccess }: {
         </div>
         {error && <p style={{ fontSize: '0.75rem', color: '#C62828', marginBottom: 10 }}>{error}</p>}
         <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={onClose} style={{ flex: 1, padding: 10, borderRadius: 8, border: '1.5px solid #D8E6EA', background: '#fff', fontSize: '0.875rem', color: '#4A7580', cursor: 'pointer', fontWeight: 500 }}>Cancelar</button>
-          <button onClick={handleBuy} disabled={!selected || loading} style={{ flex: 2, padding: 10, borderRadius: 8, border: 'none', background: selected && !loading ? '#008C94' : '#B8D0D5', color: '#fff', fontSize: '0.875rem', fontWeight: 600, cursor: selected && !loading ? 'pointer' : 'default', transition: 'background 0.12s' }}>
+          <button onClick={onClose} style={{ flex: 1, padding: 10, borderRadius: 8, border: '1.5px solid #D8E6EA', background: 'var(--surface)', fontSize: '0.875rem', color: 'var(--text-muted)', cursor: 'pointer', fontWeight: 500 }}>Cancelar</button>
+          <button onClick={handleBuy} disabled={!selected || loading} style={{ flex: 2, padding: 10, borderRadius: 8, border: 'none', background: selected && !loading ? 'var(--gold)' : 'var(--border-light)', color: 'var(--surface)', fontSize: '0.875rem', fontWeight: 600, cursor: selected && !loading ? 'pointer' : 'default', transition: 'background 0.12s' }}>
             {loading ? 'Processando…' : 'Confirmar'}
           </button>
         </div>
@@ -182,7 +182,7 @@ function LumisExplainer() {
   const ACTION_COSTS = [
     { icon: Brain, label: 'Mensagem para a Stella', cost: 9, color: '#6B4FA0' },
     { icon: Zap,   label: 'Extração de dica',        cost: 5, color: '#C97B20' },
-    { icon: Mic,   label: 'Transcrição de áudio',   cost: 2, color: '#008C94' },
+    { icon: Mic,   label: 'Transcrição de áudio',   cost: 2, color: 'var(--gold)' },
     { icon: Globe, label: 'Consulta de visto',       cost: 2, color: '#004A7C' },
   ]
 
@@ -203,13 +203,13 @@ function LumisExplainer() {
         }}
       >
         <div style={{ width: 28, height: 28, borderRadius: 8, background: '#E6F4F5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <Coins size={14} style={{ color: '#008C94' }} />
+          <Coins size={14} style={{ color: 'var(--gold)' }} />
         </div>
         <div style={{ flex: 1 }}>
-          <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#112630', margin: 0, lineHeight: 1.2 }}>
+          <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0, lineHeight: 1.2 }}>
             O que são Lumis?
           </p>
-          <p style={{ fontSize: '0.6875rem', color: '#4A7580', margin: '1px 0 0' }}>
+          <p style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', margin: '1px 0 0' }}>
             A moeda oficial da Bemgsy — toque para {open ? 'fechar' : 'entender'}
           </p>
         </div>
@@ -222,7 +222,7 @@ function LumisExplainer() {
 
           {/* Explicação lúdica */}
           <div style={{ padding: '12px 0 10px' }}>
-            <p style={{ fontSize: '0.8125rem', color: '#104C64', lineHeight: 1.65, margin: '0 0 8px', fontWeight: 300 }}>
+            <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', lineHeight: 1.65, margin: '0 0 8px', fontWeight: 300 }}>
               <strong style={{ fontWeight: 600 }}>Lumis</strong> é a moeda da <strong style={{ fontWeight: 600 }}>Bemgsy</strong> — cada ação no sistema debita Lumis do saldo da rede. Quando o saldo baixar, o admin recarrega.
             </p>
             <p style={{ fontSize: '0.75rem', color: '#7BA8B2', lineHeight: 1.55, margin: 0, fontWeight: 300 }}>
@@ -236,12 +236,12 @@ function LumisExplainer() {
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 12 }}>
             {ACTION_COSTS.map(({ icon: Icon, label, cost, color }) => (
-              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '7px 10px', background: '#fff', borderRadius: 8, border: '1px solid #E4EEF0' }}>
+              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '7px 10px', background: 'var(--surface)', borderRadius: 8, border: '1px solid #E4EEF0' }}>
                 <Icon size={11} style={{ color, flexShrink: 0 }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: '0.625rem', color: '#4A7580', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</p>
+                  <p style={{ fontSize: '0.625rem', color: 'var(--text-muted)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</p>
                 </div>
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#112630', flexShrink: 0 }}>{cost} lm</span>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-primary)', flexShrink: 0 }}>{cost} lm</span>
               </div>
             ))}
           </div>
@@ -258,8 +258,8 @@ function LumisExplainer() {
 
           {/* Como comprar */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 10px', background: '#E6F4F5', borderRadius: 8, border: '1px solid #B8E0E3' }}>
-            <Coins size={11} style={{ color: '#008C94', flexShrink: 0 }} />
-            <p style={{ fontSize: '0.75rem', color: '#006B72', margin: 0, fontWeight: 300 }}>
+            <Coins size={11} style={{ color: 'var(--gold)', flexShrink: 0 }} />
+            <p style={{ fontSize: '0.75rem', color: 'var(--gold-dim)', margin: 0, fontWeight: 300 }}>
               Cada agência recebe uma <strong style={{ fontWeight: 600 }}>cota mensal</strong> de Lumis. Se precisar de mais, compre top-up diretamente com a Bemgsy pelo botão abaixo.
             </p>
           </div>
@@ -267,7 +267,7 @@ function LumisExplainer() {
           {/* Fechar e não mostrar mais */}
           <button
             onClick={dismiss}
-            style={{ marginTop: 10, width: '100%', padding: '6px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.625rem', color: '#B8D0D5', textDecoration: 'underline' }}
+            style={{ marginTop: 10, width: '100%', padding: '6px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.625rem', color: 'var(--border-light)', textDecoration: 'underline' }}
           >
             Entendi — não mostrar mais
           </button>
@@ -319,7 +319,7 @@ function TabMyUsage() {
 
   const { totalThisMonth, prevMonthTotal, byAction, daily } = data
   const quotaPct      = quota ? Math.min(100, Math.round((quota.consumed / quota.quota) * 100)) : 0
-  const quotaBarColor = quotaPct > 85 ? '#C62828' : quotaPct > 65 ? '#C97B20' : '#008C94'
+  const quotaBarColor = quotaPct > 85 ? '#C62828' : quotaPct > 65 ? '#C97B20' : 'var(--gold)'
   const recentDays = [...daily].reverse().slice(-14)
   const avgDay = daily.slice(0, 7).length > 0 ? Math.round(daily.slice(0, 7).reduce((s, d) => s + d.credits, 0) / daily.slice(0, 7).length) : 0
   const projectedMonth = avgDay * 30
@@ -343,9 +343,9 @@ function TabMyUsage() {
 
       {/* Cota mensal */}
       {quota && (
-        <div style={{ background: '#fff', border: '1px solid #E4EEF0', borderRadius: 14, overflow: 'hidden' }}>
+        <div style={{ background: 'var(--surface)', border: '1px solid #E4EEF0', borderRadius: 14, overflow: 'hidden' }}>
           <div style={{ padding: '10px 16px', borderBottom: '1px solid #F0F5F7', background: '#F8FBFC', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Coins size={12} style={{ color: '#008C94' }} />
+            <Coins size={12} style={{ color: 'var(--gold)' }} />
             <p style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#7BA8B2', margin: 0, flex: 1 }}>
               Cota mensal — {new Date(quota.period + 'T12:00:00').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
             </p>
@@ -356,7 +356,7 @@ function TabMyUsage() {
             {/* Barra de consumo */}
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                <span style={{ fontSize: '0.75rem', color: '#112630', fontWeight: 600 }}>{quota.consumed} lm usados</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-primary)', fontWeight: 600 }}>{quota.consumed} lm usados</span>
                 <span style={{ fontSize: '0.75rem', color: '#7BA8B2' }}>cota: {quota.quota} lm</span>
               </div>
               <div style={{ height: 6, borderRadius: 3, background: '#EDF4F6', overflow: 'hidden' }}>
@@ -371,8 +371,8 @@ function TabMyUsage() {
                 número e um deles ficava desatualizado após uma compra. */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6 }}>
               {[
-                { label: 'restantes', value: quota.remaining, color: quota.remaining > 0 ? '#008C94' : '#C62828', bg: quota.remaining > 0 ? '#E6F4F5' : '#FFEBEE' },
-                { label: 'pool central', value: quota.pool, color: quota.pool > 0 ? '#4A7580' : '#B8D0D5', bg: quota.pool > 0 ? '#EDF4F6' : '#F8FBFC' },
+                { label: 'restantes', value: quota.remaining, color: quota.remaining > 0 ? 'var(--gold)' : '#C62828', bg: quota.remaining > 0 ? '#E6F4F5' : '#FFEBEE' },
+                { label: 'pool central', value: quota.pool, color: quota.pool > 0 ? 'var(--text-muted)' : 'var(--border-light)', bg: quota.pool > 0 ? '#EDF4F6' : '#F8FBFC' },
               ].map(({ label, value, color, bg }) => (
                 <div key={label} style={{ padding: '8px 10px', background: bg, borderRadius: 8, textAlign: 'center' }}>
                   <p style={{ fontSize: '1.0625rem', fontWeight: 800, color, margin: 0, lineHeight: 1 }}>{value}</p>
@@ -389,7 +389,7 @@ function TabMyUsage() {
               <div style={{ display: 'flex', gap: 8 }}>
                 <button
                   onClick={() => setShowReturn(r => !r)}
-                  style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px 12px', borderRadius: 9, border: '1.5px solid #D8E6EA', background: showReturn ? '#EDF4F6' : '#fff', color: '#4A7580', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}
+                  style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px 12px', borderRadius: 9, border: '1.5px solid #D8E6EA', background: showReturn ? '#EDF4F6' : 'var(--surface)', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}
                 >
                   <ArrowRightLeft size={12} />
                   Devolver ao pool
@@ -404,12 +404,12 @@ function TabMyUsage() {
                 <input
                   type="number" value={returnAmt} onChange={e => setReturnAmt(e.target.value)}
                   max={quota.remaining} min={1} placeholder={`máx ${quota.remaining} lm`}
-                  style={{ flex: 1, padding: '6px 8px', borderRadius: 7, border: '1.5px solid #D8E6EA', fontSize: '0.875rem', color: '#112630', outline: 'none' }}
+                  style={{ flex: 1, padding: '6px 8px', borderRadius: 7, border: '1.5px solid #D8E6EA', fontSize: '0.875rem', color: 'var(--text-primary)', outline: 'none' }}
                 />
                 <span style={{ fontSize: '0.6875rem', color: '#7BA8B2', flexShrink: 0 }}>lm ao pool</span>
                 <button
                   onClick={handleReturn} disabled={returning || !returnAmt}
-                  style={{ padding: '6px 12px', borderRadius: 7, border: 'none', background: '#008C94', color: '#fff', fontSize: '0.6875rem', fontWeight: 600, cursor: 'pointer', opacity: returning ? 0.6 : 1 }}
+                  style={{ padding: '6px 12px', borderRadius: 7, border: 'none', background: 'var(--gold)', color: 'var(--surface)', fontSize: '0.6875rem', fontWeight: 600, cursor: 'pointer', opacity: returning ? 0.6 : 1 }}
                 >
                   {returning ? '…' : 'OK'}
                 </button>
@@ -422,7 +422,7 @@ function TabMyUsage() {
               </p>
             )}
 
-            <p style={{ fontSize: '0.5625rem', color: '#B8D0D5', margin: 0, lineHeight: 1.5 }}>
+            <p style={{ fontSize: '0.5625rem', color: 'var(--border-light)', margin: 0, lineHeight: 1.5 }}>
               Top-up: R$0,012/lm · 1 lm = R$0,006 custo real · Ciclo: 1 ao último dia do mês
             </p>
           </div>
@@ -431,9 +431,9 @@ function TabMyUsage() {
 
       {/* Stat cards */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-        <div style={{ background: '#fff', border: '1px solid #E4EEF0', borderRadius: 14, padding: '16px 18px' }}>
+        <div style={{ background: 'var(--surface)', border: '1px solid #E4EEF0', borderRadius: 14, padding: '16px 18px' }}>
           <p style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#7BA8B2', margin: '0 0 8px' }}>Este mês</p>
-          <p style={{ fontSize: '2rem', fontWeight: 800, color: '#112630', margin: 0, letterSpacing: '-0.03em', lineHeight: 1 }}>
+          <p style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.03em', lineHeight: 1 }}>
             {numFmt(totalThisMonth)}<span style={{ fontSize: '0.75rem', fontWeight: 500, color: '#7BA8B2', marginLeft: 4 }}>lm</span>
           </p>
           {diffPct !== null && (
@@ -442,12 +442,12 @@ function TabMyUsage() {
               <span style={{ fontSize: '0.6875rem', color: trendColor }}>{diffPct}% vs mês anterior</span>
             </div>
           )}
-          {diffPct === null && <p style={{ fontSize: '0.6875rem', color: '#B8D0D5', marginTop: 6, margin: '6px 0 0' }}>primeiro mês</p>}
+          {diffPct === null && <p style={{ fontSize: '0.6875rem', color: 'var(--border-light)', marginTop: 6, margin: '6px 0 0' }}>primeiro mês</p>}
         </div>
 
         <div style={{ background: '#F8FBFC', border: '1px solid #E4EEF0', borderRadius: 14, padding: '16px 18px' }}>
           <p style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#7BA8B2', margin: '0 0 8px' }}>Projeção mensal</p>
-          <p style={{ fontSize: '2rem', fontWeight: 800, color: '#112630', margin: 0, letterSpacing: '-0.03em', lineHeight: 1 }}>
+          <p style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.03em', lineHeight: 1 }}>
             {projectedMonth > 0 ? numFmt(projectedMonth) : '—'}
             {projectedMonth > 0 && <span style={{ fontSize: '0.75rem', fontWeight: 500, color: '#7BA8B2', marginLeft: 4 }}>lm</span>}
           </p>
@@ -459,7 +459,7 @@ function TabMyUsage() {
 
       {/* Sparkline */}
       {recentDays.length > 1 && (
-        <div style={{ background: '#fff', border: '1px solid #E4EEF0', borderRadius: 14, padding: '14px 16px' }}>
+        <div style={{ background: 'var(--surface)', border: '1px solid #E4EEF0', borderRadius: 14, padding: '14px 16px' }}>
           <p style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#7BA8B2', margin: '0 0 10px' }}>Últimos 14 dias</p>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 32 }}>
             {recentDays.map((d, i) => {
@@ -467,28 +467,28 @@ function TabMyUsage() {
               const isLast = i === recentDays.length - 1
               return (
                 <div key={d.day} title={`${new Date(d.day).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}: ${d.credits} lm`}
-                  style={{ flex: 1, height: h, borderRadius: 3, background: isLast ? '#008C94' : '#B8D0D5', transition: 'height 0.3s ease' }} />
+                  style={{ flex: 1, height: h, borderRadius: 3, background: isLast ? 'var(--gold)' : 'var(--border-light)', transition: 'height 0.3s ease' }} />
               )
             })}
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5 }}>
-            <span style={{ fontSize: '0.5rem', color: '#B8D0D5' }}>
+            <span style={{ fontSize: '0.5rem', color: 'var(--border-light)' }}>
               {recentDays[0] ? new Date(recentDays[0].day).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) : ''}
             </span>
-            <span style={{ fontSize: '0.5rem', color: '#008C94', fontWeight: 700 }}>hoje</span>
+            <span style={{ fontSize: '0.5rem', color: 'var(--gold)', fontWeight: 700 }}>hoje</span>
           </div>
         </div>
       )}
 
       {/* By action */}
       {byAction.length > 0 ? (
-        <div style={{ background: '#fff', border: '1px solid #E4EEF0', borderRadius: 14, overflow: 'hidden' }}>
+        <div style={{ background: 'var(--surface)', border: '1px solid #E4EEF0', borderRadius: 14, overflow: 'hidden' }}>
           <div style={{ padding: '10px 16px', borderBottom: '1px solid #F0F5F7', background: '#F8FBFC' }}>
             <p style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#7BA8B2', margin: 0 }}>Por tipo de uso</p>
           </div>
           <div>
             {byAction.map((row, i) => {
-              const meta = ACTION_META[row.action_type] ?? { label: row.action_type, icon: Zap, color: '#4A7580' }
+              const meta = ACTION_META[row.action_type] ?? { label: row.action_type, icon: Zap, color: 'var(--text-muted)' }
               const Icon = meta.icon
               const pct = totalThisMonth > 0 ? Math.round(row.credits_used / totalThisMonth * 100) : 0
               const cost = CREDIT_COSTS[row.action_type] ?? 1
@@ -496,15 +496,15 @@ function TabMyUsage() {
                 <div key={i} style={{ padding: '10px 16px', borderBottom: i < byAction.length - 1 ? '1px solid #F0F5F7' : 'none' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
                     <Icon size={12} style={{ color: meta.color, flexShrink: 0 }} />
-                    <span style={{ flex: 1, fontSize: '0.8125rem', color: '#112630' }}>{meta.label}</span>
-                    <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#112630' }}>{numFmt(row.credits_used)} lm</span>
+                    <span style={{ flex: 1, fontSize: '0.8125rem', color: 'var(--text-primary)' }}>{meta.label}</span>
+                    <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-primary)' }}>{numFmt(row.credits_used)} lm</span>
                     <span style={{ fontSize: '0.6875rem', color: '#7BA8B2', width: 28, textAlign: 'right' }}>{pct}%</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div style={{ flex: 1, height: 4, borderRadius: 2, background: '#EDF4F6', overflow: 'hidden' }}>
                       <div style={{ height: '100%', width: `${pct}%`, background: meta.color, borderRadius: 2, transition: 'width 0.4s ease' }} />
                     </div>
-                    <span style={{ fontSize: '0.5625rem', color: '#B8D0D5', flexShrink: 0, width: 60, textAlign: 'right' }}>
+                    <span style={{ fontSize: '0.5625rem', color: 'var(--border-light)', flexShrink: 0, width: 60, textAlign: 'right' }}>
                       {Math.round(row.credits_used / cost)} {cost === 2 ? 'consultas' : cost === 10 ? 'gravações' : 'ações'}
                     </span>
                   </div>
@@ -515,7 +515,7 @@ function TabMyUsage() {
         </div>
       ) : (
         <div style={{ padding: '24px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F8FBFC', borderRadius: 14, border: '1px dashed #D8E6EA' }}>
-          <p style={{ fontSize: '0.8125rem', color: '#B8D0D5', textAlign: 'center', margin: 0 }}>Nenhum consumo registrado este mês.</p>
+          <p style={{ fontSize: '0.8125rem', color: 'var(--border-light)', textAlign: 'center', margin: 0 }}>Nenhum consumo registrado este mês.</p>
         </div>
       )}
     </div>
@@ -537,13 +537,13 @@ function TabInfra() {
               {group.services.map(s => {
                 const Icon = s.icon
                 return (
-                  <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', background: '#fff', border: '1px solid #E4EEF0', borderRadius: 12, opacity: s.soon ? 0.65 : 1 }}>
+                  <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', background: 'var(--surface)', border: '1px solid #E4EEF0', borderRadius: 12, opacity: s.soon ? 0.65 : 1 }}>
                     <div style={{ width: 30, height: 30, borderRadius: 8, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <Icon size={13} style={{ color: s.color }} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#112630' }}>{s.name}</span>
+                        <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)' }}>{s.name}</span>
                         <span style={{ fontSize: '0.5rem', fontWeight: 600, background: s.tierBg, color: s.tierColor, borderRadius: 20, padding: '1px 6px' }}>{s.tier}</span>
                         {s.soon && <span style={{ fontSize: '0.5rem', color: '#7BA8B2', fontStyle: 'italic' }}>em breve</span>}
                       </div>
@@ -558,9 +558,9 @@ function TabInfra() {
 
         <div style={{ padding: '10px 14px', background: '#F8FBFC', borderRadius: 10, border: '1px solid #E4EEF0' }}>
           <p style={{ fontSize: '0.6875rem', color: '#7BA8B2', lineHeight: 1.6, margin: 0 }}>
-            <strong style={{ color: '#112630' }}>Plano fixo</strong> — custo mensal independente do uso ·{' '}
-            <strong style={{ color: '#112630' }}>Por consumo</strong> — proporcional ao volume ·{' '}
-            <strong style={{ color: '#112630' }}>Gratuito</strong> — sem custo nos limites atuais
+            <strong style={{ color: 'var(--text-primary)' }}>Plano fixo</strong> — custo mensal independente do uso ·{' '}
+            <strong style={{ color: 'var(--text-primary)' }}>Por consumo</strong> — proporcional ao volume ·{' '}
+            <strong style={{ color: 'var(--text-primary)' }}>Gratuito</strong> — sem custo nos limites atuais
           </p>
         </div>
       </div>
@@ -617,7 +617,7 @@ function LumiDistribution({
   const quotaEach = distribution?.quotaEach ?? (agencyCount > 0 && equalTotal > 0 ? Math.floor(equalTotal / agencyCount) : 0)
 
   return (
-    <div style={{ background: '#fff', border: '1px solid #E4EEF0', borderRadius: 14, overflow: 'hidden' }}>
+    <div style={{ background: 'var(--surface)', border: '1px solid #E4EEF0', borderRadius: 14, overflow: 'hidden' }}>
       {/* Header */}
       <div style={{ padding: '10px 16px', borderBottom: '1px solid #F0F5F7', background: '#F8FBFC', display: 'flex', alignItems: 'center', gap: 6 }}>
         <Scale size={12} style={{ color: '#6B4FA0' }} />
@@ -642,11 +642,11 @@ function LumiDistribution({
                 style={{
                   flex: 1, padding: '9px 12px', borderRadius: 10, cursor: 'pointer', textAlign: 'left',
                   border: mode === m.id ? '2px solid #6B4FA0' : '1.5px solid #D8E6EA',
-                  background: mode === m.id ? '#F3EEF9' : '#fff',
+                  background: mode === m.id ? '#F3EEF9' : 'var(--surface)',
                   transition: 'all 0.12s',
                 }}
               >
-                <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#112630', margin: 0 }}>{m.label}</p>
+                <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{m.label}</p>
                 <p style={{ fontSize: '0.5625rem', color: '#7BA8B2', margin: '2px 0 0' }}>{m.desc}</p>
               </button>
             ))}
@@ -666,19 +666,19 @@ function LumiDistribution({
                   value={equalTotal}
                   onChange={e => setEqualTotal(Number(e.target.value))}
                   min={0}
-                  style={{ flex: 1, padding: '7px 10px', borderRadius: 8, border: '1.5px solid #D8E6EA', fontSize: '0.875rem', color: '#112630', outline: 'none' }}
+                  style={{ flex: 1, padding: '7px 10px', borderRadius: 8, border: '1.5px solid #D8E6EA', fontSize: '0.875rem', color: 'var(--text-primary)', outline: 'none' }}
                 />
                 <span style={{ fontSize: '0.75rem', color: '#7BA8B2', whiteSpace: 'nowrap' }}>lm</span>
                 <button
                   onClick={handleDistribute}
                   disabled={saving || equalTotal <= 0}
-                  style={{ padding: '7px 14px', borderRadius: 8, border: 'none', background: '#6B4FA0', color: '#fff', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', opacity: saving ? 0.6 : 1 }}
+                  style={{ padding: '7px 14px', borderRadius: 8, border: 'none', background: '#6B4FA0', color: 'var(--surface)', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', opacity: saving ? 0.6 : 1 }}
                 >
                   Distribuir
                 </button>
               </div>
               {quotaEach > 0 && (
-                <p style={{ fontSize: '0.6875rem', color: '#4A7580', margin: '5px 0 0' }}>
+                <p style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', margin: '5px 0 0' }}>
                   → <strong>{quotaEach} lm</strong> por agência
                 </p>
               )}
@@ -697,11 +697,11 @@ function LumiDistribution({
                       <div style={{ padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#112630', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.agency}</span>
+                            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.agency}</span>
                             {over && <span style={{ fontSize: '0.5rem', color: '#C62828', background: '#FFEBEE', borderRadius: 20, padding: '1px 5px', flexShrink: 0 }}>excedeu</span>}
                           </div>
                           <div style={{ height: 4, borderRadius: 2, background: '#EDF4F6', overflow: 'hidden' }}>
-                            <div style={{ height: '100%', width: `${pct}%`, background: over ? '#C62828' : pct > 75 ? '#C97B20' : '#008C94', borderRadius: 2, transition: 'width 0.3s' }} />
+                            <div style={{ height: '100%', width: `${pct}%`, background: over ? '#C62828' : pct > 75 ? '#C97B20' : 'var(--gold)', borderRadius: 2, transition: 'width 0.3s' }} />
                           </div>
                           <p style={{ fontSize: '0.5625rem', color: '#7BA8B2', margin: '3px 0 0' }}>
                             {numFmt(row.usedThisMonth)} usados {quotaEach > 0 ? `· quota ${numFmt(quotaEach)} lm` : ''}
@@ -713,8 +713,8 @@ function LumiDistribution({
                             title="Contribuir saldo não usado para o pool"
                             style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 8px', borderRadius: 7, border: '1px solid #D8E6EA', background: '#F8FBFC', cursor: 'pointer', flexShrink: 0 }}
                           >
-                            <ArrowRightLeft size={10} style={{ color: '#4A7580' }} />
-                            <span style={{ fontSize: '0.5625rem', color: '#4A7580', fontWeight: 600 }}>Contribuir</span>
+                            <ArrowRightLeft size={10} style={{ color: 'var(--text-muted)' }} />
+                            <span style={{ fontSize: '0.5625rem', color: 'var(--text-muted)', fontWeight: 600 }}>Contribuir</span>
                           </button>
                         )}
                       </div>
@@ -728,13 +728,13 @@ function LumiDistribution({
                             max={remaining}
                             min={1}
                             placeholder={`máx ${remaining} lm`}
-                            style={{ flex: 1, padding: '5px 8px', borderRadius: 7, border: '1.5px solid #D8E6EA', fontSize: '0.75rem', color: '#112630', outline: 'none' }}
+                            style={{ flex: 1, padding: '5px 8px', borderRadius: 7, border: '1.5px solid #D8E6EA', fontSize: '0.75rem', color: 'var(--text-primary)', outline: 'none' }}
                           />
                           <span style={{ fontSize: '0.6875rem', color: '#7BA8B2', flexShrink: 0 }}>lm ao pool</span>
                           <button
                             onClick={() => handleContribute(row.agency)}
                             disabled={saving || !contribAmt}
-                            style={{ padding: '5px 10px', borderRadius: 7, border: 'none', background: '#008C94', color: '#fff', fontSize: '0.6875rem', fontWeight: 600, cursor: 'pointer', opacity: saving ? 0.6 : 1 }}
+                            style={{ padding: '5px 10px', borderRadius: 7, border: 'none', background: 'var(--gold)', color: 'var(--surface)', fontSize: '0.6875rem', fontWeight: 600, cursor: 'pointer', opacity: saving ? 0.6 : 1 }}
                           >
                             OK
                           </button>
@@ -751,7 +751,7 @@ function LumiDistribution({
         {/* Free mode — just explain */}
         {mode === 'free' && (
           <p style={{ fontSize: '0.75rem', color: '#7BA8B2', lineHeight: 1.6, margin: 0 }}>
-            No modo <strong style={{ color: '#112630' }}>Livre</strong>, todos os advisors compartilham o saldo comum sem restrição por agência — quem usar primeiro consome. Para definir quotas por agência, mude para <strong style={{ color: '#6B4FA0' }}>Igualitário</strong>.
+            No modo <strong style={{ color: 'var(--text-primary)' }}>Livre</strong>, todos os advisors compartilham o saldo comum sem restrição por agência — quem usar primeiro consome. Para definir quotas por agência, mude para <strong style={{ color: '#6B4FA0' }}>Igualitário</strong>.
           </p>
         )}
       </div>
@@ -786,7 +786,7 @@ function TabNetwork() {
   // admin-only and independent of agency — they always render.
   let tierDef, avgPerDay = 0, daysLeft: number | null = null
   let alertLevel: 'critical' | 'low' | 'medium' | 'ok' = 'ok'
-  let pct = 100, barColor = '#008C94'
+  let pct = 100, barColor = 'var(--gold)'
 
   if (balance) {
     tierDef = TIERS.find(t => t.id === balance.tier) ?? TIERS[0]
@@ -795,7 +795,7 @@ function TabNetwork() {
     daysLeft = avgPerDay > 0 && balance.balance > 0 ? Math.round(balance.balance / avgPerDay) : null
     alertLevel = balance.balance < 0 ? 'critical' : tierDef.credits && balance.balance < tierDef.credits * 0.15 ? 'low' : tierDef.credits && balance.balance < tierDef.credits * 0.40 ? 'medium' : 'ok'
     pct = tierDef.credits ? Math.max(0, Math.min(100, (balance.balance / tierDef.credits) * 100)) : 100
-    barColor = pct > 40 ? '#008C94' : pct > 15 ? '#C97B20' : '#C62828'
+    barColor = pct > 40 ? 'var(--gold)' : pct > 15 ? '#C97B20' : '#C62828'
   }
 
   const alertConf = {
@@ -816,14 +816,14 @@ function TabNetwork() {
         {!balance && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 14px', background: '#F0F5F7', borderRadius: 9, border: '1px solid #E4EEF0', flexShrink: 0 }}>
             <Users size={13} style={{ color: '#7BA8B2', flexShrink: 0 }} />
-            <p style={{ fontSize: '0.75rem', color: '#4A7580', margin: 0 }}>Este admin não está vinculado a uma agência — sem saldo individual.</p>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>Este admin não está vinculado a uma agência — sem saldo individual.</p>
           </div>
         )}
 
         {balance && tierDef && (
           <>
             {/* Balance hero */}
-            <div style={{ background: '#112630', borderRadius: 16, padding: '18px 20px', flexShrink: 0 }}>
+            <div style={{ background: 'var(--text-primary)', borderRadius: 16, padding: '18px 20px', flexShrink: 0 }}>
               {bought && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(0,140,148,0.2)', borderRadius: 8, padding: '6px 10px', marginBottom: 10 }}>
                   <CheckCircle2 size={12} style={{ color: '#4DD0E1' }} />
@@ -835,14 +835,14 @@ function TabNetwork() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                     <Coins size={13} style={{ color: '#4DD0E1' }} />
                     <span style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#4DD0E1' }}>Saldo da rede</span>
-                    <span style={{ fontSize: '0.5rem', fontWeight: 700, color: '#112630', background: '#4DD0E1', borderRadius: 20, padding: '1px 7px' }}>{tierDef.name}</span>
+                    <span style={{ fontSize: '0.5rem', fontWeight: 700, color: 'var(--text-primary)', background: '#4DD0E1', borderRadius: 20, padding: '1px 7px' }}>{tierDef.name}</span>
                     {tierDef.priceReais && (
                       <span style={{ fontSize: '0.5rem', fontWeight: 600, color: '#7BA8B2', background: 'rgba(255,255,255,0.08)', borderRadius: 20, padding: '1px 7px' }}>
                         R${tierDef.priceReais}/mês
                       </span>
                     )}
                   </div>
-                  <p style={{ fontSize: '2.5rem', fontWeight: 800, color: balance.balance < 0 ? '#F48FB1' : '#fff', margin: 0, letterSpacing: '-0.04em', lineHeight: 1 }}>
+                  <p style={{ fontSize: '2.5rem', fontWeight: 800, color: balance.balance < 0 ? '#F48FB1' : 'var(--surface)', margin: 0, letterSpacing: '-0.04em', lineHeight: 1 }}>
                     {numFmt(balance.balance)}<span style={{ fontSize: '0.875rem', fontWeight: 400, color: '#7BA8B2', marginLeft: 5 }}>Lumis</span>
                   </p>
                   {tierDef.credits && (
@@ -850,13 +850,13 @@ function TabNetwork() {
                       <div style={{ height: 5, borderRadius: 3, background: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}>
                         <div style={{ height: '100%', width: `${pct}%`, background: barColor, borderRadius: 3, transition: 'width 0.5s ease' }} />
                       </div>
-                      <p style={{ fontSize: '0.5625rem', color: '#4A7580', marginTop: 4, margin: '4px 0 0' }}>
+                      <p style={{ fontSize: '0.5625rem', color: 'var(--text-muted)', marginTop: 4, margin: '4px 0 0' }}>
                         {numFmt(Math.max(0, balance.balance))} de {numFmt(tierDef.credits)} Lumis disponíveis
                       </p>
                     </div>
                   )}
                 </div>
-                <button onClick={() => setShowBuy(true)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 9, border: 'none', background: '#008C94', color: '#fff', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', flexShrink: 0, marginLeft: 12 }}>
+                <button onClick={() => setShowBuy(true)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 9, border: 'none', background: 'var(--gold)', color: 'var(--surface)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', flexShrink: 0, marginLeft: 12 }}>
                   + Adicionar<ChevronRight size={11} />
                 </button>
               </div>
@@ -877,8 +877,8 @@ function TabNetwork() {
                 { label: 'Ritmo diário', value: avgPerDay > 0 ? `${avgPerDay} lm/dia` : '—' },
                 { label: 'Saldo estimado', value: daysLeft ? `~${daysLeft} dias` : '—' },
               ].map(({ label, value }) => (
-                <div key={label} style={{ background: '#fff', border: '1px solid #E4EEF0', borderRadius: 12, padding: '12px 14px' }}>
-                  <p style={{ fontSize: '0.9375rem', fontWeight: 800, color: '#112630', margin: 0, lineHeight: 1 }}>{value}</p>
+                <div key={label} style={{ background: 'var(--surface)', border: '1px solid #E4EEF0', borderRadius: 12, padding: '12px 14px' }}>
+                  <p style={{ fontSize: '0.9375rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0, lineHeight: 1 }}>{value}</p>
                   <p style={{ fontSize: '0.5625rem', color: '#7BA8B2', margin: '5px 0 0' }}>{label}</p>
                 </div>
               ))}
@@ -888,27 +888,27 @@ function TabNetwork() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 10 }}>
 
               {/* By advisor */}
-              <div style={{ background: '#fff', border: '1px solid #E4EEF0', borderRadius: 14, overflow: 'hidden' }}>
+              <div style={{ background: 'var(--surface)', border: '1px solid #E4EEF0', borderRadius: 14, overflow: 'hidden' }}>
                 <div style={{ padding: '9px 14px', borderBottom: '1px solid #F0F5F7', background: '#F8FBFC', display: 'flex', alignItems: 'center', gap: 5 }}>
                   <Users size={11} style={{ color: '#7BA8B2' }} />
                   <p style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#7BA8B2', margin: 0 }}>Por advisor — este mês</p>
                 </div>
                 <div>
                   {!byUser || byUser.length === 0 ? (
-                    <p style={{ padding: '16px', fontSize: '0.75rem', color: '#B8D0D5' }}>Nenhum consumo registrado.</p>
+                    <p style={{ padding: '16px', fontSize: '0.75rem', color: 'var(--border-light)' }}>Nenhum consumo registrado.</p>
                   ) : byUser.map((row, i) => {
                     const maxCredits = byUser[0]?.credits_used ?? 1
                     const w = Math.round((row.credits_used / maxCredits) * 100)
                     return (
                       <div key={i} style={{ padding: '9px 14px', borderBottom: i < byUser.length - 1 ? '1px solid #F8FBFC' : 'none' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                          <span style={{ flex: 1, fontSize: '0.8125rem', color: '#112630', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          <span style={{ flex: 1, fontSize: '0.8125rem', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {row.advisor_name ?? row.user_email}
                           </span>
-                          <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#112630', flexShrink: 0 }}>{numFmt(row.credits_used)} lm</span>
+                          <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-primary)', flexShrink: 0 }}>{numFmt(row.credits_used)} lm</span>
                         </div>
                         <div style={{ height: 3, borderRadius: 2, background: '#EDF4F6', overflow: 'hidden' }}>
-                          <div style={{ height: '100%', width: `${w}%`, background: '#008C94', borderRadius: 2 }} />
+                          <div style={{ height: '100%', width: `${w}%`, background: 'var(--gold)', borderRadius: 2 }} />
                         </div>
                       </div>
                     )
@@ -924,19 +924,19 @@ function TabNetwork() {
                     const labels: Record<string, string> = { chat: 'Msg Flow', review_extraction: 'Ext. dica', transcription: 'Transcrição', travel_docs: 'Consulta visto', scan_card: 'Scan cartão' }
                     return (
                       <div key={action} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
-                        <span style={{ fontSize: '0.6875rem', color: '#4A7580' }}>{labels[action] ?? action}</span>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#112630' }}>{cost} lm</span>
+                        <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>{labels[action] ?? action}</span>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-primary)' }}>{cost} lm</span>
                       </div>
                     )
                   })}
                 </div>
 
                 {purchases && purchases.length > 0 && (
-                  <div style={{ background: '#fff', border: '1px solid #E4EEF0', borderRadius: 14, padding: '12px 14px', flex: 1 }}>
+                  <div style={{ background: 'var(--surface)', border: '1px solid #E4EEF0', borderRadius: 14, padding: '12px 14px', flex: 1 }}>
                     <p style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#7BA8B2', margin: '0 0 8px' }}>Recargas</p>
                     {purchases.map((p, i) => (
                       <div key={i} style={{ marginBottom: i < purchases.length - 1 ? 7 : 0 }}>
-                        <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#112630', margin: 0 }}>+{numFmt(p.amount)} lm</p>
+                        <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>+{numFmt(p.amount)} lm</p>
                         <p style={{ fontSize: '0.5625rem', color: '#7BA8B2', margin: '1px 0 0' }}>
                           {p.meta?.tier} · {new Date(p.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
                         </p>
@@ -983,7 +983,7 @@ export default function BillingView({ userRole }: { userRole: string }) {
       {/* Header */}
       <div style={{ marginBottom: 14, flexShrink: 0 }}>
         <p style={{ fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#7BA8B2', margin: '0 0 2px' }}>Infraestrutura</p>
-        <h1 style={{ fontSize: '1.0625rem', fontWeight: 800, color: '#112630', letterSpacing: '-0.02em', margin: 0 }}>Serviços & Custos</h1>
+        <h1 style={{ fontSize: '1.0625rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em', margin: 0 }}>Serviços & Custos</h1>
       </div>
 
       {/* Tab bar */}
@@ -992,7 +992,7 @@ export default function BillingView({ userRole }: { userRole: string }) {
           const Icon = t.icon
           const active = tab === t.id
           return (
-            <button key={t.id} onClick={() => setTab(t.id)} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '7px 10px', borderRadius: 8, border: 'none', cursor: 'pointer', background: active ? '#fff' : 'transparent', color: active ? '#112630' : '#7BA8B2', fontWeight: active ? 600 : 500, fontSize: '0.75rem', boxShadow: active ? '0 1px 4px rgba(0,0,0,0.08)' : 'none', transition: 'all 0.15s' }}>
+            <button key={t.id} onClick={() => setTab(t.id)} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '7px 10px', borderRadius: 8, border: 'none', cursor: 'pointer', background: active ? 'var(--surface)' : 'transparent', color: active ? 'var(--text-primary)' : '#7BA8B2', fontWeight: active ? 600 : 500, fontSize: '0.75rem', boxShadow: active ? '0 1px 4px rgba(0,0,0,0.08)' : 'none', transition: 'all 0.15s' }}>
               <Icon size={12} />
               {t.label}
             </button>
