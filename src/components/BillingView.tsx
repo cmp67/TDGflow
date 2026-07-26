@@ -62,12 +62,12 @@ const SERVICE_GROUPS: ServiceGroup[] = [
   {
     label: 'Inteligências Artificiais',
     services: [
-      { id: 'flow-ai', name: 'TDG Flow', icon: Brain, color: '#6B4FA0', bg: '#F3EEF9',
+      { id: 'flow-ai', name: 'TDG Flow', icon: Brain, color: '#1565C0', bg: '#E3F2FD',
         what: 'Assistente inteligente — respostas, sugestões e extração de insights',
         tier: 'Por consumo', tierColor: '#C97B20', tierBg: '#FEF3E2' },
       { id: 'transcription', name: 'Transcrição de Voz', icon: Mic, color: 'var(--gold)', bg: '#E6F4F5',
         what: 'Converte gravações em texto com alta precisão',
-        tier: 'Plano gratuito', tierColor: '#2E7D32', tierBg: '#E8F5E9' },
+        tier: 'Plano gratuito', tierColor: 'var(--success)', tierBg: '#E8F5E9' },
       { id: 'travel-ai', name: 'Requisitos de Viagem', icon: Globe, color: '#004A7C', bg: '#E8F1F8',
         what: 'Vistos, ETAs e condições de entrada em tempo real',
         tier: 'Por consumo', tierColor: '#C97B20', tierBg: '#FEF3E2' },
@@ -98,7 +98,7 @@ const SERVICE_GROUPS: ServiceGroup[] = [
 ]
 
 const ACTION_META: Record<string, { label: string; icon: React.ElementType; color: string }> = {
-  chat:              { label: 'Mensagens Flow',    icon: Brain,  color: '#6B4FA0' },
+  chat:              { label: 'Mensagens Flow',    icon: Brain,  color: '#1565C0' },
   review_extraction: { label: 'Extração de dicas', icon: Zap,    color: '#C97B20' },
   transcription:     { label: 'Transcrições',       icon: Mic,    color: 'var(--gold)' },
   travel_docs:       { label: 'Consultas de visto', icon: Globe,  color: '#004A7C' },
@@ -138,7 +138,7 @@ function BuyModal({ currentTier, onClose, onSuccess }: {
             const active = selected === t.id
             const current = t.id === currentTier
             return (
-              <button key={t.id} onClick={() => setSelected(t.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 10, cursor: 'pointer', textAlign: 'left', border: active ? `2px solid ${t.color}` : '1.5px solid #D8E6EA', background: active ? t.bg : 'var(--surface)', transition: 'all 0.12s' }}>
+              <button key={t.id} onClick={() => setSelected(t.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 10, cursor: 'pointer', textAlign: 'left', border: active ? `2px solid ${t.color}` : '1.5px solid #D8E6EA', background: active ? t.bg : 'var(--surface)', transition: 'all 0.12s var(--ease-smooth)' }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>{t.name}</span>
@@ -155,10 +155,10 @@ function BuyModal({ currentTier, onClose, onSuccess }: {
             )
           })}
         </div>
-        {error && <p style={{ fontSize: '0.75rem', color: '#C62828', marginBottom: 10 }}>{error}</p>}
+        {error && <p style={{ fontSize: '0.75rem', color: 'var(--error)', marginBottom: 10 }}>{error}</p>}
         <div style={{ display: 'flex', gap: 8 }}>
           <button onClick={onClose} style={{ flex: 1, padding: 10, borderRadius: 8, border: '1.5px solid #D8E6EA', background: 'var(--surface)', fontSize: '0.875rem', color: 'var(--text-muted)', cursor: 'pointer', fontWeight: 500 }}>Cancelar</button>
-          <button onClick={handleBuy} disabled={!selected || loading} style={{ flex: 2, padding: 10, borderRadius: 8, border: 'none', background: selected && !loading ? 'var(--gold)' : 'var(--border-light)', color: 'var(--surface)', fontSize: '0.875rem', fontWeight: 600, cursor: selected && !loading ? 'pointer' : 'default', transition: 'background 0.12s' }}>
+          <button onClick={handleBuy} disabled={!selected || loading} style={{ flex: 2, padding: 10, borderRadius: 8, border: 'none', background: selected && !loading ? 'var(--gold)' : 'var(--border-light)', color: 'var(--surface)', fontSize: '0.875rem', fontWeight: 600, cursor: selected && !loading ? 'pointer' : 'default', transition: 'background 0.12s var(--ease-smooth)' }}>
             {loading ? 'Processando…' : 'Confirmar'}
           </button>
         </div>
@@ -180,7 +180,7 @@ function LumisExplainer() {
   }
 
   const ACTION_COSTS = [
-    { icon: Brain, label: 'Mensagem para a Stella', cost: 9, color: '#6B4FA0' },
+    { icon: Brain, label: 'Mensagem para a Stella', cost: 9, color: '#1565C0' },
     { icon: Zap,   label: 'Extração de dica',        cost: 5, color: '#C97B20' },
     { icon: Mic,   label: 'Transcrição de áudio',   cost: 2, color: 'var(--gold)' },
     { icon: Globe, label: 'Consulta de visto',       cost: 2, color: '#004A7C' },
@@ -319,14 +319,14 @@ function TabMyUsage() {
 
   const { totalThisMonth, prevMonthTotal, byAction, daily } = data
   const quotaPct      = quota ? Math.min(100, Math.round((quota.consumed / quota.quota) * 100)) : 0
-  const quotaBarColor = quotaPct > 85 ? '#C62828' : quotaPct > 65 ? '#C97B20' : 'var(--gold)'
+  const quotaBarColor = quotaPct > 85 ? 'var(--error)' : quotaPct > 65 ? '#C97B20' : 'var(--gold)'
   const recentDays = [...daily].reverse().slice(-14)
   const avgDay = daily.slice(0, 7).length > 0 ? Math.round(daily.slice(0, 7).reduce((s, d) => s + d.credits, 0) / daily.slice(0, 7).length) : 0
   const projectedMonth = avgDay * 30
   const diff = totalThisMonth - prevMonthTotal
   const diffPct = prevMonthTotal > 0 ? Math.round(Math.abs(diff) / prevMonthTotal * 100) : null
   const TrendIcon = diff > 0 ? ArrowUp : diff < 0 ? ArrowDown : Minus
-  const trendColor = diff > 0 ? '#C97B20' : diff < 0 ? '#2E7D32' : '#7BA8B2'
+  const trendColor = diff > 0 ? '#C97B20' : diff < 0 ? 'var(--success)' : '#7BA8B2'
   const sparkMax = Math.max(...recentDays.map(d => d.credits), 1)
 
   return (
@@ -360,7 +360,7 @@ function TabMyUsage() {
                 <span style={{ fontSize: '0.75rem', color: '#7BA8B2' }}>cota: {quota.quota} lm</span>
               </div>
               <div style={{ height: 6, borderRadius: 3, background: '#EDF4F6', overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${quotaPct}%`, background: quotaBarColor, borderRadius: 3, transition: 'width 0.4s ease' }} />
+                <div style={{ height: '100%', width: `${quotaPct}%`, background: quotaBarColor, borderRadius: 3, transition: 'width 0.4s var(--ease-smooth)' }} />
               </div>
             </div>
 
@@ -371,7 +371,7 @@ function TabMyUsage() {
                 número e um deles ficava desatualizado após uma compra. */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6 }}>
               {[
-                { label: 'restantes', value: quota.remaining, color: quota.remaining > 0 ? 'var(--gold)' : '#C62828', bg: quota.remaining > 0 ? '#E6F4F5' : '#FFEBEE' },
+                { label: 'restantes', value: quota.remaining, color: quota.remaining > 0 ? 'var(--gold)' : 'var(--error)', bg: quota.remaining > 0 ? '#E6F4F5' : '#FFEBEE' },
                 { label: 'pool central', value: quota.pool, color: quota.pool > 0 ? 'var(--text-muted)' : 'var(--border-light)', bg: quota.pool > 0 ? '#EDF4F6' : '#F8FBFC' },
               ].map(({ label, value, color, bg }) => (
                 <div key={label} style={{ padding: '8px 10px', background: bg, borderRadius: 8, textAlign: 'center' }}>
@@ -417,7 +417,7 @@ function TabMyUsage() {
             )}
 
             {returnDone > 0 && (
-              <p style={{ fontSize: '0.75rem', color: '#2E7D32', background: '#E8F5E9', borderRadius: 7, padding: '6px 10px', margin: 0 }}>
+              <p style={{ fontSize: '0.75rem', color: 'var(--success)', background: '#E8F5E9', borderRadius: 7, padding: '6px 10px', margin: 0 }}>
                 ✓ {returnDone} lm devolvidos ao pool central da rede.
               </p>
             )}
@@ -467,7 +467,7 @@ function TabMyUsage() {
               const isLast = i === recentDays.length - 1
               return (
                 <div key={d.day} title={`${new Date(d.day).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}: ${d.credits} lm`}
-                  style={{ flex: 1, height: h, borderRadius: 3, background: isLast ? 'var(--gold)' : 'var(--border-light)', transition: 'height 0.3s ease' }} />
+                  style={{ flex: 1, height: h, borderRadius: 3, background: isLast ? 'var(--gold)' : 'var(--border-light)', transition: 'height 0.3s var(--ease-smooth)' }} />
               )
             })}
           </div>
@@ -502,7 +502,7 @@ function TabMyUsage() {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div style={{ flex: 1, height: 4, borderRadius: 2, background: '#EDF4F6', overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: `${pct}%`, background: meta.color, borderRadius: 2, transition: 'width 0.4s ease' }} />
+                      <div style={{ height: '100%', width: `${pct}%`, background: meta.color, borderRadius: 2, transition: 'width 0.4s var(--ease-smooth)' }} />
                     </div>
                     <span style={{ fontSize: '0.5625rem', color: 'var(--border-light)', flexShrink: 0, width: 60, textAlign: 'right' }}>
                       {Math.round(row.credits_used / cost)} {cost === 2 ? 'consultas' : cost === 10 ? 'gravações' : 'ações'}
@@ -578,8 +578,18 @@ function LumiDistribution({
   totalBalance: number
   onRefresh:    () => void
 }) {
-  const [mode,           setModeLocal]   = useState<'free' | 'equal'>(settings.mode)
-  const [equalTotal,     setEqualTotal]  = useState(settings.equalTotal || totalBalance)
+  // Rascunho persistido em localStorage — trocar de aba (ou fechar o
+  // navegador por engano) no meio da configuração não deve perder o que o
+  // admin já digitou, só o que já foi confirmado em "Distribuir"/"Salvar".
+  const DRAFT_KEY = 'tdg-flow-lumi-distribution-draft'
+
+  function readDraft(): { mode?: 'free' | 'equal'; equalTotal?: number } {
+    if (typeof window === 'undefined') return {}
+    try { return JSON.parse(window.localStorage.getItem(DRAFT_KEY) ?? '{}') } catch { return {} }
+  }
+
+  const [mode,           setModeLocal]   = useState<'free' | 'equal'>(() => readDraft().mode ?? settings.mode)
+  const [equalTotal,     setEqualTotal]  = useState(() => readDraft().equalTotal ?? (settings.equalTotal || totalBalance))
   const [distribution,   setDistrib]     = useState<{ agencies: string[]; quotaEach: number } | null>(null)
   const [contributing,   setContrib]     = useState<string | null>(null)  // agency name being contributed
   const [contribAmt,     setContribAmt]  = useState('')
@@ -587,6 +597,10 @@ function LumiDistribution({
   const [feedback,       setFeedback]    = useState('')
 
   const agencyCount = breakdown.length
+
+  useEffect(() => {
+    window.localStorage.setItem(DRAFT_KEY, JSON.stringify({ mode, equalTotal }))
+  }, [mode, equalTotal])
 
   async function handleSetMode(m: 'free' | 'equal') {
     setSaving(true)
@@ -600,7 +614,11 @@ function LumiDistribution({
     setSaving(true)
     const res = await fetch('/api/credits', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'distribute', total: equalTotal }) })
     const data = await res.json()
-    if (data.ok) { setDistrib(data); setFeedback(`${data.agencies.length} agências · ${data.quotaEach} lm cada`) }
+    if (data.ok) {
+      setDistrib(data)
+      setFeedback(`${data.agencies.length} agências · ${data.quotaEach} lm cada`)
+      window.localStorage.removeItem(DRAFT_KEY)
+    }
     setSaving(false)
   }
 
@@ -620,9 +638,9 @@ function LumiDistribution({
     <div style={{ background: 'var(--surface)', border: '1px solid #E4EEF0', borderRadius: 14, overflow: 'hidden' }}>
       {/* Header */}
       <div style={{ padding: '10px 16px', borderBottom: '1px solid #F0F5F7', background: '#F8FBFC', display: 'flex', alignItems: 'center', gap: 6 }}>
-        <Scale size={12} style={{ color: '#6B4FA0' }} />
-        <p style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#6B4FA0', margin: 0, flex: 1 }}>Distribuição de Lumis</p>
-        {feedback && <span style={{ fontSize: '0.5625rem', color: '#2E7D32', background: '#E8F5E9', borderRadius: 20, padding: '2px 8px' }}>{feedback}</span>}
+        <Scale size={12} style={{ color: 'var(--text-secondary)' }} />
+        <p style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-secondary)', margin: 0, flex: 1 }}>Distribuição de Lumis</p>
+        {feedback && <span style={{ fontSize: '0.5625rem', color: 'var(--success)', background: '#E8F5E9', borderRadius: 20, padding: '2px 8px' }}>{feedback}</span>}
       </div>
 
       <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -641,9 +659,9 @@ function LumiDistribution({
                 disabled={saving}
                 style={{
                   flex: 1, padding: '9px 12px', borderRadius: 10, cursor: 'pointer', textAlign: 'left',
-                  border: mode === m.id ? '2px solid #6B4FA0' : '1.5px solid #D8E6EA',
-                  background: mode === m.id ? '#F3EEF9' : 'var(--surface)',
-                  transition: 'all 0.12s',
+                  border: mode === m.id ? '2px solid var(--text-secondary)' : '1.5px solid #D8E6EA',
+                  background: mode === m.id ? 'var(--surface-high)' : 'var(--surface)',
+                  transition: 'all 0.12s var(--ease-smooth)',
                 }}
               >
                 <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{m.label}</p>
@@ -672,7 +690,7 @@ function LumiDistribution({
                 <button
                   onClick={handleDistribute}
                   disabled={saving || equalTotal <= 0}
-                  style={{ padding: '7px 14px', borderRadius: 8, border: 'none', background: '#6B4FA0', color: 'var(--surface)', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', opacity: saving ? 0.6 : 1 }}
+                  style={{ padding: '7px 14px', borderRadius: 8, border: 'none', background: 'var(--text-secondary)', color: 'var(--surface)', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', opacity: saving ? 0.6 : 1 }}
                 >
                   Distribuir
                 </button>
@@ -698,10 +716,10 @@ function LumiDistribution({
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
                             <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.agency}</span>
-                            {over && <span style={{ fontSize: '0.5rem', color: '#C62828', background: '#FFEBEE', borderRadius: 20, padding: '1px 5px', flexShrink: 0 }}>excedeu</span>}
+                            {over && <span style={{ fontSize: '0.5rem', color: 'var(--error)', background: '#FFEBEE', borderRadius: 20, padding: '1px 5px', flexShrink: 0 }}>excedeu</span>}
                           </div>
                           <div style={{ height: 4, borderRadius: 2, background: '#EDF4F6', overflow: 'hidden' }}>
-                            <div style={{ height: '100%', width: `${pct}%`, background: over ? '#C62828' : pct > 75 ? '#C97B20' : 'var(--gold)', borderRadius: 2, transition: 'width 0.3s' }} />
+                            <div style={{ height: '100%', width: `${pct}%`, background: over ? 'var(--error)' : pct > 75 ? '#C97B20' : 'var(--gold)', borderRadius: 2, transition: 'width 0.3s var(--ease-smooth)' }} />
                           </div>
                           <p style={{ fontSize: '0.5625rem', color: '#7BA8B2', margin: '3px 0 0' }}>
                             {numFmt(row.usedThisMonth)} usados {quotaEach > 0 ? `· quota ${numFmt(quotaEach)} lm` : ''}
@@ -751,7 +769,7 @@ function LumiDistribution({
         {/* Free mode — just explain */}
         {mode === 'free' && (
           <p style={{ fontSize: '0.75rem', color: '#7BA8B2', lineHeight: 1.6, margin: 0 }}>
-            No modo <strong style={{ color: 'var(--text-primary)' }}>Livre</strong>, todos os advisors compartilham o saldo comum sem restrição por agência — quem usar primeiro consome. Para definir quotas por agência, mude para <strong style={{ color: '#6B4FA0' }}>Igualitário</strong>.
+            No modo <strong style={{ color: 'var(--text-primary)' }}>Livre</strong>, todos os advisors compartilham o saldo comum sem restrição por agência — quem usar primeiro consome. Para definir quotas por agência, mude para <strong style={{ color: 'var(--text-secondary)' }}>Igualitário</strong>.
           </p>
         )}
       </div>
@@ -776,7 +794,7 @@ function TabNetwork() {
   useEffect(() => { load() }, [])
 
   if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}><p style={{ color: '#7BA8B2', fontSize: '0.875rem' }}>Carregando…</p></div>
-  if (error || !data) return <p style={{ color: '#C62828', fontSize: '0.875rem' }}>{error}</p>
+  if (error || !data) return <p style={{ color: 'var(--error)', fontSize: '0.875rem' }}>{error}</p>
 
   const { balance, creditsThisMonth, dailyUsage, byUser, purchases } = data
 
@@ -795,14 +813,14 @@ function TabNetwork() {
     daysLeft = avgPerDay > 0 && balance.balance > 0 ? Math.round(balance.balance / avgPerDay) : null
     alertLevel = balance.balance < 0 ? 'critical' : tierDef.credits && balance.balance < tierDef.credits * 0.15 ? 'low' : tierDef.credits && balance.balance < tierDef.credits * 0.40 ? 'medium' : 'ok'
     pct = tierDef.credits ? Math.max(0, Math.min(100, (balance.balance / tierDef.credits) * 100)) : 100
-    barColor = pct > 40 ? 'var(--gold)' : pct > 15 ? '#C97B20' : '#C62828'
+    barColor = pct > 40 ? 'var(--gold)' : pct > 15 ? '#C97B20' : 'var(--error)'
   }
 
   const alertConf = {
-    critical: { color: '#C62828', bg: '#FFEBEE', icon: AlertTriangle, label: 'Saldo negativo — adicione Lumis urgente' },
+    critical: { color: 'var(--error)', bg: '#FFEBEE', icon: AlertTriangle, label: 'Saldo negativo — adicione Lumis urgente' },
     low:      { color: '#C97B20', bg: '#FEF3E2', icon: AlertTriangle, label: 'Saldo baixo — considere recarregar' },
     medium:   { color: '#C97B20', bg: '#FEF3E2', icon: TrendingUp,   label: 'Consumo crescendo — monitore o saldo' },
-    ok:       { color: '#2E7D32', bg: '#E8F5E9', icon: CheckCircle2, label: 'Saldo saudável' },
+    ok:       { color: 'var(--success)', bg: '#E8F5E9', icon: CheckCircle2, label: 'Saldo saudável' },
   }
   const alert = alertConf[alertLevel]
   const AlertIcon = alert.icon
@@ -848,7 +866,7 @@ function TabNetwork() {
                   {tierDef.credits && (
                     <div style={{ marginTop: 10 }}>
                       <div style={{ height: 5, borderRadius: 3, background: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: `${pct}%`, background: barColor, borderRadius: 3, transition: 'width 0.5s ease' }} />
+                        <div style={{ height: '100%', width: `${pct}%`, background: barColor, borderRadius: 3, transition: 'width 0.5s var(--ease-smooth)' }} />
                       </div>
                       <p style={{ fontSize: '0.5625rem', color: 'var(--text-muted)', marginTop: 4, margin: '4px 0 0' }}>
                         {numFmt(Math.max(0, balance.balance))} de {numFmt(tierDef.credits)} Lumis disponíveis
@@ -992,7 +1010,7 @@ export default function BillingView({ userRole }: { userRole: string }) {
           const Icon = t.icon
           const active = tab === t.id
           return (
-            <button key={t.id} onClick={() => setTab(t.id)} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '7px 10px', borderRadius: 8, border: 'none', cursor: 'pointer', background: active ? 'var(--surface)' : 'transparent', color: active ? 'var(--text-primary)' : '#7BA8B2', fontWeight: active ? 600 : 500, fontSize: '0.75rem', boxShadow: active ? '0 1px 4px rgba(0,0,0,0.08)' : 'none', transition: 'all 0.15s' }}>
+            <button key={t.id} onClick={() => setTab(t.id)} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '7px 10px', borderRadius: 8, border: 'none', cursor: 'pointer', background: active ? 'var(--surface)' : 'transparent', color: active ? 'var(--text-primary)' : '#7BA8B2', fontWeight: active ? 600 : 500, fontSize: '0.75rem', boxShadow: active ? '0 1px 4px rgba(0,0,0,0.08)' : 'none', transition: 'all 0.15s var(--ease-smooth)' }}>
               <Icon size={12} />
               {t.label}
             </button>

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { CalendarCheck, Loader2 } from 'lucide-react'
+import Skeleton from '@/components/ui/Skeleton'
 import { fetchSubscriptionStatus, type SubscriptionStatusResult } from '@/lib/subscription-status-client'
 import { subscribeToGrowth } from '@/lib/subscribe-client'
 
@@ -41,13 +42,19 @@ export default function AgencySubscriptionCard() {
 
   if (loading) {
     return (
-      <div style={{ background: '#fff', border: '1px solid #E4EEF0', borderRadius: 14, padding: '14px 16px' }}>
-        <p style={{ fontSize: '0.75rem', color: '#7BA8B2', margin: 0 }}>Carregando assinatura…</p>
+      <div style={{ background: '#fff', border: '1px solid #E4EEF0', borderRadius: 14, overflow: 'hidden' }}>
+        <div style={{ padding: '10px 16px', borderBottom: '1px solid #F0F5F7', background: '#F8FBFC' }}>
+          <Skeleton width={130} height={9} />
+        </div>
+        <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <Skeleton width={150} height={14} />
+          <Skeleton width={220} height={11} />
+        </div>
       </div>
     )
   }
 
-  const cardBase = { background: '#fff', border: '1px solid #E4EEF0', borderRadius: 14, overflow: 'hidden' } as const
+  const cardBase = { background: '#fff', border: '1px solid #E4EEF0', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 8px rgba(17,38,48,0.06)' } as const
   const header = (
     <div style={{ padding: '10px 16px', borderBottom: '1px solid #F0F5F7', background: '#F8FBFC', display: 'flex', alignItems: 'center', gap: 6 }}>
       <CalendarCheck size={12} style={{ color: '#008C94' }} />
@@ -104,9 +111,9 @@ export default function AgencySubscriptionCard() {
         <div>
           <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#112630', margin: 0 }}>Plano Growth — R$ 1.470/mês</p>
           <p style={{ fontSize: '0.75rem', color: '#7BA8B2', margin: '4px 0 0' }}>500 lm/mês de cota para a agência, cobrança recorrente via Mercado Pago.</p>
-          <p style={{ fontSize: '0.6875rem', color: '#2E7D32', margin: '6px 0 0', fontWeight: 600 }}>Fee de manutenção de Membro Fundador — sem valores adicionais, sem surpresas na fatura.</p>
+          <p style={{ fontSize: '0.6875rem', color: 'var(--success)', margin: '6px 0 0', fontWeight: 600 }}>Fee de manutenção de Membro Fundador — sem valores adicionais, sem surpresas na fatura.</p>
         </div>
-        {error && <p style={{ fontSize: '0.75rem', color: '#C62828', margin: 0 }}>{error}</p>}
+        {error && <p style={{ fontSize: '0.75rem', color: 'var(--error)', margin: 0 }}>{error}</p>}
         <button
           onClick={handleSubscribe}
           disabled={starting}

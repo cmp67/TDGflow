@@ -265,6 +265,18 @@ p, span, li { line-height: 1.6; }
 .animate-fade-up    { animation: fade-up 300ms var(--ease-smooth) forwards; }
 .animate-spin-slow  { animation: spin-slow 2s linear infinite; }
 
+/* ── Skeleton loading ────────────────────────────────────────────────────── */
+
+@keyframes skeleton-shimmer {
+  0%, 100% { background-color: var(--surface-high); }
+  50%       { background-color: var(--border-light); }
+}
+
+.skeleton {
+  border-radius: var(--radius-sm);
+  animation: skeleton-shimmer 1.4s var(--ease-smooth) infinite;
+}
+
 /* ── Recording pulse ─────────────────────────────────────────────────────── */
 
 .recording-ring {

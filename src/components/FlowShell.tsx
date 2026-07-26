@@ -97,16 +97,23 @@ function FlowShellInner({ children, user }: Props) {
         className="desktop-only"
         style={{ flexDirection: 'column', flexShrink: 0, width: 208, background: 'var(--surface)', borderRight: '1px solid var(--border)' }}
       >
-        {/* Logotype */}
+        {/* Logotype — a agência é protagonista, "Flow" fica em segundo plano
+            até termos upload de logo por agência (feature futura, precisa de
+            infra nova: coluna no banco + storage + tela de configuração) */}
         <div className="px-6 pt-7 pb-6 flex-shrink-0">
-          <div className="flex items-baseline gap-2">
-            <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.18em', color: '#008C94', textTransform: 'uppercase' }}>
-              TDG
-            </span>
-            <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.6875rem', fontWeight: 300, letterSpacing: '0.12em', color: '#4A7580', textTransform: 'uppercase' }}>
-              Flow
-            </span>
-          </div>
+          <p style={{
+            fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', fontWeight: 700,
+            letterSpacing: '-0.01em', color: '#112630', lineHeight: 1.25,
+            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', margin: 0,
+          }}>
+            {user.agency || 'TDG'}
+          </p>
+          <p style={{
+            fontFamily: 'var(--font-sans)', fontSize: '0.5625rem', fontWeight: 400,
+            letterSpacing: '0.1em', color: '#7BA8B2', textTransform: 'uppercase', margin: '2px 0 0',
+          }}>
+            powered by TDG Flow
+          </p>
           <div style={{ marginTop: 6, height: '1px', background: 'linear-gradient(90deg, var(--gold-dim) 0%, transparent 100%)', width: 48 }} />
         </div>
 
@@ -288,9 +295,13 @@ function FlowShellInner({ children, user }: Props) {
       <main className="flex-1 overflow-hidden flex flex-col min-w-0" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {/* Mobile header — hidden on desktop */}
         <div className="mobile-only" style={{ alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', height: 44, flexShrink: 0, background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
-          <div className="flex items-center gap-2.5">
-            <span style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.18em', color: '#008C94', textTransform: 'uppercase' }}>TDG</span>
-            <span style={{ fontSize: '0.5625rem', fontWeight: 300, letterSpacing: '0.12em', color: '#4A7580', textTransform: 'uppercase' }}>Flow</span>
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span style={{
+              fontSize: '0.75rem', fontWeight: 700, color: '#112630',
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            }}>
+              {user.agency || 'TDG Flow'}
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <NotificationBell />

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { Coins, X } from 'lucide-react'
+import Skeleton from '@/components/ui/Skeleton'
 import { TIERS, type TierId } from '@/lib/credits'
 import {
   fetchOwnBalance, buyTopUp,
@@ -73,7 +74,7 @@ function TopUpModal({ currentTier, onClose, onBought }: {
                   display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 10,
                   cursor: 'pointer', textAlign: 'left',
                   border: active ? `2px solid ${t.color}` : '1.5px solid #D8E6EA',
-                  background: active ? t.bg : '#fff', transition: 'all 0.12s',
+                  background: active ? t.bg : '#fff', transition: 'all 0.12s var(--ease-smooth)',
                 }}
               >
                 <div style={{ flex: 1 }}>
@@ -97,14 +98,14 @@ function TopUpModal({ currentTier, onClose, onBought }: {
           A cobrança deste pacote é combinada e processada separadamente com a Bemgsy — os Lumis já entram no saldo da sua agência assim que a compra é confirmada aqui.
         </p>
 
-        {error && <p style={{ fontSize: '0.75rem', color: '#C62828', marginBottom: 10 }}>{error}</p>}
+        {error && <p style={{ fontSize: '0.75rem', color: 'var(--error)', marginBottom: 10 }}>{error}</p>}
 
         <div style={{ display: 'flex', gap: 8 }}>
           <button onClick={onClose} style={{ flex: 1, padding: 10, borderRadius: 8, border: '1.5px solid #D8E6EA', background: '#fff', fontSize: '0.875rem', color: '#4A7580', cursor: 'pointer', fontWeight: 500 }}>Cancelar</button>
           <button
             onClick={handleConfirm}
             disabled={!selected || loading}
-            style={{ flex: 2, padding: 10, borderRadius: 8, border: 'none', background: selected && !loading ? '#008C94' : '#B8D0D5', color: '#fff', fontSize: '0.875rem', fontWeight: 600, cursor: selected && !loading ? 'pointer' : 'default', transition: 'background 0.12s' }}
+            style={{ flex: 2, padding: 10, borderRadius: 8, border: 'none', background: selected && !loading ? '#008C94' : '#B8D0D5', color: '#fff', fontSize: '0.875rem', fontWeight: 600, cursor: selected && !loading ? 'pointer' : 'default', transition: 'background 0.12s var(--ease-smooth)' }}
           >
             {loading ? 'Processando…' : 'Confirmar compra'}
           </button>
@@ -138,8 +139,17 @@ export default function MyLumisTopUp() {
 
   if (loading) {
     return (
-      <div style={{ background: '#fff', border: '1px solid #E4EEF0', borderRadius: 14, padding: '14px 16px' }}>
-        <p style={{ fontSize: '0.75rem', color: '#7BA8B2', margin: 0 }}>Carregando saldo…</p>
+      <div style={{ background: '#fff', border: '1px solid #E4EEF0', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 8px rgba(17,38,48,0.06)' }}>
+        <div style={{ padding: '10px 16px', borderBottom: '1px solid #F0F5F7', background: '#F8FBFC' }}>
+          <Skeleton width={140} height={9} />
+        </div>
+        <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <Skeleton width={90} height={24} />
+            <Skeleton width={110} height={11} />
+          </div>
+          <Skeleton width={110} height={34} borderRadius={9} />
+        </div>
       </div>
     )
   }
@@ -165,10 +175,10 @@ export default function MyLumisTopUp() {
   if (state.status === 'error') {
     return (
       <div style={{ background: '#FFEBEE', border: '1px solid #F5C6CB', borderRadius: 14, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-        <p style={{ fontSize: '0.75rem', color: '#C62828', margin: 0 }}>{state.message}</p>
+        <p style={{ fontSize: '0.75rem', color: 'var(--error)', margin: 0 }}>{state.message}</p>
         <button
           onClick={load}
-          style={{ fontSize: '0.6875rem', fontWeight: 600, color: '#C62828', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', flexShrink: 0 }}
+          style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--error)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', flexShrink: 0 }}
         >
           Tentar novamente
         </button>
@@ -188,7 +198,7 @@ export default function MyLumisTopUp() {
           onBought={handleBought}
         />
       )}
-      <div style={{ background: '#fff', border: '1px solid #E4EEF0', borderRadius: 14, overflow: 'hidden' }}>
+      <div style={{ background: '#fff', border: '1px solid #E4EEF0', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 8px rgba(17,38,48,0.06)' }}>
         <div style={{ padding: '10px 16px', borderBottom: '1px solid #F0F5F7', background: '#F8FBFC', display: 'flex', alignItems: 'center', gap: 6 }}>
           <Coins size={12} style={{ color: '#008C94' }} />
           <p style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#7BA8B2', margin: 0, flex: 1 }}>
@@ -197,7 +207,7 @@ export default function MyLumisTopUp() {
         </div>
         <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
           {justBought && (
-            <p style={{ fontSize: '0.75rem', color: '#2E7D32', background: '#E8F5E9', borderRadius: 7, padding: '6px 10px', margin: 0 }}>
+            <p style={{ fontSize: '0.75rem', color: 'var(--success)', background: '#E8F5E9', borderRadius: 7, padding: '6px 10px', margin: 0 }}>
               Compra confirmada — Lumis já adicionados ao saldo da sua agência.
             </p>
           )}
