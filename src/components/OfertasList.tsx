@@ -81,10 +81,10 @@ export default function OfertasList() {
       {/* Header */}
       <div style={{ maxWidth: 560, margin: '0 auto 20px' }}>
         <p className="section-label mb-1">Rede TDG</p>
-        <h1 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#112630', letterSpacing: '-0.02em' }}>
+        <h1 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
           Ofertas ativas
         </h1>
-        <p style={{ fontSize: '0.8125rem', color: '#4A7580', marginTop: 4 }}>
+        <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: 4 }}>
           {sorted.length} oferta{sorted.length !== 1 ? 's' : ''} disponível{sorted.length !== 1 ? 'is' : ''} · ordenadas por comissão
         </p>
       </div>
@@ -95,8 +95,8 @@ export default function OfertasList() {
           <div
             key={offer.id}
             style={{
-              background: '#fff',
-              border: '1px solid #D0E2E5',
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
               borderRadius: 20,
               overflow: 'hidden',
               boxShadow: '0 2px 12px rgba(17,38,48,0.06)',
@@ -120,7 +120,7 @@ export default function OfertasList() {
                 <p style={{ fontSize: '0.55rem', fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)', margin: '0 0 1px' }}>
                   Comissão
                 </p>
-                <p style={{ fontSize: '2.5rem', fontWeight: 200, color: '#fff', letterSpacing: '-0.04em', lineHeight: 1, margin: 0 }}>
+                <p style={{ fontSize: '2.5rem', fontWeight: 200, color: 'var(--surface)', letterSpacing: '-0.04em', lineHeight: 1, margin: 0 }}>
                   {offer.commission}%
                 </p>
               </div>
@@ -132,7 +132,7 @@ export default function OfertasList() {
                 padding: '4px 10px', borderRadius: 999,
                 background: 'rgba(255,255,255,0.15)',
                 border: '1px solid rgba(255,255,255,0.3)',
-                color: '#fff',
+                color: 'var(--surface)',
                 backdropFilter: 'blur(4px)',
               }}>
                 {offer.type}
@@ -141,24 +141,24 @@ export default function OfertasList() {
 
             {/* Info section */}
             <div style={{ padding: '14px 18px 16px' }}>
-              <h3 style={{ fontSize: '1rem', fontWeight: 500, color: '#112630', letterSpacing: '-0.01em', margin: '0 0 8px' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 500, color: 'var(--text-primary)', letterSpacing: '-0.01em', margin: '0 0 8px' }}>
                 {offer.hotel}
               </h3>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 12 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <MapPin size={11} style={{ color: '#7BA8B2', flexShrink: 0 }} />
-                  <span style={{ fontSize: '0.75rem', color: '#4A7580' }}>{offer.location}</span>
+                  <MapPin size={11} style={{ color: 'var(--text-faint)', flexShrink: 0 }} />
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{offer.location}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <Calendar size={11} style={{ color: '#7BA8B2', flexShrink: 0 }} />
-                  <span style={{ fontSize: '0.75rem', color: '#4A7580' }}>{offer.validity}</span>
+                  <Calendar size={11} style={{ color: 'var(--text-faint)', flexShrink: 0 }} />
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{offer.validity}</span>
                 </div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                 {offer.highlights.map((h, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
                     <div style={{ width: 4, height: 4, borderRadius: '50%', background: offer.accent, marginTop: 6, flexShrink: 0 }} />
-                    <span style={{ fontSize: '0.8125rem', color: '#4A7580', lineHeight: 1.5 }}>{h}</span>
+                    <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>{h}</span>
                   </div>
                 ))}
               </div>

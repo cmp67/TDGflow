@@ -115,8 +115,8 @@ function SwipeCard({
         style={{
           position: 'absolute', inset: 0, scale, y: yOffset, zIndex,
           borderRadius: 20,
-          background: '#FFFFFF',
-          border: '1px solid #D0E2E5',
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
           pointerEvents: 'none',
           transformOrigin: 'bottom center',
           overflow: 'hidden',
@@ -148,8 +148,8 @@ function SwipeCard({
       <div
         style={{
           position: 'absolute', inset: 0, borderRadius: 20,
-          background: '#FFFFFF',
-          border: '1px solid #D0E2E5',
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
           overflow: 'hidden',
           boxShadow: '0 8px 32px rgba(17,38,48,0.10)',
         }}
@@ -173,7 +173,7 @@ function SwipeCard({
             <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.75)', marginBottom: 2 }}>
               Comissão
             </p>
-            <p style={{ fontSize: 'clamp(2.5rem, 9vw, 3.5rem)', fontWeight: 200, color: '#FFFFFF', letterSpacing: '-0.04em', lineHeight: 1 }}>
+            <p style={{ fontSize: 'clamp(2.5rem, 9vw, 3.5rem)', fontWeight: 200, color: 'var(--surface)', letterSpacing: '-0.04em', lineHeight: 1 }}>
               {offer.commission}%
             </p>
           </div>
@@ -185,7 +185,7 @@ function SwipeCard({
               padding: '4px 10px', borderRadius: 999,
               background: 'rgba(255,255,255,0.18)',
               border: '1px solid rgba(255,255,255,0.35)',
-              color: '#FFFFFF',
+              color: 'var(--surface)',
               backdropFilter: 'blur(8px)',
             }}
           >
@@ -202,7 +202,7 @@ function SwipeCard({
               padding: '18px 18px',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#2E7D4F', color: '#fff', padding: '5px 12px', borderRadius: 999, fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--success)', color: 'var(--surface)', padding: '5px 12px', borderRadius: 999, fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
               <Check size={12} /> Salvar
             </div>
           </motion.div>
@@ -217,7 +217,7 @@ function SwipeCard({
               padding: '18px 18px',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#B6410F', color: '#fff', padding: '5px 12px', borderRadius: 999, fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--warning)', color: 'var(--surface)', padding: '5px 12px', borderRadius: 999, fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
               <Bookmark size={12} /> Talvez
             </div>
           </motion.div>
@@ -232,7 +232,7 @@ function SwipeCard({
               padding: '18px 18px',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#C0392B', color: '#fff', padding: '5px 12px', borderRadius: 999, fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--error)', color: 'var(--surface)', padding: '5px 12px', borderRadius: 999, fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
               <X size={12} /> Pular
             </div>
           </motion.div>
@@ -241,15 +241,15 @@ function SwipeCard({
         {/* ── Info section (bottom 45%) ── */}
         <div style={{ padding: '16px 20px 20px', height: '45%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <div>
-            <h3 style={{ fontSize: 'clamp(1.1rem, 4vw, 1.35rem)', fontWeight: 500, color: '#112630', letterSpacing: '-0.02em', lineHeight: 1.2, marginBottom: 6 }}>
+            <h3 style={{ fontSize: 'clamp(1.1rem, 4vw, 1.35rem)', fontWeight: 500, color: 'var(--text-primary)', letterSpacing: '-0.02em', lineHeight: 1.2, marginBottom: 6 }}>
               {offer.hotel}
             </h3>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 14 }}>
-              <MapPin size={11} style={{ color: '#008C94', flexShrink: 0 }} />
-              <span style={{ fontSize: '0.75rem', color: '#4A7580' }}>{offer.location}</span>
-              <span style={{ color: '#D0E2E5', margin: '0 4px' }}>·</span>
-              <Calendar size={11} style={{ color: '#008C94', flexShrink: 0 }} />
-              <span style={{ fontSize: '0.75rem', color: '#4A7580' }}>{offer.validity}</span>
+              <MapPin size={11} style={{ color: 'var(--gold)', flexShrink: 0 }} />
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{offer.location}</span>
+              <span style={{ color: 'var(--border)', margin: '0 4px' }}>·</span>
+              <Calendar size={11} style={{ color: 'var(--gold)', flexShrink: 0 }} />
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{offer.validity}</span>
             </div>
           </div>
 
@@ -257,7 +257,7 @@ function SwipeCard({
             {offer.highlights.map((h, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 7 }}>
                 <div style={{ width: 4, height: 4, borderRadius: '50%', background: offer.accent, marginTop: 5, flexShrink: 0 }} />
-                <span style={{ fontSize: '0.8rem', color: '#104C64', lineHeight: 1.45, fontWeight: 400 }}>{h}</span>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.45, fontWeight: 400 }}>{h}</span>
               </div>
             ))}
           </div>
@@ -312,12 +312,12 @@ export default function OfertaSwipe() {
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <OfertaHeader reviewed={reviewed} total={total} saved={saved} maybe={maybe} />
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20, padding: 24 }}>
-          <div style={{ width: 56, height: 56, borderRadius: 16, background: '#E8F0F2', border: '1px solid #D0E2E5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Check size={24} style={{ color: '#008C94' }} />
+          <div style={{ width: 56, height: 56, borderRadius: 16, background: 'var(--surface-high)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Check size={24} style={{ color: 'var(--gold)' }} />
           </div>
           <div style={{ textAlign: 'center' }}>
-            <p style={{ fontSize: '1rem', fontWeight: 500, color: '#112630', marginBottom: 4 }}>Todas as ofertas revisadas</p>
-            <p style={{ fontSize: '0.8125rem', color: '#4A7580' }}>{saved} salvas · {maybe} para considerar</p>
+            <p style={{ fontSize: '1rem', fontWeight: 500, color: 'var(--text-primary)', marginBottom: 4 }}>Todas as ofertas revisadas</p>
+            <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>{saved} salvas · {maybe} para considerar</p>
           </div>
           <button
             onClick={() => { setDeck(OFFERS); setResults([]); setLastAction(null) }}
@@ -332,7 +332,7 @@ export default function OfertaSwipe() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', userSelect: 'none', background: '#F3F7F8' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', userSelect: 'none', background: 'var(--bg)' }}>
       <OfertaHeader reviewed={reviewed} total={total} saved={saved} maybe={maybe} />
 
       {/* Card area */}
@@ -360,7 +360,7 @@ export default function OfertaSwipe() {
 
       {/* Action bar */}
       <div style={{ flexShrink: 0, padding: '8px 20px 20px', maxWidth: 420, margin: '0 auto', width: '100%' }}>
-        <p style={{ textAlign: 'center', fontSize: '0.6875rem', color: '#4A7580', marginBottom: 12, letterSpacing: '0.04em' }}>
+        <p style={{ textAlign: 'center', fontSize: '0.6875rem', color: 'var(--text-muted)', marginBottom: 12, letterSpacing: '0.04em' }}>
           ← talvez &nbsp;·&nbsp; ↑ pular &nbsp;·&nbsp; salvar →
         </p>
 
@@ -371,7 +371,7 @@ export default function OfertaSwipe() {
             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(182,65,15,0.12)' }}
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(182,65,15,0.06)' }}
           >
-            <Bookmark size={20} style={{ color: '#B6410F' }} />
+            <Bookmark size={20} style={{ color: 'var(--warning)' }} />
           </button>
 
           <button
@@ -380,7 +380,7 @@ export default function OfertaSwipe() {
             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(192,57,43,0.12)' }}
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(192,57,43,0.05)' }}
           >
-            <X size={18} style={{ color: '#C0392B' }} />
+            <X size={18} style={{ color: 'var(--error)' }} />
           </button>
 
           <button
@@ -389,7 +389,7 @@ export default function OfertaSwipe() {
             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(0,140,148,0.16)' }}
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(0,140,148,0.08)' }}
           >
-            <Check size={20} style={{ color: '#008C94' }} />
+            <Check size={20} style={{ color: 'var(--gold)' }} />
           </button>
         </div>
 
@@ -397,7 +397,7 @@ export default function OfertaSwipe() {
           <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} style={{ textAlign: 'center', marginTop: 10 }}>
             <button
               onClick={handleUndo}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: '0.75rem', color: '#4A7580', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px' }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: '0.75rem', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px' }}
             >
               <RotateCcw size={11} /> Desfazer
             </button>
@@ -412,33 +412,33 @@ export default function OfertaSwipe() {
 function OfertaHeader({ reviewed, total, saved, maybe }: { reviewed: number; total: number; saved: number; maybe: number }) {
   const progress = (reviewed / total) * 100
   return (
-    <div style={{ flexShrink: 0, padding: '16px 20px 0', background: '#F3F7F8' }}>
+    <div style={{ flexShrink: 0, padding: '16px 20px 0', background: 'var(--bg)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, maxWidth: 420, margin: '0 auto 10px' }}>
         <div>
-          <h2 style={{ fontSize: '0.875rem', fontWeight: 600, color: '#112630', letterSpacing: '-0.01em' }}>Ofertas</h2>
-          <p style={{ fontSize: '0.6875rem', color: '#4A7580', marginTop: 1 }}>{reviewed} de {total} revisadas</p>
+          <h2 style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>Ofertas</h2>
+          <p style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', marginTop: 1 }}>{reviewed} de {total} revisadas</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {saved > 0 && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#2E7D4F' }} />
-              <span style={{ fontSize: '0.6875rem', color: '#4A7580' }}>{saved}</span>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--success)' }} />
+              <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>{saved}</span>
             </div>
           )}
           {maybe > 0 && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#B6410F' }} />
-              <span style={{ fontSize: '0.6875rem', color: '#4A7580' }}>{maybe}</span>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--warning)' }} />
+              <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>{maybe}</span>
             </div>
           )}
-          <ChevronRight size={14} style={{ color: '#4A7580' }} />
+          <ChevronRight size={14} style={{ color: 'var(--text-muted)' }} />
         </div>
       </div>
-      <div style={{ maxWidth: 420, margin: '0 auto', height: 2, background: '#D0E2E5', borderRadius: 2, overflow: 'hidden' }}>
+      <div style={{ maxWidth: 420, margin: '0 auto', height: 2, background: 'var(--border)', borderRadius: 2, overflow: 'hidden' }}>
         <motion.div
           animate={{ width: `${progress}%` }}
           transition={{ type: 'spring', stiffness: 200, damping: 30 }}
-          style={{ height: '100%', background: '#008C94', borderRadius: 2 }}
+          style={{ height: '100%', background: 'var(--gold)', borderRadius: 2 }}
         />
       </div>
       <div style={{ height: 12 }} />

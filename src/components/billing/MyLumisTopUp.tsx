@@ -51,14 +51,14 @@ function TopUpModal({ currentTier, onClose, onBought }: {
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(17,38,48,0.5)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-      <div style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 400, padding: 24, boxShadow: '0 24px 64px rgba(0,0,0,0.18)' }}>
+      <div style={{ background: 'var(--surface)', borderRadius: 20, width: '100%', maxWidth: 400, padding: 24, boxShadow: '0 24px 64px rgba(0,0,0,0.18)' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 4 }}>
-          <h2 style={{ fontSize: '1rem', fontWeight: 700, color: '#112630', margin: 0 }}>Comprar top-up de Lumis</h2>
-          <button onClick={onClose} aria-label="Fechar" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#B8D0D5' }}>
+          <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Comprar top-up de Lumis</h2>
+          <button onClick={onClose} aria-label="Fechar" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--border-light)' }}>
             <X size={16} />
           </button>
         </div>
-        <p style={{ fontSize: '0.75rem', color: '#7BA8B2', margin: '0 0 18px' }}>
+        <p style={{ fontSize: '0.75rem', color: 'var(--text-faint)', margin: '0 0 18px' }}>
           Selecione o pacote para o saldo da sua agência.
         </p>
 
@@ -73,39 +73,39 @@ function TopUpModal({ currentTier, onClose, onBought }: {
                 style={{
                   display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 10,
                   cursor: 'pointer', textAlign: 'left',
-                  border: active ? `2px solid ${t.color}` : '1.5px solid #D8E6EA',
-                  background: active ? t.bg : '#fff', transition: 'all 0.12s var(--ease-smooth)',
+                  border: active ? `2px solid ${t.color}` : '1.5px solid var(--border)',
+                  background: active ? t.bg : 'var(--surface)', transition: 'all 0.12s var(--ease-smooth)',
                 }}
               >
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#112630' }}>{t.name}</span>
+                    <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>{t.name}</span>
                     {current && <span style={{ fontSize: '0.5rem', fontWeight: 700, color: t.color, background: t.bg, borderRadius: 20, padding: '1px 6px' }}>atual</span>}
                   </div>
-                  <p style={{ fontSize: '0.6875rem', color: '#7BA8B2', margin: '2px 0 0' }}>{t.label}</p>
+                  <p style={{ fontSize: '0.6875rem', color: 'var(--text-faint)', margin: '2px 0 0' }}>{t.label}</p>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <p style={{ fontSize: '1rem', fontWeight: 800, color: t.color, margin: 0 }}>{numFmt(t.credits!)}</p>
-                  <p style={{ fontSize: '0.5rem', color: '#7BA8B2', margin: '1px 0 0' }}>Lumis</p>
-                  <p style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#112630', margin: '3px 0 0' }}>{t.priceLabel}</p>
+                  <p style={{ fontSize: '0.5rem', color: 'var(--text-faint)', margin: '1px 0 0' }}>Lumis</p>
+                  <p style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'var(--text-primary)', margin: '3px 0 0' }}>{t.priceLabel}</p>
                 </div>
               </button>
             )
           })}
         </div>
 
-        <p style={{ fontSize: '0.625rem', color: '#B8D0D5', lineHeight: 1.5, margin: '0 0 14px' }}>
+        <p style={{ fontSize: '0.625rem', color: 'var(--border-light)', lineHeight: 1.5, margin: '0 0 14px' }}>
           A cobrança deste pacote é combinada e processada separadamente com a Bemgsy — os Lumis já entram no saldo da sua agência assim que a compra é confirmada aqui.
         </p>
 
         {error && <p style={{ fontSize: '0.75rem', color: 'var(--error)', marginBottom: 10 }}>{error}</p>}
 
         <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={onClose} style={{ flex: 1, padding: 10, borderRadius: 8, border: '1.5px solid #D8E6EA', background: '#fff', fontSize: '0.875rem', color: '#4A7580', cursor: 'pointer', fontWeight: 500 }}>Cancelar</button>
+          <button onClick={onClose} style={{ flex: 1, padding: 10, borderRadius: 8, border: '1.5px solid var(--border)', background: 'var(--surface)', fontSize: '0.875rem', color: 'var(--text-muted)', cursor: 'pointer', fontWeight: 500 }}>Cancelar</button>
           <button
             onClick={handleConfirm}
             disabled={!selected || loading}
-            style={{ flex: 2, padding: 10, borderRadius: 8, border: 'none', background: selected && !loading ? '#008C94' : '#B8D0D5', color: '#fff', fontSize: '0.875rem', fontWeight: 600, cursor: selected && !loading ? 'pointer' : 'default', transition: 'background 0.12s var(--ease-smooth)' }}
+            style={{ flex: 2, padding: 10, borderRadius: 8, border: 'none', background: selected && !loading ? 'var(--gold)' : 'var(--border-light)', color: 'var(--surface)', fontSize: '0.875rem', fontWeight: 600, cursor: selected && !loading ? 'pointer' : 'default', transition: 'background 0.12s var(--ease-smooth)' }}
           >
             {loading ? 'Processando…' : 'Confirmar compra'}
           </button>
@@ -139,8 +139,8 @@ export default function MyLumisTopUp() {
 
   if (loading) {
     return (
-      <div style={{ background: '#fff', border: '1px solid #E4EEF0', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 8px rgba(17,38,48,0.06)' }}>
-        <div style={{ padding: '10px 16px', borderBottom: '1px solid #F0F5F7', background: '#F8FBFC' }}>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border-subtle)', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 8px rgba(17,38,48,0.06)' }}>
+        <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--border-subtle)', background: 'var(--bg)' }}>
           <Skeleton width={140} height={9} />
         </div>
         <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
@@ -156,7 +156,7 @@ export default function MyLumisTopUp() {
 
   if (state.status === 'unauthenticated') {
     return (
-      <div style={{ background: '#FEF3E2', border: '1px solid #F5D9A8', borderRadius: 14, padding: '14px 16px' }}>
+      <div style={{ background: 'var(--accent-warm-subtle)', border: '1px solid #F5D9A8', borderRadius: 14, padding: '14px 16px' }}>
         <p style={{ fontSize: '0.75rem', color: '#7A4F10', margin: 0 }}>Sua sessão expirou. Atualize a página para continuar.</p>
       </div>
     )
@@ -164,8 +164,8 @@ export default function MyLumisTopUp() {
 
   if (state.status === 'no_agency') {
     return (
-      <div style={{ background: '#F8FBFC', border: '1px dashed #D8E6EA', borderRadius: 14, padding: '14px 16px' }}>
-        <p style={{ fontSize: '0.75rem', color: '#4A7580', margin: 0 }}>
+      <div style={{ background: 'var(--bg)', border: '1px dashed var(--border)', borderRadius: 14, padding: '14px 16px' }}>
+        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>
           Sua conta ainda não está vinculada a uma agência — fale com o suporte para habilitar a compra de Lumis.
         </p>
       </div>
@@ -174,7 +174,7 @@ export default function MyLumisTopUp() {
 
   if (state.status === 'error') {
     return (
-      <div style={{ background: '#FFEBEE', border: '1px solid #F5C6CB', borderRadius: 14, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+      <div style={{ background: 'var(--error-subtle)', border: '1px solid #F5C6CB', borderRadius: 14, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
         <p style={{ fontSize: '0.75rem', color: 'var(--error)', margin: 0 }}>{state.message}</p>
         <button
           onClick={load}
@@ -198,33 +198,33 @@ export default function MyLumisTopUp() {
           onBought={handleBought}
         />
       )}
-      <div style={{ background: '#fff', border: '1px solid #E4EEF0', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 8px rgba(17,38,48,0.06)' }}>
-        <div style={{ padding: '10px 16px', borderBottom: '1px solid #F0F5F7', background: '#F8FBFC', display: 'flex', alignItems: 'center', gap: 6 }}>
-          <Coins size={12} style={{ color: '#008C94' }} />
-          <p style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#7BA8B2', margin: 0, flex: 1 }}>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border-subtle)', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 8px rgba(17,38,48,0.06)' }}>
+        <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--border-subtle)', background: 'var(--bg)', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Coins size={12} style={{ color: 'var(--gold)' }} />
+          <p style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-faint)', margin: 0, flex: 1 }}>
             Saldo comprado da agência
           </p>
         </div>
         <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
           {justBought && (
-            <p style={{ fontSize: '0.75rem', color: 'var(--success)', background: '#E8F5E9', borderRadius: 7, padding: '6px 10px', margin: 0 }}>
+            <p style={{ fontSize: '0.75rem', color: 'var(--success)', background: 'var(--success-subtle)', borderRadius: 7, padding: '6px 10px', margin: 0 }}>
               Compra confirmada — Lumis já adicionados ao saldo da sua agência.
             </p>
           )}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
             <div>
-              <p style={{ fontSize: '1.5rem', fontWeight: 800, color: '#112630', margin: 0, letterSpacing: '-0.03em', lineHeight: 1 }}>
-                {numFmt(balance.balance)}<span style={{ fontSize: '0.75rem', fontWeight: 500, color: '#7BA8B2', marginLeft: 4 }}>lm</span>
+              <p style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.03em', lineHeight: 1 }}>
+                {numFmt(balance.balance)}<span style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--text-faint)', marginLeft: 4 }}>lm</span>
               </p>
               {tierDef && (
-                <p style={{ fontSize: '0.6875rem', color: '#7BA8B2', margin: '4px 0 0' }}>
-                  Plano atual: <strong style={{ color: '#112630' }}>{tierDef.name}</strong>
+                <p style={{ fontSize: '0.6875rem', color: 'var(--text-faint)', margin: '4px 0 0' }}>
+                  Plano atual: <strong style={{ color: 'var(--text-primary)' }}>{tierDef.name}</strong>
                 </p>
               )}
             </div>
             <button
               onClick={() => setShowModal(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 14px', borderRadius: 9, border: 'none', background: '#C97B20', color: '#fff', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 14px', borderRadius: 9, border: 'none', background: 'var(--accent-warm)', color: 'var(--surface)', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}
             >
               <Coins size={12} />
               Comprar top-up

@@ -30,7 +30,7 @@ interface KnowledgeTip {
 
 /* ── Category config ────────────────────────────────────────────── */
 const CATEGORIES: { key: string; label: string; emoji: string; color: string; bg: string }[] = [
-  { key: 'all',        label: 'Todos',      emoji: '',   color: '#112630', bg: 'var(--surface-high)' },
+  { key: 'all',        label: 'Todos',      emoji: '',   color: 'var(--text-primary)', bg: 'var(--surface-high)' },
   { key: 'hotel',      label: 'Hotel',      emoji: '🏨', color: '#005F63', bg: '#E0F4F5' },
   { key: 'guia',       label: 'Guia / DMC', emoji: '🗺️', color: '#0369a1', bg: '#e0f2fe' },
   { key: 'operadora',  label: 'Operadora',  emoji: '🧳', color: '#6d28d9', bg: '#ede9fe' },
@@ -98,11 +98,11 @@ function ContactCard({ contact, copiedId, onCopy }: {
           {cat.emoji} {cat.label}
         </span>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontSize: '0.875rem', fontWeight: 600, color: '#112630', lineHeight: 1.2, marginBottom: 1 }}>
+          <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2, marginBottom: 1 }}>
             {contact.name}
           </p>
           {contact.organization && (
-            <p style={{ fontSize: '0.6875rem', color: '#4A7580', lineHeight: 1.3 }}>{contact.organization}</p>
+            <p style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', lineHeight: 1.3 }}>{contact.organization}</p>
           )}
         </div>
         {contact.whatsapp && (
@@ -114,7 +114,7 @@ function ContactCard({ contact, copiedId, onCopy }: {
               padding: '4px 9px', borderRadius: 6,
               background: copiedId === contact.id ? '#E0F4F5' : 'var(--bg)',
               border: '1px solid var(--border)',
-              color: copiedId === contact.id ? '#006B72' : '#4A7580',
+              color: copiedId === contact.id ? 'var(--gold-dim)' : 'var(--text-muted)',
               fontSize: '0.6875rem', cursor: 'pointer', transition: 'all 120ms',
             }}
           >
@@ -132,10 +132,10 @@ function ContactCard({ contact, copiedId, onCopy }: {
         padding: '9px 11px', borderLeft: `3px solid ${cat.color}`,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 4 }}>
-          <Users size={10} style={{ color: '#4A7580', flexShrink: 0 }} />
-          <span style={{ fontSize: '0.625rem', color: '#4A7580', letterSpacing: '0.05em' }}>
+          <Users size={10} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+          <span style={{ fontSize: '0.625rem', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>
             indicado por{' '}
-            <strong style={{ color: '#112630', fontWeight: 600 }}>
+            <strong style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
               {contact.source_author?.startsWith('+55')
                 ? contact.source_author.replace(/^\+55\s?/, '')
                 : contact.source_author}
@@ -147,8 +147,8 @@ function ContactCard({ contact, copiedId, onCopy }: {
         </div>
         {contact.context_trigger && (
           <div style={{ display: 'flex', gap: 5 }}>
-            <MessageCircle size={10} style={{ color: '#4A7580', flexShrink: 0, marginTop: 2 }} />
-            <p style={{ fontSize: '0.6875rem', color: '#4A7580', lineHeight: 1.45, fontStyle: 'italic' }}>
+            <MessageCircle size={10} style={{ color: 'var(--text-muted)', flexShrink: 0, marginTop: 2 }} />
+            <p style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', lineHeight: 1.45, fontStyle: 'italic' }}>
               {contact.context_trigger}
             </p>
           </div>
@@ -167,12 +167,12 @@ function ContactCard({ contact, copiedId, onCopy }: {
           >
             <div style={{ padding: '8px 0', borderTop: '1px solid var(--border)' }}>
               {contact.email && (
-                <p style={{ fontSize: '0.6875rem', color: '#4A7580', marginBottom: 3 }}>
+                <p style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', marginBottom: 3 }}>
                   📧 {contact.email}
                 </p>
               )}
               {contact.notes && (
-                <p style={{ fontSize: '0.6875rem', color: '#4A7580', lineHeight: 1.5 }}>
+                <p style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
                   {contact.notes}
                 </p>
               )}
@@ -202,7 +202,7 @@ function TipCard({ tip }: { tip: KnowledgeTip }) {
       style={{
         background: 'var(--surface)',
         border: `1px solid ${isAlert ? '#fca5a5' : 'var(--border)'}`,
-        borderLeft: `3px solid ${isAlert ? '#dc2626' : '#006B72'}`,
+        borderLeft: `3px solid ${isAlert ? '#dc2626' : 'var(--gold-dim)'}`,
         borderRadius: 10,
         padding: '13px 15px',
         cursor: 'pointer',
@@ -214,10 +214,10 @@ function TipCard({ tip }: { tip: KnowledgeTip }) {
       <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
         {isAlert
           ? <AlertTriangle size={14} style={{ color: '#dc2626', flexShrink: 0, marginTop: 1 }} />
-          : <Lightbulb size={14} style={{ color: '#006B72', flexShrink: 0, marginTop: 1 }} />
+          : <Lightbulb size={14} style={{ color: 'var(--gold-dim)', flexShrink: 0, marginTop: 1 }} />
         }
         <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#112630', lineHeight: 1.3, marginBottom: 5 }}>
+          <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.3, marginBottom: 5 }}>
             {tip.title}
           </p>
           <p style={{
@@ -232,8 +232,8 @@ function TipCard({ tip }: { tip: KnowledgeTip }) {
         </div>
       </div>
       <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
-        <Users size={9} style={{ color: '#4A7580' }} />
-        <span style={{ fontSize: '0.5625rem', color: '#4A7580', letterSpacing: '0.04em' }}>
+        <Users size={9} style={{ color: 'var(--text-muted)' }} />
+        <span style={{ fontSize: '0.5625rem', color: 'var(--text-muted)', letterSpacing: '0.04em' }}>
           {tip.source_author ?? 'Galera do Turismo'}
           {tip.source_date && <span style={{ opacity: 0.7 }}> · {formatDate(tip.source_date)}</span>}
         </span>
@@ -309,22 +309,22 @@ export default function RedeView() {
       <div style={{ flexShrink: 0, borderBottom: '1px solid var(--border)', background: 'var(--surface)' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '18px 20px 10px' }}>
           <div>
-            <p style={{ fontSize: '0.5625rem', fontWeight: 500, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#006B72', marginBottom: 3 }}>
+            <p style={{ fontSize: '0.5625rem', fontWeight: 500, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--gold-dim)', marginBottom: 3 }}>
               Galera do Turismo
             </p>
-            <h2 style={{ fontSize: '1.125rem', fontWeight: 500, color: '#112630', letterSpacing: '-0.025em', lineHeight: 1 }}>
+            <h2 style={{ fontSize: '1.125rem', fontWeight: 500, color: 'var(--text-primary)', letterSpacing: '-0.025em', lineHeight: 1 }}>
               Inteligência Coletiva
             </h2>
           </div>
           {!loading && (
             <div style={{ display: 'flex', gap: 16, paddingTop: 4 }}>
               <div style={{ textAlign: 'right' }}>
-                <p style={{ fontSize: '1rem', fontWeight: 600, color: '#112630', letterSpacing: '-0.02em', lineHeight: 1 }}>{totalContacts}</p>
-                <p style={{ fontSize: '0.55rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#4A7580', marginTop: 2 }}>contatos</p>
+                <p style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.02em', lineHeight: 1 }}>{totalContacts}</p>
+                <p style={{ fontSize: '0.55rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', marginTop: 2 }}>contatos</p>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <p style={{ fontSize: '1rem', fontWeight: 600, color: '#112630', letterSpacing: '-0.02em', lineHeight: 1 }}>{totalTips || 22}</p>
-                <p style={{ fontSize: '0.55rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#4A7580', marginTop: 2 }}>dicas</p>
+                <p style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.02em', lineHeight: 1 }}>{totalTips || 22}</p>
+                <p style={{ fontSize: '0.55rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', marginTop: 2 }}>dicas</p>
               </div>
             </div>
           )}
@@ -341,9 +341,9 @@ export default function RedeView() {
               onClick={() => switchTab(tab.key)}
               style={{
                 padding: '8px 16px', fontSize: '0.75rem', fontWeight: activeTab === tab.key ? 600 : 400,
-                color: activeTab === tab.key ? '#006B72' : '#4A7580',
+                color: activeTab === tab.key ? 'var(--gold-dim)' : 'var(--text-muted)',
                 background: 'none', border: 'none', cursor: 'pointer',
-                borderBottom: activeTab === tab.key ? '2px solid #006B72' : '2px solid transparent',
+                borderBottom: activeTab === tab.key ? '2px solid var(--gold-dim)' : '2px solid transparent',
                 marginBottom: -1, transition: 'all 150ms',
               }}
             >
@@ -354,7 +354,7 @@ export default function RedeView() {
 
         {/* Search */}
         <div style={{ padding: '10px 20px 10px', position: 'relative' }}>
-          <Search size={14} style={{ position: 'absolute', left: 34, top: '50%', transform: 'translateY(-50%)', color: '#4A7580', pointerEvents: 'none' }} />
+          <Search size={14} style={{ position: 'absolute', left: 34, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
           <input
             className="input"
             placeholder={activeTab === 'contacts' ? 'Nome, hotel, contexto, quem indicou...' : 'Destino, país, palavra-chave...'}
@@ -379,7 +379,7 @@ export default function RedeView() {
                     fontSize: '0.6875rem', fontWeight: active ? 600 : 400,
                     cursor: 'pointer',
                     background: active ? cat.color : 'var(--surface-high)',
-                    color: active ? '#fff' : '#4A7580',
+                    color: active ? 'var(--surface)' : 'var(--text-muted)',
                     border: active ? 'none' : '1px solid var(--border)',
                     transition: 'all 150ms',
                   }}
@@ -398,7 +398,7 @@ export default function RedeView() {
       {/* ── List ─────────────────────────────────────────────────── */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px' }}>
         {loading && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: 60, gap: 8, color: '#4A7580' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: 60, gap: 8, color: 'var(--text-muted)' }}>
             <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
             <span style={{ fontSize: '0.875rem' }}>Carregando...</span>
           </div>
@@ -409,11 +409,11 @@ export default function RedeView() {
           <>
             {contacts.length === 0 ? (
               <div style={{ textAlign: 'center', paddingTop: 60 }}>
-                <Search size={24} style={{ color: '#4A7580', margin: '0 auto 12px' }} />
-                <p style={{ fontSize: '0.875rem', color: '#4A7580' }}>Nenhum contato encontrado.</p>
+                <Search size={24} style={{ color: 'var(--text-muted)', margin: '0 auto 12px' }} />
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Nenhum contato encontrado.</p>
                 {(search || activeCategory !== 'all') && (
                   <button onClick={() => { setSearch(''); setActiveCategory('all') }}
-                    style={{ marginTop: 12, fontSize: '0.75rem', color: '#008C94', background: 'none', border: 'none', cursor: 'pointer' }}>
+                    style={{ marginTop: 12, fontSize: '0.75rem', color: 'var(--gold)', background: 'none', border: 'none', cursor: 'pointer' }}>
                     Limpar filtros
                   </button>
                 )}
@@ -435,11 +435,11 @@ export default function RedeView() {
           <>
             {tips.length === 0 ? (
               <div style={{ textAlign: 'center', paddingTop: 60 }}>
-                <Search size={24} style={{ color: '#4A7580', margin: '0 auto 12px' }} />
-                <p style={{ fontSize: '0.875rem', color: '#4A7580' }}>Nenhuma dica encontrada.</p>
+                <Search size={24} style={{ color: 'var(--text-muted)', margin: '0 auto 12px' }} />
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Nenhuma dica encontrada.</p>
                 {search && (
                   <button onClick={() => setSearch('')}
-                    style={{ marginTop: 12, fontSize: '0.75rem', color: '#008C94', background: 'none', border: 'none', cursor: 'pointer' }}>
+                    style={{ marginTop: 12, fontSize: '0.75rem', color: 'var(--gold)', background: 'none', border: 'none', cursor: 'pointer' }}>
                     Limpar filtro
                   </button>
                 )}
@@ -456,7 +456,7 @@ export default function RedeView() {
 
         {/* Attribution footer */}
         {!loading && (contacts.length > 0 || tips.length > 0) && (
-          <p style={{ textAlign: 'center', fontSize: '0.625rem', color: '#4A7580', opacity: 0.6, letterSpacing: '0.08em', marginTop: 24, marginBottom: 8 }}>
+          <p style={{ textAlign: 'center', fontSize: '0.625rem', color: 'var(--text-muted)', opacity: 0.6, letterSpacing: '0.08em', marginTop: 24, marginBottom: 8 }}>
             FONTE · GRUPO GALERA DO TURISMO · SET 2024 – MAR 2026
           </p>
         )}

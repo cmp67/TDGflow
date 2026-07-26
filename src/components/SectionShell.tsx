@@ -23,16 +23,16 @@ export default function SectionShell({ title, description, icon: Icon, soon, soo
           className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
           style={{ background: 'var(--gold-subtle)', border: '1px solid var(--gold-ring)' }}
         >
-          <Icon size={15} style={{ color: '#008C94' }} />
+          <Icon size={15} style={{ color: 'var(--gold)' }} />
         </div>
         <div>
-          <h2 className="text-sm font-semibold" style={{ color: '#112630' }}>{title}</h2>
-          <p className="text-xs mt-0.5" style={{ color: '#4A7580' }}>{description}</p>
+          <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{title}</h2>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{description}</p>
         </div>
         {soon && (
           <span
             className="ml-auto text-xs px-2 py-1 rounded-lg"
-            style={{ background: 'var(--surface-high)', color: '#4A7580', fontSize: '0.6875rem', letterSpacing: '0.06em', textTransform: 'uppercase' }}
+            style={{ background: 'var(--surface-high)', color: 'var(--text-muted)', fontSize: '0.6875rem', letterSpacing: '0.06em', textTransform: 'uppercase' }}
           >
             Em breve
           </span>
@@ -47,13 +47,13 @@ export default function SectionShell({ title, description, icon: Icon, soon, soo
               className="w-14 h-14 rounded-2xl flex items-center justify-center"
               style={{ background: 'var(--surface-high)', border: '1px solid var(--border)' }}
             >
-              <Icon size={24} style={{ color: '#4A7580' }} />
+              <Icon size={24} style={{ color: 'var(--text-muted)' }} />
             </div>
-            <p className="text-sm font-medium" style={{ color: '#104C64' }}>
+            <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
               {soon ? soonMessage : `${title} em desenvolvimento`}
             </p>
             {!soon && (
-              <p className="text-xs max-w-xs" style={{ color: '#4A7580' }}>
+              <p className="text-xs max-w-xs" style={{ color: 'var(--text-muted)' }}>
                 Esta seção estará disponível em breve com dados reais dos parceiros.
               </p>
             )}

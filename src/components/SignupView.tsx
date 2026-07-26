@@ -65,11 +65,11 @@ export default function SignupView({ token, agencyName, role }: Props) {
           animate={{ opacity: 1, y: 0 }}
           className="w-full max-w-sm text-center"
         >
-          <CheckCircle2 size={32} style={{ color: '#2E7D4F', margin: '0 auto 12px' }} />
-          <h1 className="text-lg font-semibold mb-2" style={{ color: '#112630', letterSpacing: '-0.02em' }}>
+          <CheckCircle2 size={32} style={{ color: 'var(--success)', margin: '0 auto 12px' }} />
+          <h1 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
             Conta criada!
           </h1>
-          <p className="text-sm" style={{ color: '#4A7580' }}>
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
             Redirecionando para o login...
           </p>
         </motion.div>
@@ -88,21 +88,21 @@ export default function SignupView({ token, agencyName, role }: Props) {
         <div className="text-center mb-8">
           <div
             className="w-12 h-12 rounded-xl flex items-center justify-center font-semibold text-sm mx-auto mb-5"
-            style={{ background: 'var(--gold)', color: '#FFFFFF', letterSpacing: '0.04em' }}
+            style={{ background: 'var(--gold)', color: 'var(--surface)', letterSpacing: '0.04em' }}
           >
             TDG
           </div>
-          <h1 className="text-lg font-semibold" style={{ color: '#112630', letterSpacing: '-0.02em' }}>
+          <h1 className="text-lg font-semibold" style={{ color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
             Bem-vindo(a), {agencyName}
           </h1>
-          <p className="text-sm mt-1" style={{ color: '#4A7580' }}>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
             Crie sua conta como {roleLabel} no TDG Flow.
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
-            <label className="text-xs font-medium uppercase tracking-wider block mb-1.5" style={{ color: '#4A7580' }}>
+            <label className="text-xs font-medium uppercase tracking-wider block mb-1.5" style={{ color: 'var(--text-muted)' }}>
               Nome completo
             </label>
             <input
@@ -116,7 +116,7 @@ export default function SignupView({ token, agencyName, role }: Props) {
             />
           </div>
           <div>
-            <label className="text-xs font-medium uppercase tracking-wider block mb-1.5" style={{ color: '#4A7580' }}>
+            <label className="text-xs font-medium uppercase tracking-wider block mb-1.5" style={{ color: 'var(--text-muted)' }}>
               Email
             </label>
             <input
@@ -130,7 +130,7 @@ export default function SignupView({ token, agencyName, role }: Props) {
             />
           </div>
           <div>
-            <label className="text-xs font-medium uppercase tracking-wider block mb-1.5" style={{ color: '#4A7580' }}>
+            <label className="text-xs font-medium uppercase tracking-wider block mb-1.5" style={{ color: 'var(--text-muted)' }}>
               Senha
             </label>
             <div style={{ position: 'relative' }}>
@@ -150,7 +150,7 @@ export default function SignupView({ token, agencyName, role }: Props) {
                 style={{
                   position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
                   background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-                  color: '#4A7580', display: 'flex', alignItems: 'center',
+                  color: 'var(--text-muted)', display: 'flex', alignItems: 'center',
                 }}
                 tabIndex={-1}
                 aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
@@ -160,7 +160,7 @@ export default function SignupView({ token, agencyName, role }: Props) {
             </div>
           </div>
           <div>
-            <label className="text-xs font-medium uppercase tracking-wider block mb-1.5" style={{ color: '#4A7580' }}>
+            <label className="text-xs font-medium uppercase tracking-wider block mb-1.5" style={{ color: 'var(--text-muted)' }}>
               Confirmar senha
             </label>
             <input
@@ -175,7 +175,7 @@ export default function SignupView({ token, agencyName, role }: Props) {
           </div>
 
           {error && (
-            <p className="text-xs text-center" style={{ color: '#C0392B' }}>{error}</p>
+            <p className="text-xs text-center" style={{ color: 'var(--error)' }}>{error}</p>
           )}
 
           <button
@@ -191,7 +191,7 @@ export default function SignupView({ token, agencyName, role }: Props) {
           </button>
         </form>
 
-        <p className="text-center text-xs mt-8" style={{ color: '#4A7580' }}>
+        <p className="text-center text-xs mt-8" style={{ color: 'var(--text-muted)' }}>
           Travel Designers Group · TDG Flow
         </p>
       </motion.div>

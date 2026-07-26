@@ -61,8 +61,8 @@ function SentimentBadge({ value }: { value: number }) {
   const isNeg = value < 0 || isLegacyNegative
   if (!isPos && !isNeg && value === 0) return null
 
-  const color = isPos ? '#008C94' : '#C62828'
-  const bg    = isPos ? '#E6F4F5' : '#FFEBEE'
+  const color = isPos ? 'var(--gold)' : 'var(--error)'
+  const bg    = isPos ? 'var(--gold-subtle)' : 'var(--error-subtle)'
 
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 9px', borderRadius: 20, background: bg }}>
@@ -75,13 +75,13 @@ function SentimentBadge({ value }: { value: number }) {
 const SCORE_LABEL: Record<number, { label: string; color: string; bg: string }> = {
   5:  { label: 'Excepcional',        color: '#005F63', bg: '#D0F0F1' },
   4:  { label: 'Excelente',          color: '#007A7F', bg: '#E0F4F5' },
-  3:  { label: 'Muito bom',          color: '#2E7D32', bg: '#E8F5E9' },
+  3:  { label: 'Muito bom',          color: 'var(--success)', bg: 'var(--success-subtle)' },
   2:  { label: 'Bom',                color: '#388E3C', bg: '#F1F8E9' },
   1:  { label: 'Satisfatório',       color: '#558B2F', bg: '#F9FBE7' },
-  0:  { label: 'Neutro',             color: '#4A7580', bg: '#F0F5F7' },
+  0:  { label: 'Neutro',             color: 'var(--text-muted)', bg: 'var(--border-subtle)' },
   '-1': { label: 'Regular',          color: '#7B5800', bg: '#FFF8E1' },
   '-2': { label: 'Abaixo do esperado', color: '#BF360C', bg: '#FBE9E7' },
-  '-3': { label: 'Fraco',            color: '#C62828', bg: '#FFEBEE' },
+  '-3': { label: 'Fraco',            color: 'var(--error)', bg: 'var(--error-subtle)' },
   '-4': { label: 'Ruim',             color: '#B71C1C', bg: '#FFCDD2' },
   '-5': { label: 'Péssimo',          color: '#7F0000', bg: '#FFCDD2' },
 }
@@ -93,28 +93,28 @@ function SubSentimentRow({
   const conf = (SCORE_LABEL as Record<string, typeof SCORE_LABEL[5]>)[String(value)] ?? SCORE_LABEL[0]
   // bar: 0–100% where center=0, left=neg, right=pos
   const pct = Math.round(((value + 5) / 10) * 100)
-  const barColor = value >= 3 ? '#008C94' : value >= 1 ? '#2E7D32' : value === 0 ? '#B8CDD2' : value >= -2 ? '#C97B20' : '#C62828'
+  const barColor = value >= 3 ? 'var(--gold)' : value >= 1 ? 'var(--success)' : value === 0 ? '#B8CDD2' : value >= -2 ? 'var(--accent-warm)' : 'var(--error)'
 
   return (
     <div style={{ marginBottom: 8 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 }}>
-        <span style={{ fontSize: '0.6875rem', color: '#4A7580', fontWeight: 500 }}>{label}</span>
+        <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', fontWeight: 500 }}>{label}</span>
         <span style={{
           fontSize: '0.5625rem', fontWeight: 700, color: conf.color,
           background: conf.bg, borderRadius: 10, padding: '2px 7px',
         }}>{conf.label}</span>
       </div>
       {/* Mini bar –5…+5 */}
-      <div style={{ height: 3, borderRadius: 2, background: '#EDF4F6', position: 'relative', overflow: 'visible' }}>
+      <div style={{ height: 3, borderRadius: 2, background: 'var(--surface-high)', position: 'relative', overflow: 'visible' }}>
         <div style={{
           position: 'absolute', left: 0, top: 0, height: '100%',
           width: `${pct}%`, background: barColor, borderRadius: 2, transition: 'width 0.3s',
         }} />
         {/* center marker */}
-        <div style={{ position: 'absolute', left: '50%', top: -1, width: 1, height: 5, background: '#D0E2E5', transform: 'translateX(-50%)' }} />
+        <div style={{ position: 'absolute', left: '50%', top: -1, width: 1, height: 5, background: 'var(--border)', transform: 'translateX(-50%)' }} />
       </div>
       {note && (
-        <p style={{ fontSize: '0.6875rem', color: '#104C64', margin: '4px 0 0', lineHeight: 1.45, fontStyle: 'italic' }}>
+        <p style={{ fontSize: '0.6875rem', color: 'var(--text-secondary)', margin: '4px 0 0', lineHeight: 1.45, fontStyle: 'italic' }}>
           &ldquo;{note}&rdquo;
         </p>
       )}
@@ -124,9 +124,9 @@ function SubSentimentRow({
 
 /* ── Accent color ────────────────────────────────────────────────── */
 function ratingAccent(r: number) {
-  if (r > 0 || r >= 4) return '#008C94'
-  if (r < 0 || r === 1) return '#C62828'
-  return '#4A7580'
+  if (r > 0 || r >= 4) return 'var(--gold)'
+  if (r < 0 || r === 1) return 'var(--error)'
+  return 'var(--text-muted)'
 }
 
 /* ── Sentiment slider — −5 a +5 com escala musical ─────────────── */
@@ -186,7 +186,7 @@ function SentimentSlider({
           const tealBase  = `rgba(0,140,148,${0.25 + intensity * 0.75})`
           const redBase   = `rgba(198,40,40,${0.25 + intensity * 0.75})`
           const dotColor  = p < 0 ? redBase : p > 0 ? tealBase : '#94A3B8'
-          const emptyColor = p === 0 ? '#D0E2E5' : '#E8F0F2'
+          const emptyColor = p === 0 ? 'var(--border)' : 'var(--surface-high)'
 
           return (
             <motion.button
@@ -216,14 +216,14 @@ function SentimentSlider({
 
       {/* Labels */}
       <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: 2, paddingRight: 2 }}>
-        <span style={{ fontSize, color: '#C62828', fontWeight: 600 }}>−5</span>
+        <span style={{ fontSize, color: 'var(--error)', fontWeight: 600 }}>−5</span>
         <span style={{ fontSize, color: '#94A3B8' }}>0</span>
-        <span style={{ fontSize, color: '#008C94', fontWeight: 600 }}>+5</span>
+        <span style={{ fontSize, color: 'var(--gold)', fontWeight: 600 }}>+5</span>
       </div>
 
       {/* Current value indicator */}
       {value !== null && value !== 0 && (
-        <p style={{ textAlign: 'center', marginTop: 8, fontSize: '0.875rem', fontWeight: 700, color: value > 0 ? '#008C94' : '#C62828', margin: '8px 0 0' }}>
+        <p style={{ textAlign: 'center', marginTop: 8, fontSize: '0.875rem', fontWeight: 700, color: value > 0 ? 'var(--gold)' : 'var(--error)', margin: '8px 0 0' }}>
           {value > 0 ? `+${value}` : value}
         </p>
       )}
@@ -318,9 +318,9 @@ function SentimentMapStep({ value, onChange }: {
               onClick={() => toggleAspect(name)}
               style={{
                 padding: '5px 12px', borderRadius: 999, fontSize: '0.75rem',
-                background: active ? '#E6F4F5' : 'var(--surface-high)',
-                border: `1px solid ${active ? '#008C94' : 'var(--border)'}`,
-                color: active ? '#008C94' : '#4A7580',
+                background: active ? 'var(--gold-subtle)' : 'var(--surface-high)',
+                border: `1px solid ${active ? 'var(--gold)' : 'var(--border)'}`,
+                color: active ? 'var(--gold)' : 'var(--text-muted)',
                 fontWeight: active ? 600 : 400,
                 cursor: 'pointer', transition: 'all 0.12s',
               }}
@@ -346,8 +346,8 @@ function SentimentMapStep({ value, onChange }: {
           disabled={!custom.trim()}
           style={{
             padding: '8px 14px', borderRadius: 10, border: 'none',
-            background: custom.trim() ? '#008C94' : 'var(--border)',
-            color: '#fff', cursor: custom.trim() ? 'pointer' : 'default',
+            background: custom.trim() ? 'var(--gold)' : 'var(--border)',
+            color: 'var(--surface)', cursor: custom.trim() ? 'pointer' : 'default',
             fontSize: '0.875rem', fontWeight: 700,
           }}
         >+</button>
@@ -363,9 +363,9 @@ function SentimentMapStep({ value, onChange }: {
             return (
               <div key={name} style={{ padding: '12px 14px', borderRadius: 12, background: 'var(--surface-high)', border: '1px solid var(--border)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                  <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#112630' }}>{name}</span>
+                  <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)' }}>{name}</span>
                   <button onClick={() => toggleAspect(name)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}>
-                    <X size={12} style={{ color: '#7BA8B2' }} />
+                    <X size={12} style={{ color: 'var(--text-faint)' }} />
                   </button>
                 </div>
                 <SentimentSlider
@@ -388,7 +388,7 @@ function SentimentMapStep({ value, onChange }: {
                       padding: '6px 10px', borderRadius: 8, flexShrink: 0,
                       background: isRec ? 'var(--error)' : 'var(--surface)',
                       border: `1px solid ${isRec ? 'transparent' : 'var(--border)'}`,
-                      color: isRec ? '#fff' : '#4A7580', cursor: 'pointer',
+                      color: isRec ? 'var(--surface)' : 'var(--text-muted)', cursor: 'pointer',
                       display: 'flex', alignItems: 'center', gap: 4,
                     }}
                   >
@@ -407,12 +407,12 @@ function SentimentMapStep({ value, onChange }: {
       )}
 
       {selectedAspects.length === 0 && (
-        <p style={{ fontSize: '0.6875rem', color: '#B8D0D5', textAlign: 'center', padding: '4px 0' }}>
+        <p style={{ fontSize: '0.6875rem', color: 'var(--border-light)', textAlign: 'center', padding: '4px 0' }}>
           Toque nos aspectos acima para mapear sentimentos
         </p>
       )}
 
-      <p style={{ fontSize: '0.6875rem', color: '#B8D0D5', textAlign: 'center' }}>
+      <p style={{ fontSize: '0.6875rem', color: 'var(--border-light)', textAlign: 'center' }}>
         Opcional — pule se preferir
       </p>
     </div>
@@ -469,20 +469,20 @@ function HotelCard({ review, onToggleFavorite, onViewHistory }: {
 
           <div style={{ flex: 1, minWidth: 0 }}>
             <h3 style={{
-              fontSize: '0.9375rem', fontWeight: 500, color: '#112630',
+              fontSize: '0.9375rem', fontWeight: 500, color: 'var(--text-primary)',
               letterSpacing: '-0.02em', lineHeight: 1.2, marginBottom: 2,
             }}>
               {review.hotel_name}
             </h3>
             {review.country && (
-              <p style={{ fontSize: '0.6875rem', color: '#4A7580', marginBottom: 5, letterSpacing: '0.01em' }}>
+              <p style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', marginBottom: 5, letterSpacing: '0.01em' }}>
                 {review.country}
               </p>
             )}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <SentimentBadge value={Math.round(avgRating)} />
-              <span style={{ color: '#B8D0D5' }}>·</span>
-              <span style={{ fontSize: '0.6875rem', color: '#4A7580' }}>
+              <span style={{ color: 'var(--border-light)' }}>·</span>
+              <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
                 {visitCount} {visitCount === 1 ? 'visita' : 'visitas'}
               </span>
               {review.visit_type && (
@@ -515,7 +515,7 @@ function HotelCard({ review, onToggleFavorite, onViewHistory }: {
             {(expanded ? review.highlights : review.highlights.slice(0, 3)).map((h, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
                 <div style={{ width: 3, height: 3, borderRadius: '50%', background: accent, marginTop: 7, flexShrink: 0, opacity: 0.7 }} />
-                <span style={{ fontSize: '0.8125rem', color: '#104C64', lineHeight: 1.5, fontWeight: 300 }}>{h}</span>
+                <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', lineHeight: 1.5, fontWeight: 300 }}>{h}</span>
               </div>
             ))}
           </div>
@@ -530,7 +530,7 @@ function HotelCard({ review, onToggleFavorite, onViewHistory }: {
             borderLeft: `2px solid ${accent}50`,
           }}>
             <span style={{ fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: accent, flexShrink: 0, marginTop: 1 }}>★</span>
-            <span style={{ fontSize: '0.8125rem', color: '#104C64', lineHeight: 1.5, fontWeight: 300 }}>{review.must_experience}</span>
+            <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', lineHeight: 1.5, fontWeight: 300 }}>{review.must_experience}</span>
           </div>
         )}
 
@@ -546,7 +546,7 @@ function HotelCard({ review, onToggleFavorite, onViewHistory }: {
               <div style={{ paddingTop: 12, borderTop: '1px solid var(--border)', marginBottom: 12 }}>
                 {(review.rooms_rating || review.service_rating || review.food_rating || review.location_rating) && (
                   <div style={{ marginBottom: 14 }}>
-                    <p style={{ fontSize: '0.55rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#4A7580', margin: '0 0 8px' }}>
+                    <p style={{ fontSize: '0.55rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: '0 0 8px' }}>
                       Avaliação por aspecto
                     </p>
                     <SubSentimentRow label="Acomodações" value={review.rooms_rating} />
@@ -560,8 +560,8 @@ function HotelCard({ review, onToggleFavorite, onViewHistory }: {
                 {review.sentiment_map && Object.keys(review.sentiment_map).length > 0 && (
                   <div style={{ marginBottom: 14 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 8 }}>
-                      <MapPin size={10} style={{ color: '#4A7580' }} />
-                      <p style={{ fontSize: '0.55rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#4A7580', margin: 0 }}>
+                      <MapPin size={10} style={{ color: 'var(--text-muted)' }} />
+                      <p style={{ fontSize: '0.55rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: 0 }}>
                         Mapa de sentimentos
                       </p>
                     </div>
@@ -580,17 +580,17 @@ function HotelCard({ review, onToggleFavorite, onViewHistory }: {
                 )}
                 {review.client_profile && (
                   <div style={{ marginBottom: 12 }}>
-                    <p style={{ fontSize: '0.55rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#4A7580', marginBottom: 5 }}>
+                    <p style={{ fontSize: '0.55rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 5 }}>
                       Perfil ideal
                     </p>
-                    <p style={{ fontSize: '0.8125rem', color: '#104C64', lineHeight: 1.6, fontWeight: 300 }}>{review.client_profile}</p>
+                    <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', lineHeight: 1.6, fontWeight: 300 }}>{review.client_profile}</p>
                   </div>
                 )}
                 {review.heads_up && (
                   <div style={{ padding: '10px 12px', borderRadius: 8, background: 'rgba(251,191,36,0.05)', border: '1px solid rgba(251,191,36,0.12)' }}>
                     <div style={{ display: 'flex', gap: 7, alignItems: 'flex-start' }}>
-                      <AlertCircle size={12} style={{ color: '#B6410F', flexShrink: 0, marginTop: 1 }} />
-                      <p style={{ fontSize: '0.8125rem', color: '#4A7580', lineHeight: 1.6, fontWeight: 300 }}>{review.heads_up}</p>
+                      <AlertCircle size={12} style={{ color: 'var(--warning)', flexShrink: 0, marginTop: 1 }} />
+                      <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', lineHeight: 1.6, fontWeight: 300 }}>{review.heads_up}</p>
                     </div>
                   </div>
                 )}
@@ -605,17 +605,17 @@ function HotelCard({ review, onToggleFavorite, onViewHistory }: {
             width: 20, height: 20, borderRadius: '50%',
             background: 'var(--surface-high)', border: '1px solid var(--border)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '0.5625rem', fontWeight: 700, color: '#4A7580', flexShrink: 0,
+            fontSize: '0.5625rem', fontWeight: 700, color: 'var(--text-muted)', flexShrink: 0,
           }}>
             {review.agent_name[0]}
           </div>
-          <span style={{ fontSize: '0.6875rem', color: '#4A7580' }}>
+          <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
             {review.agent_name}
           </span>
           {review.visit_date && (
             <>
-              <span style={{ color: '#D0E2E5', fontSize: '0.6875rem' }}>·</span>
-              <span style={{ fontSize: '0.6875rem', color: '#4A7580' }}>{formatDate(review.visit_date)}</span>
+              <span style={{ color: 'var(--border)', fontSize: '0.6875rem' }}>·</span>
+              <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>{formatDate(review.visit_date)}</span>
             </>
           )}
         </div>
@@ -630,7 +630,7 @@ function HotelCard({ review, onToggleFavorite, onViewHistory }: {
       }}>
         <button
           onClick={() => setExpanded(e => !e)}
-          style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.6875rem', color: '#4A7580', padding: 0, transition: 'color 150ms' }}
+          style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.6875rem', color: 'var(--text-muted)', padding: 0, transition: 'color 150ms' }}
           onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
           onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
         >
@@ -788,12 +788,12 @@ function Questionnaire({ onClose, onSaved }: { onClose: () => void; onSaved: () 
           style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 20, padding: 40, maxWidth: 360, width: '100%', textAlign: 'center' }}
         >
           <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(134,239,172,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-            <CheckCircle size={28} style={{ color: '#2E7D4F' }} />
+            <CheckCircle size={28} style={{ color: 'var(--success)' }} />
           </div>
-          <p style={{ fontSize: '1rem', fontWeight: 500, color: '#112630', marginBottom: 8 }}>
+          <p style={{ fontSize: '1rem', fontWeight: 500, color: 'var(--text-primary)', marginBottom: 8 }}>
             Dica registrada
           </p>
-          <p style={{ fontSize: '0.8125rem', color: '#4A7580', lineHeight: 1.6, marginBottom: 24 }}>
+          <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 24 }}>
             A IA processou suas respostas e extraiu os pontos-chave. Sua visita ficou registrada no histórico do hotel.
           </p>
           <button onClick={() => { onSaved(); onClose() }} className="btn-gold w-full" style={{ justifyContent: 'center', padding: 12 }}>
@@ -825,11 +825,11 @@ function Questionnaire({ onClose, onSaved }: { onClose: () => void; onSaved: () 
 
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 20px 16px' }}>
-          <p style={{ fontSize: '0.6875rem', color: '#4A7580', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+          <p style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
             Registrar visita · {step + 1} de {QUESTIONS.length}
           </p>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
-            <X size={16} style={{ color: '#4A7580' }} />
+            <X size={16} style={{ color: 'var(--text-muted)' }} />
           </button>
         </div>
 
@@ -852,7 +852,7 @@ function Questionnaire({ onClose, onSaved }: { onClose: () => void; onSaved: () 
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.2 }}
             >
-              <p style={{ fontSize: 'clamp(1rem, 4vw, 1.25rem)', fontWeight: 300, color: '#112630', letterSpacing: '-0.02em', lineHeight: 1.4, marginBottom: 20 }}>
+              <p style={{ fontSize: 'clamp(1rem, 4vw, 1.25rem)', fontWeight: 300, color: 'var(--text-primary)', letterSpacing: '-0.02em', lineHeight: 1.4, marginBottom: 20 }}>
                 {q.text}
               </p>
 
@@ -888,7 +888,7 @@ function Questionnaire({ onClose, onSaved }: { onClose: () => void; onSaved: () 
                         padding: '12px 16px', borderRadius: 12, textAlign: 'left',
                         background: currentAnswer === opt ? 'var(--gold-subtle)' : 'var(--surface-high)',
                         border: `1px solid ${currentAnswer === opt ? 'var(--gold-ring)' : 'var(--border)'}`,
-                        color: currentAnswer === opt ? '#008C94' : '#104C64',
+                        color: currentAnswer === opt ? 'var(--gold)' : 'var(--text-secondary)',
                         fontSize: '0.875rem', cursor: 'pointer', transition: 'all 0.15s',
                       }}
                     >
@@ -919,7 +919,7 @@ function Questionnaire({ onClose, onSaved }: { onClose: () => void; onSaved: () 
                     const subs = (currentAnswer as Record<string, number>) ?? {}
                     return (
                       <div key={key} style={{ padding: '10px 14px', borderRadius: 12, background: 'var(--surface-high)', border: '1px solid var(--border)' }}>
-                        <p style={{ fontSize: '0.8125rem', color: '#104C64', marginBottom: 2, margin: '0 0 2px' }}>{label}</p>
+                        <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: 2, margin: '0 0 2px' }}>{label}</p>
                         <SentimentSlider
                           value={subs[key] !== undefined ? subs[key] : null}
                           onChange={v => setAnswer({ ...subs, [key]: v })}
@@ -928,7 +928,7 @@ function Questionnaire({ onClose, onSaved }: { onClose: () => void; onSaved: () 
                       </div>
                     )
                   })}
-                  <p style={{ fontSize: '0.6875rem', color: '#B8D0D5', textAlign: 'center' }}>
+                  <p style={{ fontSize: '0.6875rem', color: 'var(--border-light)', textAlign: 'center' }}>
                     Opcional — pule se preferir
                   </p>
                 </div>
@@ -961,7 +961,7 @@ function Questionnaire({ onClose, onSaved }: { onClose: () => void; onSaved: () 
                           display: 'inline-flex', alignItems: 'center', gap: 6,
                           padding: '8px 14px', borderRadius: 10,
                           background: 'var(--surface-high)', border: '1px solid var(--border)',
-                          color: '#4A7580', fontSize: '0.75rem', cursor: 'pointer',
+                          color: 'var(--text-muted)', fontSize: '0.75rem', cursor: 'pointer',
                         }}
                       >
                         <Mic size={13} /> Responder por voz
@@ -973,7 +973,7 @@ function Questionnaire({ onClose, onSaved }: { onClose: () => void; onSaved: () 
                           display: 'inline-flex', alignItems: 'center', gap: 6,
                           padding: '8px 14px', borderRadius: 10,
                           background: 'var(--error)', border: 'none',
-                          color: '#fff', fontSize: '0.75rem', cursor: 'pointer',
+                          color: 'var(--surface)', fontSize: '0.75rem', cursor: 'pointer',
                         }}
                       >
                         <Square size={12} className="fill-current" />
@@ -1052,16 +1052,16 @@ function HistoryDrawer({ hotelName, onClose, onToggleFavorite }: {
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
           <div>
-            <h3 style={{ fontSize: '0.9375rem', fontWeight: 500, color: '#112630' }}>{hotelName}</h3>
-            <p style={{ fontSize: '0.75rem', color: '#4A7580', marginTop: 2 }}>Histórico de visitas</p>
+            <h3 style={{ fontSize: '0.9375rem', fontWeight: 500, color: 'var(--text-primary)' }}>{hotelName}</h3>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>Histórico de visitas</p>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
-            <X size={18} style={{ color: '#4A7580' }} />
+            <X size={18} style={{ color: 'var(--text-muted)' }} />
           </button>
         </div>
 
         <div style={{ flex: 1, overflow: 'hidden auto', padding: '16px' }}>
-          {loading && <p style={{ textAlign: 'center', color: '#4A7580', fontSize: '0.875rem', paddingTop: 40 }}>Carregando...</p>}
+          {loading && <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem', paddingTop: 40 }}>Carregando...</p>}
           {!loading && reviews.map((r, idx) => (
             <div
               key={r.id}
@@ -1076,25 +1076,25 @@ function HistoryDrawer({ hotelName, onClose, onToggleFavorite }: {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
                     <SentimentBadge value={r.overall_rating} />
                     {r.visit_type && (
-                      <span style={{ fontSize: '0.6rem', color: '#008C94', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                      <span style={{ fontSize: '0.6rem', color: 'var(--gold)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
                         {VISIT_TYPE_LABELS[r.visit_type] ?? r.visit_type}
                       </span>
                     )}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'var(--surface-high)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.5625rem', fontWeight: 600, color: '#104C64' }}>
+                    <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'var(--surface-high)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.5625rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
                       {r.agent_name[0]}
                     </div>
-                    <span style={{ fontSize: '0.75rem', color: '#4A7580' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                       {r.agent_name} · {r.agency_name}
                     </span>
-                    {idx === 0 && <span style={{ fontSize: '0.6rem', color: '#008C94', letterSpacing: '0.06em', textTransform: 'uppercase' }}>mais recente</span>}
+                    {idx === 0 && <span style={{ fontSize: '0.6rem', color: 'var(--gold)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>mais recente</span>}
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ fontSize: '0.6875rem', color: '#4A7580' }}>{formatDate(r.visit_date)}</span>
+                  <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>{formatDate(r.visit_date)}</span>
                   <button onClick={() => onToggleFavorite(r.id, r.is_favorite)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}>
-                    <Heart size={14} style={{ color: r.is_favorite ? '#f87171' : '#D0E2E5', fill: r.is_favorite ? '#f87171' : 'transparent' }} />
+                    <Heart size={14} style={{ color: r.is_favorite ? '#f87171' : 'var(--border)', fill: r.is_favorite ? '#f87171' : 'transparent' }} />
                   </button>
                 </div>
               </div>
@@ -1103,14 +1103,14 @@ function HistoryDrawer({ hotelName, onClose, onToggleFavorite }: {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   {r.highlights.map((h, i) => (
                     <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
-                      <div style={{ width: 3, height: 3, borderRadius: '50%', background: '#006B72', marginTop: 6, flexShrink: 0 }} />
-                      <span style={{ fontSize: '0.75rem', color: '#104C64', lineHeight: 1.5, fontWeight: 300 }}>{h}</span>
+                      <div style={{ width: 3, height: 3, borderRadius: '50%', background: 'var(--gold-dim)', marginTop: 6, flexShrink: 0 }} />
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.5, fontWeight: 300 }}>{h}</span>
                     </div>
                   ))}
                 </div>
               )}
               {r.must_experience && (
-                <p style={{ fontSize: '0.75rem', color: '#008C94', marginTop: 6, fontWeight: 300 }}>
+                <p style={{ fontSize: '0.75rem', color: 'var(--gold)', marginTop: 6, fontWeight: 300 }}>
                   ★ {r.must_experience}
                 </p>
               )}
@@ -1188,10 +1188,10 @@ export default function DicasView() {
         {/* Title row */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '18px 20px 12px' }}>
           <div>
-            <p style={{ fontSize: '0.5625rem', fontWeight: 500, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#006B72', marginBottom: 3 }}>
+            <p style={{ fontSize: '0.5625rem', fontWeight: 500, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--gold-dim)', marginBottom: 3 }}>
               Rede TDG
             </p>
-            <h2 style={{ fontSize: '1.125rem', fontWeight: 500, color: '#112630', letterSpacing: '-0.025em', lineHeight: 1 }}>
+            <h2 style={{ fontSize: '1.125rem', fontWeight: 500, color: 'var(--text-primary)', letterSpacing: '-0.025em', lineHeight: 1 }}>
               Dicas de Hotéis
             </h2>
           </div>
@@ -1199,12 +1199,12 @@ export default function DicasView() {
             {!loading && (
               <div style={{ display: 'flex', gap: 16 }}>
                 <div style={{ textAlign: 'right' }}>
-                  <p style={{ fontSize: '1rem', fontWeight: 600, color: '#112630', letterSpacing: '-0.02em', lineHeight: 1 }}>{uniqueHotels}</p>
-                  <p style={{ fontSize: '0.55rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#4A7580', marginTop: 2 }}>hotéis</p>
+                  <p style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.02em', lineHeight: 1 }}>{uniqueHotels}</p>
+                  <p style={{ fontSize: '0.55rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', marginTop: 2 }}>hotéis</p>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <p style={{ fontSize: '1rem', fontWeight: 600, color: '#112630', letterSpacing: '-0.02em', lineHeight: 1 }}>{reviews.length}</p>
-                  <p style={{ fontSize: '0.55rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#4A7580', marginTop: 2 }}>reviews</p>
+                  <p style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.02em', lineHeight: 1 }}>{reviews.length}</p>
+                  <p style={{ fontSize: '0.55rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', marginTop: 2 }}>reviews</p>
                 </div>
               </div>
             )}
@@ -1220,7 +1220,7 @@ export default function DicasView() {
 
         {/* Search */}
         <div style={{ padding: '0 20px 12px', position: 'relative' }}>
-          <Search size={14} style={{ position: 'absolute', left: 34, top: '50%', transform: 'translateY(-50%)', color: '#4A7580', pointerEvents: 'none' }} />
+          <Search size={14} style={{ position: 'absolute', left: 34, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
           <input
             className="input"
             placeholder="Hotel, advisor, perfil de cliente, palavra-chave..."
@@ -1241,7 +1241,7 @@ export default function DicasView() {
                 fontSize: '0.6875rem', fontWeight: activeFilter === tab.id ? 600 : 400,
                 cursor: 'pointer',
                 background: activeFilter === tab.id ? 'var(--gold)' : 'var(--surface-high)',
-                color: activeFilter === tab.id ? '#FFFFFF' : '#4A7580',
+                color: activeFilter === tab.id ? 'var(--surface)' : 'var(--text-muted)',
                 border: activeFilter === tab.id ? 'none' : '1px solid var(--border)',
                 transition: 'all 150ms',
               }}
@@ -1266,7 +1266,7 @@ export default function DicasView() {
                   fontSize: '0.625rem', fontWeight: activeCountry === c ? 600 : 400,
                   letterSpacing: '0.02em', cursor: 'pointer',
                   background: activeCountry === c ? 'var(--surface-high)' : 'transparent',
-                  color: activeCountry === c ? '#112630' : '#4A7580',
+                  color: activeCountry === c ? 'var(--text-primary)' : 'var(--text-muted)',
                   border: activeCountry === c ? '1px solid var(--border-light)' : '1px solid transparent',
                   transition: 'all 150ms',
                 }}
@@ -1281,23 +1281,23 @@ export default function DicasView() {
       {/* ── List ─────────────────────────────────────────────────── */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px' }}>
         {loading && (
-          <p style={{ textAlign: 'center', color: '#4A7580', fontSize: '0.875rem', paddingTop: 48 }}>Carregando...</p>
+          <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem', paddingTop: 48 }}>Carregando...</p>
         )}
         {!loading && filtered.length === 0 && (
           <div style={{ textAlign: 'center', paddingTop: 60 }}>
             {q || activeFilter !== 'all' ? (
               <>
-                <Search size={24} style={{ color: '#4A7580', margin: '0 auto 12px' }} />
-                <p style={{ fontSize: '0.875rem', color: '#4A7580' }}>Nenhum resultado encontrado.</p>
-                <button onClick={() => { setSearch(''); setActiveFilter('all'); setActiveCountry('all') }} style={{ marginTop: 12, fontSize: '0.75rem', color: '#008C94', background: 'none', border: 'none', cursor: 'pointer' }}>
+                <Search size={24} style={{ color: 'var(--text-muted)', margin: '0 auto 12px' }} />
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Nenhum resultado encontrado.</p>
+                <button onClick={() => { setSearch(''); setActiveFilter('all'); setActiveCountry('all') }} style={{ marginTop: 12, fontSize: '0.75rem', color: 'var(--gold)', background: 'none', border: 'none', cursor: 'pointer' }}>
                   Limpar filtros
                 </button>
               </>
             ) : (
               <>
-                <Building2 size={24} style={{ color: '#4A7580', margin: '0 auto 12px' }} />
-                <p style={{ fontSize: '0.875rem', color: '#4A7580' }}>Nenhuma visita registrada ainda.</p>
-                <p style={{ fontSize: '0.75rem', color: '#4A7580', marginTop: 4 }}>Clique em "Nova visita" para começar.</p>
+                <Building2 size={24} style={{ color: 'var(--text-muted)', margin: '0 auto 12px' }} />
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Nenhuma visita registrada ainda.</p>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>Clique em "Nova visita" para começar.</p>
               </>
             )}
           </div>

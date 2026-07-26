@@ -53,7 +53,7 @@ export default function UserAvatar({ name, avatarUrl: initialUrl, size = 28, edi
           background: url ? 'transparent' : 'var(--surface-high)',
           border: `1px solid ${hover && editable ? 'var(--gold)' : 'var(--border-light)'}`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize, fontWeight: 600, color: '#104C64',
+          fontSize, fontWeight: 600, color: 'var(--text-secondary)',
           cursor: editable ? 'pointer' : 'default',
           transition: 'border-color 150ms',
           position: 'relative',
@@ -72,7 +72,7 @@ export default function UserAvatar({ name, avatarUrl: initialUrl, size = 28, edi
             background: 'rgba(0,0,0,0.45)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <Camera size={Math.round(size * 0.35)} style={{ color: '#fff' }} />
+            <Camera size={Math.round(size * 0.35)} style={{ color: 'var(--surface)' }} />
           </div>
         )}
 
@@ -83,7 +83,7 @@ export default function UserAvatar({ name, avatarUrl: initialUrl, size = 28, edi
             background: 'rgba(0,0,0,0.4)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <Loader2 size={Math.round(size * 0.38)} className="animate-spin" style={{ color: '#fff' }} />
+            <Loader2 size={Math.round(size * 0.38)} className="animate-spin" style={{ color: 'var(--surface)' }} />
           </div>
         )}
       </div>

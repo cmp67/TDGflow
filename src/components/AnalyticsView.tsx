@@ -76,11 +76,11 @@ function StatCard({ value, label, icon, accent = false, delay = 0 }: {
         borderRadius: 14, padding: '16px 18px',
       }}
     >
-      <div style={{ color: accent ? '#008C94' : '#4A7580', marginBottom: 10 }}>{icon}</div>
-      <p style={{ fontSize: '2rem', fontWeight: 700, letterSpacing: '-0.04em', color: accent ? '#008C94' : '#112630', lineHeight: 1, marginBottom: 5 }}>
+      <div style={{ color: accent ? 'var(--gold)' : 'var(--text-muted)', marginBottom: 10 }}>{icon}</div>
+      <p style={{ fontSize: '2rem', fontWeight: 700, letterSpacing: '-0.04em', color: accent ? 'var(--gold)' : 'var(--text-primary)', lineHeight: 1, marginBottom: 5 }}>
         {isNumeric ? animated.toLocaleString('pt-BR') : value}
       </p>
-      <p style={{ fontSize: '0.6875rem', color: '#4A7580', letterSpacing: '0.01em' }}>{label}</p>
+      <p style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', letterSpacing: '0.01em' }}>{label}</p>
     </motion.div>
   )
 }
@@ -98,7 +98,7 @@ function MiniBar({ value, max, color }: { value: number; max: number; color: str
 
 /* ── Trend chart ─────────────────────────────────────────────────────── */
 function TrendChart({ data, color = 'var(--gold)' }: { data: MonthStat[]; color?: string }) {
-  if (!data.length) return <p style={{ fontSize: '0.75rem', color: '#4A7580', padding: '8px 0' }}>Sem dados suficientes.</p>
+  if (!data.length) return <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', padding: '8px 0' }}>Sem dados suficientes.</p>
   const max = Math.max(...data.map(d => d.reviews), 1)
   const height = 52
   return (
@@ -115,7 +115,7 @@ function TrendChart({ data, color = 'var(--gold)' }: { data: MonthStat[]; color?
               title={`${d.reviews} dicas`}
               style={{ width: '100%', background: color, borderRadius: '3px 3px 0 0', opacity: i === data.length - 1 ? 1 : 0.5 }}
             />
-            <span style={{ fontSize: '0.45rem', color: '#4A7580', letterSpacing: '0.02em' }}>{label}</span>
+            <span style={{ fontSize: '0.45rem', color: 'var(--text-muted)', letterSpacing: '0.02em' }}>{label}</span>
           </div>
         )
       })}
@@ -135,15 +135,15 @@ function ActivityRow({ item }: { item: ActivityItem }) {
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
       <div style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
       <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{ fontSize: '0.8125rem', fontWeight: 500, color: '#112630', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        <p style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {item.hotel_name}
-          {item.country && <span style={{ color: '#4A7580', fontWeight: 400 }}> · {item.country}</span>}
+          {item.country && <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}> · {item.country}</span>}
         </p>
-        <p style={{ fontSize: '0.6875rem', color: '#104C64' }}>{item.agent_name} · {item.agency_name}</p>
+        <p style={{ fontSize: '0.6875rem', color: 'var(--text-secondary)' }}>{item.agent_name} · {item.agency_name}</p>
       </div>
       <div style={{ textAlign: 'right', flexShrink: 0 }}>
-        <p style={{ fontSize: '0.75rem', fontWeight: 600, color: '#008C94' }}>{item.overall_rating} ★</p>
-        <p style={{ fontSize: '0.625rem', color: '#4A7580' }}>{timeStr}</p>
+        <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--gold)' }}>{item.overall_rating} ★</p>
+        <p style={{ fontSize: '0.625rem', color: 'var(--text-muted)' }}>{timeStr}</p>
       </div>
     </div>
   )
@@ -164,15 +164,15 @@ function InsightsBlock() {
   return (
     <div style={{ background: 'linear-gradient(135deg, var(--gold-subtle) 0%, var(--surface) 60%)', border: '1px solid var(--gold-ring)', borderRadius: 14, padding: '16px 18px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-        <Sparkles size={13} style={{ color: '#008C94' }} />
-        <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#006B72' }}>
+        <Sparkles size={13} style={{ color: 'var(--gold)' }} />
+        <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--gold-dim)' }}>
           Insights da rede · gerado por IA
         </p>
       </div>
       {loading ? (
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--gold)', opacity: 0.6, animation: 'pulse 1.2s ease-in-out infinite' }} />
-          <p style={{ fontSize: '0.8125rem', color: '#4A7580' }}>Analisando dados...</p>
+          <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Analisando dados...</p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -184,8 +184,8 @@ function InsightsBlock() {
               transition={{ delay: i * 0.12 }}
               style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}
             >
-              <span style={{ color: '#008C94', fontSize: '0.6rem', marginTop: 4, flexShrink: 0 }}>◆</span>
-              <p style={{ fontSize: '0.8125rem', color: '#104C64', lineHeight: 1.5 }}>{text}</p>
+              <span style={{ color: 'var(--gold)', fontSize: '0.6rem', marginTop: 4, flexShrink: 0 }}>◆</span>
+              <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{text}</p>
             </motion.div>
           ))}
         </div>
@@ -230,7 +230,7 @@ export default function AnalyticsView() {
 
   if (loading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-      <p style={{ color: '#4A7580', fontSize: '0.875rem' }}>Carregando dados...</p>
+      <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Carregando dados...</p>
     </div>
   )
   if (!data) return null
@@ -259,10 +259,10 @@ export default function AnalyticsView() {
       <div style={{ flexShrink: 0, background: 'var(--surface)', borderBottom: '1px solid var(--border)', padding: '18px 20px 0' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
           <div>
-            <p style={{ fontSize: '0.5625rem', fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#006B72', marginBottom: 3 }}>
+            <p style={{ fontSize: '0.5625rem', fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--gold-dim)', marginBottom: 3 }}>
               Intelligence
             </p>
-            <h2 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#112630', letterSpacing: '-0.025em' }}>
+            <h2 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.025em' }}>
               Analytics TDG
             </h2>
           </div>
@@ -275,7 +275,7 @@ export default function AnalyticsView() {
                 style={{
                   padding: '4px 9px', borderRadius: 7, fontSize: '0.6875rem', cursor: 'pointer', border: 'none',
                   background: period === p ? 'var(--surface)' : 'transparent',
-                  color: period === p ? '#112630' : '#4A7580',
+                  color: period === p ? 'var(--text-primary)' : 'var(--text-muted)',
                   fontWeight: period === p ? 600 : 400,
                   boxShadow: period === p ? '0 1px 3px rgba(28,20,16,0.10)' : 'none',
                   transition: 'all 150ms',
@@ -299,7 +299,7 @@ export default function AnalyticsView() {
               style={{
                 padding: '10px 16px', background: 'none', border: 'none', cursor: 'pointer',
                 fontSize: '0.875rem', fontWeight: tab === t.id ? 600 : 500,
-                color: tab === t.id ? '#112630' : '#4A7580',
+                color: tab === t.id ? 'var(--text-primary)' : 'var(--text-muted)',
                 borderBottom: tab === t.id ? '2px solid var(--gold)' : '2px solid transparent',
                 transition: 'all 150ms',
               }}
@@ -338,25 +338,25 @@ export default function AnalyticsView() {
                 >
                   <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'linear-gradient(90deg, var(--gold) 0%, var(--gold-dim) 100%)' }} />
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                    <Trophy size={13} style={{ color: '#008C94' }} />
-                    <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#4A7580' }}>
+                    <Trophy size={13} style={{ color: 'var(--gold)' }} />
+                    <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
                       Hotel mais avaliado da rede
                     </p>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div>
-                      <p style={{ fontSize: '1rem', fontWeight: 600, color: '#112630', letterSpacing: '-0.02em', marginBottom: 3 }}>
+                      <p style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.02em', marginBottom: 3 }}>
                         {topHotel.hotel_name}
                       </p>
-                      <p style={{ fontSize: '0.75rem', color: '#4A7580' }}>
+                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                         {topHotel.agency_count} agênci{topHotel.agency_count !== 1 ? 'as' : 'a'} visitaram
                       </p>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <p style={{ fontSize: '1.5rem', fontWeight: 700, color: '#008C94', letterSpacing: '-0.04em', lineHeight: 1 }}>
+                      <p style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--gold)', letterSpacing: '-0.04em', lineHeight: 1 }}>
                         {topHotel.visit_count}
                       </p>
-                      <p style={{ fontSize: '0.6875rem', color: '#4A7580' }}>
+                      <p style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
                         visitas · {Number(topHotel.avg_rating).toFixed(1)} ★
                       </p>
                     </div>
@@ -366,7 +366,7 @@ export default function AnalyticsView() {
 
               {/* ── Por tipo de visita ── */}
               <div style={{ background: 'var(--surface)', borderRadius: 14, border: '1px solid var(--border)', padding: '16px 18px' }}>
-                <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#4A7580', marginBottom: 14 }}>
+                <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 14 }}>
                   {tr('analytics.byType')} · {PERIOD_LABELS[period]}
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -378,11 +378,11 @@ export default function AnalyticsView() {
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <div style={{ width: 9, height: 9, borderRadius: '50%', background: color, flexShrink: 0 }} />
-                            <span style={{ fontSize: '0.875rem', fontWeight: 500, color: '#104C64' }}>
+                            <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-secondary)' }}>
                               {VISIT_TYPE_LABELS[s.visit_type] ?? s.visit_type}
                             </span>
                           </div>
-                          <span style={{ fontSize: '1rem', fontWeight: 700, color: '#112630', letterSpacing: '-0.03em' }}>
+                          <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
                             {v.toLocaleString('pt-BR')}
                           </span>
                         </div>
@@ -397,8 +397,8 @@ export default function AnalyticsView() {
               {(network.top_countries ?? []).length > 0 && (
                 <div style={{ background: 'var(--surface)', borderRadius: 14, border: '1px solid var(--border)', padding: '16px 18px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-                    <MapPin size={13} style={{ color: '#008C94' }} />
-                    <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#4A7580' }}>
+                    <MapPin size={13} style={{ color: 'var(--gold)' }} />
+                    <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
                       Destinos mais avaliados
                     </p>
                   </div>
@@ -406,8 +406,8 @@ export default function AnalyticsView() {
                     {network.top_countries.map(c => (
                       <div key={c.country}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                          <span style={{ fontSize: '0.875rem', fontWeight: 500, color: '#104C64' }}>{c.country}</span>
-                          <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#112630' }}>{c.visit_count}</span>
+                          <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-secondary)' }}>{c.country}</span>
+                          <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>{c.visit_count}</span>
                         </div>
                         <MiniBar value={c.visit_count} max={maxCountry} color="var(--gold)" />
                       </div>
@@ -418,7 +418,7 @@ export default function AnalyticsView() {
 
               {/* ── Tendência mensal ── */}
               <div style={{ background: 'var(--surface)', borderRadius: 14, border: '1px solid var(--border)', padding: '16px 18px' }}>
-                <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#4A7580', marginBottom: 16 }}>
+                <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 16 }}>
                   {tr('analytics.trend')}
                 </p>
                 <TrendChart data={network.monthly_trend} />
@@ -428,8 +428,8 @@ export default function AnalyticsView() {
               {(network.recent_activity ?? []).length > 0 && (
                 <div style={{ background: 'var(--surface)', borderRadius: 14, border: '1px solid var(--border)', padding: '16px 18px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <Activity size={13} style={{ color: '#008C94' }} />
-                    <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#4A7580' }}>
+                    <Activity size={13} style={{ color: 'var(--gold)' }} />
+                    <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
                       Atividade recente da rede
                     </p>
                   </div>
@@ -442,23 +442,23 @@ export default function AnalyticsView() {
               {/* ── Top hotéis ── */}
               <div style={{ background: 'var(--surface)', borderRadius: 14, border: '1px solid var(--border)', overflow: 'hidden' }}>
                 <div style={{ padding: '16px 18px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Award size={13} style={{ color: '#008C94' }} />
-                  <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#4A7580' }}>
+                  <Award size={13} style={{ color: 'var(--gold)' }} />
+                  <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
                     {tr('analytics.topHotels')}
                   </p>
                 </div>
                 {network.top_hotels.map((h, i) => (
                   <div key={h.hotel_name} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 18px', borderTop: '1px solid var(--border)', background: i === 0 ? 'var(--gold-subtle)' : 'transparent' }}>
-                    <span style={{ width: 22, height: 22, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '0.6875rem', fontWeight: 700, background: i < 3 ? 'var(--gold-subtle)' : 'var(--surface-high)', color: i < 3 ? '#008C94' : '#4A7580', border: i < 3 ? '1px solid var(--gold-ring)' : '1px solid var(--border)' }}>
+                    <span style={{ width: 22, height: 22, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '0.6875rem', fontWeight: 700, background: i < 3 ? 'var(--gold-subtle)' : 'var(--surface-high)', color: i < 3 ? 'var(--gold)' : 'var(--text-muted)', border: i < 3 ? '1px solid var(--gold-ring)' : '1px solid var(--border)' }}>
                       {i + 1}
                     </span>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: '0.875rem', fontWeight: 600, color: '#112630', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{h.hotel_name}</p>
-                      <p style={{ fontSize: '0.6875rem', color: '#4A7580' }}>{h.agency_count} agênci{h.agency_count !== 1 ? 'as' : 'a'}</p>
+                      <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{h.hotel_name}</p>
+                      <p style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>{h.agency_count} agênci{h.agency_count !== 1 ? 'as' : 'a'}</p>
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <p style={{ fontSize: '1rem', fontWeight: 700, color: '#112630', letterSpacing: '-0.03em' }}>{h.visit_count}</p>
-                      <p style={{ fontSize: '0.6rem', color: '#008C94' }}>{Number(h.avg_rating).toFixed(1)} ★</p>
+                      <p style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>{h.visit_count}</p>
+                      <p style={{ fontSize: '0.6rem', color: 'var(--gold)' }}>{Number(h.avg_rating).toFixed(1)} ★</p>
                     </div>
                   </div>
                 ))}
@@ -467,23 +467,23 @@ export default function AnalyticsView() {
               {/* ── Top agências ── */}
               <div style={{ background: 'var(--surface)', borderRadius: 14, border: '1px solid var(--border)', overflow: 'hidden' }}>
                 <div style={{ padding: '16px 18px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <BarChart2 size={13} style={{ color: '#008C94' }} />
-                  <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#4A7580' }}>
+                  <BarChart2 size={13} style={{ color: 'var(--gold)' }} />
+                  <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
                     {tr('analytics.topAgencies')}
                   </p>
                 </div>
                 {network.top_agencies.map(a => (
                   <div key={a.agency_name} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 18px', borderTop: '1px solid var(--border)' }}>
-                    <div style={{ width: 30, height: 30, borderRadius: 8, flexShrink: 0, background: 'var(--surface-high)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6875rem', fontWeight: 700, color: '#104C64' }}>
+                    <div style={{ width: 30, height: 30, borderRadius: 8, flexShrink: 0, background: 'var(--surface-high)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6875rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
                       {a.agency_name.slice(0, 2).toUpperCase()}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: '0.875rem', fontWeight: 600, color: '#112630', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{a.agency_name}</p>
-                      <p style={{ fontSize: '0.6875rem', color: '#4A7580' }}>{a.unique_hotels} hotéis únicos</p>
+                      <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{a.agency_name}</p>
+                      <p style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>{a.unique_hotels} hotéis únicos</p>
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <p style={{ fontSize: '1rem', fontWeight: 700, color: '#112630', letterSpacing: '-0.03em' }}>{a.review_count}</p>
-                      <p style={{ fontSize: '0.6rem', color: '#008C94' }}>{Number(a.avg_rating).toFixed(1)} ★</p>
+                      <p style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>{a.review_count}</p>
+                      <p style={{ fontSize: '0.6rem', color: 'var(--gold)' }}>{Number(a.avg_rating).toFixed(1)} ★</p>
                     </div>
                   </div>
                 ))}
@@ -505,7 +505,7 @@ export default function AnalyticsView() {
 
               {me.by_visit_type.length > 0 && (
                 <div style={{ background: 'var(--surface)', borderRadius: 14, border: '1px solid var(--border)', padding: '16px 18px' }}>
-                  <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#4A7580', marginBottom: 14 }}>
+                  <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 14 }}>
                     Minhas visitas por tipo
                   </p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -517,9 +517,9 @@ export default function AnalyticsView() {
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 7 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                               <div style={{ width: 9, height: 9, borderRadius: '50%', background: color }} />
-                              <span style={{ fontSize: '0.875rem', fontWeight: 500, color: '#104C64' }}>{VISIT_TYPE_LABELS[s.visit_type] ?? s.visit_type}</span>
+                              <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-secondary)' }}>{VISIT_TYPE_LABELS[s.visit_type] ?? s.visit_type}</span>
                             </div>
-                            <span style={{ fontSize: '1rem', fontWeight: 700, color: '#112630' }}>{s.count}</span>
+                            <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>{s.count}</span>
                           </div>
                           <MiniBar value={s.count} max={maxMe} color={color} />
                         </div>
@@ -531,7 +531,7 @@ export default function AnalyticsView() {
 
               {me.monthly_trend.length > 0 && (
                 <div style={{ background: 'var(--surface)', borderRadius: 14, border: '1px solid var(--border)', padding: '16px 18px' }}>
-                  <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#4A7580', marginBottom: 16 }}>
+                  <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 16 }}>
                     Minha atividade — últimos 6 meses
                   </p>
                   <TrendChart data={me.monthly_trend} color="#86EFAC" />
@@ -540,9 +540,9 @@ export default function AnalyticsView() {
 
               {me.total_reviews === 0 && (
                 <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-                  <TrendingUp size={28} style={{ color: '#4A7580', margin: '0 auto 12px' }} />
-                  <p style={{ fontSize: '0.875rem', color: '#4A7580' }}>Você ainda não registrou nenhuma dica.</p>
-                  <p style={{ fontSize: '0.75rem', color: '#4A7580', marginTop: 4 }}>Vá em Dicas → Nova visita para começar.</p>
+                  <TrendingUp size={28} style={{ color: 'var(--text-muted)', margin: '0 auto 12px' }} />
+                  <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Você ainda não registrou nenhuma dica.</p>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>Vá em Dicas → Nova visita para começar.</p>
                 </div>
               )}
             </motion.div>

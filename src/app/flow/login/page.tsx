@@ -46,14 +46,14 @@ export default function LoginPage() {
         <div className="text-center mb-10">
           <div
             className="w-12 h-12 rounded-xl flex items-center justify-center font-semibold text-sm mx-auto mb-5"
-            style={{ background: 'var(--gold)', color: '#FFFFFF', letterSpacing: '0.04em' }}
+            style={{ background: 'var(--gold)', color: 'var(--surface)', letterSpacing: '0.04em' }}
           >
             TDG
           </div>
-          <h1 className="text-lg font-semibold" style={{ color: '#112630', letterSpacing: '-0.02em' }}>
+          <h1 className="text-lg font-semibold" style={{ color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
             TDG Flow
           </h1>
-          <p className="text-sm mt-1" style={{ color: '#4A7580' }}>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
             Acesso exclusivo para agências credenciadas
           </p>
         </div>
@@ -61,7 +61,7 @@ export default function LoginPage() {
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
-            <label className="text-xs font-medium uppercase tracking-wider block mb-1.5" style={{ color: '#4A7580' }}>
+            <label className="text-xs font-medium uppercase tracking-wider block mb-1.5" style={{ color: 'var(--text-muted)' }}>
               Email
             </label>
             <input
@@ -75,7 +75,7 @@ export default function LoginPage() {
             />
           </div>
           <div>
-            <label className="text-xs font-medium uppercase tracking-wider block mb-1.5" style={{ color: '#4A7580' }}>
+            <label className="text-xs font-medium uppercase tracking-wider block mb-1.5" style={{ color: 'var(--text-muted)' }}>
               Senha
             </label>
             <div style={{ position: 'relative' }}>
@@ -95,7 +95,7 @@ export default function LoginPage() {
                 style={{
                   position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
                   background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-                  color: '#4A7580', display: 'flex', alignItems: 'center',
+                  color: 'var(--text-muted)', display: 'flex', alignItems: 'center',
                 }}
                 tabIndex={-1}
                 aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
@@ -106,7 +106,7 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <p className="text-xs text-center" style={{ color: '#C0392B' }}>{error}</p>
+            <p className="text-xs text-center" style={{ color: 'var(--error)' }}>{error}</p>
           )}
 
           <button
@@ -122,7 +122,7 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className="text-center text-xs mt-8" style={{ color: '#4A7580' }}>
+        <p className="text-center text-xs mt-8" style={{ color: 'var(--text-muted)' }}>
           Acesso restrito — Travel Designers Group
         </p>
       </motion.div>

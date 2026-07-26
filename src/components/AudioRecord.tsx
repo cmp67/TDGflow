@@ -125,10 +125,10 @@ export default function AudioRecord({ defaultAgentName = '', onSaved, onClose }:
             className="w-14 h-14 rounded-full flex items-center justify-center mx-auto"
             style={{ background: 'rgba(134,239,172,0.10)' }}
           >
-            <CheckCircle size={32} style={{ color: '#2E7D4F' }} />
+            <CheckCircle size={32} style={{ color: 'var(--success)' }} />
           </div>
-          <p className="font-semibold" style={{ color: '#112630' }}>Áudio salvo</p>
-          <p className="text-sm" style={{ color: '#4A7580' }}>
+          <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>Áudio salvo</p>
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
             Você pode transcrever depois na fila de áudios.
           </p>
           <div className="flex gap-2 pt-2">
@@ -154,9 +154,9 @@ export default function AudioRecord({ defaultAgentName = '', onSaved, onClose }:
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
-          <h2 className="text-base font-semibold" style={{ color: '#112630' }}>Registrar Reunião</h2>
+          <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Registrar Reunião</h2>
           <button onClick={onClose} className="btn-ghost" style={{ padding: '4px', border: 'none' }}>
-            <X size={18} style={{ color: '#4A7580' }} />
+            <X size={18} style={{ color: 'var(--text-muted)' }} />
           </button>
         </div>
 
@@ -164,7 +164,7 @@ export default function AudioRecord({ defaultAgentName = '', onSaved, onClose }:
           {/* Participants */}
           <div className="space-y-3">
             <div>
-              <label className="text-xs font-medium uppercase tracking-wider mb-1.5 block" style={{ color: '#4A7580' }}>
+              <label className="text-xs font-medium uppercase tracking-wider mb-1.5 block" style={{ color: 'var(--text-muted)' }}>
                 Agente
               </label>
               <input
@@ -176,7 +176,7 @@ export default function AudioRecord({ defaultAgentName = '', onSaved, onClose }:
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-medium uppercase tracking-wider mb-1.5 block" style={{ color: '#4A7580' }}>
+                <label className="text-xs font-medium uppercase tracking-wider mb-1.5 block" style={{ color: 'var(--text-muted)' }}>
                   Interlocutor
                 </label>
                 <input
@@ -187,7 +187,7 @@ export default function AudioRecord({ defaultAgentName = '', onSaved, onClose }:
                 />
               </div>
               <div>
-                <label className="text-xs font-medium uppercase tracking-wider mb-1.5 block" style={{ color: '#4A7580' }}>
+                <label className="text-xs font-medium uppercase tracking-wider mb-1.5 block" style={{ color: 'var(--text-muted)' }}>
                   Empresa
                 </label>
                 <input
@@ -212,8 +212,8 @@ export default function AudioRecord({ defaultAgentName = '', onSaved, onClose }:
                 className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all"
                 style={
                   mode === m
-                    ? { background: 'var(--surface)', color: '#112630', boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }
-                    : { color: '#4A7580' }
+                    ? { background: 'var(--surface)', color: 'var(--text-primary)', boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }
+                    : { color: 'var(--text-muted)' }
                 }
               >
                 {m === 'record' ? <><Mic size={14} /> Gravar</> : <><Upload size={14} /> Enviar arquivo</>}
@@ -238,7 +238,7 @@ export default function AudioRecord({ defaultAgentName = '', onSaved, onClose }:
                       className="w-14 h-14 rounded-full flex items-center justify-center mx-auto"
                       style={{ background: 'var(--gold-subtle)' }}
                     >
-                      <Mic size={24} style={{ color: '#008C94' }} />
+                      <Mic size={24} style={{ color: 'var(--gold)' }} />
                     </div>
                     <button onClick={startRecording} className="btn-gold mx-auto">
                       <Circle size={12} className="fill-current" /> Iniciar gravação
@@ -257,11 +257,11 @@ export default function AudioRecord({ defaultAgentName = '', onSaved, onClose }:
                         className="w-14 h-14 rounded-full flex items-center justify-center mx-auto recording-ring"
                         style={{ background: 'rgba(248,113,113,0.10)' }}
                       >
-                        <Mic size={24} style={{ color: '#C0392B' }} />
+                        <Mic size={24} style={{ color: 'var(--error)' }} />
                       </div>
                       <p
                         className="text-2xl font-mono font-semibold"
-                        style={{ color: crit ? '#C0392B' : '#112630', fontVariantNumeric: 'tabular-nums' }}
+                        style={{ color: crit ? 'var(--error)' : 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}
                       >
                         {formatSeconds(recordingSeconds)}
                       </p>
@@ -277,18 +277,18 @@ export default function AudioRecord({ defaultAgentName = '', onSaved, onClose }:
                           />
                         </div>
                         {crit && (
-                          <p className="text-xs font-medium animate-pulse" style={{ color: '#C0392B' }}>
+                          <p className="text-xs font-medium animate-pulse" style={{ color: 'var(--error)' }}>
                             Limite quase atingido — pare agora!
                           </p>
                         )}
                         {warn && !crit && (
-                          <p className="text-xs" style={{ color: '#B6410F' }}>Menos de 5 min restantes</p>
+                          <p className="text-xs" style={{ color: 'var(--warning)' }}>Menos de 5 min restantes</p>
                         )}
                       </div>
                       <button
                         onClick={stopRecording}
                         className="inline-flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold transition-colors"
-                        style={{ background: 'var(--error)', color: '#FFFFFF' }}
+                        style={{ background: 'var(--error)', color: 'var(--surface)' }}
                       >
                         <Square size={12} className="fill-current" /> Parar
                       </button>
@@ -297,7 +297,7 @@ export default function AudioRecord({ defaultAgentName = '', onSaved, onClose }:
                 })()}
 
                 {stopping && (
-                  <p className="py-2 text-sm" style={{ color: '#4A7580' }}>Processando gravação...</p>
+                  <p className="py-2 text-sm" style={{ color: 'var(--text-muted)' }}>Processando gravação...</p>
                 )}
 
                 {!recording && !stopping && recordedFile && (
@@ -306,15 +306,15 @@ export default function AudioRecord({ defaultAgentName = '', onSaved, onClose }:
                       className="w-14 h-14 rounded-full flex items-center justify-center mx-auto"
                       style={{ background: 'rgba(134,239,172,0.10)' }}
                     >
-                      <Mic size={24} style={{ color: '#2E7D4F' }} />
+                      <Mic size={24} style={{ color: 'var(--success)' }} />
                     </div>
-                    <p className="text-sm font-medium" style={{ color: '#112630' }}>
+                    <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
                       {formatSeconds(recordingSeconds)} &middot; {(recordedFile.size / 1024 / 1024).toFixed(1)} MB
                     </p>
                     <button
                       onClick={() => { setRecordedFile(null); setRecordingSeconds(0) }}
                       className="text-xs underline"
-                      style={{ color: '#4A7580' }}
+                      style={{ color: 'var(--text-muted)' }}
                     >
                       Gravar novamente
                     </button>
@@ -338,13 +338,13 @@ export default function AudioRecord({ defaultAgentName = '', onSaved, onClose }:
                 <input ref={fileRef} type="file" accept="audio/*" className="hidden"
                   onChange={e => setUploadFile(e.target.files?.[0] || null)} />
                 {uploadFile ? (
-                  <p className="text-sm font-medium" style={{ color: '#112630' }}>
+                  <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
                     {uploadFile.name} &middot; {(uploadFile.size / 1024 / 1024).toFixed(1)} MB
                   </p>
                 ) : (
                   <>
-                    <Upload size={28} className="mx-auto mb-2" style={{ color: '#4A7580' }} />
-                    <p className="text-sm" style={{ color: '#4A7580' }}>Clique para selecionar áudio</p>
+                    <Upload size={28} className="mx-auto mb-2" style={{ color: 'var(--text-muted)' }} />
+                    <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Clique para selecionar áudio</p>
                   </>
                 )}
               </motion.div>

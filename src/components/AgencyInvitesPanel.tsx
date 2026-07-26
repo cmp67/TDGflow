@@ -60,18 +60,18 @@ export default function AgencyInvitesPanel() {
   if (!agencies && !error) {
     return (
       <div className="flex items-center justify-center py-10">
-        <Loader size={18} className="animate-spin" style={{ color: '#4A7580' }} />
+        <Loader size={18} className="animate-spin" style={{ color: 'var(--text-muted)' }} />
       </div>
     )
   }
 
   return (
     <div className="space-y-3">
-      <p className="text-sm" style={{ color: '#4A7580' }}>
+      <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
         Gere um link único de auto-cadastro para cada agência. Quem clicar vira administrador(a) da própria agência e passa a convidar a própria equipe.
       </p>
 
-      {error && <p className="text-xs" style={{ color: '#C0392B' }}>{error}</p>}
+      {error && <p className="text-xs" style={{ color: 'var(--error)' }}>{error}</p>}
 
       <div className="space-y-2">
         {agencies?.map(a => (
@@ -82,7 +82,7 @@ export default function AgencyInvitesPanel() {
           >
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm font-medium" style={{ color: '#112630' }}>{a.name}</span>
+                <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{a.name}</span>
                 {a.status === 'registered' && (
                   <span className="badge badge-success" style={{ fontSize: '0.6rem', display: 'flex', alignItems: 'center', gap: 3 }}>
                     <CircleCheck size={11} /> registrada
@@ -105,7 +105,7 @@ export default function AgencyInvitesPanel() {
                     style={{ padding: '6px 10px', fontSize: '0.75rem' }}
                     title="Copiar link existente"
                   >
-                    {copiedId === a.id ? <Check size={12} style={{ color: '#2E7D4F' }} /> : <Copy size={12} />}
+                    {copiedId === a.id ? <Check size={12} style={{ color: 'var(--success)' }} /> : <Copy size={12} />}
                     {copiedId === a.id ? 'Copiado!' : 'Copiar link'}
                   </button>
                 )}

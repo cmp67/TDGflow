@@ -36,10 +36,10 @@ export default async function SignupPage({ params }: Props) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'var(--bg)' }}>
         <div className="w-full max-w-sm text-center">
-          <h1 className="text-lg font-semibold mb-2" style={{ color: '#112630', letterSpacing: '-0.02em' }}>
+          <h1 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
             Convite inválido
           </h1>
-          <p className="text-sm" style={{ color: '#4A7580' }}>
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
             Este link de convite é inválido, expirou ou já foi utilizado. Fale com quem te enviou o link para solicitar um novo.
           </p>
         </div>

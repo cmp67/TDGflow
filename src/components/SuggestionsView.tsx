@@ -17,14 +17,14 @@ interface Suggestion {
 }
 
 const STATUS_CONFIG = {
-  pending:     { color: '#4A7580', bg: '#EDF4F6', icon: Clock },
-  in_progress: { color: '#008C94', bg: '#E6F4F5', icon: Zap },
-  done:        { color: '#2E7D32', bg: '#E8F5E9', icon: CheckCircle2 },
+  pending:     { color: 'var(--text-muted)', bg: 'var(--surface-high)', icon: Clock },
+  in_progress: { color: 'var(--gold)', bg: 'var(--gold-subtle)', icon: Zap },
+  done:        { color: 'var(--success)', bg: 'var(--success-subtle)', icon: CheckCircle2 },
 } as const
 
 const TYPE_CONFIG = {
-  improvement: { color: '#6B4FA0', bg: '#F3EEF9', icon: Wrench },
-  new_feature: { color: '#C97B20', bg: '#FEF3E2', icon: Sparkles },
+  improvement: { color: 'var(--accent-info)', bg: 'var(--accent-info-subtle)', icon: Wrench },
+  new_feature: { color: 'var(--accent-warm)', bg: 'var(--accent-warm-subtle)', icon: Sparkles },
 } as const
 
 function ImpactDots({ value, interactive, onChange }: { value: number; interactive?: boolean; onChange?: (v: number) => void }) {
@@ -37,7 +37,7 @@ function ImpactDots({ value, interactive, onChange }: { value: number; interacti
           onClick={() => interactive && onChange?.(n)}
           style={{
             width: 10, height: 10, borderRadius: '50%',
-            background: n <= value ? '#008C94' : '#D8E6EA',
+            background: n <= value ? 'var(--gold)' : 'var(--border)',
             border: 'none', padding: 0,
             cursor: interactive ? 'pointer' : 'default',
             transition: 'background 150ms',
@@ -188,17 +188,17 @@ export default function SuggestionsView({ userRole }: { userRole: string }) {
     <div className="flex flex-col h-full overflow-hidden" style={{ background: '#F5F8FA' }}>
 
       {/* Header */}
-      <div className="flex-shrink-0" style={{ background: '#ffffff', borderBottom: '1px solid #D8E6EA', padding: '24px 28px 0' }}>
+      <div className="flex-shrink-0" style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', padding: '24px 28px 0' }}>
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h1 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#112630', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+            <h1 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
               {lx.title}
             </h1>
-            <p style={{ fontSize: '0.8125rem', color: '#4A7580', marginTop: 4 }}>{lx.subtitle}</p>
+            <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: 4 }}>{lx.subtitle}</p>
           </div>
           <button
             onClick={() => { setShowForm(true); setError('') }}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#008C94', color: '#ffffff', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 600, flexShrink: 0 }}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--gold)', color: 'var(--surface)', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 600, flexShrink: 0 }}
           >
             <Plus size={14} />{lx.suggest}
           </button>
@@ -210,10 +210,10 @@ export default function SuggestionsView({ userRole }: { userRole: string }) {
             <button
               key={t}
               onClick={() => setTab(t)}
-              style={{ padding: '10px 18px', background: 'none', border: 'none', borderBottom: tab === t ? '2px solid #008C94' : '2px solid transparent', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: tab === t ? 600 : 400, color: tab === t ? '#008C94' : '#4A7580', transition: 'all 150ms', marginBottom: -1 }}
+              style={{ padding: '10px 18px', background: 'none', border: 'none', borderBottom: tab === t ? '2px solid var(--gold)' : '2px solid transparent', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: tab === t ? 600 : 400, color: tab === t ? 'var(--gold)' : 'var(--text-muted)', transition: 'all 150ms', marginBottom: -1 }}
             >
               {t === 'board' ? lx.board : lx.roadmap}
-              <span style={{ marginLeft: 6, fontSize: '0.65rem', background: tab === t ? '#E6F4F5' : '#EDF4F6', color: tab === t ? '#008C94' : '#4A7580', borderRadius: 10, padding: '1px 6px', fontWeight: 600 }}>
+              <span style={{ marginLeft: 6, fontSize: '0.65rem', background: tab === t ? 'var(--gold-subtle)' : 'var(--surface-high)', color: tab === t ? 'var(--gold)' : 'var(--text-muted)', borderRadius: 10, padding: '1px 6px', fontWeight: 600 }}>
                 {t === 'board' ? board.length : roadmap.length}
               </span>
             </button>
@@ -224,37 +224,37 @@ export default function SuggestionsView({ userRole }: { userRole: string }) {
       {/* Submit form modal */}
       {showForm && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(17,38,48,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <div style={{ background: '#ffffff', borderRadius: 16, width: '100%', maxWidth: 500, padding: 28, boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
+          <div style={{ background: 'var(--surface)', borderRadius: 16, width: '100%', maxWidth: 500, padding: 28, boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2">
-                <MessageSquarePlus size={18} style={{ color: '#008C94' }} />
-                <h2 style={{ fontSize: '1rem', fontWeight: 700, color: '#112630', letterSpacing: '-0.02em' }}>{lx.formTitle}</h2>
+                <MessageSquarePlus size={18} style={{ color: 'var(--gold)' }} />
+                <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>{lx.formTitle}</h2>
               </div>
-              <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#4A7580', padding: 4 }}><X size={16} /></button>
+              <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4 }}><X size={16} /></button>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {/* Title */}
               <div>
-                <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 600, color: '#4A7580', marginBottom: 6, letterSpacing: '0.06em', textTransform: 'uppercase' }}>{lx.titleLabel}</label>
+                <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: 6, letterSpacing: '0.06em', textTransform: 'uppercase' }}>{lx.titleLabel}</label>
                 <input
                   value={title} onChange={e => setTitle(e.target.value)} placeholder={lx.titlePh} maxLength={120}
-                  style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #D8E6EA', borderRadius: 8, padding: '10px 12px', fontSize: '0.9375rem', color: '#112630', background: '#F8FBFC', outline: 'none' }}
+                  style={{ width: '100%', boxSizing: 'border-box', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', fontSize: '0.9375rem', color: 'var(--text-primary)', background: 'var(--bg)', outline: 'none' }}
                 />
               </div>
 
               {/* Description */}
               <div>
-                <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 600, color: '#4A7580', marginBottom: 6, letterSpacing: '0.06em', textTransform: 'uppercase' }}>{lx.descLabel}</label>
+                <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: 6, letterSpacing: '0.06em', textTransform: 'uppercase' }}>{lx.descLabel}</label>
                 <textarea
                   value={description} onChange={e => setDescription(e.target.value)} placeholder={lx.descPh} rows={3}
-                  style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #D8E6EA', borderRadius: 8, padding: '10px 12px', fontSize: '0.9375rem', color: '#112630', background: '#F8FBFC', outline: 'none', resize: 'vertical' }}
+                  style={{ width: '100%', boxSizing: 'border-box', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', fontSize: '0.9375rem', color: 'var(--text-primary)', background: 'var(--bg)', outline: 'none', resize: 'vertical' }}
                 />
               </div>
 
               {/* Type */}
               <div>
-                <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 600, color: '#4A7580', marginBottom: 8, letterSpacing: '0.06em', textTransform: 'uppercase' }}>{lx.typeLabel}</label>
+                <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: 8, letterSpacing: '0.06em', textTransform: 'uppercase' }}>{lx.typeLabel}</label>
                 <div className="flex gap-2">
                   {(['improvement', 'new_feature'] as const).map(t => {
                     const cfg = TYPE_CONFIG[t]
@@ -263,10 +263,10 @@ export default function SuggestionsView({ userRole }: { userRole: string }) {
                     return (
                       <button
                         key={t} type="button" onClick={() => setType(t)}
-                        style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 7, padding: '9px 12px', borderRadius: 8, border: selected ? `1.5px solid ${cfg.color}` : '1.5px solid #D8E6EA', background: selected ? cfg.bg : '#F8FBFC', cursor: 'pointer', transition: 'all 150ms' }}
+                        style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 7, padding: '9px 12px', borderRadius: 8, border: selected ? `1.5px solid ${cfg.color}` : '1.5px solid var(--border)', background: selected ? cfg.bg : 'var(--bg)', cursor: 'pointer', transition: 'all 150ms' }}
                       >
                         <Icon size={13} style={{ color: cfg.color, flexShrink: 0 }} />
-                        <span style={{ fontSize: '0.8125rem', fontWeight: selected ? 600 : 400, color: selected ? cfg.color : '#4A7580', lineHeight: 1.3 }}>
+                        <span style={{ fontSize: '0.8125rem', fontWeight: selected ? 600 : 400, color: selected ? cfg.color : 'var(--text-muted)', lineHeight: 1.3 }}>
                           {t === 'improvement' ? lx.improvement : lx.new_feature}
                         </span>
                       </button>
@@ -277,25 +277,25 @@ export default function SuggestionsView({ userRole }: { userRole: string }) {
 
               {/* Impact */}
               <div>
-                <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 600, color: '#4A7580', marginBottom: 8, letterSpacing: '0.06em', textTransform: 'uppercase' }}>{lx.impactLabel}</label>
+                <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: 8, letterSpacing: '0.06em', textTransform: 'uppercase' }}>{lx.impactLabel}</label>
                 <div className="flex items-center gap-3">
                   <ImpactDots value={impact} interactive onChange={setImpact} />
-                  <span style={{ fontSize: '0.8125rem', color: '#4A7580', fontStyle: 'italic' }}>{lx.impactHint(impact)}</span>
+                  <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>{lx.impactHint(impact)}</span>
                 </div>
-                <p style={{ fontSize: '0.6875rem', color: '#7BA8B2', marginTop: 6 }}>
+                <p style={{ fontSize: '0.6875rem', color: 'var(--text-faint)', marginTop: 6 }}>
                   {lang === 'en' ? '1 = minimal · 5 = game changer' : '1 = pouco · 5 = mudaria tudo'}
                 </p>
               </div>
 
-              {error && <p style={{ fontSize: '0.8125rem', color: '#C62828' }}>{error}</p>}
+              {error && <p style={{ fontSize: '0.8125rem', color: 'var(--error)' }}>{error}</p>}
 
               <div className="flex gap-2 justify-end">
-                <button onClick={() => setShowForm(false)} style={{ padding: '9px 18px', borderRadius: 8, border: '1px solid #D8E6EA', background: 'none', cursor: 'pointer', fontSize: '0.875rem', color: '#4A7580' }}>
+                <button onClick={() => setShowForm(false)} style={{ padding: '9px 18px', borderRadius: 8, border: '1px solid var(--border)', background: 'none', cursor: 'pointer', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
                   {lx.cancel}
                 </button>
                 <button
                   onClick={handleSubmit} disabled={submitting || !title.trim() || !description.trim()}
-                  style={{ padding: '9px 20px', borderRadius: 8, border: 'none', background: submitting || !title.trim() || !description.trim() ? '#B8D0D5' : '#008C94', color: '#ffffff', cursor: submitting ? 'not-allowed' : 'pointer', fontSize: '0.875rem', fontWeight: 600 }}
+                  style={{ padding: '9px 20px', borderRadius: 8, border: 'none', background: submitting || !title.trim() || !description.trim() ? 'var(--border-light)' : 'var(--gold)', color: 'var(--surface)', cursor: submitting ? 'not-allowed' : 'pointer', fontSize: '0.875rem', fontWeight: 600 }}
                 >
                   {submitting ? '…' : lx.submit}
                 </button>
@@ -308,9 +308,9 @@ export default function SuggestionsView({ userRole }: { userRole: string }) {
       {/* List */}
       <div className="flex-1 overflow-y-auto" style={{ padding: '20px 28px' }}>
         {loading ? (
-          <div style={{ textAlign: 'center', paddingTop: 60, color: '#4A7580', fontSize: '0.875rem' }}>Carregando…</div>
+          <div style={{ textAlign: 'center', paddingTop: 60, color: 'var(--text-muted)', fontSize: '0.875rem' }}>Carregando…</div>
         ) : displayed.length === 0 ? (
-          <div style={{ textAlign: 'center', paddingTop: 60, color: '#4A7580', fontSize: '0.875rem' }}>{tab === 'board' ? lx.empty : lx.emptyRoadmap}</div>
+          <div style={{ textAlign: 'center', paddingTop: 60, color: 'var(--text-muted)', fontSize: '0.875rem' }}>{tab === 'board' ? lx.empty : lx.emptyRoadmap}</div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 680, margin: '0 auto' }}>
             {displayed.map((s, idx) => {
@@ -323,9 +323,9 @@ export default function SuggestionsView({ userRole }: { userRole: string }) {
                 <div
                   key={s.id}
                   style={{
-                    background: '#ffffff',
+                    background: 'var(--surface)',
                     borderRadius: 12,
-                    border: isTop ? '1.5px solid #008C94' : '1px solid #D8E6EA',
+                    border: isTop ? '1.5px solid var(--gold)' : '1px solid var(--border)',
                     padding: '16px 18px',
                     display: 'flex',
                     gap: 14,
@@ -334,7 +334,7 @@ export default function SuggestionsView({ userRole }: { userRole: string }) {
                   }}
                 >
                   {isTop && (
-                    <div style={{ position: 'absolute', top: -1, left: 16, background: '#008C94', color: '#fff', fontSize: '0.55rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '2px 8px', borderRadius: '0 0 6px 6px' }}>
+                    <div style={{ position: 'absolute', top: -1, left: 16, background: 'var(--gold)', color: 'var(--surface)', fontSize: '0.55rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '2px 8px', borderRadius: '0 0 6px 6px' }}>
                       {lang === 'en' ? 'Top voted' : 'Mais votado'}
                     </div>
                   )}
@@ -343,17 +343,17 @@ export default function SuggestionsView({ userRole }: { userRole: string }) {
                   <div className="flex-shrink-0" style={{ marginTop: isTop ? 10 : 0 }}>
                     <button
                       onClick={() => handleVote(s.id)} disabled={votingId === s.id}
-                      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, padding: '8px 10px', borderRadius: 8, border: s.voted ? '1.5px solid #008C94' : '1.5px solid #D8E6EA', background: s.voted ? '#E6F4F5' : '#F8FBFC', cursor: votingId === s.id ? 'not-allowed' : 'pointer', transition: 'all 150ms', minWidth: 44 }}
+                      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, padding: '8px 10px', borderRadius: 8, border: s.voted ? '1.5px solid var(--gold)' : '1.5px solid var(--border)', background: s.voted ? 'var(--gold-subtle)' : 'var(--bg)', cursor: votingId === s.id ? 'not-allowed' : 'pointer', transition: 'all 150ms', minWidth: 44 }}
                     >
-                      <ChevronUp size={14} style={{ color: s.voted ? '#008C94' : '#4A7580' }} />
-                      <span style={{ fontSize: '0.875rem', fontWeight: 700, color: s.voted ? '#008C94' : '#112630', lineHeight: 1 }}>{s.votes}</span>
+                      <ChevronUp size={14} style={{ color: s.voted ? 'var(--gold)' : 'var(--text-muted)' }} />
+                      <span style={{ fontSize: '0.875rem', fontWeight: 700, color: s.voted ? 'var(--gold)' : 'var(--text-primary)', lineHeight: 1 }}>{s.votes}</span>
                     </button>
                   </div>
 
                   {/* Content */}
                   <div className="flex-1 min-w-0" style={{ marginTop: isTop ? 10 : 0 }}>
                     <div className="flex items-start justify-between gap-2 mb-1.5">
-                      <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: '#112630', lineHeight: 1.3, margin: 0 }}>{s.title}</h3>
+                      <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.3, margin: 0 }}>{s.title}</h3>
                       <div className="flex items-center gap-1.5 flex-shrink-0">
                         {/* Type badge */}
                         <span style={{ display: 'flex', alignItems: 'center', gap: 3, background: tCfg.bg, color: tCfg.color, borderRadius: 20, padding: '3px 8px', fontSize: '0.625rem', fontWeight: 600, letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>
@@ -368,22 +368,22 @@ export default function SuggestionsView({ userRole }: { userRole: string }) {
                       </div>
                     </div>
 
-                    <p style={{ fontSize: '0.8125rem', color: '#4A7580', lineHeight: 1.5, margin: '0 0 10px' }}>{s.description}</p>
+                    <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', lineHeight: 1.5, margin: '0 0 10px' }}>{s.description}</p>
 
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
                         <ImpactDots value={s.impact} />
-                        <span style={{ fontSize: '0.6875rem', color: '#7BA8B2' }}>
+                        <span style={{ fontSize: '0.6875rem', color: 'var(--text-faint)' }}>
                           {lx.impactScore} {s.impact}/5
                         </span>
-                        <span style={{ fontSize: '0.6875rem', color: '#B8D0D5' }}>·</span>
-                        <span style={{ fontSize: '0.6875rem', color: '#7BA8B2' }}>{timeAgo(s.created_at, lang)}</span>
+                        <span style={{ fontSize: '0.6875rem', color: 'var(--border-light)' }}>·</span>
+                        <span style={{ fontSize: '0.6875rem', color: 'var(--text-faint)' }}>{timeAgo(s.created_at, lang)}</span>
                       </div>
                       {isAdmin && (
                         <select
                           value={s.status} disabled={statusUpdating === s.id}
                           onChange={e => handleStatusChange(s.id, e.target.value)}
-                          style={{ fontSize: '0.6875rem', color: '#4A7580', background: '#F8FBFC', border: '1px solid #D8E6EA', borderRadius: 6, padding: '3px 6px', cursor: 'pointer' }}
+                          style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 6, padding: '3px 6px', cursor: 'pointer' }}
                         >
                           <option value="pending">{lx.statusPending}</option>
                           <option value="in_progress">{lx.statusProgress}</option>

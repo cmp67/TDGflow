@@ -5,11 +5,12 @@
 
 :root {
   /* Backgrounds — cool neutral */
-  --bg:           #F3F7F8;
-  --surface:      #FFFFFF;
-  --surface-high: #E8F0F2;
-  --border:       #D0E2E5;
-  --border-light: #B8D0D5;
+  --bg:            #F3F7F8;
+  --surface:       #FFFFFF;
+  --surface-high:  #E8F0F2;
+  --border:        #D0E2E5;
+  --border-light:  #B8D0D5;
+  --border-subtle: #E4EEF0; /* mais clara que --border — contorno discreto de card, não divisor de seção */
 
   /* Teal — TDG Brand Primary (#008C94) */
   --gold:         #008C94;
@@ -18,15 +19,27 @@
   --gold-subtle:  rgba(0, 140, 148, 0.10);
   --gold-ring:    rgba(0, 140, 148, 0.22);
 
+  /* Acento quente — tiers/preço, distinto do warning semântico (mais terracota) */
+  --accent-warm:        #C97B20;
+  --accent-warm-subtle: #FEF3E2;
+
+  /* Acento informativo — 3ª cor categórica (Stella/IA, transferência entre agências,
+     integrações). Substitui roxo (#6B4FA0/#F3EEF9), que violava a regra "sem roxo". */
+  --accent-info:        #1565C0;
+  --accent-info-subtle: #E3F2FD;
+
   /* Text — TDG navy tones (WCAG AA+) */
   --text-primary:   #112630;
   --text-secondary: #104C64;
   --text-muted:     #4A7580;
+  --text-faint:     #7BA8B2; /* labels de seção, unidades, legendas — mais claro que --text-muted */
 
   /* Functional */
-  --success: #2E7D4F;
-  --warning: #B6410F;
-  --error:   #C0392B;
+  --success:        #2E7D4F;
+  --success-subtle: #E8F5E9;
+  --warning:        #B6410F;
+  --error:          #C0392B;
+  --error-subtle:   #FFEBEE;
 
   /* Easing */
   --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
@@ -40,16 +53,22 @@
   --color-surface-high: var(--surface-high);
   --color-border:       var(--border);
   --color-border-light: var(--border-light);
+  --color-border-subtle: var(--border-subtle);
   --color-gold:         var(--gold);
   --color-gold-hover:   var(--gold-hover);
   --color-gold-dim:     var(--gold-dim);
   --color-gold-subtle:  var(--gold-subtle);
+  --color-accent-warm:  var(--accent-warm);
+  --color-accent-warm-subtle: var(--accent-warm-subtle);
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
   --color-text-muted:   var(--text-muted);
+  --color-text-faint:   var(--text-faint);
   --color-success:      var(--success);
+  --color-success-subtle: var(--success-subtle);
   --color-warning:      var(--warning);
   --color-error:        var(--error);
+  --color-error-subtle: var(--error-subtle);
 
   /* Typography */
   --font-sans: 'Raleway', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
