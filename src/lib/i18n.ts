@@ -26,7 +26,7 @@ export const t: Record<Lang, Record<string, string>> = {
     'nav.docs':       'Documentação',
     'nav.inbox':      'Inbox',
     'nav.sugestoes':  'Sugestões',
-    'nav.billing':    'Serviços & Custos',
+    'nav.billing':    'Billing',
     'nav.mais':       'Mais',
     'nav.breve':      'breve',
 
@@ -95,7 +95,7 @@ export const t: Record<Lang, Record<string, string>> = {
     'nav.docs':        'Documentation',
     'nav.inbox':       'Inbox',
     'nav.sugestoes':   'Suggestions',
-    'nav.billing':     'Services & Costs',
+    'nav.billing':     'Billing',
     'nav.mais':        'More',
     'nav.breve':       'soon',
 
@@ -160,7 +160,7 @@ export const t: Record<Lang, Record<string, string>> = {
     'nav.docs':        'Documentación',
     'nav.inbox':       'Bandeja',
     'nav.sugestoes':   'Sugerencias',
-    'nav.billing':     'Servicios & Costos',
+    'nav.billing':     'Billing',
     'nav.mais':        'Más',
     'nav.breve':       'pronto',
 
