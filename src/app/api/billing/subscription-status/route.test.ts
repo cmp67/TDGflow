@@ -54,7 +54,7 @@ describe('GET /api/billing/subscription-status', () => {
     preapprovalIdA = `tdd-preapproval-${Date.now()}`
     await sql`
       INSERT INTO tdg_agency_subscriptions (agency_id, mp_preapproval_id, plan_tier, status, transaction_amount, next_payment_date)
-      VALUES (${agencyAId}, ${preapprovalIdA}, 'growth', 'authorized', 1470.00, NOW() + INTERVAL '30 days')
+      VALUES (${agencyAId}, ${preapprovalIdA}, 'growth', 'authorized', 77.37, NOW() + INTERVAL '30 days')
     `
   })
 
@@ -91,7 +91,7 @@ describe('GET /api/billing/subscription-status', () => {
     expect(res.status).toBe(200)
     expect(body.status).toBe('authorized')
     expect(body.planTier).toBe('growth')
-    expect(body.transactionAmount).toBe(1470)
+    expect(body.transactionAmount).toBe(77.37)
   })
 
   it('resolves by preapproval_id when given, scoped to the caller\'s own agency', async () => {

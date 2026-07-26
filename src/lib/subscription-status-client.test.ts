@@ -30,9 +30,9 @@ describe('fetchSubscriptionStatus', () => {
   })
 
   it('maps an authorized subscription with full fields', async () => {
-    mockFetch(200, { status: 'authorized', planTier: 'growth', transactionAmount: 1470, nextPaymentDate: '2026-08-05' })
+    mockFetch(200, { status: 'authorized', planTier: 'growth', transactionAmount: 77.37, nextPaymentDate: '2026-08-05' })
     expect(await fetchSubscriptionStatus()).toEqual({
-      status: 'authorized', planTier: 'growth', transactionAmount: 1470, nextPaymentDate: '2026-08-05',
+      status: 'authorized', planTier: 'growth', transactionAmount: 77.37, nextPaymentDate: '2026-08-05',
     })
   })
 

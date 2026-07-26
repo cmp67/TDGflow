@@ -25,7 +25,7 @@ export const TIERS: Array<{
   priceLabel:  string
 }> = [
   { id: 'starter',    name: 'Starter',    credits: 2500,  label: 'R$0,012/lm — 500 lm/agência', color: '#4A7580', bg: '#EDF4F6', priceReais: 990,  priceLabel: 'R$990/mês'    },
-  { id: 'growth',     name: 'Growth',     credits: 9500,  label: 'R$0,012/lm — 500 lm/agência', color: '#2E7D32', bg: '#E8F5E9', priceReais: 1470, priceLabel: 'R$1.470/mês'  },
+  { id: 'growth',     name: 'Growth',     credits: 9500,  label: 'R$0,012/lm — 500 lm/agência', color: '#2E7D32', bg: '#E8F5E9', priceReais: 77.37, priceLabel: 'R$77,37/mês'  },
   { id: 'scale',      name: 'Scale',      credits: 15000, label: 'R$0,012/lm — 500 lm/agência', color: '#1565C0', bg: '#E3F2FD', priceReais: 1690, priceLabel: 'R$1.690/mês'  },
   { id: 'enterprise', name: 'Enterprise', credits: null,  label: 'Volume alto, SLA dedicado',  color: '#6B4FA0', bg: '#F3EEF9', priceReais: null, priceLabel: 'Sob consulta' },
 ]

@@ -77,13 +77,13 @@ describe('POST /api/billing/subscribe', () => {
     expect(rows).toHaveLength(1)
     expect(rows[0].mp_preapproval_id).toBe('pre-abc')
     expect(rows[0].status).toBe('pending')
-    expect(Number(rows[0].transaction_amount)).toBe(1470)
+    expect(Number(rows[0].transaction_amount)).toBe(77.37)
   })
 
   it('returns 409 when the agency already has an authorized subscription', async () => {
     await sql`
       INSERT INTO tdg_agency_subscriptions (agency_id, mp_preapproval_id, plan_tier, status, transaction_amount)
-      VALUES (${agencyId}, 'pre-existing', 'growth', 'authorized', 1470.00)
+      VALUES (${agencyId}, 'pre-existing', 'growth', 'authorized', 77.37)
     `
     mockAuth.mockResolvedValueOnce(sessionFor(email))
 

@@ -37,12 +37,32 @@ describe('createAgencySubscription', () => {
         auto_recurring: expect.objectContaining({
           frequency:          1,
           frequency_type:     'months',
-          transaction_amount: 1470,
+          transaction_amount: 77.37,
           currency_id:        'BRL',
+          start_date:         expect.any(String),
+          end_date:           expect.any(String),
         }),
       }),
     })
     expect(result).toEqual({ preapprovalId: 'pre-123', initPoint: 'https://mp.example/checkout/pre-123' })
+  })
+
+  it('anchors start_date on day 5 and caps end_date 24 months later', async () => {
+    mockCreate.mockResolvedValue({ id: 'pre-123', init_point: 'https://mp.example/checkout/pre-123' })
+
+    await createAgencySubscription({
+      agencyId: 'agency-1', payerEmail: 'admin@agencia.com', backUrl: 'https://tdg-flow.example/flow/billing/confirmacao',
+    })
+
+    const { auto_recurring } = mockCreate.mock.calls[0][0].body
+    const start = new Date(auto_recurring.start_date)
+    const end   = new Date(auto_recurring.end_date)
+
+    expect(start.getUTCDate()).toBe(5)
+    expect(end.getUTCDate()).toBe(5)
+    expect(
+      (end.getUTCFullYear() - start.getUTCFullYear()) * 12 + (end.getUTCMonth() - start.getUTCMonth()),
+    ).toBe(24)
   })
 
   it('throws if Mercado Pago returns no id/init_point', async () => {

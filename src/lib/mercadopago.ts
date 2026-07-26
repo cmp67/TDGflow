@@ -3,12 +3,28 @@ import { GROWTH_PLAN } from '@/lib/plans'
 
 // No preapproval_plan template is created — the subscription is created
 // directly with a fixed transaction_amount, which the Mercado Pago
-// Subscriptions API supports without an associated plan.
+// Subscriptions API supports without an associated plan. That planless
+// endpoint has no billing_day/repetitions fields (those only exist on the
+// Plan resource, which in turn requires a pre-tokenized card at creation
+// time — incompatible with redirecting the buyer to MP's own checkout).
+// start_date/end_date achieve the same result here: anchoring the first
+// charge on the next day 5 makes every following monthly charge land on
+// day 5 too, and end_date stops it after GROWTH_PLAN.repetitions cycles.
 
 function getClient(): MercadoPagoConfig {
   const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN
   if (!accessToken) throw new Error('MERCADOPAGO_ACCESS_TOKEN não configurado')
   return new MercadoPagoConfig({ accessToken })
+}
+
+function nextBillingDate(billingDay: number): Date {
+  const now         = new Date()
+  const monthOffset = now.getUTCDate() > billingDay ? 1 : 0
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + monthOffset, billingDay))
+}
+
+function addMonths(date: Date, months: number): Date {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + months, date.getUTCDate()))
 }
 
 export interface CreateSubscriptionParams {
@@ -29,6 +45,9 @@ export interface CreateSubscriptionResult {
 export async function createAgencySubscription(params: CreateSubscriptionParams): Promise<CreateSubscriptionResult> {
   const preApproval = new PreApproval(getClient())
 
+  const startDate = nextBillingDate(GROWTH_PLAN.billingDay)
+  const endDate   = addMonths(startDate, GROWTH_PLAN.repetitions)
+
   const result = await preApproval.create({
     body: {
       reason:              GROWTH_PLAN.reason,
@@ -40,6 +59,8 @@ export async function createAgencySubscription(params: CreateSubscriptionParams)
         frequency_type:     'months',
         transaction_amount: GROWTH_PLAN.transactionAmount,
         currency_id:        GROWTH_PLAN.currencyId,
+        start_date:         startDate.toISOString(),
+        end_date:           endDate.toISOString(),
       },
     },
   })

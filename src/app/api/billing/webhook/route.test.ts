@@ -71,7 +71,7 @@ describe('POST /api/billing/webhook', () => {
   it('updates the subscription row on a valid subscription_preapproval event', async () => {
     await sql`
       INSERT INTO tdg_agency_subscriptions (agency_id, mp_preapproval_id, plan_tier, status, transaction_amount)
-      VALUES (${agencyId}, 'pre-1', 'growth', 'pending', 1470.00)
+      VALUES (${agencyId}, 'pre-1', 'growth', 'pending', 77.37)
     `
     mockGetSubscription.mockResolvedValue({ status: 'authorized', externalReference: agencyId, nextPaymentDate: '2026-08-05T00:00:00Z' })
 
@@ -92,7 +92,7 @@ describe('POST /api/billing/webhook', () => {
   it('bumps next_payment_date on an approved subscription_authorized_payment event', async () => {
     await sql`
       INSERT INTO tdg_agency_subscriptions (agency_id, mp_preapproval_id, plan_tier, status, transaction_amount)
-      VALUES (${agencyId}, 'pre-2', 'growth', 'authorized', 1470.00)
+      VALUES (${agencyId}, 'pre-2', 'growth', 'authorized', 77.37)
     `
     mockGetPayment.mockResolvedValue({ status: 'approved', externalReference: agencyId, dateApproved: '2026-07-05T12:00:00Z' })
 
