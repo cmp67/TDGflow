@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { Users, Plus, Crown, UserCheck, UserX, Loader, Check, X, Eye, EyeOff, Link2 } from 'lucide-react'
+import { Users, Plus, Crown, UserCheck, UserX, Loader, Check, X, Eye, EyeOff, Link2, CreditCard } from 'lucide-react'
 import AgencyInvitesPanel from '@/components/AgencyInvitesPanel'
+import AdminSubscriptionsPanel from '@/components/AdminSubscriptionsPanel'
 
 interface TdgUser {
   id: string
@@ -21,7 +22,7 @@ interface Props {
 }
 
 export default function GestaoView({ users: initial }: Props) {
-  const [tab, setTab] = useState<'users' | 'invites'>('users')
+  const [tab, setTab] = useState<'users' | 'invites' | 'assinaturas'>('users')
   const [users, setUsers] = useState<TdgUser[]>(initial)
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -83,12 +84,14 @@ export default function GestaoView({ users: initial }: Props) {
         <div>
           <p className="section-label mb-1">Administração</p>
           <h1 className="text-xl font-semibold" style={{ color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
-            {tab === 'users' ? 'Gestão de Usuários' : 'Convites de Agência'}
+            {tab === 'users' ? 'Gestão de Usuários' : tab === 'invites' ? 'Convites de Agência' : 'Assinaturas'}
           </h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
             {tab === 'users'
               ? `${Object.values(byAgency).flat().length} usuário${Object.values(byAgency).flat().length !== 1 ? 's' : ''} · ${Object.keys(byAgency).length} agênci${Object.keys(byAgency).length !== 1 ? 'as' : 'a'}`
-              : 'Links de auto-cadastro para as agências da rede'}
+              : tab === 'invites'
+              ? 'Links de auto-cadastro para as agências da rede'
+              : 'Status de cobrança do plano Growth por agência'}
           </p>
         </div>
         {tab === 'users' && (
@@ -110,8 +113,8 @@ export default function GestaoView({ users: initial }: Props) {
           style={{
             padding: '8px 12px', fontSize: '0.8125rem', fontWeight: tab === 'users' ? 600 : 400,
             background: 'none', border: 'none', cursor: 'pointer',
-            color: tab === 'users' ? 'var(--gold-dim)' : 'var(--text-muted)',
-            borderBottom: tab === 'users' ? '2px solid var(--gold)' : '2px solid transparent',
+            color: tab === 'users' ? 'var(--navy-dim)' : 'var(--text-muted)',
+            borderBottom: tab === 'users' ? '2px solid var(--navy)' : '2px solid transparent',
             marginBottom: -1,
           }}
         >
@@ -123,16 +126,30 @@ export default function GestaoView({ users: initial }: Props) {
           style={{
             padding: '8px 12px', fontSize: '0.8125rem', fontWeight: tab === 'invites' ? 600 : 400,
             background: 'none', border: 'none', cursor: 'pointer',
-            color: tab === 'invites' ? 'var(--gold-dim)' : 'var(--text-muted)',
-            borderBottom: tab === 'invites' ? '2px solid var(--gold)' : '2px solid transparent',
+            color: tab === 'invites' ? 'var(--navy-dim)' : 'var(--text-muted)',
+            borderBottom: tab === 'invites' ? '2px solid var(--navy)' : '2px solid transparent',
             marginBottom: -1,
           }}
         >
           <Link2 size={14} /> Convites de Agência
         </button>
+        <button
+          onClick={() => setTab('assinaturas')}
+          className="flex items-center gap-1.5"
+          style={{
+            padding: '8px 12px', fontSize: '0.8125rem', fontWeight: tab === 'assinaturas' ? 600 : 400,
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: tab === 'assinaturas' ? 'var(--navy-dim)' : 'var(--text-muted)',
+            borderBottom: tab === 'assinaturas' ? '2px solid var(--navy)' : '2px solid transparent',
+            marginBottom: -1,
+          }}
+        >
+          <CreditCard size={14} /> Assinaturas
+        </button>
       </div>
 
       {tab === 'invites' && <AgencyInvitesPanel />}
+      {tab === 'assinaturas' && <AdminSubscriptionsPanel />}
 
       {/* Create form */}
       {tab === 'users' && showForm && (
@@ -173,7 +190,7 @@ export default function GestaoView({ users: initial }: Props) {
                 type="checkbox"
                 checked={form.role === 'admin'}
                 onChange={e => setForm(p => ({ ...p, role: e.target.checked ? 'admin' : 'agent' }))}
-                style={{ accentColor: 'var(--gold)' }}
+                style={{ accentColor: 'var(--navy)' }}
               />
               <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Permissão de administrador</span>
             </label>
@@ -216,7 +233,7 @@ export default function GestaoView({ users: initial }: Props) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{u.name}</span>
-                    {u.role === 'admin' && <Crown size={11} style={{ color: 'var(--gold)' }} />}
+                    {u.role === 'admin' && <Crown size={11} style={{ color: 'var(--navy)' }} />}
                     {!u.active && <span className="badge badge-muted" style={{ fontSize: '0.6rem' }}>inativo</span>}
                   </div>
                   <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{u.email}</p>
@@ -225,7 +242,7 @@ export default function GestaoView({ users: initial }: Props) {
                       <span className="text-xs" style={{ color: 'var(--text-muted)' }}>📱 +{u.whatsapp}</span>
                     )}
                     {u.agent_interaction_id && (
-                      <span className="text-xs font-mono" style={{ color: 'var(--gold)' }}>ID: {u.agent_interaction_id}</span>
+                      <span className="text-xs font-mono" style={{ color: 'var(--navy)' }}>ID: {u.agent_interaction_id}</span>
                     )}
                   </div>
                 </div>
