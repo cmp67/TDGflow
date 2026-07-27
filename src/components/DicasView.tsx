@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { sounds } from '@/lib/sounds'
 import { useToast } from '@/contexts/ToastContext'
+import { getQuestions, isLeadSubmission } from '@/lib/review-questions'
 
 /* ── Types ─────────────────────────────────────────────────────── */
 interface AspectEntry { score: number | null; note: string }
@@ -44,6 +45,18 @@ const VISIT_TYPE_LABELS: Record<string, string> = {
   personal_stay: 'Hospedagem pessoal',
   commercial_meeting: 'Reunião comercial',
 }
+
+const ENTITY_TYPE_LABELS: Record<string, string> = {
+  hotel: 'Hotel',
+  beach_club: 'Beach Club',
+  transfer: 'Transfer',
+  guide: 'Guia',
+  restaurant: 'Restaurante',
+  other: 'Outro',
+}
+
+// Usado no questionário — cada pergunta select busca aqui a label da própria opção.
+const OPTION_LABELS: Record<string, string> = { ...VISIT_TYPE_LABELS, ...ENTITY_TYPE_LABELS }
 
 /* ── Sentiment badge — shows +3 / −2 / 0 ────────────────────────── */
 function SentimentBadge({ value }: { value: number }) {
@@ -658,19 +671,7 @@ function HotelCard({ review, onToggleFavorite, onViewHistory }: {
 }
 
 /* ── Questionnaire ──────────────────────────────────────────────── */
-const QUESTIONS = [
-  { id: 'hotel_name',      text: 'Qual hotel você visitou?',                                    type: 'text',     placeholder: 'Nome do hotel...' },
-  { id: 'country',         text: 'Em qual país fica o hotel?',                                  type: 'text',     placeholder: 'Ex: Portugal, Maldivas, França...' },
-  { id: 'visit_date',      text: 'Quando foi a sua visita?',                                    type: 'date' },
-  { id: 'visit_type',      text: 'Qual o tipo de visita?',                                      type: 'select',   options: ['fam_trip', 'site_inspection', 'personal_stay', 'commercial_meeting'] },
-  { id: 'overall_rating',  text: 'Qual a sua avaliação geral do hotel?',                        type: 'sentiment' },
-  { id: 'sub_ratings',     text: 'Como você avalia cada aspecto?',                              type: 'sub_sentiment' },
-  { id: 'sentiment_map',   text: 'Quer mapear sentimentos por aspecto do hotel?',               type: 'sentiment_map' },
-  { id: 'impressions',     text: 'O que mais te impressionou durante a visita?',                type: 'voice_text', placeholder: 'Descreva os pontos de destaque...' },
-  { id: 'client_profile',  text: 'Para qual perfil de cliente você recomendaria este hotel?',  type: 'voice_text', placeholder: 'Famílias, casais, golf...' },
-  { id: 'must_experience', text: 'Qual experiência no hotel você considera obrigatória?',       type: 'voice_text', placeholder: 'Uma atividade, restaurante, serviço...' },
-  { id: 'heads_up',        text: 'Há alguma ressalva ou ponto de atenção para o cliente?',     type: 'voice_text', placeholder: 'Opcional — deixe em branco se não houver.' },
-]
+// Perguntas ramificadas por entity_type/visit_type — ver src/lib/review-questions.ts
 
 function Questionnaire({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
   const [step, setStep] = useState(0)
@@ -685,6 +686,7 @@ function Questionnaire({ onClose, onSaved }: { onClose: () => void; onSaved: () 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [secs, setSecs] = useState(0)
 
+  const QUESTIONS = getQuestions(answers)
   const q = QUESTIONS[step]
   const isLast = step === QUESTIONS.length - 1
   const progress = ((step + 1) / QUESTIONS.length) * 100
@@ -750,7 +752,7 @@ function Questionnaire({ onClose, onSaved }: { onClose: () => void; onSaved: () 
     const hasSentimentMap = Object.keys(sentimentMap).length > 0
     const rawAnswers = Object.fromEntries(
       Object.entries(answers)
-        .filter(([k]) => !['overall_rating', 'sub_ratings', 'sentiment_map', 'hotel_name', 'visit_date', 'visit_type'].includes(k))
+        .filter(([k]) => !['overall_rating', 'sub_ratings', 'sentiment_map', 'hotel_name', 'visit_date', 'visit_type', 'entity_type'].includes(k))
         .map(([k, v]) => [k, String(v)])
     )
 
@@ -760,14 +762,16 @@ function Questionnaire({ onClose, onSaved }: { onClose: () => void; onSaved: () 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           hotel_name:      answers.hotel_name,
+          entity_type:     answers.entity_type || 'hotel',
           country:         answers.country || null,
           visit_date:      answers.visit_date || null,
           visit_type:      answers.visit_type || null,
-          overall_rating:  (answers.overall_rating as number) ?? 0,
+          overall_rating:  answers.overall_rating,
           rooms_rating:    subRatings.rooms    ?? null,
           service_rating:  subRatings.service  ?? null,
           food_rating:     subRatings.food     ?? null,
           location_rating: subRatings.location ?? null,
+          // status não é enviado — o servidor deriva de visit_type, nunca confia no cliente.
           raw_answers:     rawAnswers,
           sentiment_map:   hasSentimentMap ? sentimentMap : null,
         }),
@@ -778,7 +782,10 @@ function Questionnaire({ onClose, onSaved }: { onClose: () => void; onSaved: () 
       }
       setDone(true)
       sounds.saved()
-      toast('Dica registrada com sucesso!', 'success')
+      toast(
+        isLeadSubmission(answers) ? 'Descoberta registrada — vamos testar!' : 'Dica registrada com sucesso!',
+        'success'
+      )
     } catch (err) {
       toast(`Erro ao salvar dica: ${err instanceof Error ? err.message : 'Tente novamente'}`, 'error')
     } finally {
@@ -798,10 +805,12 @@ function Questionnaire({ onClose, onSaved }: { onClose: () => void; onSaved: () 
             <CheckCircle size={28} style={{ color: 'var(--tdgflow-success)' }} />
           </div>
           <p style={{ fontSize: '1rem', fontWeight: 500, color: 'var(--tdgflow-text-primary)', marginBottom: 8 }}>
-            Dica registrada
+            {isLeadSubmission(answers) ? 'Registrado — vamos testar' : 'Dica registrada'}
           </p>
           <p style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-muted)', lineHeight: 1.6, marginBottom: 24 }}>
-            A IA processou suas respostas e extraiu os pontos-chave. Sua visita ficou registrada no histórico do hotel.
+            {isLeadSubmission(answers)
+              ? 'Assim que alguém da rede confirmar de perto, essa descoberta vira uma dica de verdade.'
+              : 'Extraímos os pontos-chave das suas respostas. Sua visita ficou registrada no histórico.'}
           </p>
           <button onClick={() => { onSaved(); onClose() }} className="btn-gold w-full" style={{ justifyContent: 'center', padding: 12 }}>
             Ver as dicas
@@ -899,7 +908,7 @@ function Questionnaire({ onClose, onSaved }: { onClose: () => void; onSaved: () 
                         fontSize: '0.875rem', cursor: 'pointer', transition: 'all 0.15s',
                       }}
                     >
-                      {VISIT_TYPE_LABELS[opt]}
+                      {OPTION_LABELS[opt] ?? opt}
                     </button>
                   ))}
                 </div>
@@ -1014,7 +1023,7 @@ function Questionnaire({ onClose, onSaved }: { onClose: () => void; onSaved: () 
             {saving
               ? <><Loader2 size={14} className="animate-spin" /> Processando...</>
               : isLast
-                ? <><CheckCircle size={14} /> Publicar dica</>
+                ? <><CheckCircle size={14} /> {isLeadSubmission(answers) ? 'Registrar descoberta' : 'Publicar dica'}</>
                 : <>Próxima <ArrowRight size={14} /></>
             }
           </button>
