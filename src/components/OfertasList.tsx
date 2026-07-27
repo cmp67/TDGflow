@@ -1,6 +1,6 @@
 'use client'
 
-import { MapPin, Calendar } from 'lucide-react'
+import TdgIconSprite from '@/components/TdgIconSprite'
 
 interface Offer {
   id: string
@@ -77,10 +77,21 @@ export default function OfertasList() {
 
   return (
     <div className="flex-1 overflow-y-auto" style={{ padding: '16px 20px' }}>
+      <TdgIconSprite />
 
-      {/* Header */}
+      {/* Header — mesmo padrão de "Na prática": marca discreta + título +
+          definição fixa da seção. */}
       <div style={{ maxWidth: 1320, margin: '0 auto 20px' }}>
-        <p className="section-label mb-1">Rede TDG</p>
+        <p style={{
+          display: 'flex', alignItems: 'center', gap: 5,
+          fontSize: '0.5625rem', fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase',
+          color: 'var(--tdgflow-accent-warm)', marginBottom: 4,
+        }}>
+          <svg style={{ width: 10, height: 10, stroke: 'currentColor', fill: 'none', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+            <use href="#i-compass" />
+          </svg>
+          Rede TDG
+        </p>
         <h1 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.02em' }}>
           Ofertas ativas
         </h1>
@@ -124,7 +135,10 @@ export default function OfertasList() {
 
               {/* Commission — bottom left */}
               <div style={{ position: 'absolute', bottom: 14, left: 18 }}>
-                <p style={{ fontSize: '0.55rem', fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)', margin: '0 0 1px' }}>
+                <p style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.55rem', fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)', margin: '0 0 1px' }}>
+                  <svg style={{ width: 9, height: 9, stroke: 'currentColor', fill: 'none', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                    <use href="#i-percent" />
+                  </svg>
                   Comissão
                 </p>
                 <p style={{ fontSize: '2.5rem', fontWeight: 200, color: 'var(--tdgflow-surface)', letterSpacing: '-0.04em', lineHeight: 1, margin: 0 }}>
@@ -153,11 +167,15 @@ export default function OfertasList() {
               </h3>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 12 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <MapPin size={11} style={{ color: 'var(--tdgflow-text-faint)', flexShrink: 0 }} />
+                  <svg style={{ width: 11, height: 11, stroke: 'var(--tdgflow-text-faint)', fill: 'none', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round', flexShrink: 0 }}>
+                    <use href="#i-pin" />
+                  </svg>
                   <span style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)' }}>{offer.location}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <Calendar size={11} style={{ color: 'var(--tdgflow-text-faint)', flexShrink: 0 }} />
+                  <svg style={{ width: 11, height: 11, stroke: 'var(--tdgflow-text-faint)', fill: 'none', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round', flexShrink: 0 }}>
+                    <use href="#i-calendar" />
+                  </svg>
                   <span style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)' }}>{offer.validity}</span>
                 </div>
               </div>
