@@ -1,5 +1,6 @@
 import { MercadoPagoConfig, PreApproval, Payment } from 'mercadopago'
 import { GROWTH_PLAN } from '@/lib/plans'
+import { getOrCreateAgreementWindow } from '@/lib/subscriptions'
 
 // No preapproval_plan template is created — the subscription is created
 // directly with a fixed transaction_amount, which the Mercado Pago
@@ -7,9 +8,16 @@ import { GROWTH_PLAN } from '@/lib/plans'
 // endpoint has no billing_day/repetitions fields (those only exist on the
 // Plan resource, which in turn requires a pre-tokenized card at creation
 // time — incompatible with redirecting the buyer to MP's own checkout).
-// start_date/end_date achieve the same result here: anchoring the first
-// charge on the next day 5 makes every following monthly charge land on
-// day 5 too, and end_date stops it after GROWTH_PLAN.repetitions cycles.
+//
+// start_date/end_date achieve the same result. Per Cláusula 7.1 do contrato
+// (Jul/2026), the 24-month term belongs to the ONE contract instrument all
+// 19 agencies sign — not to each agency individually — so end_date is a
+// single value shared by every agency (whoever subscribes first "locks" it
+// in tdg_agreement_window; everyone after just reads it). start_date stays
+// per-agency: whoever joins after day 5 simply waits for the next day 5
+// (no immediate/prorated charge for the partial month, per Carla, 2026-07-26)
+// — a late joiner ends up with fewer than GROWTH_PLAN.repetitions charges
+// since they share the same end_date as everyone else.
 
 function getClient(): MercadoPagoConfig {
   const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN
@@ -45,8 +53,11 @@ export interface CreateSubscriptionResult {
 export async function createAgencySubscription(params: CreateSubscriptionParams): Promise<CreateSubscriptionResult> {
   const preApproval = new PreApproval(getClient())
 
-  const startDate = nextBillingDate(GROWTH_PLAN.billingDay)
-  const endDate   = addMonths(startDate, GROWTH_PLAN.repetitions)
+  const startDate      = nextBillingDate(GROWTH_PLAN.billingDay)
+  const { endDate }    = await getOrCreateAgreementWindow(() => ({
+    startDate,
+    endDate: addMonths(startDate, GROWTH_PLAN.repetitions),
+  }))
 
   const result = await preApproval.create({
     body: {

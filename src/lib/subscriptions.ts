@@ -1,5 +1,40 @@
 import { sql } from '@vercel/postgres'
 
+export interface AgreementWindow {
+  startDate: Date
+  endDate:   Date
+}
+
+// Shared billing window for the whole 24-month contract (see migration 006)
+// — lazily created by whichever agency subscribes first, every agency after
+// that reads the same end_date instead of getting its own 24 months. Insert
+// races (two agencies subscribing at nearly the same instant) resolve via
+// ON CONFLICT DO NOTHING + re-select, so both callers end up returning the
+// one row that actually won, never two different windows.
+export async function getOrCreateAgreementWindow(
+  computeDefault: () => AgreementWindow,
+  key = 'default',
+): Promise<AgreementWindow> {
+  const { rows } = await sql`
+    SELECT start_date, end_date FROM tdg_agreement_window WHERE key = ${key}
+  `
+  if (rows[0]) {
+    return { startDate: new Date(rows[0].start_date as string), endDate: new Date(rows[0].end_date as string) }
+  }
+
+  const { startDate, endDate } = computeDefault()
+  await sql`
+    INSERT INTO tdg_agreement_window (key, start_date, end_date)
+    VALUES (${key}, ${startDate.toISOString()}, ${endDate.toISOString()})
+    ON CONFLICT (key) DO NOTHING
+  `
+
+  const { rows: settled } = await sql`
+    SELECT start_date, end_date FROM tdg_agreement_window WHERE key = ${key}
+  `
+  return { startDate: new Date(settled[0].start_date as string), endDate: new Date(settled[0].end_date as string) }
+}
+
 export type SubscriptionStatus = 'pending' | 'authorized' | 'paused' | 'cancelled' | 'rejected'
 
 export interface AgencySubscription {

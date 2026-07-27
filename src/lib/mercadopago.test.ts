@@ -7,11 +7,27 @@ vi.mock('mercadopago', () => ({
   PreApproval: class { create = mockCreate },
 }))
 
+// Pass-through by default — most tests just care that createAgencySubscription
+// delegates the end_date decision to the shared-window helper, not that it
+// recomputes one locally. Tests that care about the shared value override
+// this per-call with mockResolvedValueOnce.
+const mockGetOrCreateAgreementWindow = vi.fn(
+  (computeDefault: () => { startDate: Date; endDate: Date }, _key?: string) => Promise.resolve(computeDefault()),
+)
+vi.mock('@/lib/subscriptions', () => ({
+  getOrCreateAgreementWindow: (computeDefault: () => { startDate: Date; endDate: Date }, key?: string) =>
+    mockGetOrCreateAgreementWindow(computeDefault, key),
+}))
+
 import { createAgencySubscription } from './mercadopago'
 
 describe('createAgencySubscription', () => {
   beforeEach(() => {
     mockCreate.mockReset()
+    mockGetOrCreateAgreementWindow.mockClear()
+    mockGetOrCreateAgreementWindow.mockImplementation(
+      (computeDefault: () => { startDate: Date; endDate: Date }) => Promise.resolve(computeDefault()),
+    )
     process.env.MERCADOPAGO_ACCESS_TOKEN = 'TEST-token'
   })
 
@@ -63,6 +79,23 @@ describe('createAgencySubscription', () => {
     expect(
       (end.getUTCFullYear() - start.getUTCFullYear()) * 12 + (end.getUTCMonth() - start.getUTCMonth()),
     ).toBe(24)
+  })
+
+  it('uses the shared end_date from getOrCreateAgreementWindow, not a locally recomputed one', async () => {
+    mockCreate.mockResolvedValue({ id: 'pre-123', init_point: 'https://mp.example/checkout/pre-123' })
+    const sharedEndDate = new Date('2028-03-05T00:00:00.000Z')
+    mockGetOrCreateAgreementWindow.mockResolvedValueOnce({
+      startDate: new Date('2026-03-05T00:00:00.000Z'),
+      endDate:   sharedEndDate,
+    })
+
+    await createAgencySubscription({
+      agencyId: 'agency-late-joiner', payerEmail: 'admin@agencia.com', backUrl: 'https://tdg-flow.example/flow/billing/confirmacao',
+    })
+
+    const { auto_recurring } = mockCreate.mock.calls[0][0].body
+    expect(auto_recurring.end_date).toBe(sharedEndDate.toISOString())
+    expect(typeof mockGetOrCreateAgreementWindow.mock.calls[0][0]).toBe('function')
   })
 
   it('throws if Mercado Pago returns no id/init_point', async () => {
