@@ -2,16 +2,103 @@
 
 import React, { useState, useEffect } from 'react'
 import {
-  Zap, Mic, Globe, Brain, Database, HardDrive, Bot,
-  Users, Coins, TrendingUp, AlertTriangle, CheckCircle2,
-  ChevronRight, ArrowUp, ArrowDown, Minus, LayoutGrid, Activity,
-  ChevronDown, ChevronUp, Sparkles, Scale, ArrowRightLeft, Send,
+  Database, HardDrive,
+  TrendingUp, AlertTriangle, CheckCircle2,
+  ChevronRight, ArrowUp, ArrowDown, Minus,
+  ChevronDown, ChevronUp, Sparkles, ArrowRightLeft,
 } from 'lucide-react'
 import { TIERS, CREDIT_COSTS, type TierId } from '@/lib/credits'
 import MyLumisTopUp from '@/components/billing/MyLumisTopUp'
 import AgencySubscriptionCard from '@/components/billing/AgencySubscriptionCard'
 import { fetchPendingGuestRequests, reviewGuestRequest, type PendingGuestRequest } from '@/lib/guest-access-client'
 import StatBlock from '@/components/ui/StatBlock'
+
+// ── Ícones próprios (traço só, sem biblioteca genérica — consistente com
+//    "Na prática"/Ofertas) para marcadores com personalidade: tipo de ação,
+//    moeda Lumis, e as abas principais. Utilitários puros (chevron, seta de
+//    tendência, check, alerta) continuam lucide. ─────────────────────────
+type IconProps = { size?: number; style?: React.CSSProperties }
+
+function IconBrain({ size = 14, style }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" style={style}>
+      <circle cx="7" cy="8" r="2" /><circle cx="17" cy="8" r="2" /><circle cx="12" cy="16" r="2" />
+      <path d="M8.7 9.2L11 14.5M15.3 9.2L13 14.5M9 8h6" />
+    </svg>
+  )
+}
+function IconZap({ size = 14, style }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" style={style}>
+      <path d="M13 2 5 13.5h5.5L11 22l8-12h-5.5z" />
+    </svg>
+  )
+}
+function IconMic({ size = 14, style }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" style={style}>
+      <rect x="9" y="2.5" width="6" height="11" rx="3" /><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3.5M9 21.5h6" />
+    </svg>
+  )
+}
+function IconGlobe({ size = 14, style }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" style={style}>
+      <circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.8 2.5 4.2 6 4.2 9s-1.4 6.5-4.2 9c-2.8-2.5-4.2-6-4.2-9s1.4-6.5 4.2-9z" />
+    </svg>
+  )
+}
+function IconBot({ size = 14, style }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" style={style}>
+      <rect x="4.5" y="8" width="15" height="11" rx="2.5" /><path d="M12 8V4.5M9.5 4.5h5" /><circle cx="9" cy="13.5" r="1.1" fill="currentColor" stroke="none" /><circle cx="15" cy="13.5" r="1.1" fill="currentColor" stroke="none" /><path d="M9 17.5h6" />
+    </svg>
+  )
+}
+function IconCoins({ size = 14, style }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" style={style}>
+      <circle cx="9.5" cy="9.5" r="6" /><circle cx="15" cy="15" r="6" />
+    </svg>
+  )
+}
+function IconScale({ size = 14, style }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" style={style}>
+      <path d="M12 3v17M8 20h8" /><path d="M4 7l8-2 8 2M4 7c0 2.5-2 4-2 4h4s-2-1.5-2-4zM20 7c0 2.5-2 4-2 4h4s-2-1.5-2-4z" />
+    </svg>
+  )
+}
+function IconSend({ size = 14, style }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" style={style}>
+      <path d="M21 3 3 10.5l7 3.2 3.2 7z" />
+    </svg>
+  )
+}
+function IconTeam({ size = 14, style }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" style={style}>
+      <circle cx="9" cy="8" r="3" /><path d="M3.5 20c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5" />
+      <circle cx="17" cy="9" r="2.3" /><path d="M15.5 14.7c2.4.3 4 2.2 4 5.3" />
+    </svg>
+  )
+}
+function IconGrid({ size = 14, style }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" style={style}>
+      <rect x="3.5" y="3.5" width="7" height="7" rx="1.3" /><rect x="13.5" y="3.5" width="7" height="7" rx="1.3" />
+      <rect x="3.5" y="13.5" width="7" height="7" rx="1.3" /><rect x="13.5" y="13.5" width="7" height="7" rx="1.3" />
+    </svg>
+  )
+}
+function IconPulse({ size = 14, style }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" style={style}>
+      <path d="M2.5 12h4l2-7 4 14 3-11 1.5 4h4.5" />
+    </svg>
+  )
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -64,13 +151,13 @@ const SERVICE_GROUPS: ServiceGroup[] = [
   {
     label: 'Inteligências Artificiais',
     services: [
-      { id: 'flow-ai', name: 'TDG Flow', icon: Brain, color: 'var(--tdgflow-accent-info)', bg: 'var(--tdgflow-accent-info-subtle)',
+      { id: 'flow-ai', name: 'TDG Flow', icon: IconBrain, color: 'var(--tdgflow-accent-info)', bg: 'var(--tdgflow-accent-info-subtle)',
         what: 'Assistente inteligente — respostas, sugestões e extração de insights',
         tier: 'Por consumo', tierColor: 'var(--tdgflow-accent-warm)', tierBg: 'var(--tdgflow-accent-warm-subtle)' },
-      { id: 'transcription', name: 'Transcrição de Voz', icon: Mic, color: 'var(--tdgflow-navy)', bg: 'var(--tdgflow-navy-subtle)',
+      { id: 'transcription', name: 'Transcrição de Voz', icon: IconMic, color: 'var(--tdgflow-navy)', bg: 'var(--tdgflow-navy-subtle)',
         what: 'Converte gravações em texto com alta precisão',
         tier: 'Plano gratuito', tierColor: 'var(--tdgflow-success)', tierBg: 'var(--tdgflow-success-subtle)' },
-      { id: 'travel-ai', name: 'Requisitos de Viagem', icon: Globe, color: '#004A7C', bg: '#E8F1F8',
+      { id: 'travel-ai', name: 'Requisitos de Viagem', icon: IconGlobe, color: '#004A7C', bg: '#E8F1F8',
         what: 'Vistos, ETAs e condições de entrada em tempo real',
         tier: 'Por consumo', tierColor: 'var(--tdgflow-accent-warm)', tierBg: 'var(--tdgflow-accent-warm-subtle)' },
     ],
@@ -78,7 +165,7 @@ const SERVICE_GROUPS: ServiceGroup[] = [
   {
     label: 'Infraestrutura',
     services: [
-      { id: 'hosting', name: 'Hospedagem & Deploy', icon: Zap, color: '#000', bg: '#F5F5F5',
+      { id: 'hosting', name: 'Hospedagem & Deploy', icon: IconZap, color: '#000', bg: '#F5F5F5',
         what: 'Disponibilidade global, atualizações instantâneas',
         tier: 'Plano fixo', tierColor: 'var(--tdgflow-text-muted)', tierBg: 'var(--tdgflow-surface-high)' },
       { id: 'database', name: 'Base de Dados', icon: Database, color: '#00B388', bg: '#E6FAF5',
@@ -92,7 +179,7 @@ const SERVICE_GROUPS: ServiceGroup[] = [
   {
     label: 'Plataforma de Agentes',
     services: [
-      { id: 'agents', name: 'Agentes Conversacionais', icon: Bot, color: '#E53935', bg: 'var(--tdgflow-error-subtle)',
+      { id: 'agents', name: 'Agentes Conversacionais', icon: IconBot, color: '#E53935', bg: 'var(--tdgflow-error-subtle)',
         what: 'Atendimento automatizado via WhatsApp e outros canais',
         tier: 'Em integração', tierColor: 'var(--tdgflow-text-muted)', tierBg: 'var(--tdgflow-surface-high)', soon: true },
     ],
@@ -100,11 +187,11 @@ const SERVICE_GROUPS: ServiceGroup[] = [
 ]
 
 const ACTION_META: Record<string, { label: string; icon: React.ElementType; color: string }> = {
-  chat:              { label: 'Mensagens Flow',    icon: Brain,  color: 'var(--tdgflow-accent-info)' },
-  review_extraction: { label: 'Extração de dicas', icon: Zap,    color: 'var(--tdgflow-accent-warm)' },
-  transcription:     { label: 'Transcrições',       icon: Mic,    color: 'var(--tdgflow-navy)' },
-  travel_docs:       { label: 'Consultas de visto', icon: Globe,  color: '#004A7C' },
-  scan_card:         { label: 'Scan de cartão',     icon: Bot,    color: '#E53935' },
+  chat:              { label: 'Mensagens Flow',    icon: IconBrain,  color: 'var(--tdgflow-accent-info)' },
+  review_extraction: { label: 'Extração de dicas', icon: IconZap,    color: 'var(--tdgflow-accent-warm)' },
+  transcription:     { label: 'Transcrições',       icon: IconMic,    color: 'var(--tdgflow-navy)' },
+  travel_docs:       { label: 'Consultas de visto', icon: IconGlobe,  color: '#004A7C' },
+  scan_card:         { label: 'Scan de cartão',     icon: IconBot,    color: '#E53935' },
 }
 
 // ── Buy Modal ─────────────────────────────────────────────────────────────────
@@ -182,10 +269,10 @@ function LumisExplainer() {
   }
 
   const ACTION_COSTS = [
-    { icon: Brain, label: 'Mensagem para a Stella', cost: 9, color: 'var(--tdgflow-accent-info)' },
-    { icon: Zap,   label: 'Extração de dica',        cost: 5, color: 'var(--tdgflow-accent-warm)' },
-    { icon: Mic,   label: 'Transcrição de áudio',   cost: 2, color: 'var(--tdgflow-navy)' },
-    { icon: Globe, label: 'Consulta de visto',       cost: 2, color: '#004A7C' },
+    { icon: IconBrain, label: 'Mensagem para a Stella', cost: 9, color: 'var(--tdgflow-accent-info)' },
+    { icon: IconZap,   label: 'Extração de dica',        cost: 5, color: 'var(--tdgflow-accent-warm)' },
+    { icon: IconMic,   label: 'Transcrição de áudio',   cost: 2, color: 'var(--tdgflow-navy)' },
+    { icon: IconGlobe, label: 'Consulta de visto',       cost: 2, color: '#004A7C' },
   ]
 
   return (
@@ -205,7 +292,7 @@ function LumisExplainer() {
         }}
       >
         <div style={{ width: 28, height: 28, borderRadius: 8, background: 'var(--tdgflow-navy-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <Coins size={14} style={{ color: 'var(--tdgflow-navy)' }} />
+          <IconCoins size={14} style={{ color: 'var(--tdgflow-navy)' }} />
         </div>
         <div style={{ flex: 1 }}>
           <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)', margin: 0, lineHeight: 1.2 }}>
@@ -260,7 +347,7 @@ function LumisExplainer() {
 
           {/* Como comprar */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 10px', background: 'var(--tdgflow-navy-subtle)', borderRadius: 8, border: '1px solid #B8E0E3' }}>
-            <Coins size={11} style={{ color: 'var(--tdgflow-navy)', flexShrink: 0 }} />
+            <IconCoins size={11} style={{ color: 'var(--tdgflow-navy)', flexShrink: 0 }} />
             <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-navy-dim)', margin: 0, fontWeight: 300 }}>
               Cada agência recebe uma <strong style={{ fontWeight: 600 }}>cota mensal</strong> de Lumis. Se precisar de mais, compre top-up diretamente com a Bemgsy pelo botão abaixo.
             </p>
@@ -347,7 +434,7 @@ function TabMyUsage() {
       {quota && (
         <div style={{ background: 'var(--tdgflow-surface)', border: '1px solid var(--tdgflow-border-subtle)', borderRadius: 14, overflow: 'hidden' }}>
           <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--tdgflow-border-subtle)', background: 'var(--tdgflow-bg)', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Coins size={12} style={{ color: 'var(--tdgflow-navy)' }} />
+            <IconCoins size={12} style={{ color: 'var(--tdgflow-navy)' }} />
             <p style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--tdgflow-text-faint)', margin: 0, flex: 1 }}>
               Cota mensal — {new Date(quota.period + 'T12:00:00').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
             </p>
@@ -488,7 +575,7 @@ function TabMyUsage() {
           </div>
           <div>
             {byAction.map((row, i) => {
-              const meta = ACTION_META[row.action_type] ?? { label: row.action_type, icon: Zap, color: 'var(--tdgflow-text-muted)' }
+              const meta = ACTION_META[row.action_type] ?? { label: row.action_type, icon: IconZap, color: 'var(--tdgflow-text-muted)' }
               const Icon = meta.icon
               const pct = totalThisMonth > 0 ? Math.round(row.credits_used / totalThisMonth * 100) : 0
               const cost = CREDIT_COSTS[row.action_type] ?? 1
@@ -638,7 +725,7 @@ function LumiDistribution({
     <div style={{ background: 'var(--tdgflow-surface)', border: '1px solid var(--tdgflow-border-subtle)', borderRadius: 14, overflow: 'hidden' }}>
       {/* Header */}
       <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--tdgflow-border-subtle)', background: 'var(--tdgflow-bg)', display: 'flex', alignItems: 'center', gap: 6 }}>
-        <Scale size={12} style={{ color: 'var(--tdgflow-text-secondary)' }} />
+        <IconScale size={12} style={{ color: 'var(--tdgflow-text-secondary)' }} />
         <p style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--tdgflow-text-secondary)', margin: 0, flex: 1 }}>Distribuição de Lumis</p>
         {feedback && <span style={{ fontSize: '0.5625rem', color: 'var(--tdgflow-success)', background: 'var(--tdgflow-success-subtle)', borderRadius: 20, padding: '2px 8px' }}>{feedback}</span>}
       </div>
@@ -805,7 +892,7 @@ function GuestRequestsPanel() {
   return (
     <div style={{ background: 'var(--tdgflow-surface)', border: '1px solid var(--tdgflow-border-subtle)', borderRadius: 14, overflow: 'hidden', flexShrink: 0 }}>
       <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--tdgflow-border-subtle)', background: 'var(--tdgflow-bg)', display: 'flex', alignItems: 'center', gap: 6 }}>
-        <Send size={12} style={{ color: 'var(--tdgflow-gold-dim)' }} />
+        <IconSend size={12} style={{ color: 'var(--tdgflow-gold-dim)' }} />
         <p style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--tdgflow-text-faint)', margin: 0, flex: 1 }}>
           Pedidos de ativação GUEST
         </p>
@@ -907,7 +994,7 @@ function TabNetwork() {
 
         {!balance && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 14px', background: 'var(--tdgflow-border-subtle)', borderRadius: 9, border: '1px solid var(--tdgflow-border-subtle)', flexShrink: 0 }}>
-            <Users size={13} style={{ color: 'var(--tdgflow-text-faint)', flexShrink: 0 }} />
+            <IconTeam size={13} style={{ color: 'var(--tdgflow-text-faint)', flexShrink: 0 }} />
             <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)', margin: 0 }}>Este admin não está vinculado a uma agência — sem saldo individual.</p>
           </div>
         )}
@@ -925,7 +1012,7 @@ function TabNetwork() {
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <Coins size={13} style={{ color: '#4DD0E1' }} />
+                    <IconCoins size={13} style={{ color: '#4DD0E1' }} />
                     <span style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#4DD0E1' }}>Saldo da rede</span>
                     {tierDef && (
                       <span style={{ fontSize: '0.5rem', fontWeight: 700, color: 'var(--tdgflow-text-primary)', background: '#4DD0E1', borderRadius: 20, padding: '1px 7px' }}>
@@ -981,7 +1068,7 @@ function TabNetwork() {
               {/* By advisor */}
               <div style={{ background: 'var(--tdgflow-surface)', border: '1px solid var(--tdgflow-border-subtle)', borderRadius: 14, overflow: 'hidden' }}>
                 <div style={{ padding: '9px 14px', borderBottom: '1px solid var(--tdgflow-border-subtle)', background: 'var(--tdgflow-bg)', display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <Users size={11} style={{ color: 'var(--tdgflow-text-faint)' }} />
+                  <IconTeam size={11} style={{ color: 'var(--tdgflow-text-faint)' }} />
                   <p style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--tdgflow-text-faint)', margin: 0 }}>Por advisor — este mês</p>
                 </div>
                 <div>
@@ -1062,9 +1149,9 @@ export default function BillingView({ userRole }: { userRole: string }) {
   const [tab, setTab] = useState<Tab>('usage')
 
   const allTabs: { id: Tab; label: string; icon: React.ElementType; adminOnly?: boolean }[] = [
-    { id: 'usage',   label: 'Meu uso',       icon: Activity },
-    { id: 'infra',   label: 'Infraestrutura', icon: LayoutGrid },
-    { id: 'network', label: 'Rede TDG',       icon: Users, adminOnly: true },
+    { id: 'usage',   label: 'Meu uso',       icon: IconPulse },
+    { id: 'infra',   label: 'Infraestrutura', icon: IconGrid },
+    { id: 'network', label: 'Rede TDG',       icon: IconTeam, adminOnly: true },
   ]
   const tabs = allTabs.filter(t => !t.adminOnly || isAdmin)
 

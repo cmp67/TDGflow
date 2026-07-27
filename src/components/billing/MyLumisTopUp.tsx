@@ -1,13 +1,23 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { Coins, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import Skeleton from '@/components/ui/Skeleton'
 import { TIERS, type TierId } from '@/lib/credits'
 import {
   fetchOwnBalance, buyTopUp,
   type AgencyBalance, type OwnBalanceResult,
 } from '@/lib/topup-client'
+
+// Ícone próprio (traço só) pra moeda Lumis — consistente com "Na prática"/
+// Ofertas/BillingView, nunca o ícone genérico de moeda do lucide.
+function IconCoins({ size = 14, style }: { size?: number; style?: React.CSSProperties }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" style={style}>
+      <circle cx="9.5" cy="9.5" r="6" /><circle cx="15" cy="15" r="6" />
+    </svg>
+  )
+}
 
 function numFmt(n: number) {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
@@ -200,7 +210,7 @@ export default function MyLumisTopUp() {
       )}
       <div style={{ background: 'var(--tdgflow-surface)', border: '1px solid var(--tdgflow-border-subtle)', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 8px rgba(17,38,48,0.06)' }}>
         <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--tdgflow-border-subtle)', background: 'var(--tdgflow-bg)', display: 'flex', alignItems: 'center', gap: 6 }}>
-          <Coins size={12} style={{ color: 'var(--tdgflow-navy)' }} />
+          <IconCoins size={12} style={{ color: 'var(--tdgflow-navy)' }} />
           <p style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--tdgflow-text-faint)', margin: 0, flex: 1 }}>
             Saldo comprado da agência
           </p>
@@ -226,7 +236,7 @@ export default function MyLumisTopUp() {
               onClick={() => setShowModal(true)}
               style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 14px', borderRadius: 9, border: 'none', background: 'var(--tdgflow-accent-warm)', color: 'var(--tdgflow-surface)', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}
             >
-              <Coins size={12} />
+              <IconCoins size={12} />
               Comprar top-up
             </button>
           </div>
