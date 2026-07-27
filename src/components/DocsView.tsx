@@ -1,8 +1,28 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
-import { Search, Loader2, ShieldCheck, ShieldAlert, ShieldX, Syringe, FileText, Globe, AlertTriangle, X, ChevronRight } from 'lucide-react'
+import { Search, Loader2, ShieldCheck, ShieldAlert, ShieldX, Syringe, AlertTriangle, X, ChevronRight } from 'lucide-react'
 import InsufficientBalanceModal from './InsufficientBalanceModal'
+
+/* ── Ícones próprios — traço só (regra de personalidade Bemgsy) pros
+   marcadores de identidade das abas (Vistos/Materiais). Selos semânticos
+   de segurança/saúde (shields e seringa) e utilitários (busca, fechar,
+   seta) continuam lucide — são estado funcional, não decoração. ──── */
+function IconGlobe({ size = 14, style }: { size?: number; style?: React.CSSProperties }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" style={style}>
+      <circle cx="12" cy="12" r="8.5" /><path d="M3.5 12h17M12 3.5c2.5 2.3 3.8 5.4 3.8 8.5s-1.3 6.2-3.8 8.5c-2.5-2.3-3.8-5.4-3.8-8.5S9.5 5.8 12 3.5z" />
+    </svg>
+  )
+}
+function IconDoc({ size = 14, style }: { size?: number; style?: React.CSSProperties }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" style={style}>
+      <path d="M7 3.5h7l4 4V20a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1z" />
+      <path d="M14 3.5V8h4M9 13h6M9 16.5h6" />
+    </svg>
+  )
+}
 import type { TravelRequirements } from '@/lib/travel-docs'
 
 // ── Quick-access chips (top TDG destinations) ─────────────────────────────────
@@ -242,7 +262,7 @@ function ResultCard({ result, onClose }: { result: TravelRequirements; onClose: 
       {/* ETA note */}
       {result.eta_required && (
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 14px', borderRadius: 10, background: 'rgba(107,33,168,.05)', border: '1px solid rgba(107,33,168,.2)', marginBottom: 10 }}>
-          <Globe size={14} style={{ color: '#6B21A8', flexShrink: 0, marginTop: 1 }} />
+          <IconGlobe size={14} style={{ color: '#6B21A8', flexShrink: 0, marginTop: 1 }} />
           <p style={{ fontSize: '0.7rem', color: 'var(--tdgflow-text-secondary)', lineHeight: 1.4 }}>Requer ETA (Autorização Eletrônica de Viagem) antes do embarque.</p>
         </div>
       )}
@@ -340,10 +360,10 @@ export default function DocsView() {
   }, [])
 
   const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
-    { key: 'vistos',    label: 'Vistos',    icon: <Globe size={13} /> },
+    { key: 'vistos',    label: 'Vistos',    icon: <IconGlobe size={13} /> },
     { key: 'saude',     label: 'Saúde',     icon: <Syringe size={13} /> },
     { key: 'seguranca', label: 'Segurança', icon: <ShieldCheck size={13} /> },
-    { key: 'materiais', label: 'Materiais', icon: <FileText size={13} /> },
+    { key: 'materiais', label: 'Materiais', icon: <IconDoc size={13} /> },
   ]
 
   const filteredVisa = visaFilter === 'all'
@@ -631,7 +651,7 @@ export default function DocsView() {
       {tab === 'materiais' && (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px', textAlign: 'center', gap: 12 }}>
           <div style={{ width: 48, height: 48, borderRadius: 14, background: 'var(--tdgflow-surface-high)', border: '1px solid var(--tdgflow-border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <FileText size={20} style={{ color: 'var(--tdgflow-text-muted)' }} />
+            <IconDoc size={20} style={{ color: 'var(--tdgflow-text-muted)' }} />
           </div>
           <p style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--tdgflow-text-primary)' }}>Materiais em breve</p>
           <p style={{ fontSize: '0.8rem', color: 'var(--tdgflow-text-muted)', maxWidth: 320, lineHeight: 1.5 }}>

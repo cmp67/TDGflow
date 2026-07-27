@@ -1,8 +1,47 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ChevronUp, Plus, X, Clock, CheckCircle2, Zap, MessageSquarePlus, Sparkles, Wrench } from 'lucide-react'
+import { ChevronUp, Plus, X, CheckCircle2 } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
+
+/* ── Ícones próprios — traço só (regra de personalidade Bemgsy) pros
+   marcadores de status/tipo de sugestão. Utilitários (fechar, adicionar,
+   seta, check de concluído) continuam lucide. ──────────────────────── */
+function IconPending({ size = 14, style }: { size?: number; style?: React.CSSProperties }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" style={style}>
+      <circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" />
+    </svg>
+  )
+}
+function IconInProgress({ size = 14, style }: { size?: number; style?: React.CSSProperties }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" style={style}>
+      <path d="M12 3l1.6 5.4L19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6z" />
+    </svg>
+  )
+}
+function IconImprovement({ size = 14, style }: { size?: number; style?: React.CSSProperties }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" style={style}>
+      <path d="M9.5 15.5L4 21M14 4l1.3 3.3L18.5 8.5 15.2 9.8 14 13l-1.3-3.3L9.5 8.5l3.2-1.3z" /><circle cx="18" cy="17" r="3" />
+    </svg>
+  )
+}
+function IconNewFeature({ size = 14, style }: { size?: number; style?: React.CSSProperties }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" style={style}>
+      <path d="M12 3l1.6 5.4L19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6z" /><path d="M19 15l.7 2.2L22 18l-2.3.8L19 21l-.7-2.2L16 18l2.3-.8z" />
+    </svg>
+  )
+}
+function IconSuggest({ size = 18, style }: { size?: number; style?: React.CSSProperties }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" style={style}>
+      <path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.5.4.8 1 .8 1.7h5.6c0-.7.3-1.3.8-1.7A6 6 0 0 0 12 3z" />
+    </svg>
+  )
+}
 
 interface Suggestion {
   id: number
@@ -17,14 +56,14 @@ interface Suggestion {
 }
 
 const STATUS_CONFIG = {
-  pending:     { color: 'var(--tdgflow-text-muted)', bg: 'var(--tdgflow-surface-high)', icon: Clock },
-  in_progress: { color: 'var(--tdgflow-navy)', bg: 'var(--tdgflow-navy-subtle)', icon: Zap },
+  pending:     { color: 'var(--tdgflow-text-muted)', bg: 'var(--tdgflow-surface-high)', icon: IconPending },
+  in_progress: { color: 'var(--tdgflow-navy)', bg: 'var(--tdgflow-navy-subtle)', icon: IconInProgress },
   done:        { color: 'var(--tdgflow-success)', bg: 'var(--tdgflow-success-subtle)', icon: CheckCircle2 },
 } as const
 
 const TYPE_CONFIG = {
-  improvement: { color: 'var(--tdgflow-accent-info)', bg: 'var(--tdgflow-accent-info-subtle)', icon: Wrench },
-  new_feature: { color: 'var(--tdgflow-accent-warm)', bg: 'var(--tdgflow-accent-warm-subtle)', icon: Sparkles },
+  improvement: { color: 'var(--tdgflow-accent-info)', bg: 'var(--tdgflow-accent-info-subtle)', icon: IconImprovement },
+  new_feature: { color: 'var(--tdgflow-accent-warm)', bg: 'var(--tdgflow-accent-warm-subtle)', icon: IconNewFeature },
 } as const
 
 function ImpactDots({ value, interactive, onChange }: { value: number; interactive?: boolean; onChange?: (v: number) => void }) {
@@ -227,7 +266,7 @@ export default function SuggestionsView({ userRole }: { userRole: string }) {
           <div style={{ background: 'var(--tdgflow-surface)', borderRadius: 16, width: '100%', maxWidth: 500, padding: 28, boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2">
-                <MessageSquarePlus size={18} style={{ color: 'var(--tdgflow-navy)' }} />
+                <IconSuggest size={18} style={{ color: 'var(--tdgflow-navy)' }} />
                 <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.02em' }}>{lx.formTitle}</h2>
               </div>
               <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tdgflow-text-muted)', padding: 4 }}><X size={16} /></button>

@@ -1,8 +1,55 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Send, Mic, Loader2, List, Sparkles, Clock, Lightbulb, Zap, Search } from 'lucide-react'
+import { Send, Loader2, Sparkles } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
+
+/* ── Ícones próprios — traço só, sem lucide genérico pros marcadores de
+   conteúdo/categoria (regra de personalidade Bemgsy). Utilitários puros
+   (enviar, spinner) continuam lucide. ──────────────────────────────── */
+function IconMic({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="9" y="3" width="6" height="11" rx="3" />
+      <path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6" />
+    </svg>
+  )
+}
+function IconQueue({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 6h16M4 12h16M4 18h10" />
+    </svg>
+  )
+}
+function IconPending({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" />
+    </svg>
+  )
+}
+function IconExpiring({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3l1.6 5.4L19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6z" />
+    </svg>
+  )
+}
+function IconSearch({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="10.5" cy="10.5" r="6.5" /><path d="M20 20l-4.8-4.8" />
+    </svg>
+  )
+}
+function IconTip({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.5.4.8 1 .8 1.7h5.6c0-.7.3-1.3.8-1.7A6 6 0 0 0 12 3z" />
+    </svg>
+  )
+}
 import { motion, AnimatePresence } from 'framer-motion'
 // ReactMarkdown kept for assistant conversation messages
 import AudioRecord from './AudioRecord'
@@ -85,7 +132,7 @@ function buildActionCards(ctx: AgentContext): ActionCard[] {
 
   if (ctx.pending_recordings > 0) {
     cards.push({
-      icon: <Clock size={14} />,
+      icon: <IconPending size={14} />,
       label: `${ctx.pending_recordings} gravação${ctx.pending_recordings > 1 ? 'ões' : ''} pendente${ctx.pending_recordings > 1 ? 's' : ''}`,
       sublabel: 'Transcrever agora',
       prompt: 'Tenho gravações pendentes. Como processo a transcrição?',
@@ -95,7 +142,7 @@ function buildActionCards(ctx: AgentContext): ActionCard[] {
 
   if (ctx.expiring_promotions.length > 0) {
     cards.push({
-      icon: <Zap size={14} />,
+      icon: <IconExpiring size={14} />,
       label: 'Promoções expirando',
       sublabel: `${ctx.expiring_promotions.length} offer${ctx.expiring_promotions.length > 1 ? 's' : ''} esta semana`,
       prompt: 'Quais promoções estão expirando esta semana? Me dá os detalhes para eu comunicar aos clientes.',
@@ -104,14 +151,14 @@ function buildActionCards(ctx: AgentContext): ActionCard[] {
   }
 
   cards.push({
-    icon: <Search size={14} />,
+    icon: <IconSearch size={14} />,
     label: 'Buscar hotel',
     sublabel: 'Por perfil de cliente',
     prompt: '',
   })
 
   cards.push({
-    icon: <Lightbulb size={14} />,
+    icon: <IconTip size={14} />,
     label: 'Registrar dica',
     sublabel: 'Visita a hotel',
     prompt: 'Quero registrar uma dica de hotel que visitei recentemente.',
@@ -213,14 +260,14 @@ export default function Chat() {
             className="btn-gold"
             style={{ padding: '7px 12px', fontSize: '0.8125rem' }}
           >
-            <Mic size={13} /> Gravar
+            <IconMic size={13} /> Gravar
           </button>
           <button
             onClick={() => setShowQueue(true)}
             className="btn-ghost relative"
             style={{ padding: '7px 12px', fontSize: '0.8125rem' }}
           >
-            <List size={13} /> Fila
+            <IconQueue size={13} /> Fila
             {queueCount > 0 && (
               <span
                 className="absolute -top-1.5 -right-1.5 flex items-center justify-center font-bold rounded-full"

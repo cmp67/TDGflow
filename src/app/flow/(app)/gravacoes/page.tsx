@@ -3,7 +3,23 @@
 import { useState } from 'react'
 import AudioRecord from '@/components/AudioRecord'
 import AudioQueue from '@/components/AudioQueue'
-import { Mic, List } from 'lucide-react'
+
+/* ── Ícones próprios — traço só (regra de personalidade Bemgsy). ──── */
+function IconMic({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="9" y="3" width="6" height="11" rx="3" />
+      <path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6" />
+    </svg>
+  )
+}
+function IconQueue({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 6h16M4 12h16M4 18h10" />
+    </svg>
+  )
+}
 
 export default function GravacoesPage() {
   const [showRecord, setShowRecord] = useState(false)
@@ -29,14 +45,14 @@ export default function GravacoesPage() {
             className="btn-gold"
             style={{ padding: '8px 14px', fontSize: '0.8125rem' }}
           >
-            <Mic size={14} /> Nova gravação
+            <IconMic size={14} /> Nova gravação
           </button>
           <button
             onClick={() => setShowQueue(true)}
             className="btn-ghost relative"
             style={{ padding: '8px 14px', fontSize: '0.8125rem' }}
           >
-            <List size={14} /> Fila
+            <IconQueue size={14} /> Fila
             {queueCount > 0 && (
               <span
                 className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full flex items-center justify-center font-bold leading-none"

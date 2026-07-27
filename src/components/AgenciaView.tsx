@@ -1,10 +1,34 @@
 'use client'
 
 import { useState } from 'react'
-import { Building2, Crown, Calendar, Save, Loader, Eye, EyeOff, CheckCircle } from 'lucide-react'
+import { Save, Loader, Eye, EyeOff, CheckCircle } from 'lucide-react'
 import UserAvatar from '@/components/UserAvatar'
 import GuestActivationCard from '@/components/billing/GuestActivationCard'
 import BrandSettings from '@/components/BrandSettings'
+
+/* ── Ícones próprios — traço só (regra de personalidade Bemgsy). ──── */
+function IconAgency({ size = 16, style }: { size?: number; style?: React.CSSProperties }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" style={style}>
+      <rect x="5" y="3.5" width="14" height="17" rx="1.2" />
+      <path d="M9.5 20.5v-4h5v4M9 8h.01M9 11.5h.01M14 8h.01M14 11.5h.01" />
+    </svg>
+  )
+}
+function IconFounder({ size = 11, style }: { size?: number; style?: React.CSSProperties }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" style={style}>
+      <path d="M4 8l4 3 4-6 4 6 4-3-2 10H6z" />
+    </svg>
+  )
+}
+function IconCalendar({ size = 10, style }: { size?: number; style?: React.CSSProperties }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" style={style}>
+      <rect x="4" y="5.5" width="16" height="15" rx="1.6" /><path d="M4 10h16M8 3.5v3.5M16 3.5v3.5" />
+    </svg>
+  )
+}
 
 interface Member {
   id: string
@@ -90,7 +114,7 @@ export default function AgenciaView({ user, members }: Props) {
             <p style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.01em' }}>{user.name}</p>
             <p style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-muted)', marginTop: 2 }}>{user.email}</p>
             <div className="flex items-center gap-1.5 mt-2">
-              {user.role === 'admin' && <Crown size={11} style={{ color: 'var(--tdgflow-navy)' }} />}
+              {user.role === 'admin' && <IconFounder size={11} style={{ color: 'var(--tdgflow-navy)' }} />}
               <span className="badge badge-gold" style={{ fontSize: '0.6rem' }}>{roleBadge}</span>
             </div>
           </div>
@@ -190,7 +214,7 @@ export default function AgenciaView({ user, members }: Props) {
             className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
             style={{ background: 'var(--tdgflow-navy-subtle)', border: '1px solid var(--tdgflow-navy-ring)' }}
           >
-            <Building2 size={16} style={{ color: 'var(--tdgflow-navy)' }} />
+            <IconAgency size={16} style={{ color: 'var(--tdgflow-navy)' }} />
           </div>
           <div>
             <p className="text-sm font-semibold" style={{ color: 'var(--tdgflow-text-primary)' }}>{user.agency || '—'}</p>
@@ -222,11 +246,11 @@ export default function AgenciaView({ user, members }: Props) {
                       {m.email === user.email && (
                         <span className="badge badge-gold" style={{ fontSize: '0.55rem', padding: '1px 5px' }}>você</span>
                       )}
-                      {m.role === 'admin' && <Crown size={10} style={{ color: 'var(--tdgflow-navy)' }} />}
+                      {m.role === 'admin' && <IconFounder size={10} style={{ color: 'var(--tdgflow-navy)' }} />}
                     </div>
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0" style={{ color: 'var(--tdgflow-text-muted)' }}>
-                    <Calendar size={10} />
+                    <IconCalendar size={10} />
                     <span style={{ fontSize: '0.625rem' }}>{formatDate(m.created_at)}</span>
                   </div>
                 </div>
