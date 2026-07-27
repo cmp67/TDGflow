@@ -1,9 +1,56 @@
 'use client'
 
 import { useState } from 'react'
-import { Users, Plus, Crown, UserCheck, UserX, Loader, Check, X, Eye, EyeOff, Link2, CreditCard } from 'lucide-react'
+import { Plus, UserCheck, UserX, Loader, Check, X, Eye, EyeOff } from 'lucide-react'
 import AgencyInvitesPanel from '@/components/AgencyInvitesPanel'
 import AdminSubscriptionsPanel from '@/components/AdminSubscriptionsPanel'
+
+/* ── Ícones próprios — traço só, sem emoji/biblioteca genérica pra badges e
+   labels de seção (consistente com Na prática/Ofertas/HoteisView). ────── */
+function IconTeam({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="9" cy="8" r="3" />
+      <path d="M3.5 20c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5" />
+      <circle cx="17.5" cy="8.5" r="2.2" />
+      <path d="M15.8 14.6c2.4.3 4.2 2.2 4.2 5.4" />
+    </svg>
+  )
+}
+function IconInvite({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9.5 14.5l5-5" />
+      <path d="M11 8.5l1.5-1.5a3 3 0 0 1 4.2 4.2L15 12.7" />
+      <path d="M13 15.5l-1.5 1.5a3 3 0 0 1-4.2-4.2L8.7 11.3" />
+    </svg>
+  )
+}
+function IconBilling({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="6" width="18" height="13" rx="1.8" />
+      <path d="M3 10.5h18" />
+      <path d="M7 14.5h4" />
+    </svg>
+  )
+}
+function IconCrown({ size = 11, style }: { size?: number; style?: React.CSSProperties }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" style={style}>
+      <path d="M4 18h16l-1.4-8-4.1 3.2L12 7l-2.5 6.2L5.4 10z" />
+      <path d="M4 18v1.5h16V18" />
+    </svg>
+  )
+}
+function IconPhone({ size = 12 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="7" y="2.5" width="10" height="19" rx="2" />
+      <path d="M11 18.5h2" />
+    </svg>
+  )
+}
 
 interface TdgUser {
   id: string
@@ -118,7 +165,7 @@ export default function GestaoView({ users: initial }: Props) {
             marginBottom: -1,
           }}
         >
-          <Users size={14} /> Usuários
+          <IconTeam size={14} /> Usuários
         </button>
         <button
           onClick={() => setTab('invites')}
@@ -131,7 +178,7 @@ export default function GestaoView({ users: initial }: Props) {
             marginBottom: -1,
           }}
         >
-          <Link2 size={14} /> Convites de Agência
+          <IconInvite size={14} /> Convites de Agência
         </button>
         <button
           onClick={() => setTab('assinaturas')}
@@ -144,7 +191,7 @@ export default function GestaoView({ users: initial }: Props) {
             marginBottom: -1,
           }}
         >
-          <CreditCard size={14} /> Assinaturas
+          <IconBilling size={14} /> Assinaturas
         </button>
       </div>
 
@@ -233,13 +280,13 @@ export default function GestaoView({ users: initial }: Props) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-medium" style={{ color: 'var(--tdgflow-text-primary)' }}>{u.name}</span>
-                    {u.role === 'admin' && <Crown size={11} style={{ color: 'var(--tdgflow-navy)' }} />}
+                    {u.role === 'admin' && <IconCrown size={11} style={{ color: 'var(--tdgflow-navy)' }} />}
                     {!u.active && <span className="badge badge-muted" style={{ fontSize: '0.6rem' }}>inativo</span>}
                   </div>
                   <p className="text-xs truncate" style={{ color: 'var(--tdgflow-text-muted)' }}>{u.email}</p>
                   <div className="flex items-center gap-3 flex-wrap mt-0.5">
                     {u.whatsapp && (
-                      <span className="text-xs" style={{ color: 'var(--tdgflow-text-muted)' }}>📱 +{u.whatsapp}</span>
+                      <span className="text-xs flex items-center gap-1" style={{ color: 'var(--tdgflow-text-muted)' }}><IconPhone size={11} />+{u.whatsapp}</span>
                     )}
                     {u.agent_interaction_id && (
                       <span className="text-xs font-mono" style={{ color: 'var(--tdgflow-navy)' }}>ID: {u.agent_interaction_id}</span>

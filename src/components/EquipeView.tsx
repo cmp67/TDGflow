@@ -1,7 +1,18 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { UserPlus, Loader, Crown, Copy, Check, X } from 'lucide-react'
+import { UserPlus, Loader, Copy, Check, X } from 'lucide-react'
+
+/* ── Ícone próprio — mesmo traço usado em GestaoView.tsx pro mesmo conceito
+   (admin), Na prática, Ofertas e HoteisView.tsx. ────────────────────────── */
+function IconCrown({ size = 11, style }: { size?: number; style?: React.CSSProperties }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" style={style}>
+      <path d="M4 18h16l-1.4-8-4.1 3.2L12 7l-2.5 6.2L5.4 10z" />
+      <path d="M4 18v1.5h16V18" />
+    </svg>
+  )
+}
 
 interface TeamMember {
   id:         string
@@ -144,7 +155,7 @@ export default function EquipeView({ agencyName }: Props) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-medium" style={{ color: 'var(--tdgflow-text-primary)' }}>{m.name}</span>
-                    {m.role === 'agency_admin' && <Crown size={11} style={{ color: 'var(--tdgflow-navy)' }} />}
+                    {m.role === 'agency_admin' && <IconCrown size={11} style={{ color: 'var(--tdgflow-navy)' }} />}
                     {!m.active && <span className="badge badge-muted" style={{ fontSize: '0.6rem' }}>inativo</span>}
                   </div>
                   <p className="text-xs truncate" style={{ color: 'var(--tdgflow-text-muted)' }}>{m.email}</p>
