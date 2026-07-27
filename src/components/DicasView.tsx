@@ -1423,9 +1423,12 @@ export default function DicasView() {
               </svg>
               Rede TDG
             </p>
-            <h2 style={{ fontSize: '1.125rem', fontWeight: 500, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.025em', lineHeight: 1 }}>
-              O que a rede descobriu
+            <h2 style={{ fontSize: '1.125rem', fontWeight: 500, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.025em', lineHeight: 1, marginBottom: 4 }}>
+              Na prática
             </h2>
+            <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)' }}>
+              O que aprendemos indo lá: inspeções, impressões, avisos
+            </p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, paddingTop: 4 }}>
             {!loading && (

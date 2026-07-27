@@ -17,7 +17,7 @@ export const t: Record<Lang, Record<string, string>> = {
     // Nav items
     'nav.assistente': 'Modo Flow',
     'nav.ofertas':    'Ofertas',
-    'nav.dicas':      'Dicas',
+    'nav.dicas':      'Na prática',
     'nav.hoteis':     'Hotéis',
     'nav.rede':       'Rede',
     'nav.analytics':  'Analytics',
