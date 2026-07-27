@@ -2,8 +2,81 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { TrendingUp, Building2, Users, Star, BarChart2, Award, Sparkles, MapPin, Activity, Trophy } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
+import TdgIconSprite from '@/components/TdgIconSprite'
+
+/* ── Ícones próprios — traço só, consistentes com Na prática/Ofertas ──── */
+function IconTrend({ size = 15 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 17l6-6 4 4 8-9" />
+      <path d="M15 6h6v6" />
+    </svg>
+  )
+}
+function IconHotelBuilding({ size = 15 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="5" y="3.5" width="14" height="17" rx="1.2" />
+      <path d="M9.5 20.5v-4h5v4M9 8h.01M9 11.5h.01M14 8h.01M14 11.5h.01" />
+    </svg>
+  )
+}
+function IconAdvisors({ size = 15 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="9" cy="8" r="3" />
+      <path d="M3.5 20c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5" />
+      <circle cx="17" cy="7" r="2.3" />
+      <path d="M14.5 14.2c2.7.2 4.7 2.3 4.9 5.3" />
+    </svg>
+  )
+}
+function IconStarOutline({ size = 15 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3.5l2.6 5.6 6 .7-4.5 4.1 1.3 6-5.4-3-5.4 3 1.3-6-4.5-4.1 6-.7z" />
+    </svg>
+  )
+}
+function IconBars({ size = 15, color = 'currentColor' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 20V13M12 20V8M19 20v-7" />
+    </svg>
+  )
+}
+function IconAward({ size = 15, color = 'var(--tdgflow-navy)' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="8.5" r="5" />
+      <path d="M8.5 12.8L7 21l5-2.5L17 21l-1.5-8.2" />
+    </svg>
+  )
+}
+function IconTrophy({ size = 15, color = 'var(--tdgflow-navy)' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M7 4h10v5a5 5 0 0 1-10 0V4z" />
+      <path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3" />
+      <path d="M12 14v3M9 20h6M9.5 17h5" />
+    </svg>
+  )
+}
+function IconActivity({ size = 15, color = 'var(--tdgflow-navy)' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 12h4l2-7 4 14 2-7h6" />
+    </svg>
+  )
+}
+function IconInline({ id, size = 13, color = 'var(--tdgflow-navy)' }: { id: string; size?: number; color?: string }) {
+  return (
+    <svg style={{ width: size, height: size, stroke: color, fill: 'none', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+      <use href={`#${id}`} />
+    </svg>
+  )
+}
 
 const VISIT_TYPE_COLORS: Record<string, string> = {
   fam_trip:           'var(--tdgflow-navy)',
@@ -163,7 +236,7 @@ function InsightsBlock() {
   return (
     <div style={{ background: 'linear-gradient(135deg, var(--tdgflow-navy-subtle) 0%, var(--tdgflow-surface) 60%)', border: '1px solid var(--tdgflow-navy-ring)', borderRadius: 14, padding: '16px 18px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-        <Sparkles size={13} style={{ color: 'var(--tdgflow-navy)' }} />
+        <IconInline id="i-spark" size={13} />
         <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--tdgflow-navy-dim)' }}>
           Insights da rede · gerado por IA
         </p>
@@ -253,6 +326,7 @@ export default function AnalyticsView() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+      <TdgIconSprite />
 
       {/* ── Header ─────────────────────────────────────────────────── */}
       <div style={{ flexShrink: 0, background: 'var(--tdgflow-surface)', borderBottom: '1px solid var(--tdgflow-border)', padding: '18px 20px 0' }}>
@@ -320,10 +394,10 @@ export default function AnalyticsView() {
 
               {/* Hero stats — count-up animated */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
-                <StatCard value={networkTotal} label={`${tr('analytics.totalReviews')} · ${PERIOD_LABELS[period].toLowerCase()}`} icon={<TrendingUp size={15} />} accent delay={0} />
-                <StatCard value={network.unique_hotels} label={tr('analytics.hotels')} icon={<Building2 size={15} />} delay={0.06} />
-                <StatCard value={network.active_agencies} label={tr('analytics.advisors')} icon={<Users size={15} />} delay={0.12} />
-                <StatCard value={network.avg_rating ? `${Number(network.avg_rating).toFixed(1)} ★` : '—'} label={tr('analytics.avgRating')} icon={<Star size={15} />} delay={0.18} />
+                <StatCard value={networkTotal} label={`${tr('analytics.totalReviews')} · ${PERIOD_LABELS[period].toLowerCase()}`} icon={<IconTrend size={15} />} accent delay={0} />
+                <StatCard value={network.unique_hotels} label={tr('analytics.hotels')} icon={<IconHotelBuilding size={15} />} delay={0.06} />
+                <StatCard value={network.active_agencies} label={tr('analytics.advisors')} icon={<IconAdvisors size={15} />} delay={0.12} />
+                <StatCard value={network.avg_rating ? `${Number(network.avg_rating).toFixed(1)} ★` : '—'} label={tr('analytics.avgRating')} icon={<IconStarOutline size={15} />} delay={0.18} />
               </div>
 
               {/* ── AI Insights ── */}
@@ -337,7 +411,7 @@ export default function AnalyticsView() {
                 >
                   <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'linear-gradient(90deg, var(--tdgflow-navy) 0%, var(--tdgflow-navy-dim) 100%)' }} />
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                    <Trophy size={13} style={{ color: 'var(--tdgflow-navy)' }} />
+                    <IconTrophy size={13} />
                     <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)' }}>
                       Hotel mais avaliado da rede
                     </p>
@@ -396,7 +470,7 @@ export default function AnalyticsView() {
               {(network.top_countries ?? []).length > 0 && (
                 <div style={{ background: 'var(--tdgflow-surface)', borderRadius: 14, border: '1px solid var(--tdgflow-border)', padding: '16px 18px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-                    <MapPin size={13} style={{ color: 'var(--tdgflow-navy)' }} />
+                    <IconInline id="i-pin" size={13} />
                     <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)' }}>
                       Destinos mais avaliados
                     </p>
@@ -427,7 +501,7 @@ export default function AnalyticsView() {
               {(network.recent_activity ?? []).length > 0 && (
                 <div style={{ background: 'var(--tdgflow-surface)', borderRadius: 14, border: '1px solid var(--tdgflow-border)', padding: '16px 18px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <Activity size={13} style={{ color: 'var(--tdgflow-navy)' }} />
+                    <IconActivity size={13} />
                     <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)' }}>
                       Atividade recente da rede
                     </p>
@@ -441,7 +515,7 @@ export default function AnalyticsView() {
               {/* ── Top hotéis ── */}
               <div style={{ background: 'var(--tdgflow-surface)', borderRadius: 14, border: '1px solid var(--tdgflow-border)', overflow: 'hidden' }}>
                 <div style={{ padding: '16px 18px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Award size={13} style={{ color: 'var(--tdgflow-navy)' }} />
+                  <IconAward size={13} />
                   <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)' }}>
                     {tr('analytics.topHotels')}
                   </p>
@@ -466,7 +540,7 @@ export default function AnalyticsView() {
               {/* ── Top agências ── */}
               <div style={{ background: 'var(--tdgflow-surface)', borderRadius: 14, border: '1px solid var(--tdgflow-border)', overflow: 'hidden' }}>
                 <div style={{ padding: '16px 18px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <BarChart2 size={13} style={{ color: 'var(--tdgflow-navy)' }} />
+                  <IconBars size={13} color="var(--tdgflow-navy)" />
                   <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)' }}>
                     {tr('analytics.topAgencies')}
                   </p>
@@ -496,10 +570,10 @@ export default function AnalyticsView() {
               style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
-                <StatCard value={meTotal} label={`Minhas dicas · ${PERIOD_LABELS[period].toLowerCase()}`} icon={<TrendingUp size={15} />} accent delay={0} />
-                <StatCard value={me.unique_hotels} label="Hotéis únicos visitados" icon={<Building2 size={15} />} delay={0.06} />
-                <StatCard value={me.avg_rating ? `${Number(me.avg_rating).toFixed(1)} ★` : '—'} label="Meu rating médio" icon={<Star size={15} />} delay={0.12} />
-                <StatCard value={`${meTotal > 0 && networkTotal > 0 ? ((meTotal / networkTotal) * 100).toFixed(0) : 0}%`} label="Da atividade da rede" icon={<BarChart2 size={15} />} delay={0.18} />
+                <StatCard value={meTotal} label={`Minhas dicas · ${PERIOD_LABELS[period].toLowerCase()}`} icon={<IconTrend size={15} />} accent delay={0} />
+                <StatCard value={me.unique_hotels} label="Hotéis únicos visitados" icon={<IconHotelBuilding size={15} />} delay={0.06} />
+                <StatCard value={me.avg_rating ? `${Number(me.avg_rating).toFixed(1)} ★` : '—'} label="Meu rating médio" icon={<IconStarOutline size={15} />} delay={0.12} />
+                <StatCard value={`${meTotal > 0 && networkTotal > 0 ? ((meTotal / networkTotal) * 100).toFixed(0) : 0}%`} label="Da atividade da rede" icon={<IconBars size={15} />} delay={0.18} />
               </div>
 
               {me.by_visit_type.length > 0 && (
@@ -539,7 +613,7 @@ export default function AnalyticsView() {
 
               {me.total_reviews === 0 && (
                 <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-                  <TrendingUp size={28} style={{ color: 'var(--tdgflow-text-muted)', margin: '0 auto 12px' }} />
+                  <IconTrend size={28} />
                   <p style={{ fontSize: '0.875rem', color: 'var(--tdgflow-text-muted)' }}>Você ainda não registrou nenhuma dica.</p>
                   <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)', marginTop: 4 }}>Vá em Dicas → Nova visita para começar.</p>
                 </div>
