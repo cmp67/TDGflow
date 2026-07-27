@@ -1,13 +1,12 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
 import { CheckCircle2, Clock, XCircle, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { fetchSubscriptionStatus, type SubscriptionStatusResult } from '@/lib/subscription-status-client'
 
 const POLL_INTERVAL_MS = 3000
-const MAX_POLL_ATTEMPTS = 12 // ~36s — Mercado Pago's webhook usually lands within a few seconds
+const MAX_POLL_ATTEMPTS = 12 // ~36s — o webhook do Asaas geralmente chega em poucos segundos
 
 const PLAN_NAMES: Record<string, string> = { growth: 'Growth' }
 
@@ -22,15 +21,12 @@ function fmtAmount(n: number | null) {
 }
 
 export default function SubscriptionConfirmation() {
-  const searchParams   = useSearchParams()
-  const preapprovalId  = searchParams.get('preapproval_id')
-
   const [result, setResult] = useState<SubscriptionStatusResult>({ status: 'pending' })
   const [gaveUp, setGaveUp] = useState(false)
   const attemptsRef = useRef(0)
 
   async function poll() {
-    const r = await fetchSubscriptionStatus(preapprovalId)
+    const r = await fetchSubscriptionStatus()
     setResult(r)
     return r
   }
@@ -58,8 +54,7 @@ export default function SubscriptionConfirmation() {
 
     tick()
     return () => { cancelled = true; clearTimeout(timer) }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [preapprovalId])
+  }, [])
 
   function retryNow() {
     setGaveUp(false)
@@ -80,7 +75,7 @@ export default function SubscriptionConfirmation() {
               Confirmando sua assinatura…
             </h1>
             <p className="text-sm" style={{ color: 'var(--tdgflow-text-muted)' }}>
-              Estamos aguardando a confirmação do Mercado Pago. Isso leva só alguns segundos.
+              Estamos aguardando a confirmação do pagamento. Isso leva só alguns segundos.
             </p>
           </>
         )}
@@ -92,7 +87,7 @@ export default function SubscriptionConfirmation() {
               Ainda processando
             </h1>
             <p className="text-sm mb-4" style={{ color: 'var(--tdgflow-text-muted)' }}>
-              O Mercado Pago está demorando um pouco mais que o normal para confirmar. Você recebe acesso automaticamente assim que for aprovado — pode fechar esta página com segurança.
+              A confirmação está demorando um pouco mais que o normal. Você recebe acesso automaticamente assim que for aprovado — pode fechar esta página com segurança.
             </p>
             <button
               onClick={retryNow}
@@ -136,7 +131,7 @@ export default function SubscriptionConfirmation() {
             </h1>
             <p className="text-sm mb-4" style={{ color: 'var(--tdgflow-text-muted)' }}>
               {result.status === 'rejected'
-                ? 'O Mercado Pago não conseguiu confirmar o pagamento. Verifique os dados do cartão e tente novamente.'
+                ? 'Não conseguimos confirmar o pagamento. Verifique os dados do cartão e tente novamente.'
                 : 'Esta assinatura foi cancelada antes de ser concluída.'}
             </p>
             <Link href="/flow/billing" style={{ display: 'inline-block', padding: '9px 16px', borderRadius: 9, background: 'var(--tdgflow-navy)', color: 'var(--tdgflow-surface)', fontSize: '0.8125rem', fontWeight: 600, textDecoration: 'none' }}>

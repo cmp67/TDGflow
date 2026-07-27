@@ -3,14 +3,14 @@ import { NextRequest } from 'next/server'
 import { sql } from '@vercel/postgres'
 
 vi.mock('@/auth', () => ({ auth: vi.fn() }))
-vi.mock('@/lib/mercadopago', () => ({ createAgencySubscription: vi.fn() }))
+vi.mock('@/lib/asaas', () => ({ createAgencyCheckout: vi.fn() }))
 
 import { auth } from '@/auth'
-import { createAgencySubscription } from '@/lib/mercadopago'
+import { createAgencyCheckout } from '@/lib/asaas'
 import { POST } from './route'
 
 const mockAuth   = auth as unknown as ReturnType<typeof vi.fn>
-const mockCreate = createAgencySubscription as unknown as ReturnType<typeof vi.fn>
+const mockCreate = createAgencyCheckout as unknown as ReturnType<typeof vi.fn>
 
 function sessionFor(email: string) {
   return { user: { email } }
@@ -62,28 +62,30 @@ describe('POST /api/billing/subscribe', () => {
     expect(res.status).toBe(422)
   })
 
-  it('creates a subscription tagged with the agency and persists a pending row', async () => {
+  it('creates a checkout tagged with the agency and persists a pending row', async () => {
     mockAuth.mockResolvedValueOnce(sessionFor(email))
-    mockCreate.mockResolvedValue({ preapprovalId: 'pre-abc', initPoint: 'https://mp.example/checkout/pre-abc' })
+    mockCreate.mockResolvedValue({ checkoutId: 'checkout-abc', checkoutUrl: 'https://checkout.asaas.com/checkout-abc' })
 
     const res  = await POST(request())
     const body = await res.json()
 
     expect(res.status).toBe(200)
-    expect(body.initPoint).toBe('https://mp.example/checkout/pre-abc')
-    expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({ agencyId, payerEmail: email }))
+    expect(body.initPoint).toBe('https://checkout.asaas.com/checkout-abc')
+    expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({
+      agencyId, agencyName: '__TDD_SUBSCRIBE_AGENCY__', agencyCnpj: cnpj, payerEmail: email,
+    }))
 
     const { rows } = await sql`SELECT * FROM tdg_agency_subscriptions WHERE agency_id = ${agencyId}`
     expect(rows).toHaveLength(1)
-    expect(rows[0].mp_preapproval_id).toBe('pre-abc')
+    expect(rows[0].provider_subscription_id).toBe('checkout-abc')
     expect(rows[0].status).toBe('pending')
     expect(Number(rows[0].transaction_amount)).toBe(77.37)
   })
 
   it('returns 409 when the agency already has an authorized subscription', async () => {
     await sql`
-      INSERT INTO tdg_agency_subscriptions (agency_id, mp_preapproval_id, plan_tier, status, transaction_amount)
-      VALUES (${agencyId}, 'pre-existing', 'growth', 'authorized', 77.37)
+      INSERT INTO tdg_agency_subscriptions (agency_id, provider_subscription_id, plan_tier, status, transaction_amount)
+      VALUES (${agencyId}, 'sub-existing', 'growth', 'authorized', 77.37)
     `
     mockAuth.mockResolvedValueOnce(sessionFor(email))
 
@@ -92,9 +94,9 @@ describe('POST /api/billing/subscribe', () => {
     expect(mockCreate).not.toHaveBeenCalled()
   })
 
-  it('returns 500 with a clear error when Mercado Pago call fails', async () => {
+  it('returns 500 with a clear error when the Asaas call fails', async () => {
     mockAuth.mockResolvedValueOnce(sessionFor(email))
-    mockCreate.mockRejectedValue(new Error('MERCADOPAGO_ACCESS_TOKEN não configurado'))
+    mockCreate.mockRejectedValue(new Error('ASAAS_API_KEY não configurado'))
 
     const res = await POST(request())
     expect(res.status).toBe(500)

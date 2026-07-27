@@ -41,13 +41,13 @@ describe('GET /api/admin/subscriptions (global admin — billing status across a
 
     // Older, superseded row — should NOT be what the endpoint reports.
     await sql`
-      INSERT INTO tdg_agency_subscriptions (agency_id, mp_preapproval_id, plan_tier, status, transaction_amount, created_at)
-      VALUES (${agencyLatestId}, 'pre-old', 'growth', 'cancelled', 77.37, NOW() - INTERVAL '1 day')
+      INSERT INTO tdg_agency_subscriptions (agency_id, provider_subscription_id, plan_tier, status, transaction_amount, created_at)
+      VALUES (${agencyLatestId}, 'sub-old', 'growth', 'cancelled', 77.37, NOW() - INTERVAL '1 day')
     `
     // Newest row for the same agency — this is the one that should win.
     await sql`
-      INSERT INTO tdg_agency_subscriptions (agency_id, mp_preapproval_id, plan_tier, status, transaction_amount, next_payment_date)
-      VALUES (${agencyLatestId}, 'pre-new', 'growth', 'authorized', 77.37, NOW() + INTERVAL '10 days')
+      INSERT INTO tdg_agency_subscriptions (agency_id, provider_subscription_id, plan_tier, status, transaction_amount, next_payment_date)
+      VALUES (${agencyLatestId}, 'sub-new', 'growth', 'authorized', 77.37, NOW() + INTERVAL '10 days')
     `
   })
 
@@ -87,7 +87,7 @@ describe('GET /api/admin/subscriptions (global admin — billing status across a
 
     const row = body.agencies.find((a: { id: string }) => a.id === agencyLatestId)
     expect(row.status).toBe('authorized')
-    expect(row.mpPreapprovalId).toBe('pre-new')
+    expect(row.providerSubscriptionId).toBe('sub-new')
     expect(row.transactionAmount).toBe(77.37)
     expect(row.nextPaymentDate).not.toBeNull()
   })

@@ -25,17 +25,13 @@ async function parseJson(res: Response): Promise<Record<string, unknown>> {
   }
 }
 
-export async function fetchSubscriptionStatus(preapprovalId?: string | null): Promise<SubscriptionStatusResult> {
+export async function fetchSubscriptionStatus(): Promise<SubscriptionStatusResult> {
   try {
-    const url = preapprovalId
-      ? `/api/billing/subscription-status?preapproval_id=${encodeURIComponent(preapprovalId)}`
-      : '/api/billing/subscription-status'
-    const res  = await fetch(url)
+    const res  = await fetch('/api/billing/subscription-status')
     const body = await parseJson(res)
 
     if (res.status === 401) return { status: 'unauthenticated' }
     if (res.status === 422) return { status: 'no_agency' }
-    if (res.status === 404) return { status: 'not_found' }
     if (!res.ok) return { status: 'error', message: typeof body.error === 'string' ? body.error : GENERIC_ERROR }
 
     const status = body.status as string

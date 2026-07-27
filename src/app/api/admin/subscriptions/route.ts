@@ -7,17 +7,17 @@ export const dynamic = 'force-dynamic'
 
 // Global-admin only: billing status across every one of the 19 contracted
 // agencies in one screen, instead of checking each agency's own Billing tab
-// or the Mercado Pago dashboard by hand.
+// or the payment gateway's dashboard by hand.
 
 type SubscriptionStatus = 'none' | 'pending' | 'authorized' | 'paused' | 'cancelled' | 'rejected'
 
 interface AgencySubscriptionRow {
-  id:                 string
-  name:               string
-  status:             SubscriptionStatus
-  mpPreapprovalId:    string | null
-  transactionAmount:  number | null
-  nextPaymentDate:    string | null
+  id:                     string
+  name:                   string
+  status:                 SubscriptionStatus
+  providerSubscriptionId: string | null
+  transactionAmount:      number | null
+  nextPaymentDate:        string | null
 }
 
 export async function GET() {
@@ -32,12 +32,12 @@ export async function GET() {
       a.id,
       a.name,
       COALESCE(s.status, 'none')  AS status,
-      s.mp_preapproval_id,
+      s.provider_subscription_id,
       s.transaction_amount,
       s.next_payment_date
     FROM tdg_agencies a
     LEFT JOIN LATERAL (
-      SELECT status, mp_preapproval_id, transaction_amount, next_payment_date
+      SELECT status, provider_subscription_id, transaction_amount, next_payment_date
       FROM tdg_agency_subscriptions
       WHERE agency_id = a.id
       ORDER BY created_at DESC
@@ -48,12 +48,12 @@ export async function GET() {
   `
 
   const agencies: AgencySubscriptionRow[] = rows.map(r => ({
-    id:                r.id as string,
-    name:              r.name as string,
-    status:            r.status as SubscriptionStatus,
-    mpPreapprovalId:   (r.mp_preapproval_id as string | null) ?? null,
-    transactionAmount: r.transaction_amount === null ? null : Number(r.transaction_amount),
-    nextPaymentDate:   (r.next_payment_date as string | null) ?? null,
+    id:                     r.id as string,
+    name:                   r.name as string,
+    status:                 r.status as SubscriptionStatus,
+    providerSubscriptionId: (r.provider_subscription_id as string | null) ?? null,
+    transactionAmount:      r.transaction_amount === null ? null : Number(r.transaction_amount),
+    nextPaymentDate:        (r.next_payment_date as string | null) ?? null,
   }))
 
   return NextResponse.json({ agencies })

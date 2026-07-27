@@ -86,7 +86,7 @@ export default function AgencySubscriptionCard() {
       <div style={cardBase}>
         {header}
         <div style={{ padding: '14px 16px' }}>
-          <p style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-muted)', margin: 0 }}>Assinatura em processamento — aguardando confirmação do Mercado Pago.</p>
+          <p style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-muted)', margin: 0 }}>Assinatura em processamento — aguardando confirmação do pagamento.</p>
         </div>
       </div>
     )
@@ -97,7 +97,7 @@ export default function AgencySubscriptionCard() {
       <div style={cardBase}>
         {header}
         <div style={{ padding: '14px 16px' }}>
-          <p style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-accent-warm)', margin: 0 }}>Assinatura pausada — regularize o pagamento no Mercado Pago.</p>
+          <p style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-accent-warm)', margin: 0 }}>Assinatura pausada — regularize o pagamento.</p>
         </div>
       </div>
     )
@@ -110,7 +110,7 @@ export default function AgencySubscriptionCard() {
       <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div>
           <p style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--tdgflow-text-primary)', margin: 0 }}>Plano Growth — R$ 77,37/mês</p>
-          <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-faint)', margin: '4px 0 0' }}>500 lm/mês de cota para a agência, cobrança recorrente via Mercado Pago todo dia 5.</p>
+          <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-faint)', margin: '4px 0 0' }}>500 lm/mês de cota para a agência, cobrança recorrente todo dia 5.</p>
           <p style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-success)', margin: '6px 0 0', fontWeight: 600 }}>Fee de manutenção de Membro Fundador — sem valores adicionais, sem surpresas na fatura.</p>
         </div>
         {error && <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-error)', margin: 0 }}>{error}</p>}

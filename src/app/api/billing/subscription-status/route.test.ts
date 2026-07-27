@@ -13,11 +13,8 @@ function sessionFor(email: string) {
   return { user: { email } }
 }
 
-function requestWith(preapprovalId?: string): NextRequest {
-  const url = preapprovalId
-    ? `http://localhost/api/billing/subscription-status?preapproval_id=${preapprovalId}`
-    : 'http://localhost/api/billing/subscription-status'
-  return new NextRequest(url)
+function request(): NextRequest {
+  return new NextRequest('http://localhost/api/billing/subscription-status')
 }
 
 describe('GET /api/billing/subscription-status', () => {
@@ -29,8 +26,6 @@ describe('GET /api/billing/subscription-status', () => {
   const emailA      = `tdd-sub-a-${Date.now()}@example.com`
   const emailB      = `tdd-sub-b-${Date.now()}@example.com`
   const emailNoAg   = `tdd-sub-noag-${Date.now()}@example.com`
-
-  let preapprovalIdA: string
 
   beforeAll(async () => {
     const { rows: agencyRows } = await sql`
@@ -51,10 +46,9 @@ describe('GET /api/billing/subscription-status', () => {
         ('TDD Sub NoAg',  ${emailNoAg}, 'N/A', 'x', 'agent', NULL)
     `
 
-    preapprovalIdA = `tdd-preapproval-${Date.now()}`
     await sql`
-      INSERT INTO tdg_agency_subscriptions (agency_id, mp_preapproval_id, plan_tier, status, transaction_amount, next_payment_date)
-      VALUES (${agencyAId}, ${preapprovalIdA}, 'growth', 'authorized', 77.37, NOW() + INTERVAL '30 days')
+      INSERT INTO tdg_agency_subscriptions (agency_id, provider_subscription_id, plan_tier, status, transaction_amount, next_payment_date)
+      VALUES (${agencyAId}, ${`tdd-sub-${Date.now()}`}, 'growth', 'authorized', 77.37, NOW() + INTERVAL '30 days')
     `
   })
 
@@ -66,13 +60,13 @@ describe('GET /api/billing/subscription-status', () => {
 
   it('returns 401 when there is no session', async () => {
     mockAuth.mockResolvedValueOnce(null)
-    const res = await GET(requestWith())
+    const res = await GET(request())
     expect(res.status).toBe(401)
   })
 
   it('returns status "none" when the agency has no subscription row yet', async () => {
     mockAuth.mockResolvedValueOnce(sessionFor(emailB))
-    const res = await GET(requestWith())
+    const res = await GET(request())
     const body = await res.json()
     expect(res.status).toBe(200)
     expect(body.status).toBe('none')
@@ -80,13 +74,13 @@ describe('GET /api/billing/subscription-status', () => {
 
   it('returns 422 when the caller has no agency_id at all', async () => {
     mockAuth.mockResolvedValueOnce(sessionFor(emailNoAg))
-    const res = await GET(requestWith())
+    const res = await GET(request())
     expect(res.status).toBe(422)
   })
 
-  it('returns the latest subscription for the caller\'s own agency', async () => {
+  it('returns the latest subscription for the caller\'s own agency, resolved by session — never by an id in the URL', async () => {
     mockAuth.mockResolvedValueOnce(sessionFor(emailA))
-    const res = await GET(requestWith())
+    const res = await GET(request())
     const body = await res.json()
     expect(res.status).toBe(200)
     expect(body.status).toBe('authorized')
@@ -94,23 +88,10 @@ describe('GET /api/billing/subscription-status', () => {
     expect(body.transactionAmount).toBe(77.37)
   })
 
-  it('resolves by preapproval_id when given, scoped to the caller\'s own agency', async () => {
-    mockAuth.mockResolvedValueOnce(sessionFor(emailA))
-    const res = await GET(requestWith(preapprovalIdA))
-    const body = await res.json()
-    expect(res.status).toBe(200)
-    expect(body.status).toBe('authorized')
-  })
-
-  it('returns 404 (not 403) when preapproval_id belongs to a different agency — does not confirm existence', async () => {
+  it('a caller from a different agency never sees agency A\'s subscription', async () => {
     mockAuth.mockResolvedValueOnce(sessionFor(emailB))
-    const res = await GET(requestWith(preapprovalIdA))
-    expect(res.status).toBe(404)
-  })
-
-  it('returns 404 for a preapproval_id that does not exist at all', async () => {
-    mockAuth.mockResolvedValueOnce(sessionFor(emailA))
-    const res = await GET(requestWith('does-not-exist'))
-    expect(res.status).toBe(404)
+    const res = await GET(request())
+    const body = await res.json()
+    expect(body.status).toBe('none')
   })
 })

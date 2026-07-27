@@ -9,7 +9,7 @@ interface AgencySubscriptionRow {
   id:                 string
   name:               string
   status:             SubscriptionStatus
-  mpPreapprovalId:    string | null
+  providerSubscriptionId: string | null
   transactionAmount:  number | null
   nextPaymentDate:    string | null
 }
@@ -35,7 +35,7 @@ function fmtAmount(n: number | null) {
 
 // Admin-only screen (see /api/admin/subscriptions — gated on role==='admin'):
 // billing status for every one of the 19 contracted agencies in one place,
-// so the network doesn't have to be checked one Mercado Pago page at a time.
+// so the network doesn't have to be checked one payment-gateway page at a time.
 export default function AdminSubscriptionsPanel() {
   const [agencies, setAgencies] = useState<AgencySubscriptionRow[] | null>(null)
   const [error, setError]       = useState('')
@@ -64,7 +64,7 @@ export default function AdminSubscriptionsPanel() {
   return (
     <div className="space-y-3">
       <p className="text-sm" style={{ color: 'var(--tdgflow-text-muted)' }}>
-        {activeCount} de {agencies!.length} agências com assinatura ativa. Status sincronizado direto do Mercado Pago via webhook.
+        {activeCount} de {agencies!.length} agências com assinatura ativa. Status sincronizado direto do gateway de pagamento via webhook.
       </p>
 
       <div className="space-y-2">

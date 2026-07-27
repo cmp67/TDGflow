@@ -337,7 +337,7 @@ function TabMyUsage() {
       {/* Lumis explainer */}
       <LumisExplainer />
 
-      {/* Assinatura mensal da agência (Mercado Pago, plano Growth) */}
+      {/* Assinatura mensal da agência (Asaas, plano Growth) */}
       <AgencySubscriptionCard />
 
       {/* Saldo comprado da agência (top-up self-service, via /api/credits) */}

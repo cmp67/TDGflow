@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { fetchSubscriptionStatus } from './subscription-status-client'
 
 const originalFetch = global.fetch
@@ -24,11 +24,6 @@ describe('fetchSubscriptionStatus', () => {
     expect(await fetchSubscriptionStatus()).toEqual({ status: 'no_agency' })
   })
 
-  it('maps 404 to not_found', async () => {
-    mockFetch(404, {})
-    expect(await fetchSubscriptionStatus('abc')).toEqual({ status: 'not_found' })
-  })
-
   it('maps an authorized subscription with full fields', async () => {
     mockFetch(200, { status: 'authorized', planTier: 'growth', transactionAmount: 77.37, nextPaymentDate: '2026-08-05' })
     expect(await fetchSubscriptionStatus()).toEqual({
@@ -46,9 +41,9 @@ describe('fetchSubscriptionStatus', () => {
     expect(await fetchSubscriptionStatus()).toEqual({ status: 'error', message: 'Não foi possível conectar ao servidor.' })
   })
 
-  it('passes preapproval_id as a query param when given', async () => {
+  it('always calls the endpoint without a query param — status is resolved by session, never by an id in the URL', async () => {
     mockFetch(200, { status: 'pending' })
-    await fetchSubscriptionStatus('pre-123')
-    expect(global.fetch).toHaveBeenCalledWith('/api/billing/subscription-status?preapproval_id=pre-123')
+    await fetchSubscriptionStatus()
+    expect(global.fetch).toHaveBeenCalledWith('/api/billing/subscription-status')
   })
 })

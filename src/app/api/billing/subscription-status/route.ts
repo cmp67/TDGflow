@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { sql } from '@vercel/postgres'
-import { getLatestSubscriptionForAgency, getSubscriptionByPreapprovalId } from '@/lib/subscriptions'
+import { getLatestSubscriptionForAgency } from '@/lib/subscriptions'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,14 +12,12 @@ async function getCallerAgencyId(email: string): Promise<string | null> {
   return (rows[0]?.agency_id as string | undefined) ?? null
 }
 
-// GET /api/billing/subscription-status[?preapproval_id=...]
+// GET /api/billing/subscription-status
 //
-// Used by the post-checkout confirmation page (polling right after the
-// Mercado Pago redirect) and can later back a "billing status" widget.
-// Ownership check: a preapproval_id belonging to a DIFFERENT agency returns
-// 404, not 403 — same convention as the GUEST IDOR fix earlier this session
-// (don't confirm existence of another tenant's record to a caller who
-// merely guessed/observed an id).
+// Usado pela tela de confirmação (polling logo após o checkout do Asaas) e
+// como base pra um widget de status de billing. Sempre resolve pela sessão
+// do chamador — nunca por um id vindo da URL — então não há id de provedor
+// pra adivinhar/vazar entre agências.
 export async function GET(req: NextRequest) {
   const session = await auth()
   if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -28,16 +26,7 @@ export async function GET(req: NextRequest) {
   if (!agencyId) return NextResponse.json({ error: NO_AGENCY_ERROR }, { status: 422 })
 
   try {
-    const preapprovalId = req.nextUrl.searchParams.get('preapproval_id')
-
-    const subscription = preapprovalId
-      ? await getSubscriptionByPreapprovalId(preapprovalId)
-      : await getLatestSubscriptionForAgency(agencyId)
-
-    if (preapprovalId && (!subscription || subscription.agencyId !== agencyId)) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 })
-    }
-
+    const subscription = await getLatestSubscriptionForAgency(agencyId)
     if (!subscription) return NextResponse.json({ status: 'none' })
 
     return NextResponse.json({
