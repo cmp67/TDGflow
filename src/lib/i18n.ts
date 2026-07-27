@@ -24,7 +24,7 @@ export const t: Record<Lang, Record<string, string>> = {
     'nav.agencia':    'Minha Agência',
     'nav.gestao':     'Gestão de Usuários',
     'nav.equipe':     'Minha Equipe',
-    'nav.gravacoes':  'Gravações',
+    'nav.gravacoes':  'Da mesa',
     'nav.docs':       'Documentação',
     'nav.inbox':      'Inbox',
     'nav.sugestoes':  'Sugestões',

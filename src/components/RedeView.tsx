@@ -312,9 +312,14 @@ export default function RedeView() {
             <p style={{ fontSize: '0.5625rem', fontWeight: 500, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--tdgflow-navy-dim)', marginBottom: 3 }}>
               Galera do Turismo
             </p>
-            <h2 style={{ fontSize: '1.125rem', fontWeight: 500, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.025em', lineHeight: 1 }}>
+            <h2 style={{ fontSize: '1.125rem', fontWeight: 500, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.025em', lineHeight: 1, marginBottom: activeTab === 'contacts' ? 4 : 0 }}>
               Inteligência Coletiva
             </h2>
+            {activeTab === 'contacts' && (
+              <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)' }}>
+                Quem ligar: reps, DMCs, direto na fonte
+              </p>
+            )}
           </div>
           {!loading && (
             <div style={{ display: 'flex', gap: 16, paddingTop: 4 }}>

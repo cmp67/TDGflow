@@ -18,9 +18,9 @@ export default function GravacoesPage() {
         style={{ borderBottom: '1px solid var(--tdgflow-border)' }}
       >
         <div>
-          <h2 className="text-sm font-semibold" style={{ color: 'var(--tdgflow-text-primary)' }}>Gravações</h2>
+          <h2 className="text-sm font-semibold" style={{ color: 'var(--tdgflow-text-primary)' }}>Da mesa</h2>
           <p className="text-xs mt-0.5" style={{ color: 'var(--tdgflow-text-muted)' }}>
-            Reuniões gravadas, transcritas e sumarizadas pela IA
+            Matéria-prima que vira dica, review ou contato depois de processada — não é conteúdo pra navegar direto
           </p>
         </div>
         <div className="flex items-center gap-2">

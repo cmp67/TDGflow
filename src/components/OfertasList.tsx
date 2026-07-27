@@ -84,6 +84,9 @@ export default function OfertasList() {
         <h1 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.02em' }}>
           Ofertas ativas
         </h1>
+        <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)', marginTop: 4 }}>
+          Tarifas e comissões negociadas, com prazo de validade
+        </p>
         <p style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-muted)', marginTop: 4 }}>
           {sorted.length} oferta{sorted.length !== 1 ? 's' : ''} disponível{sorted.length !== 1 ? 'is' : ''} · ordenadas por comissão
         </p>

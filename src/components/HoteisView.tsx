@@ -824,6 +824,9 @@ export default function HoteisView() {
           <div>
             <h2 style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.01em' }}>Hotéis Parceiros</h2>
             <p style={{ fontSize: '0.625rem', color: 'var(--tdgflow-text-muted)', marginTop: 1 }}>
+              Ficha do hotel: rede, perfil, contratos permanentes
+            </p>
+            <p style={{ fontSize: '0.625rem', color: 'var(--tdgflow-text-muted)', marginTop: 1 }}>
               {filtered.length} de {HOTELS.length} propriedades
             </p>
           </div>
