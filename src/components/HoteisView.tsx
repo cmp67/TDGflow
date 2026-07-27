@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Search, X, MapPin, Phone, Mail, ExternalLink,
+  Search, X, Phone, Mail, ExternalLink,
   Building2, ChevronRight, Globe, Users, ArrowRight,
   MessageCircle, Plus, Loader2, Trash2, UserCircle2,
   Camera, ScanLine, PenLine, CheckCircle2, AlertCircle,
@@ -11,6 +11,7 @@ import {
 import { useRef } from 'react'
 import Link from 'next/link'
 import { readVideoDurationSeconds, MAX_VIDEO_DURATION_SECONDS } from '@/lib/video-upload'
+import TdgIconSprite from '@/components/TdgIconSprite'
 
 /* ── Ícones próprios pra vídeo — traço só, sem emoji/biblioteca genérica
    (regra de personalidade do design system Bemgsy, mesma família visual do
@@ -29,6 +30,34 @@ function IconHandshake({ size = 14, style }: { size?: number; style?: React.CSSP
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" style={style}>
       <circle cx="12" cy="12" r="9" />
       <path d="M8 12.3l2.4 2.4 5.6-6.2" />
+    </svg>
+  )
+}
+
+/* ── Ícones de perfil — antes emoji cru (👨‍👩‍👧💑🏖️...), trocado por traço
+   próprio (regra de personalidade do design system Bemgsy: nunca emoji em
+   componente funcional). Um único wrapper, um path-set por perfil. ────── */
+const PROFILE_ICON_PATHS: Record<string, React.ReactNode> = {
+  'Família':      <><circle cx="8" cy="7.5" r="2.2" /><path d="M4.2 18c0-3 1.7-4.8 3.8-4.8s3.8 1.8 3.8 4.8" /><circle cx="16.2" cy="8.3" r="1.7" /><path d="M13.3 18c0-2.4 1.3-3.9 2.9-3.9s2.9 1.5 2.9 3.9" /></>,
+  'Casais':       <><circle cx="9" cy="12" r="5.2" /><circle cx="15" cy="12" r="5.2" /></>,
+  'Praia':        <><path d="M3 17.5c1.4-1.4 2.8-1.4 4.2 0s2.8 1.4 4.2 0 2.8-1.4 4.2 0 2.8 1.4 4.2 0" /><circle cx="12" cy="7.5" r="3" /></>,
+  'Urban':        <path d="M4 20V10h4v10M10 20V6h4v14M16 20v-8h4v8" />,
+  'Resort':       <><path d="M12 21V12" /><path d="M12 12c-3-.5-5.5-3-5-6 3 .2 5 2.3 5 6z" /><path d="M12 12c3-.5 5.5-3 5-6-3 .2-5 2.3-5 6z" /></>,
+  'Boutique':     <><path d="M5 21V10M19 21V10M5 10l7-6 7 6M4.5 10h15" /><path d="M9 21v-6h6v6" /></>,
+  'Golf':         <><path d="M6 21V4" /><path d="M6 4.5l8 3-8 3z" /></>,
+  'Villas':       <><path d="M4 20V11L12 5l8 6v9" /><path d="M9 20v-6h6v6" /></>,
+  'Overwater':    <><path d="M3 20h18" /><path d="M7.5 20v-6l4.5-2.6 4.5 2.6v6" /></>,
+  'Ultra Luxury': <><path d="M6 9l6-5 6 5-6 11z" /><path d="M6 9h12M9.5 9L12 4M14.5 9L12 4" /></>,
+  'Natureza':     <><path d="M6 19c8 0 12-6 12-14-8 0-12 6-12 14z" /><path d="M6.5 18.5c2-4 5-7 9-9" /></>,
+  'Negócios':     <><rect x="4" y="8" width="16" height="11" rx="1.6" /><path d="M9 8V6.2a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2V8" /></>,
+}
+
+function ProfileIcon({ profileKey, size = 12 }: { profileKey: string; size?: number }) {
+  const paths = PROFILE_ICON_PATHS[profileKey]
+  if (!paths) return null
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+      {paths}
     </svg>
   )
 }
@@ -56,19 +85,19 @@ interface Hotel {
 /* ── Filter definitions ─────────────────────────────────────────── */
 const REGIONS = ['Todos', 'Algarve', 'Lisboa', 'Maldivas']
 
-const PROFILES: { key: string; label: string; emoji: string }[] = [
-  { key: 'Família',     label: 'Família',     emoji: '👨‍👩‍👧' },
-  { key: 'Casais',      label: 'Casais',       emoji: '💑' },
-  { key: 'Praia',       label: 'Praia',        emoji: '🏖️' },
-  { key: 'Urban',       label: 'Urban',        emoji: '🏙️' },
-  { key: 'Resort',      label: 'Resort',       emoji: '🌴' },
-  { key: 'Boutique',    label: 'Boutique',     emoji: '🏛️' },
-  { key: 'Golf',        label: 'Golf',         emoji: '⛳' },
-  { key: 'Villas',      label: 'Villas',       emoji: '🏡' },
-  { key: 'Overwater',   label: 'Overwater',    emoji: '🏝️' },
-  { key: 'Ultra Luxury',label: 'Ultra Luxury', emoji: '💎' },
-  { key: 'Natureza',    label: 'Natureza',     emoji: '🌿' },
-  { key: 'Negócios',    label: 'Negócios',     emoji: '💼' },
+const PROFILES: { key: string; label: string }[] = [
+  { key: 'Família',      label: 'Família' },
+  { key: 'Casais',       label: 'Casais' },
+  { key: 'Praia',        label: 'Praia' },
+  { key: 'Urban',        label: 'Urban' },
+  { key: 'Resort',       label: 'Resort' },
+  { key: 'Boutique',     label: 'Boutique' },
+  { key: 'Golf',         label: 'Golf' },
+  { key: 'Villas',       label: 'Villas' },
+  { key: 'Overwater',    label: 'Overwater' },
+  { key: 'Ultra Luxury', label: 'Ultra Luxury' },
+  { key: 'Natureza',     label: 'Natureza' },
+  { key: 'Negócios',     label: 'Negócios' },
 ]
 
 interface HotelContact {
@@ -241,24 +270,24 @@ function HotelCard({ hotel, onClick }: { hotel: Hotel; onClick: () => void }) {
       {/* Card body — tight */}
       <div style={{ padding: '10px 12px 12px', borderTop: `2px solid ${hotel.dot}` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 8 }}>
-          <MapPin size={10} style={{ color: hotel.dot, flexShrink: 0 }} />
+          <svg style={{ width: 10, height: 10, stroke: hotel.dot, fill: 'none', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round', flexShrink: 0 }}>
+            <use href="#i-pin" />
+          </svg>
           <span style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{hotel.location}</span>
         </div>
         {/* Profile pills */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
-          {hotel.profiles.slice(0, 3).map(p => {
-            const def = PROFILES.find(x => x.key === p)
-            return (
-              <span key={p} style={{
-                fontSize: '0.5625rem', fontWeight: 500, letterSpacing: '0.04em',
-                padding: '2px 7px', borderRadius: 999,
-                background: 'var(--tdgflow-surface-high)', border: '1px solid var(--tdgflow-border)',
-                color: 'var(--tdgflow-text-muted)',
-              }}>
-                {def?.emoji} {p}
-              </span>
-            )
-          })}
+          {hotel.profiles.slice(0, 3).map(p => (
+            <span key={p} style={{
+              display: 'inline-flex', alignItems: 'center', gap: 3,
+              fontSize: '0.5625rem', fontWeight: 500, letterSpacing: '0.04em',
+              padding: '2px 7px', borderRadius: 999,
+              background: 'var(--tdgflow-surface-high)', border: '1px solid var(--tdgflow-border)',
+              color: 'var(--tdgflow-text-muted)',
+            }}>
+              <ProfileIcon profileKey={p} size={9} /> {p}
+            </span>
+          ))}
         </div>
       </div>
     </motion.button>
@@ -860,7 +889,9 @@ function HotelDetail({ hotel, onClose }: { hotel: Hotel; onClose: () => void }) 
               {hotel.name}
             </h2>
             <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              <MapPin size={12} style={{ color: hotel.dot }} />
+              <svg style={{ width: 12, height: 12, stroke: hotel.dot, fill: 'none', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                <use href="#i-pin" />
+              </svg>
               <span style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.7)' }}>{hotel.location}</span>
             </div>
           </div>
@@ -1109,6 +1140,7 @@ export default function HoteisView() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <TdgIconSprite />
 
       {/* ── Filter header ──────────────────────────────────────────── */}
       <div style={{ flexShrink: 0, padding: '14px 16px 0', borderBottom: '1px solid var(--tdgflow-border)' }}>
@@ -1116,6 +1148,16 @@ export default function HoteisView() {
         {/* Title row */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <div>
+            <p style={{
+              display: 'flex', alignItems: 'center', gap: 5,
+              fontSize: '0.5625rem', fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase',
+              color: 'var(--tdgflow-accent-warm)', marginBottom: 3,
+            }}>
+              <svg style={{ width: 9, height: 9, stroke: 'currentColor', fill: 'none', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                <use href="#i-compass" />
+              </svg>
+              Rede TDG
+            </p>
             <h2 style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.01em' }}>Hotéis Parceiros</h2>
             <p style={{ fontSize: '0.625rem', color: 'var(--tdgflow-text-muted)', marginTop: 1 }}>
               Ficha do hotel: rede, perfil, contratos permanentes
@@ -1165,7 +1207,7 @@ export default function HoteisView() {
 
         {/* Perfil chips */}
         <div style={{ display: 'flex', gap: 5, overflowX: 'auto', paddingBottom: 12, scrollbarWidth: 'none' }}>
-          {PROFILES.map(({ key, label, emoji }) => {
+          {PROFILES.map(({ key, label }) => {
             const on = activeProfiles.has(key)
             return (
               <button key={key} onClick={() => toggleProfile(key)} style={{
@@ -1176,7 +1218,7 @@ export default function HoteisView() {
                 color: on ? 'var(--tdgflow-navy-dim)' : 'var(--tdgflow-text-muted)',
                 display: 'flex', alignItems: 'center', gap: 4,
               }}>
-                <span style={{ fontSize: '0.7rem' }}>{emoji}</span> {label}
+                <ProfileIcon profileKey={key} size={11} /> {label}
               </button>
             )
           })}
