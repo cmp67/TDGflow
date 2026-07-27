@@ -1,7 +1,7 @@
 export interface ReviewQuestion {
   id: string
   text: string
-  type: 'text' | 'date' | 'select' | 'sentiment' | 'sub_sentiment' | 'sentiment_map' | 'voice_text'
+  type: 'text' | 'date' | 'select' | 'sentiment' | 'sub_sentiment' | 'sentiment_map' | 'voice_text' | 'photo'
   placeholder?: string
   options?: string[]
 }
@@ -27,6 +27,13 @@ const COMMERCIAL_MEETING_QUESTION: ReviewQuestion = {
   placeholder: 'O que você viu ou ouviu que merece atenção da rede...',
 }
 
+const PHOTO_QUESTION: ReviewQuestion = {
+  id: 'photo',
+  text: 'Tem uma foto sua dessa visita?',
+  type: 'photo',
+  placeholder: 'Opcional — mas é o que prova que alguém esteve lá de verdade.',
+}
+
 const STAY_QUESTIONS: ReviewQuestion[] = [
   { id: 'overall_rating', text: 'Qual a sua avaliação geral?', type: 'sentiment' },
   { id: 'sub_ratings', text: 'Como você avalia cada aspecto?', type: 'sub_sentiment' },
@@ -35,12 +42,14 @@ const STAY_QUESTIONS: ReviewQuestion[] = [
   { id: 'client_profile', text: 'Para qual perfil de cliente você recomendaria?', type: 'voice_text', placeholder: 'Famílias, casais, golf...' },
   { id: 'must_experience', text: 'Qual experiência você considera obrigatória?', type: 'voice_text', placeholder: 'Uma atividade, restaurante, serviço...' },
   { id: 'heads_up', text: 'Há alguma ressalva ou ponto de atenção?', type: 'voice_text', placeholder: 'Opcional — deixe em branco se não houver.' },
+  PHOTO_QUESTION,
 ]
 
 const LIGHT_TIP_QUESTIONS: ReviewQuestion[] = [
   { id: 'overall_rating', text: 'Qual a sua avaliação geral?', type: 'sentiment' },
   { id: 'impressions', text: 'O que mais te impressionou?', type: 'voice_text', placeholder: 'Descreva os pontos de destaque...' },
   { id: 'client_profile', text: 'Para qual perfil de cliente você recomendaria?', type: 'voice_text', placeholder: 'Famílias, casais, lua de mel...' },
+  PHOTO_QUESTION,
 ]
 
 /**

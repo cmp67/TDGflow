@@ -38,11 +38,17 @@ describe('getQuestions', () => {
     expect(ids).not.toContain('sub_ratings')
   })
 
-  it('site inspection de hotel pede sub-notas de quarto/comida/localização e mapa de sentimento', () => {
+  it('site inspection de hotel pede sub-notas de quarto/comida/localização, mapa de sentimento e foto', () => {
     const qs = getQuestions({ entity_type: 'hotel', visit_type: 'site_inspection' })
     const ids = qs.map(q => q.id)
     expect(ids).toContain('sub_ratings')
     expect(ids).toContain('sentiment_map')
+    expect(ids).toContain('photo')
+  })
+
+  it('reunião comercial nunca pede foto — ninguém foi lá pessoalmente ainda', () => {
+    const qs = getQuestions({ entity_type: 'hotel', visit_type: 'commercial_meeting' })
+    expect(qs.map(q => q.id)).not.toContain('photo')
   })
 
   it('site inspection de beach club NÃO pede sub-notas nem mapa de sentimento (trilho leve)', () => {

@@ -18,6 +18,7 @@ type SentimentMapValue = Record<string, AspectEntry>
 interface Review {
   id: string
   hotel_name: string
+  entity_type: string
   country: string | null
   agent_name: string
   agency_name: string
@@ -32,6 +33,8 @@ interface Review {
   client_profile: string | null
   must_experience: string | null
   heads_up: string | null
+  status: string
+  photo_url: string | null
   sentiment_map: SentimentMapValue | null
   created_at: string
   is_favorite: boolean
@@ -57,6 +60,36 @@ const ENTITY_TYPE_LABELS: Record<string, string> = {
 
 // Usado no questionário — cada pergunta select busca aqui a label da própria opção.
 const OPTION_LABELS: Record<string, string> = { ...VISIT_TYPE_LABELS, ...ENTITY_TYPE_LABELS }
+
+/* ── Ícones próprios — traço só, sem emoji/biblioteca genérica (regra de
+   personalidade do design system Bemgsy). Cada tipo de fornecedor tem uma
+   cena de linha única, reaproveitada tanto no card art (quando não há foto)
+   quanto no chip de filtro. ──────────────────────────────────────────── */
+const ENTITY_SCENE_ID: Record<string, string> = {
+  hotel: 'scene-hotel',
+  beach_club: 'scene-beach',
+  transfer: 'scene-transfer',
+  guide: 'scene-guide',
+  restaurant: 'scene-restaurant',
+  other: 'scene-hotel',
+}
+
+function TdgIconSprite() {
+  return (
+    <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true">
+      <defs>
+        <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" /><path d="M14.8 9.2l-1.6 4.8-4.8 1.6 1.6-4.8z" /></symbol>
+        <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.6 5.4L19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6z" /></symbol>
+        <symbol id="i-verified" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" /><path d="M8.3 12.3l2.4 2.4 4.6-5.2" /></symbol>
+        <symbol id="scene-hotel" viewBox="0 0 96 96"><path d="M20 78V38a28 28 0 0 1 56 0v40" /><path d="M20 78h56" /><path d="M40 78V54a8 8 0 0 1 16 0v24" /><path d="M30 46h6M30 58h6M60 46h6M60 58h6" /></symbol>
+        <symbol id="scene-beach" viewBox="0 0 96 96"><path d="M14 66h68" /><path d="M48 66V32" /><path d="M48 32c-14 0-22 10-22 18h44c0-8-8-18-22-18z" /><path d="M48 66v14M40 80h16" /></symbol>
+        <symbol id="scene-transfer" viewBox="0 0 96 96"><path d="M16 80C30 40 40 20 48 20s18 20 32 60" /><path d="M48 20V12" strokeDasharray="3 5" /><circle cx="48" cy="70" r="3" fill="currentColor" stroke="none" /></symbol>
+        <symbol id="scene-guide" viewBox="0 0 96 96"><path d="M12 72c10-24 16-40 32-40s20 16 30 8" /><path d="M12 60c10-20 16-32 32-32s20 13 30 7" /><path d="M12 48c10-16 16-24 32-24s20 10 30 6" /></symbol>
+        <symbol id="scene-restaurant" viewBox="0 0 96 96"><ellipse cx="48" cy="52" rx="30" ry="10" /><path d="M30 52v-24M30 22v10M34 22v10M30 32c0 3 4 3 4 0" /><path d="M64 22c-4 0-6 4-6 10s2 9 6 10V80" /></symbol>
+      </defs>
+    </svg>
+  )
+}
 
 /* ── Sentiment badge — shows +3 / −2 / 0 ────────────────────────── */
 function SentimentBadge({ value }: { value: number }) {
@@ -433,15 +466,18 @@ function SentimentMapStep({ value, onChange }: {
 }
 
 /* ── Hotel card ─────────────────────────────────────────────────── */
-function HotelCard({ review, onToggleFavorite, onViewHistory }: {
+function HotelCard({ review, onToggleFavorite, onViewHistory, onConfirmLead }: {
   review: Review
   onToggleFavorite: (id: string, current: boolean) => void
   onViewHistory: (hotelName: string) => void
+  onConfirmLead: (review: Review) => void
 }) {
   const [expanded, setExpanded] = useState(false)
+  const isLead = review.status === 'a_testar'
   const visitCount = Number(review.visit_count ?? 1)
   const avgRating = Number(review.avg_rating ?? review.overall_rating)
-  const accent = ratingAccent(Math.round(avgRating))
+  const accent = isLead ? 'var(--tdgflow-accent-warm)' : ratingAccent(Math.round(avgRating))
+  const sceneId = ENTITY_SCENE_ID[review.entity_type] ?? 'scene-hotel'
 
   function formatDate(iso: string | null) {
     if (!iso) return null
@@ -455,13 +491,60 @@ function HotelCard({ review, onToggleFavorite, onViewHistory }: {
       style={{
         background: 'var(--tdgflow-surface)',
         borderRadius: 16,
-        border: '1px solid var(--tdgflow-border)',
+        border: isLead ? '1.5px dashed var(--tdgflow-border-light)' : '1px solid var(--tdgflow-border)',
         overflow: 'hidden',
         position: 'relative',
       }}
     >
+      {/* Card art — foto real de quem confirmou (published), ou traço próprio
+          quando ainda não há foto anexada, ou lead (ninguém foi lá ainda —
+          por isso é traço, nunca finge ser foto). A cor da tinta conta a
+          história: dourado = confirmado pela rede, coral = ainda a testar. */}
+      <div style={{
+        height: 128, position: 'relative', display: 'flex', alignItems: isLead || !review.photo_url ? 'center' : 'flex-end',
+        justifyContent: isLead || !review.photo_url ? 'center' : 'flex-start',
+        padding: isLead || !review.photo_url ? 0 : '10px 12px',
+        background: review.photo_url && !isLead
+          ? `linear-gradient(0deg, rgba(20,12,6,0.6) 0%, rgba(20,12,6,0.02) 55%, transparent 75%), url(${review.photo_url}) center/cover`
+          : 'var(--tdgflow-surface-high)',
+      }}>
+        {isLead && (
+          <>
+            <span style={{
+              position: 'absolute', top: 10, left: 12,
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
+              color: accent,
+            }}>
+              <svg style={{ width: 11, height: 11, fill: 'currentColor' }}><use href="#i-spark" /></svg>
+              Recém-descoberto
+            </span>
+            <svg style={{ width: 62, height: 62, stroke: accent, strokeWidth: 1.4, fill: 'none', strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+              <use href={`#${sceneId}`} />
+            </svg>
+          </>
+        )}
+        {!isLead && !review.photo_url && (
+          <svg style={{ width: 62, height: 62, stroke: 'var(--tdgflow-gold-dim, #8C6436)', strokeWidth: 1.4, fill: 'none', strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+            <use href={`#${sceneId}`} />
+          </svg>
+        )}
+        {!isLead && review.photo_url && (
+          <span style={{
+            position: 'relative', zIndex: 1,
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
+            padding: '3px 9px 3px 7px', borderRadius: 999,
+            background: 'rgba(255,255,255,0.18)', color: '#fff', backdropFilter: 'blur(6px)',
+          }}>
+            <svg style={{ width: 10, height: 10, fill: 'currentColor' }}><use href="#i-verified" /></svg>
+            {review.visit_type ? (VISIT_TYPE_LABELS[review.visit_type] ?? review.visit_type) : 'Confirmado'}
+          </span>
+        )}
+      </div>
+
       {/* Left accent bar */}
-      <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: accent }} />
+      <div style={{ position: 'absolute', left: 0, top: 128, bottom: 0, width: 3, background: accent }} />
 
       {/* Main content */}
       <div style={{ padding: '18px 18px 14px 22px' }}>
@@ -500,11 +583,13 @@ function HotelCard({ review, onToggleFavorite, onViewHistory }: {
               por {review.agent_name}
             </p>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              <SentimentBadge value={Math.round(avgRating)} />
-              <span style={{ color: 'var(--tdgflow-border-light)' }}>·</span>
-              <span style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)' }}>
-                {visitCount} {visitCount === 1 ? 'visita' : 'visitas'}
-              </span>
+              {!isLead && <SentimentBadge value={Math.round(avgRating)} />}
+              {!isLead && <span style={{ color: 'var(--tdgflow-border-light)' }}>·</span>}
+              {!isLead && (
+                <span style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)' }}>
+                  {visitCount} {visitCount === 1 ? 'visita' : 'visitas'}
+                </span>
+              )}
               {review.visit_type && (
                 <span style={{
                   fontSize: '0.5625rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase',
@@ -529,8 +614,34 @@ function HotelCard({ review, onToggleFavorite, onViewHistory }: {
           </button>
         </div>
 
+        {/* Lead — o "porquê" é o conteúdo principal, sempre visível (não
+            escondido atrás de "Ver detalhes"), com CTA pra confirmar de
+            perto. Sem isso, um lead vira um card fantasma sem nada legível. */}
+        {isLead && (
+          <>
+            {review.heads_up && (
+              <p style={{
+                fontSize: '0.8125rem', color: 'var(--tdgflow-text-secondary)', lineHeight: 1.55,
+                fontStyle: 'italic', marginBottom: 12,
+              }}>
+                &ldquo;{review.heads_up}&rdquo;
+              </p>
+            )}
+            <button
+              onClick={() => onConfirmLead(review)}
+              style={{
+                fontSize: '0.75rem', fontWeight: 700, color: '#fff',
+                background: accent, border: `1px solid ${accent}`,
+                padding: '7px 13px', borderRadius: 999, cursor: 'pointer', marginBottom: 12,
+              }}
+            >
+              Registrar teste real →
+            </button>
+          </>
+        )}
+
         {/* Highlights */}
-        {review.highlights?.length > 0 && (
+        {!isLead && review.highlights?.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 12 }}>
             {(expanded ? review.highlights : review.highlights.slice(0, 3)).map((h, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
@@ -606,7 +717,9 @@ function HotelCard({ review, onToggleFavorite, onViewHistory }: {
                     <p style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-secondary)', lineHeight: 1.6, fontWeight: 300 }}>{review.client_profile}</p>
                   </div>
                 )}
-                {review.heads_up && (
+                {/* heads_up de lead já aparece sempre visível acima como o
+                    "porquê" — não repete aqui pra não duplicar o mesmo texto. */}
+                {!isLead && review.heads_up && (
                   <div style={{ padding: '10px 12px', borderRadius: 8, background: 'rgba(251,191,36,0.05)', border: '1px solid rgba(251,191,36,0.12)' }}>
                     <div style={{ display: 'flex', gap: 7, alignItems: 'flex-start' }}>
                       <AlertCircle size={12} style={{ color: 'var(--tdgflow-warning)', flexShrink: 0, marginTop: 1 }} />
@@ -641,31 +754,34 @@ function HotelCard({ review, onToggleFavorite, onViewHistory }: {
         </div>
       </div>
 
-      {/* Footer */}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '8px 18px 8px 22px',
-        borderTop: '1px solid var(--tdgflow-border)',
-        background: 'var(--tdgflow-bg)',
-      }}>
-        <button
-          onClick={() => setExpanded(e => !e)}
-          style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)', padding: 0, transition: 'color 150ms' }}
-          onMouseEnter={e => (e.currentTarget.style.color = 'var(--tdgflow-text-secondary)')}
-          onMouseLeave={e => (e.currentTarget.style.color = 'var(--tdgflow-text-muted)')}
-        >
-          {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-          {expanded ? 'Fechar' : 'Ver detalhes'}
-        </button>
-        {visitCount > 1 && (
+      {/* Footer — lead não tem o que expandir nem histórico (é um registro
+          único, ainda sem confirmação), então não mostra a barra. */}
+      {!isLead && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '8px 18px 8px 22px',
+          borderTop: '1px solid var(--tdgflow-border)',
+          background: 'var(--tdgflow-bg)',
+        }}>
           <button
-            onClick={() => onViewHistory(review.hotel_name)}
-            style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.6875rem', color: accent, padding: 0 }}
+            onClick={() => setExpanded(e => !e)}
+            style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)', padding: 0, transition: 'color 150ms' }}
+            onMouseEnter={e => (e.currentTarget.style.color = 'var(--tdgflow-text-secondary)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'var(--tdgflow-text-muted)')}
           >
-            {visitCount} visitas <ArrowRight size={10} />
+            {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+            {expanded ? 'Fechar' : 'Ver detalhes'}
           </button>
-        )}
-      </div>
+          {visitCount > 1 && (
+            <button
+              onClick={() => onViewHistory(review.hotel_name)}
+              style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.6875rem', color: accent, padding: 0 }}
+            >
+              {visitCount} visitas <ArrowRight size={10} />
+            </button>
+          )}
+        </div>
+      )}
     </motion.div>
   )
 }
@@ -673,12 +789,18 @@ function HotelCard({ review, onToggleFavorite, onViewHistory }: {
 /* ── Questionnaire ──────────────────────────────────────────────── */
 // Perguntas ramificadas por entity_type/visit_type — ver src/lib/review-questions.ts
 
-function Questionnaire({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+function Questionnaire({ onClose, onSaved, initialAnswers, relatedLeadId }: {
+  onClose: () => void
+  onSaved: () => void
+  initialAnswers?: Record<string, unknown>
+  relatedLeadId?: string
+}) {
   const [step, setStep] = useState(0)
-  const [answers, setAnswers] = useState<Record<string, unknown>>({})
+  const [answers, setAnswers] = useState<Record<string, unknown>>(initialAnswers ?? {})
   const [recording, setRecording] = useState(false)
   const [saving, setSaving] = useState(false)
   const [done, setDone] = useState(false)
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const { toast } = useToast()
 
   const mediaRef = useRef<MediaRecorder | null>(null)
@@ -701,8 +823,25 @@ function Questionnaire({ onClose, onSaved }: { onClose: () => void; onSaved: () 
     if (q.id === 'heads_up') return true          // optional
     if (q.type === 'sub_sentiment') return true   // optional
     if (q.type === 'sentiment_map') return true   // optional
+    if (q.type === 'photo') return !uploadingPhoto // optional, só trava durante upload
     if (q.type === 'sentiment') return currentAnswer !== undefined  // allow 0
     return !!currentAnswer
+  }
+
+  async function handlePhotoSelect(file: File) {
+    setUploadingPhoto(true)
+    try {
+      const fd = new FormData()
+      fd.append('photo', file)
+      const res = await fetch('/api/reviews/photo', { method: 'POST', body: fd })
+      if (!res.ok) throw new Error()
+      const data = await res.json()
+      setAnswer(data.photo_url)
+    } catch {
+      toast('Não foi possível enviar a foto — pode seguir sem ela', 'error')
+    } finally {
+      setUploadingPhoto(false)
+    }
   }
 
   async function startRecording() {
@@ -752,7 +891,7 @@ function Questionnaire({ onClose, onSaved }: { onClose: () => void; onSaved: () 
     const hasSentimentMap = Object.keys(sentimentMap).length > 0
     const rawAnswers = Object.fromEntries(
       Object.entries(answers)
-        .filter(([k]) => !['overall_rating', 'sub_ratings', 'sentiment_map', 'hotel_name', 'visit_date', 'visit_type', 'entity_type'].includes(k))
+        .filter(([k]) => !['overall_rating', 'sub_ratings', 'sentiment_map', 'hotel_name', 'visit_date', 'visit_type', 'entity_type', 'photo'].includes(k))
         .map(([k, v]) => [k, String(v)])
     )
 
@@ -761,19 +900,21 @@ function Questionnaire({ onClose, onSaved }: { onClose: () => void; onSaved: () 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          hotel_name:      answers.hotel_name,
-          entity_type:     answers.entity_type || 'hotel',
-          country:         answers.country || null,
-          visit_date:      answers.visit_date || null,
-          visit_type:      answers.visit_type || null,
-          overall_rating:  answers.overall_rating,
-          rooms_rating:    subRatings.rooms    ?? null,
-          service_rating:  subRatings.service  ?? null,
-          food_rating:     subRatings.food     ?? null,
-          location_rating: subRatings.location ?? null,
+          hotel_name:       answers.hotel_name,
+          entity_type:      answers.entity_type || 'hotel',
+          country:          answers.country || null,
+          visit_date:       answers.visit_date || null,
+          visit_type:       answers.visit_type || null,
+          overall_rating:   answers.overall_rating,
+          rooms_rating:     subRatings.rooms    ?? null,
+          service_rating:   subRatings.service  ?? null,
+          food_rating:      subRatings.food     ?? null,
+          location_rating:  subRatings.location ?? null,
+          photo_url:        answers.photo || null,
+          related_lead_id:  relatedLeadId || null,
           // status não é enviado — o servidor deriva de visit_type, nunca confia no cliente.
-          raw_answers:     rawAnswers,
-          sentiment_map:   hasSentimentMap ? sentimentMap : null,
+          raw_answers:      rawAnswers,
+          sentiment_map:    hasSentimentMap ? sentimentMap : null,
         }),
       })
       if (!res.ok) {
@@ -958,6 +1099,45 @@ function Questionnaire({ onClose, onSaved }: { onClose: () => void; onSaved: () 
                 />
               )}
 
+              {/* Photo — prova de que alguém esteve lá de verdade; opcional */}
+              {q.type === 'photo' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {currentAnswer ? (
+                    <div style={{ position: 'relative', borderRadius: 14, overflow: 'hidden', border: '1px solid var(--tdgflow-border)' }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={currentAnswer as string} alt="Foto da visita" style={{ width: '100%', height: 180, objectFit: 'cover', display: 'block' }} />
+                      <button
+                        onClick={() => setAnswer(undefined)}
+                        style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.55)', border: 'none', borderRadius: '50%', width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                      >
+                        <X size={13} style={{ color: '#fff' }} />
+                      </button>
+                    </div>
+                  ) : (
+                    <label
+                      style={{
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8,
+                        padding: '28px 16px', borderRadius: 14, border: '1.5px dashed var(--tdgflow-border-light)',
+                        background: 'var(--tdgflow-surface-high)', cursor: uploadingPhoto ? 'default' : 'pointer',
+                      }}
+                    >
+                      {uploadingPhoto
+                        ? <Loader2 size={18} className="animate-spin" style={{ color: 'var(--tdgflow-text-muted)' }} />
+                        : <span style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-muted)' }}>Toque para escolher uma foto</span>
+                      }
+                      <input
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        disabled={uploadingPhoto}
+                        onChange={e => { const f = e.target.files?.[0]; if (f) handlePhotoSelect(f) }}
+                        style={{ display: 'none' }}
+                      />
+                    </label>
+                  )}
+                </div>
+              )}
+
               {/* Voice + text */}
               {q.type === 'voice_text' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -1138,28 +1318,38 @@ function HistoryDrawer({ hotelName, onClose, onToggleFavorite }: {
   )
 }
 
-const FILTER_TABS = [
-  { id: 'all',               label: 'Todos' },
-  { id: 'favorites',         label: 'Favoritos' },
+const VISIT_FILTER_TABS = [
+  { id: 'all',               label: 'Tudo' },
   { id: 'fam_trip',          label: 'FAM Trip' },
   { id: 'site_inspection',   label: 'Site Inspection' },
   { id: 'personal_stay',     label: 'Personal Stay' },
+  { id: 'favorites',         label: 'Favoritos' },
 ]
+
+const ENTITY_FILTER_TABS = [{ id: 'all', label: 'Todos os tipos' }, ...Object.entries(ENTITY_TYPE_LABELS).map(([id, label]) => ({ id, label }))]
 
 /* ── Main export ────────────────────────────────────────────────── */
 export default function DicasView() {
-  const [reviews, setReviews] = useState<Review[]>([])
+  const [publishedReviews, setPublishedReviews] = useState<Review[]>([])
+  const [leadReviews, setLeadReviews] = useState<Review[]>([])
   const [loading, setLoading] = useState(true)
   const [showQuestionnaire, setShowQuestionnaire] = useState(false)
+  const [confirmingLead, setConfirmingLead] = useState<Review | null>(null)
   const [historyHotel, setHistoryHotel] = useState<string | null>(null)
   const [search, setSearch] = useState('')
-  const [activeFilter, setActiveFilter] = useState('all')
+  const [activeVisitType, setActiveVisitType] = useState('all')
+  const [activeEntityType, setActiveEntityType] = useState('all')
   const [activeCountry, setActiveCountry] = useState('all')
 
   const loadReviews = useCallback(async () => {
-    const res = await fetch('/api/reviews')
-    const data = await res.json()
-    setReviews(data.reviews ?? [])
+    const [pubRes, leadRes] = await Promise.all([
+      fetch('/api/reviews?status=published'),
+      fetch('/api/reviews?status=a_testar'),
+    ])
+    const pubData = await pubRes.json()
+    const leadData = await leadRes.json()
+    setPublishedReviews(pubData.reviews ?? [])
+    setLeadReviews(leadData.reviews ?? [])
     setLoading(false)
   }, [])
 
@@ -1167,7 +1357,9 @@ export default function DicasView() {
 
   async function toggleFavorite(reviewId: string, isFavorite: boolean) {
     isFavorite ? sounds.favoriteRemove() : sounds.favoriteAdd()
-    setReviews(prev => prev.map(r => r.id === reviewId ? { ...r, is_favorite: !isFavorite } : r))
+    const patch = (r: Review) => r.id === reviewId ? { ...r, is_favorite: !isFavorite } : r
+    setPublishedReviews(prev => prev.map(patch))
+    setLeadReviews(prev => prev.map(patch))
     await fetch('/api/reviews', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -1175,12 +1367,14 @@ export default function DicasView() {
     })
   }
 
+  const allReviews = [...publishedReviews, ...leadReviews]
   const q = search.trim().toLowerCase()
-  const countries = ['all', ...Array.from(new Set(reviews.map(r => r.country).filter(Boolean))).sort()] as string[]
+  const countries = ['all', ...Array.from(new Set(allReviews.map(r => r.country).filter(Boolean))).sort()] as string[]
 
-  const filtered = reviews.filter(r => {
-    if (activeFilter === 'favorites' && !r.is_favorite) return false
-    if (activeFilter !== 'all' && activeFilter !== 'favorites' && r.visit_type !== activeFilter) return false
+  function matches(r: Review) {
+    if (activeVisitType === 'favorites' && !r.is_favorite) return false
+    if (activeVisitType !== 'all' && activeVisitType !== 'favorites' && r.visit_type !== activeVisitType) return false
+    if (activeEntityType !== 'all' && r.entity_type !== activeEntityType) return false
     if (activeCountry !== 'all' && r.country !== activeCountry) return false
     if (!q) return true
     return (
@@ -1190,37 +1384,59 @@ export default function DicasView() {
       r.agency_name.toLowerCase().includes(q) ||
       (r.client_profile ?? '').toLowerCase().includes(q) ||
       (r.must_experience ?? '').toLowerCase().includes(q) ||
+      (r.heads_up ?? '').toLowerCase().includes(q) ||
       r.highlights.some(h => h.toLowerCase().includes(q))
     )
-  })
+  }
 
-  const uniqueHotels = new Set(reviews.map(r => r.hotel_name)).size
+  const filteredPublished = publishedReviews.filter(matches)
+  const filteredLeads = leadReviews.filter(matches)
+  const hasResults = filteredPublished.length > 0 || filteredLeads.length > 0
+  const hasActiveFilter = activeVisitType !== 'all' || activeEntityType !== 'all' || activeCountry !== 'all' || !!q
+
+  // Hero — a review confirmada com melhor nota que tenha foto real anexada.
+  // Sem foto, não vira hero (nunca finge com gradiente).
+  const heroCandidate = [...filteredPublished]
+    .filter(r => r.photo_url)
+    .sort((a, b) => (b.overall_rating ?? 0) - (a.overall_rating ?? 0))[0]
+
+  function clearFilters() {
+    setSearch(''); setActiveVisitType('all'); setActiveEntityType('all'); setActiveCountry('all')
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <TdgIconSprite />
 
       {/* ── Header block ─────────────────────────────────────────── */}
       <div style={{ flexShrink: 0, borderBottom: '1px solid var(--tdgflow-border)', background: 'var(--tdgflow-surface)' }}>
         {/* Title row */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '18px 20px 12px' }}>
           <div>
-            <p style={{ fontSize: '0.5625rem', fontWeight: 500, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--tdgflow-navy-dim)', marginBottom: 3 }}>
+            <p style={{
+              display: 'flex', alignItems: 'center', gap: 5,
+              fontSize: '0.5625rem', fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase',
+              color: 'var(--tdgflow-accent-warm)', marginBottom: 4,
+            }}>
+              <svg style={{ width: 10, height: 10, stroke: 'currentColor', fill: 'none', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                <use href="#i-compass" />
+              </svg>
               Rede TDG
             </p>
             <h2 style={{ fontSize: '1.125rem', fontWeight: 500, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.025em', lineHeight: 1 }}>
-              Dicas de Hotéis
+              O que a rede descobriu
             </h2>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, paddingTop: 4 }}>
             {!loading && (
               <div style={{ display: 'flex', gap: 16 }}>
                 <div style={{ textAlign: 'right' }}>
-                  <p style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.02em', lineHeight: 1 }}>{uniqueHotels}</p>
-                  <p style={{ fontSize: '0.55rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)', marginTop: 2 }}>hotéis</p>
+                  <p style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.02em', lineHeight: 1 }}>{publishedReviews.length}</p>
+                  <p style={{ fontSize: '0.55rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)', marginTop: 2 }}>aprovadas</p>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <p style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.02em', lineHeight: 1 }}>{reviews.length}</p>
-                  <p style={{ fontSize: '0.55rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)', marginTop: 2 }}>reviews</p>
+                  <p style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--tdgflow-accent-warm)', letterSpacing: '-0.02em', lineHeight: 1 }}>{leadReviews.length}</p>
+                  <p style={{ fontSize: '0.55rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)', marginTop: 2 }}>a testar</p>
                 </div>
               </div>
             )}
@@ -1246,25 +1462,46 @@ export default function DicasView() {
           />
         </div>
 
-        {/* Visit type filter chips */}
+        {/* Entity type filter chips */}
         <div style={{ display: 'flex', gap: 6, padding: '0 20px 8px', overflowX: 'auto', scrollbarWidth: 'none' }}>
-          {FILTER_TABS.map(tab => (
+          {ENTITY_FILTER_TABS.map(tab => (
             <button
               key={tab.id}
-              onClick={() => setActiveFilter(tab.id)}
+              onClick={() => setActiveEntityType(tab.id)}
               style={{
                 flexShrink: 0, padding: '4px 12px', borderRadius: 999,
-                fontSize: '0.6875rem', fontWeight: activeFilter === tab.id ? 600 : 400,
+                fontSize: '0.6875rem', fontWeight: activeEntityType === tab.id ? 600 : 400,
                 cursor: 'pointer',
-                background: activeFilter === tab.id ? 'var(--tdgflow-navy)' : 'var(--tdgflow-surface-high)',
-                color: activeFilter === tab.id ? 'var(--tdgflow-surface)' : 'var(--tdgflow-text-muted)',
-                border: activeFilter === tab.id ? 'none' : '1px solid var(--tdgflow-border)',
+                background: activeEntityType === tab.id ? 'var(--tdgflow-text-primary)' : 'var(--tdgflow-surface-high)',
+                color: activeEntityType === tab.id ? 'var(--tdgflow-surface)' : 'var(--tdgflow-text-muted)',
+                border: activeEntityType === tab.id ? 'none' : '1px solid var(--tdgflow-border)',
                 transition: 'all 150ms',
               }}
             >
               {tab.label}
-              {tab.id === 'favorites' && reviews.filter(r => r.is_favorite).length > 0 && (
-                <span style={{ marginLeft: 5, opacity: 0.7 }}>{reviews.filter(r => r.is_favorite).length}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Visit type + favorites filter chips */}
+        <div style={{ display: 'flex', gap: 6, padding: '0 20px 8px', overflowX: 'auto', scrollbarWidth: 'none' }}>
+          {VISIT_FILTER_TABS.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveVisitType(tab.id)}
+              style={{
+                flexShrink: 0, padding: '4px 12px', borderRadius: 999,
+                fontSize: '0.6875rem', fontWeight: activeVisitType === tab.id ? 600 : 400,
+                cursor: 'pointer',
+                background: activeVisitType === tab.id ? 'var(--tdgflow-navy)' : 'var(--tdgflow-surface-high)',
+                color: activeVisitType === tab.id ? 'var(--tdgflow-surface)' : 'var(--tdgflow-text-muted)',
+                border: activeVisitType === tab.id ? 'none' : '1px solid var(--tdgflow-border)',
+                transition: 'all 150ms',
+              }}
+            >
+              {tab.label}
+              {tab.id === 'favorites' && allReviews.filter(r => r.is_favorite).length > 0 && (
+                <span style={{ marginLeft: 5, opacity: 0.7 }}>{allReviews.filter(r => r.is_favorite).length}</span>
               )}
             </button>
           ))}
@@ -1294,18 +1531,18 @@ export default function DicasView() {
         )}
       </div>
 
-      {/* ── List ─────────────────────────────────────────────────── */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px' }}>
+      {/* ── Feed ─────────────────────────────────────────────────── */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '18px 16px 40px' }}>
         {loading && (
           <p style={{ textAlign: 'center', color: 'var(--tdgflow-text-muted)', fontSize: '0.875rem', paddingTop: 48 }}>Carregando...</p>
         )}
-        {!loading && filtered.length === 0 && (
+        {!loading && !hasResults && (
           <div style={{ textAlign: 'center', paddingTop: 60 }}>
-            {q || activeFilter !== 'all' ? (
+            {hasActiveFilter ? (
               <>
                 <Search size={24} style={{ color: 'var(--tdgflow-text-muted)', margin: '0 auto 12px' }} />
                 <p style={{ fontSize: '0.875rem', color: 'var(--tdgflow-text-muted)' }}>Nenhum resultado encontrado.</p>
-                <button onClick={() => { setSearch(''); setActiveFilter('all'); setActiveCountry('all') }} style={{ marginTop: 12, fontSize: '0.75rem', color: 'var(--tdgflow-navy)', background: 'none', border: 'none', cursor: 'pointer' }}>
+                <button onClick={clearFilters} style={{ marginTop: 12, fontSize: '0.75rem', color: 'var(--tdgflow-navy)', background: 'none', border: 'none', cursor: 'pointer' }}>
                   Limpar filtros
                 </button>
               </>
@@ -1313,23 +1550,101 @@ export default function DicasView() {
               <>
                 <Building2 size={24} style={{ color: 'var(--tdgflow-text-muted)', margin: '0 auto 12px' }} />
                 <p style={{ fontSize: '0.875rem', color: 'var(--tdgflow-text-muted)' }}>Nenhuma visita registrada ainda.</p>
-                <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)', marginTop: 4 }}>Clique em "Nova visita" para começar.</p>
+                <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)', marginTop: 4 }}>Clique em &quot;Nova visita&quot; para começar.</p>
               </>
             )}
           </div>
         )}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 620, margin: '0 auto' }}>
-          <AnimatePresence>
-            {filtered.map(r => (
-              <HotelCard
-                key={r.id}
-                review={r}
-                onToggleFavorite={toggleFavorite}
-                onViewHistory={setHistoryHotel}
-              />
-            ))}
-          </AnimatePresence>
-        </div>
+
+        {!loading && hasResults && (
+          <div style={{ maxWidth: 1040, margin: '0 auto' }}>
+
+            {/* Hero — uma peça editorial só, nunca compete dentro da grade */}
+            {heroCandidate && (
+              <div style={{
+                position: 'relative', borderRadius: 20, overflow: 'hidden', height: 260, marginBottom: 32,
+                background: `linear-gradient(0deg, rgba(20,12,6,0.82) 0%, rgba(20,12,6,0.3) 50%, rgba(20,12,6,0.05) 72%), url(${heroCandidate.photo_url}) center/cover`,
+              }}>
+                <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: '24px 28px 22px' }}>
+                  <p style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase',
+                    color: 'rgba(255,255,255,0.92)', marginBottom: 8,
+                  }}>
+                    <svg style={{ width: 11, height: 11, fill: 'currentColor' }}><use href="#i-verified" /></svg>
+                    {heroCandidate.visit_type ? (VISIT_TYPE_LABELS[heroCandidate.visit_type] ?? heroCandidate.visit_type) : 'Confirmado'} · por {heroCandidate.agent_name}
+                  </p>
+                  <h3 style={{ fontFamily: 'ui-serif, Georgia, serif', fontWeight: 500, fontSize: '1.75rem', color: '#fff', margin: '0 0 6px', maxWidth: 560, lineHeight: 1.15 }}>
+                    {heroCandidate.hotel_name}
+                  </h3>
+                  <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.82)' }}>
+                    {heroCandidate.country ?? ''}{heroCandidate.must_experience ? ` · ${heroCandidate.must_experience}` : ''}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Recém-descoberto — ninguém foi lá pessoalmente ainda */}
+            {filteredLeads.length > 0 && (
+              <div style={{ marginBottom: 36 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 14 }}>
+                  <h4 style={{
+                    display: 'flex', alignItems: 'center', gap: 6, margin: 0,
+                    fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase',
+                    color: 'var(--tdgflow-text-muted)',
+                  }}>
+                    <svg style={{ width: 12, height: 12, fill: 'var(--tdgflow-accent-warm)' }}><use href="#i-spark" /></svg>
+                    Recém-descoberto pela rede
+                  </h4>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)' }}>Ainda a testar — por isso é traço, não foto</span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(252px, 1fr))', gap: 16 }}>
+                  <AnimatePresence>
+                    {filteredLeads.map(r => (
+                      <HotelCard
+                        key={r.id}
+                        review={r}
+                        onToggleFavorite={toggleFavorite}
+                        onViewHistory={setHistoryHotel}
+                        onConfirmLead={setConfirmingLead}
+                      />
+                    ))}
+                  </AnimatePresence>
+                </div>
+              </div>
+            )}
+
+            {/* Aprovado pela rede */}
+            {filteredPublished.length > 0 && (
+              <div>
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 14 }}>
+                  <h4 style={{
+                    display: 'flex', alignItems: 'center', gap: 6, margin: 0,
+                    fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase',
+                    color: 'var(--tdgflow-text-muted)',
+                  }}>
+                    <svg style={{ width: 12, height: 12, fill: 'var(--tdgflow-gold-dim, #8C6436)' }}><use href="#i-verified" /></svg>
+                    Aprovado pela rede
+                  </h4>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)' }}>Foto de quem esteve lá — nunca banco de imagens</span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(252px, 1fr))', gap: 16 }}>
+                  <AnimatePresence>
+                    {filteredPublished.map(r => (
+                      <HotelCard
+                        key={r.id}
+                        review={r}
+                        onToggleFavorite={toggleFavorite}
+                        onViewHistory={setHistoryHotel}
+                        onConfirmLead={setConfirmingLead}
+                      />
+                    ))}
+                  </AnimatePresence>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <AnimatePresence>
@@ -1337,6 +1652,18 @@ export default function DicasView() {
           <Questionnaire
             onClose={() => setShowQuestionnaire(false)}
             onSaved={() => { loadReviews() }}
+          />
+        )}
+        {confirmingLead && (
+          <Questionnaire
+            onClose={() => setConfirmingLead(null)}
+            onSaved={() => { loadReviews() }}
+            relatedLeadId={confirmingLead.id}
+            initialAnswers={{
+              entity_type: confirmingLead.entity_type,
+              hotel_name: confirmingLead.hotel_name,
+              country: confirmingLead.country ?? undefined,
+            }}
           />
         )}
         {historyHotel && (

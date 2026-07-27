@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
     const {
       hotel_name, entity_type, country, visit_date, visit_type,
       overall_rating, rooms_rating, service_rating, food_rating, location_rating,
-      raw_answers, sentiment_map,
+      raw_answers, sentiment_map, photo_url, related_lead_id,
     } = body
 
     // status nunca vem do cliente — é sempre derivado de visit_type no servidor,
@@ -87,8 +87,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'hotel_name e overall_rating são obrigatórios' }, { status: 400 })
     }
 
+    // Lead de reunião comercial nunca tem foto — ninguém foi lá pessoalmente
+    // ainda, não há o que fotografar. Ignora silenciosamente se vier mesmo assim.
+    const finalPhotoUrl = isLead ? null : (photo_url || null)
+
     // Ensure country column exists (idempotent migration)
     await sql`ALTER TABLE tdg_hotel_reviews ADD COLUMN IF NOT EXISTS country TEXT`
+
+    // Ensure photo_url column exists (idempotent migration)
+    await sql`ALTER TABLE tdg_hotel_reviews ADD COLUMN IF NOT EXISTS photo_url TEXT`
 
     // Add sentiment_map column (idempotent)
     await sql`ALTER TABLE tdg_hotel_reviews ADD COLUMN IF NOT EXISTS sentiment_map JSONB`
@@ -157,11 +164,15 @@ Retorne APENAS um JSON válido com esta estrutura:
       } catch { /* AI failure is non-blocking — review saves without extraction */ }
     }
 
+    // related_lead_id nunca em lead — só uma review confirmada aponta de
+    // volta pro lead original que ela testou.
+    const finalRelatedLeadId = isLead ? null : (related_lead_id || null)
+
     const { rows } = await sql`
       INSERT INTO tdg_hotel_reviews
         (hotel_name, entity_type, country, agent_id, agent_name, agency_name, visit_date, visit_type,
          overall_rating, rooms_rating, service_rating, food_rating, location_rating,
-         highlights, client_profile, must_experience, heads_up, status, raw_answers, sentiment_map)
+         highlights, client_profile, must_experience, heads_up, status, photo_url, related_lead_id, raw_answers, sentiment_map)
       VALUES (
         ${hotel_name}, ${entity_type || 'hotel'}, ${country || null}, ${user.id}, ${user.name}, ${user.agency_name},
         ${visit_date || null}, ${visit_type || null},
@@ -169,7 +180,7 @@ Retorne APENAS um JSON válido com esta estrutura:
         ${food_rating || null}, ${location_rating || null},
         ${JSON.stringify(structured.highlights ?? [])}, ${structured.client_profile ?? null},
         ${structured.must_experience ?? null}, ${structured.heads_up ?? null},
-        ${status},
+        ${status}, ${finalPhotoUrl}, ${finalRelatedLeadId},
         ${JSON.stringify(raw_answers)},
         ${sentiment_map ? JSON.stringify(sentiment_map) : null}
       )

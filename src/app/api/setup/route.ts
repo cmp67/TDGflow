@@ -97,6 +97,9 @@ export async function GET(req: Request) {
   await sql`CREATE INDEX IF NOT EXISTS idx_tdg_hotel_reviews_entity_type ON tdg_hotel_reviews (entity_type)`
   await sql`CREATE INDEX IF NOT EXISTS idx_tdg_hotel_reviews_status ON tdg_hotel_reviews (status)`
 
+  steps.push('add photo_url column (reviews)')
+  await sql`ALTER TABLE tdg_hotel_reviews ADD COLUMN IF NOT EXISTS photo_url TEXT`
+
   steps.push('create tdg_review_favorites')
   await sql`
     CREATE TABLE IF NOT EXISTS tdg_review_favorites (
