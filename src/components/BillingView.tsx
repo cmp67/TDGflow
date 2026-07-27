@@ -876,12 +876,15 @@ function TabNetwork() {
   let pct = 100, barColor = 'var(--tdgflow-navy)'
 
   if (balance) {
-    tierDef = TIERS.find(t => t.id === balance.tier) ?? TIERS[0]
+    // Sem fallback pra TIERS[0]: se a agência nunca comprou top-up (tier ''),
+    // tierDef fica undefined de propósito — mostrar um pacote como "atual"
+    // sem ter sido comprado inventaria um fato que não está no dado.
+    tierDef = TIERS.find(t => t.id === balance.tier)
     const recentDays = (dailyUsage ?? []).slice(0, 7)
     avgPerDay = recentDays.length > 0 ? Math.round(recentDays.reduce((s, d) => s + d.requests, 0) / recentDays.length * 1.5) : 0
     daysLeft = avgPerDay > 0 && balance.balance > 0 ? Math.round(balance.balance / avgPerDay) : null
-    alertLevel = balance.balance < 0 ? 'critical' : tierDef.credits && balance.balance < tierDef.credits * 0.15 ? 'low' : tierDef.credits && balance.balance < tierDef.credits * 0.40 ? 'medium' : 'ok'
-    pct = tierDef.credits ? Math.max(0, Math.min(100, (balance.balance / tierDef.credits) * 100)) : 100
+    alertLevel = balance.balance < 0 ? 'critical' : tierDef?.credits && balance.balance < tierDef.credits * 0.15 ? 'low' : tierDef?.credits && balance.balance < tierDef.credits * 0.40 ? 'medium' : 'ok'
+    pct = tierDef?.credits ? Math.max(0, Math.min(100, (balance.balance / tierDef.credits) * 100)) : 100
     barColor = pct > 40 ? 'var(--tdgflow-navy)' : pct > 15 ? 'var(--tdgflow-accent-warm)' : 'var(--tdgflow-error)'
   }
 
@@ -909,7 +912,7 @@ function TabNetwork() {
           </div>
         )}
 
-        {balance && tierDef && (
+        {balance && (
           <>
             {/* Balance hero */}
             <div style={{ background: 'var(--tdgflow-text-primary)', borderRadius: 16, padding: '18px 20px', flexShrink: 0 }}>
@@ -924,23 +927,22 @@ function TabNetwork() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                     <Coins size={13} style={{ color: '#4DD0E1' }} />
                     <span style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#4DD0E1' }}>Saldo da rede</span>
-                    <span style={{ fontSize: '0.5rem', fontWeight: 700, color: 'var(--tdgflow-text-primary)', background: '#4DD0E1', borderRadius: 20, padding: '1px 7px' }}>{tierDef.name}</span>
-                    {tierDef.priceReais && (
-                      <span style={{ fontSize: '0.5rem', fontWeight: 600, color: 'var(--tdgflow-text-faint)', background: 'rgba(255,255,255,0.08)', borderRadius: 20, padding: '1px 7px' }}>
-                        R${tierDef.priceReais}/mês
+                    {tierDef && (
+                      <span style={{ fontSize: '0.5rem', fontWeight: 700, color: 'var(--tdgflow-text-primary)', background: '#4DD0E1', borderRadius: 20, padding: '1px 7px' }}>
+                        Último top-up: {tierDef.name}
                       </span>
                     )}
                   </div>
                   <p style={{ fontSize: '2.5rem', fontWeight: 800, color: balance.balance < 0 ? '#F48FB1' : 'var(--tdgflow-surface)', margin: 0, letterSpacing: '-0.04em', lineHeight: 1 }}>
                     {numFmt(balance.balance)}<span style={{ fontSize: '0.875rem', fontWeight: 400, color: 'var(--tdgflow-text-faint)', marginLeft: 5 }}>Lumis</span>
                   </p>
-                  {tierDef.credits && (
+                  {tierDef?.credits && (
                     <div style={{ marginTop: 10 }}>
                       <div style={{ height: 5, borderRadius: 3, background: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}>
                         <div style={{ height: '100%', width: `${pct}%`, background: barColor, borderRadius: 3, transition: 'width 0.5s var(--tdgflow-ease-smooth)' }} />
                       </div>
                       <p style={{ fontSize: '0.5625rem', color: 'var(--tdgflow-text-muted)', marginTop: 4, margin: '4px 0 0' }}>
-                        {numFmt(Math.max(0, balance.balance))} de {numFmt(tierDef.credits)} Lumis disponíveis
+                        {numFmt(Math.max(0, balance.balance))} de {numFmt(tierDef.credits)} Lumis disponíveis (último top-up)
                       </p>
                     </div>
                   )}

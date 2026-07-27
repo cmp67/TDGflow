@@ -24,11 +24,11 @@ describe('fetchOwnBalance', () => {
   })
 
   it('returns ready with balance on 200', async () => {
-    global.fetch = mockFetchOnce(200, { balance: { balance: 2500, tier: 'starter' } }) as unknown as typeof fetch
+    global.fetch = mockFetchOnce(200, { balance: { balance: 2500, tier: 'pkg_100' } }) as unknown as typeof fetch
 
     const result = await fetchOwnBalance()
 
-    expect(result).toEqual({ status: 'ready', balance: { balance: 2500, tier: 'starter' } })
+    expect(result).toEqual({ status: 'ready', balance: { balance: 2500, tier: 'pkg_100' } })
   })
 
   it('returns unauthenticated on 401', async () => {
@@ -92,16 +92,16 @@ describe('buyTopUp', () => {
   })
 
   it('sends action=top_up and the chosen tier, returns updated balance on 200', async () => {
-    const fetchMock = mockFetchOnce(200, { ok: true, balance: { balance: 9500, tier: 'growth' } })
+    const fetchMock = mockFetchOnce(200, { ok: true, balance: { balance: 9500, tier: 'pkg_500' } })
     global.fetch = fetchMock as unknown as typeof fetch
 
-    const result = await buyTopUp('growth')
+    const result = await buyTopUp('pkg_500')
 
-    expect(result).toEqual({ status: 'ok', balance: { balance: 9500, tier: 'growth' } })
+    expect(result).toEqual({ status: 'ok', balance: { balance: 9500, tier: 'pkg_500' } })
     expect(fetchMock).toHaveBeenCalledWith('/api/credits', expect.objectContaining({
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'top_up', tier: 'growth' }),
+      body: JSON.stringify({ action: 'top_up', tier: 'pkg_500' }),
     }))
   })
 
@@ -116,7 +116,7 @@ describe('buyTopUp', () => {
   it('returns unauthenticated on 401', async () => {
     global.fetch = mockFetchOnce(401, { error: 'Unauthorized' }) as unknown as typeof fetch
 
-    const result = await buyTopUp('starter')
+    const result = await buyTopUp('pkg_100')
 
     expect(result).toEqual({ status: 'unauthenticated' })
   })
@@ -124,7 +124,7 @@ describe('buyTopUp', () => {
   it('returns no_agency on 422', async () => {
     global.fetch = mockFetchOnce(422, { error: 'Usuário sem agência vinculada' }) as unknown as typeof fetch
 
-    const result = await buyTopUp('starter')
+    const result = await buyTopUp('pkg_100')
 
     expect(result).toEqual({ status: 'no_agency' })
   })
@@ -132,7 +132,7 @@ describe('buyTopUp', () => {
   it('returns error with server message on 500', async () => {
     global.fetch = mockFetchOnce(500, { error: 'db down' }) as unknown as typeof fetch
 
-    const result = await buyTopUp('starter')
+    const result = await buyTopUp('pkg_100')
 
     expect(result).toEqual({ status: 'error', message: 'db down' })
   })
@@ -140,7 +140,7 @@ describe('buyTopUp', () => {
   it('returns error when fetch throws (network failure)', async () => {
     global.fetch = vi.fn().mockRejectedValue(new Error('network down')) as unknown as typeof fetch
 
-    const result = await buyTopUp('starter')
+    const result = await buyTopUp('pkg_100')
 
     expect(result.status).toBe('error')
   })

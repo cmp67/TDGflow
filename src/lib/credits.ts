@@ -10,34 +10,36 @@ export const CREDIT_COSTS: Record<string, number> = {
   scan_card:         3,   // 3 lm × R$0,006 = R$0,018 real (Claude Haiku vision)
 }
 
-// ── Tiers (legacy — kept for UI reference) ────────────────────────────────────
-
-export type TierId = 'starter' | 'growth' | 'scale' | 'enterprise'
+// ── Top-up packages (Cláusula 3.5 do contrato — únicos pacotes reais) ─────────
+// Antes disso havia um array "TIERS" fantasma (Starter/Growth/Scale/Enterprise)
+// que misturava o valor da assinatura mensal do plano Growth (R$77,37/mês,
+// Cláusula 2.1 — cobrança recorrente, uma por agência) com pacotes de top-up
+// avulso — carla flagou em produção (2026-07-27): a tela mostrava "9.5k Lumis
+// por R$77,37/mês" como se fosse um pacote de compra, quando na verdade
+// R$77,37/mês é o rateio da assinatura e 9.500 é o pool mensal de TODA a rede
+// (19 agências × 500 lm), não um pacote comprável por uma agência. Corrigido
+// pros dois únicos pacotes de top-up que o contrato define — avulsos, não
+// recorrentes, sem relação nenhuma com o valor da assinatura.
+export type TierId = 'pkg_100' | 'pkg_500' | ''
 
 export const TIERS: Array<{
   id:          TierId
   name:        string
-  credits:     number | null
+  credits:     number
   label:       string
   color:       string
   bg:          string
-  priceReais:  number | null
+  priceReais:  number
   priceLabel:  string
 }> = [
-  { id: 'starter',    name: 'Starter',    credits: 2500,  label: 'R$0,012/lm — 500 lm/agência', color: '#4A7580', bg: '#EDF4F6', priceReais: 990,  priceLabel: 'R$990/mês'    },
-  { id: 'growth',     name: 'Growth',     credits: 9500,  label: 'R$0,012/lm — 500 lm/agência', color: '#2E7D32', bg: '#E8F5E9', priceReais: 77.37, priceLabel: 'R$77,37/mês'  },
-  { id: 'scale',      name: 'Scale',      credits: 15000, label: 'R$0,012/lm — 500 lm/agência', color: '#1565C0', bg: '#E3F2FD', priceReais: 1690, priceLabel: 'R$1.690/mês'  },
-  { id: 'enterprise', name: 'Enterprise', credits: null,  label: 'Volume alto, SLA dedicado',  color: '#6B4FA0', bg: '#F3EEF9', priceReais: null, priceLabel: 'Sob consulta' },
+  { id: 'pkg_100', name: '100 Lumis', credits: 100, label: 'R$0,13/lm — pacote avulso', color: '#4A7580', bg: '#EDF4F6', priceReais: 13.00, priceLabel: 'R$13,00' },
+  { id: 'pkg_500', name: '500 Lumis', credits: 500, label: 'R$0,12/lm — pacote avulso', color: '#2E7D32', bg: '#E8F5E9', priceReais: 60.00, priceLabel: 'R$60,00' },
 ]
 
 // ── Pool config ────────────────────────────────────────────────────────────────
 
 export const POOL_CONFIG = {
-  quotaPerAgency:  500,   // Lumis per agency per month (1 lm = R$0,006 real cost)
-  topupPackages: [
-    { size: 100, priceReais: 0.13, total: 13.00,  label: 'Pacote 100 lm — R$ 13,00' },
-    { size: 500, priceReais: 0.12, total: 60.00,  label: 'Pacote 500 lm — R$ 60,00' },
-  ] as const,
+  quotaPerAgency: 500,   // Lumis per agency per month (1 lm = R$0,006 real cost)
 } as const
 
 // ── Table bootstrap ───────────────────────────────────────────────────────────
@@ -53,7 +55,7 @@ async function ensureTables() {
       id          SERIAL PRIMARY KEY,
       agency_id   UUID NOT NULL UNIQUE REFERENCES tdg_agencies(id),
       balance     INTEGER NOT NULL DEFAULT 0,
-      tier        TEXT NOT NULL DEFAULT 'starter',
+      tier        TEXT NOT NULL DEFAULT '',
       updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `
@@ -266,7 +268,7 @@ export function deductCredits(params: {
 
       await sql`
         INSERT INTO tdg_credits_balance (agency_id, balance, tier)
-        VALUES (${agencyId}, 0, 'starter')
+        VALUES (${agencyId}, 0, '')
         ON CONFLICT (agency_id) DO NOTHING
       `
       await sql`
@@ -325,7 +327,7 @@ export async function getBalance(agencyId: string): Promise<{ balance: number; t
   `
   return rows[0]
     ? { balance: rows[0].balance as number, tier: rows[0].tier as TierId }
-    : { balance: 0, tier: 'starter' }
+    : { balance: 0, tier: '' as TierId }
 }
 
 // ── Quota status — full picture for billing dashboard ─────────────────────────
@@ -490,7 +492,7 @@ export async function contributeToPool(params: {
 
   await sql`
     INSERT INTO tdg_credits_balance (agency_id, balance, tier)
-    VALUES (${params.poolId}, ${params.amount}, 'starter')
+    VALUES (${params.poolId}, ${params.amount}, '')
     ON CONFLICT (agency_id) DO UPDATE
     SET balance = tdg_credits_balance.balance + ${params.amount}, updated_at = NOW()
   `

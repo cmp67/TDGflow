@@ -118,7 +118,7 @@ function TopUpModal({ currentTier, onClose, onBought }: {
 // ── Main card ──────────────────────────────────────────────────────────────
 
 export default function MyLumisTopUp() {
-  const [state, setState]         = useState<OwnBalanceResult>({ status: 'ready', balance: { balance: 0, tier: 'starter' } })
+  const [state, setState]         = useState<OwnBalanceResult>({ status: 'ready', balance: { balance: 0, tier: '' } })
   const [loading, setLoading]     = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [justBought, setJustBought] = useState(false)
@@ -218,7 +218,7 @@ export default function MyLumisTopUp() {
               </p>
               {tierDef && (
                 <p style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-faint)', margin: '4px 0 0' }}>
-                  Plano atual: <strong style={{ color: 'var(--tdgflow-text-primary)' }}>{tierDef.name}</strong>
+                  Último top-up: <strong style={{ color: 'var(--tdgflow-text-primary)' }}>{tierDef.name}</strong>
                 </p>
               )}
             </div>

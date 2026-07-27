@@ -80,7 +80,7 @@ describe('GET/POST /api/credits (self-service top-up, post agency_id migration)'
       const json = await res.json()
 
       expect(res.status).toBe(200)
-      expect(json.balance).toEqual({ balance: 0, tier: 'starter' })
+      expect(json.balance).toEqual({ balance: 0, tier: '' })
       expect(json.creditsThisMonth).toBe(0)
       // Not an admin — must not receive the cross-agency network view.
       expect(json.agencyBreakdown).toBeUndefined()
@@ -102,13 +102,13 @@ describe('GET/POST /api/credits (self-service top-up, post agency_id migration)'
   describe('POST action=top_up', () => {
     it('returns 401 when there is no session', async () => {
       mockAuth.mockResolvedValueOnce(null)
-      const res = await POST(postRequest({ tier: 'starter' }))
+      const res = await POST(postRequest({ tier: 'pkg_500' }))
       expect(res.status).toBe(401)
     })
 
     it('returns a clear 422 when the logged-in user has no agency_id', async () => {
       mockAuth.mockResolvedValueOnce(sessionFor(emailNoAgency))
-      const res = await POST(postRequest({ tier: 'starter' }))
+      const res = await POST(postRequest({ tier: 'pkg_500' }))
       const json = await res.json()
 
       expect(res.status).toBe(422)
@@ -117,15 +117,15 @@ describe('GET/POST /api/credits (self-service top-up, post agency_id migration)'
 
     it('tops up only the caller\'s own agency, never a hardcoded pseudo-agency', async () => {
       mockAuth.mockResolvedValueOnce(sessionFor(emailWithAgency))
-      const res = await POST(postRequest({ tier: 'starter', note: 'tdd' }))
+      const res = await POST(postRequest({ tier: 'pkg_500', note: 'tdd' }))
       const json = await res.json()
 
       expect(res.status).toBe(200)
       expect(json.ok).toBe(true)
-      expect(json.balance.balance).toBe(2500)
+      expect(json.balance.balance).toBe(500)
 
       const persisted = await getBalance(agencyId)
-      expect(persisted.balance).toBe(2500)
+      expect(persisted.balance).toBe(500)
     })
 
     it('rejects an invalid tier', async () => {
