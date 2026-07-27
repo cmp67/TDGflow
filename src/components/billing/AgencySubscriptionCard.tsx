@@ -1,8 +1,9 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { CalendarCheck, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import Skeleton from '@/components/ui/Skeleton'
+import TdgIconSprite from '@/components/TdgIconSprite'
 import { fetchSubscriptionStatus, type SubscriptionStatusResult } from '@/lib/subscription-status-client'
 import { subscribeToGrowth } from '@/lib/subscribe-client'
 
@@ -54,10 +55,12 @@ export default function AgencySubscriptionCard() {
     )
   }
 
-  const cardBase = { background: 'var(--tdgflow-surface)', border: '1px solid var(--tdgflow-border-subtle)', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 8px rgba(17,38,48,0.06)' } as const
+  const cardBase = { background: 'var(--tdgflow-surface)', border: '1px solid var(--tdgflow-border-subtle)', borderRadius: 14, boxShadow: '0 2px 8px rgba(17,38,48,0.06)' } as const
   const header = (
-    <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--tdgflow-border-subtle)', background: 'var(--tdgflow-bg)', display: 'flex', alignItems: 'center', gap: 6 }}>
-      <CalendarCheck size={12} style={{ color: 'var(--tdgflow-navy)' }} />
+    <div style={{ padding: '10px 16px', borderRadius: '14px 14px 0 0', borderBottom: '1px solid var(--tdgflow-border-subtle)', background: 'var(--tdgflow-bg)', display: 'flex', alignItems: 'center', gap: 6 }}>
+      <svg style={{ width: 12, height: 12, stroke: 'var(--tdgflow-navy)', fill: 'none', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round', flexShrink: 0 }}>
+        <use href="#i-calendar" />
+      </svg>
       <p style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--tdgflow-text-faint)', margin: 0, flex: 1 }}>
         Assinatura da agência
       </p>
@@ -67,9 +70,15 @@ export default function AgencySubscriptionCard() {
   if (state.status === 'authorized') {
     return (
       <div style={cardBase}>
+        <TdgIconSprite />
         {header}
         <div style={{ padding: '14px 16px' }}>
-          <p style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--tdgflow-text-primary)', margin: 0 }}>Plano Growth ativo · Membro Fundador</p>
+          <p style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.875rem', fontWeight: 700, color: 'var(--tdgflow-text-primary)', margin: 0 }}>
+            <svg style={{ width: 13, height: 13, stroke: 'var(--tdgflow-success)', fill: 'none', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round', flexShrink: 0 }}>
+              <use href="#i-verified" />
+            </svg>
+            Plano Growth ativo · Membro Fundador
+          </p>
           {state.transactionAmount !== null && (
             <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-faint)', margin: '4px 0 0' }}>
               {fmtAmount(state.transactionAmount)}/mês (fee de manutenção)
@@ -84,6 +93,7 @@ export default function AgencySubscriptionCard() {
   if (state.status === 'pending') {
     return (
       <div style={cardBase}>
+        <TdgIconSprite />
         {header}
         <div style={{ padding: '14px 16px' }}>
           <p style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-muted)', margin: 0 }}>Assinatura em processamento — aguardando confirmação do pagamento.</p>
@@ -95,6 +105,7 @@ export default function AgencySubscriptionCard() {
   if (state.status === 'paused') {
     return (
       <div style={cardBase}>
+        <TdgIconSprite />
         {header}
         <div style={{ padding: '14px 16px' }}>
           <p style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-accent-warm)', margin: 0 }}>Assinatura pausada — regularize o pagamento.</p>
@@ -106,8 +117,9 @@ export default function AgencySubscriptionCard() {
   // none, cancelled, rejected → offer to subscribe
   return (
     <div style={cardBase}>
+      <TdgIconSprite />
       {header}
-      <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ padding: '14px 16px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div>
           <p style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--tdgflow-text-primary)', margin: 0 }}>Plano Growth — R$ 77,37/mês</p>
           <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-faint)', margin: '4px 0 0' }}>500 lm/mês de cota para a agência, cobrança recorrente todo dia 5.</p>
@@ -117,7 +129,14 @@ export default function AgencySubscriptionCard() {
         <button
           onClick={handleSubscribe}
           disabled={starting}
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 14px', borderRadius: 9, border: 'none', background: starting ? 'var(--tdgflow-border-light)' : 'var(--tdgflow-navy)', color: 'var(--tdgflow-surface)', fontSize: '0.8125rem', fontWeight: 600, cursor: starting ? 'default' : 'pointer' }}
+          style={{
+            width: '100%', boxSizing: 'border-box',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            padding: '11px 14px', borderRadius: 9, border: 'none',
+            background: starting ? 'var(--tdgflow-border-light)' : 'var(--tdgflow-navy)',
+            color: 'var(--tdgflow-surface)', fontSize: '0.8125rem', fontWeight: 600,
+            cursor: starting ? 'default' : 'pointer', flexShrink: 0,
+          }}
         >
           {starting ? <Loader2 className="animate-spin" size={14} /> : null}
           {starting ? 'Redirecionando…' : 'Assinar plano Growth'}
