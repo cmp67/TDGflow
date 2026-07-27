@@ -51,6 +51,34 @@ export async function GET(req: Request) {
   // Add country column if it doesn't exist yet (idempotent)
   await sql`ALTER TABLE tdg_hotel_reviews ADD COLUMN IF NOT EXISTS country TEXT`
 
+  // entity_type + related_lead_id (idempotent) — ver supabase/migrations/002_reviews_entity_type_and_leads.sql
+  await sql`ALTER TABLE tdg_hotel_reviews ADD COLUMN IF NOT EXISTS entity_type TEXT NOT NULL DEFAULT 'hotel'`
+  await sql`ALTER TABLE tdg_hotel_reviews ADD COLUMN IF NOT EXISTS related_lead_id UUID REFERENCES tdg_hotel_reviews(id) ON DELETE SET NULL`
+  await sql`
+    DO $$ BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'tdg_hotel_reviews_entity_type_check'
+      ) THEN
+        ALTER TABLE tdg_hotel_reviews
+          ADD CONSTRAINT tdg_hotel_reviews_entity_type_check
+          CHECK (entity_type IN ('hotel', 'beach_club', 'transfer', 'guide', 'restaurant', 'other'));
+      END IF;
+    END $$
+  `
+  await sql`
+    DO $$ BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'tdg_hotel_reviews_status_check'
+      ) THEN
+        ALTER TABLE tdg_hotel_reviews
+          ADD CONSTRAINT tdg_hotel_reviews_status_check
+          CHECK (status IN ('published', 'a_testar'));
+      END IF;
+    END $$
+  `
+  await sql`CREATE INDEX IF NOT EXISTS idx_tdg_hotel_reviews_entity_type ON tdg_hotel_reviews (entity_type)`
+  await sql`CREATE INDEX IF NOT EXISTS idx_tdg_hotel_reviews_status ON tdg_hotel_reviews (status)`
+
   await sql`
     CREATE TABLE IF NOT EXISTS tdg_review_favorites (
       agent_id   UUID NOT NULL REFERENCES tdg_users(id) ON DELETE CASCADE,

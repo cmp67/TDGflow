@@ -13,6 +13,10 @@ export async function GET(req: NextRequest) {
   const agentEmail = session.user?.email ?? ''
   const { searchParams } = new URL(req.url)
   const hotel = searchParams.get('hotel')
+  const entityType = searchParams.get('entity_type')
+  // Sem status explícito, só o que já foi confirmado pela rede — lead
+  // ("a_testar") é opt-in, nunca aparece por padrão misturado com o resto.
+  const status = searchParams.get('status') || 'published'
 
   // Get agent id for favorites lookup
   const { rows: userRows } = await sql`
@@ -29,11 +33,13 @@ export async function GET(req: NextRequest) {
       LEFT JOIN tdg_review_favorites f
         ON f.review_id = r.id AND f.agent_id = ${agentId}
       WHERE r.hotel_name ILIKE ${`%${hotel}%`}
+        AND r.status = ${status}
+        AND (${entityType}::text IS NULL OR r.entity_type = ${entityType})
       ORDER BY r.visit_date DESC NULLS LAST
     `
     reviewRows = rows
   } else {
-    // Group: one row per hotel (latest review), with count
+    // Group: one row por hotel/fornecedor (última visita), com contagem
     const { rows } = await sql`
       SELECT DISTINCT ON (r.hotel_name)
         r.*,
@@ -43,6 +49,8 @@ export async function GET(req: NextRequest) {
       FROM tdg_hotel_reviews r
       LEFT JOIN tdg_review_favorites f
         ON f.review_id = r.id AND f.agent_id = ${agentId}
+      WHERE r.status = ${status}
+        AND (${entityType}::text IS NULL OR r.entity_type = ${entityType})
       ORDER BY r.hotel_name, r.visit_date DESC NULLS LAST
     `
     reviewRows = rows
@@ -58,15 +66,28 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json()
   const {
-    hotel_name, country, visit_date, visit_type,
+    hotel_name, entity_type, country, visit_date, visit_type,
     overall_rating, rooms_rating, service_rating, food_rating, location_rating,
     raw_answers,
   } = body
 
-  // AI extraction of structured fields
-  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  // status nunca vem do cliente — é sempre derivado de visit_type no servidor,
+  // senão um cliente malicioso/com bug publica um lead não testado direto na
+  // fila de confiança da rede.
+  const isLead = visit_type === 'commercial_meeting'
+  const status = isLead ? 'a_testar' : 'published'
 
-  const prompt = `Você é um assistente especializado em turismo de luxo. Com base nas respostas do travel advisor abaixo sobre uma visita a um hotel, extraia as informações estruturadas.
+  // Lead de reunião comercial: só uma resposta curta (por que chamou atenção),
+  // sem estadia pra extrair — não vale a chamada de IA nem os campos estruturados.
+  // A resposta em si vira heads_up, que a UI já sabe renderizar — sem precisar
+  // de tela nova só pra mostrar o texto do lead.
+  let structured: { highlights?: string[]; client_profile?: string; must_experience?: string; heads_up?: string | null } = {}
+  if (isLead) {
+    structured = { heads_up: (raw_answers as Record<string, string>)?.why_it_matters ?? null }
+  } else {
+    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+
+    const prompt = `Você é um assistente especializado em turismo de luxo. Com base nas respostas do travel advisor abaixo sobre uma visita, extraia as informações estruturadas.
 
 Respostas do advisor:
 ${Object.entries(raw_answers as Record<string, string>).map(([k, v]) => `${k}: ${v}`).join('\n')}
@@ -74,25 +95,25 @@ ${Object.entries(raw_answers as Record<string, string>).map(([k, v]) => `${k}: $
 Retorne APENAS um JSON válido com esta estrutura:
 {
   "highlights": ["array de 3 a 5 pontos mais relevantes — específicos, úteis para vender ao cliente"],
-  "client_profile": "perfil ideal em 1-2 frases — quem deve ir a este hotel?",
-  "must_experience": "UMA experiência obrigatória no hotel",
+  "client_profile": "perfil ideal em 1-2 frases — quem deve se beneficiar disso?",
+  "must_experience": "UMA experiência obrigatória, se aplicável (ou null)",
   "heads_up": "ressalva ou informação importante (ou null se não houver)"
 }`
 
-  const extraction = await anthropic.messages.create({
-    model: 'claude-haiku-4-5-20251001',
-    max_tokens: 800,
-    messages: [{ role: 'user', content: prompt }],
-  })
+    const extraction = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 800,
+      messages: [{ role: 'user', content: prompt }],
+    })
 
-  let structured: { highlights?: string[]; client_profile?: string; must_experience?: string; heads_up?: string } = {}
-  try {
-    const textBlock = extraction.content.find(b => b.type === 'text')
-    if (textBlock?.type === 'text') {
-      const match = textBlock.text.match(/\{[\s\S]*\}/)
-      if (match) structured = JSON.parse(match[0])
-    }
-  } catch { /* keep empty */ }
+    try {
+      const textBlock = extraction.content.find(b => b.type === 'text')
+      if (textBlock?.type === 'text') {
+        const match = textBlock.text.match(/\{[\s\S]*\}/)
+        if (match) structured = JSON.parse(match[0])
+      }
+    } catch { /* keep empty */ }
+  }
 
   const { rows: userRows } = await sql`
     SELECT id, name, agency_name FROM tdg_users WHERE email = ${session.user?.email ?? ''} LIMIT 1
@@ -101,16 +122,17 @@ Retorne APENAS um JSON válido com esta estrutura:
 
   const { rows } = await sql`
     INSERT INTO tdg_hotel_reviews
-      (hotel_name, country, agent_id, agent_name, agency_name, visit_date, visit_type,
+      (hotel_name, entity_type, country, agent_id, agent_name, agency_name, visit_date, visit_type,
        overall_rating, rooms_rating, service_rating, food_rating, location_rating,
-       highlights, client_profile, must_experience, heads_up, raw_answers)
+       highlights, client_profile, must_experience, heads_up, status, raw_answers)
     VALUES (
-      ${hotel_name}, ${country || null}, ${user.id}, ${user.name}, ${user.agency_name},
+      ${hotel_name}, ${entity_type || 'hotel'}, ${country || null}, ${user.id}, ${user.name}, ${user.agency_name},
       ${visit_date || null}, ${visit_type || null},
       ${overall_rating}, ${rooms_rating || null}, ${service_rating || null},
       ${food_rating || null}, ${location_rating || null},
       ${JSON.stringify(structured.highlights ?? [])}, ${structured.client_profile ?? null},
       ${structured.must_experience ?? null}, ${structured.heads_up ?? null},
+      ${status},
       ${JSON.stringify(raw_answers)}
     )
     RETURNING *
