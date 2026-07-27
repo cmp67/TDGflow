@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Building2, Crown, Calendar, Save, Loader, Eye, EyeOff, CheckCircle } from 'lucide-react'
 import UserAvatar from '@/components/UserAvatar'
 import GuestActivationCard from '@/components/billing/GuestActivationCard'
+import BrandSettings from '@/components/BrandSettings'
 
 interface Member {
   id: string
@@ -234,6 +235,9 @@ export default function AgenciaView({ user, members }: Props) {
           </>
         )}
       </div>
+
+      {/* DNA de marca — logo + cor de destaque da agência */}
+      <BrandSettings userRole={user.role} />
 
       {/* GUEST showcase + activation request */}
       <GuestActivationCard userRole={user.role} />

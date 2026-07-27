@@ -82,22 +82,29 @@ const NAV_GROUPS_AGENCY_ADMIN: NavGroup[] = [
   { labelKey: 'nav.groupRecursos', items: RESOURCE_ITEMS },
 ]
 
+interface Brand {
+  logoUrl:        string | null
+  primaryColor:   string | null
+  secondaryColor: string | null
+}
+
 interface Props {
   children: React.ReactNode
   user: { name: string; agency: string; role: string; avatar_url?: string | null }
+  brand?: Brand | null
 }
 
-export default function FlowShell({ children, user }: Props) {
+export default function FlowShell({ children, user, brand }: Props) {
   return (
     <LanguageProvider>
       <ToastProvider>
-        <FlowShellInner user={user}>{children}</FlowShellInner>
+        <FlowShellInner user={user} brand={brand}>{children}</FlowShellInner>
       </ToastProvider>
     </LanguageProvider>
   )
 }
 
-function FlowShellInner({ children, user }: Props) {
+function FlowShellInner({ children, user, brand }: Props) {
   const pathname = usePathname()
   const [showMore, setShowMore] = useState(false)
   const { lang, setLang, tr } = useLanguage()
@@ -121,24 +128,39 @@ function FlowShellInner({ children, user }: Props) {
         className="desktop-only"
         style={{ flexDirection: 'column', flexShrink: 0, width: 208, background: 'var(--tdgflow-surface)', borderRight: '1px solid var(--tdgflow-border)' }}
       >
-        {/* Logotype — a agência é protagonista, "Flow" fica em segundo plano
-            até termos upload de logo por agência (feature futura, precisa de
-            infra nova: coluna no banco + storage + tela de configuração) */}
+        {/* Logotype — pele da agência (logo + acento de cor) sobre o
+            esqueleto Bemgsy, nunca o contrário. "powered by TDG Flow" fica
+            sempre visível: white-label de pele, não de estrutura — a
+            agência nunca deixa de ser reconhecível como família Bemgsy. */}
         <div className="px-6 pt-7 pb-6 flex-shrink-0">
-          <p style={{
-            fontFamily: 'var(--tdgflow-font-sans)', fontSize: '0.8125rem', fontWeight: 700,
-            letterSpacing: '-0.01em', color: 'var(--tdgflow-text-primary)', lineHeight: 1.25,
-            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', margin: 0,
-          }}>
-            {user.agency || 'TDG'}
-          </p>
+          {brand?.logoUrl ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={brand.logoUrl}
+              alt={user.agency || 'Logo da agência'}
+              style={{ maxHeight: 28, maxWidth: '100%', objectFit: 'contain', display: 'block' }}
+            />
+          ) : (
+            <p style={{
+              fontFamily: 'var(--tdgflow-font-sans)', fontSize: '0.8125rem', fontWeight: 700,
+              letterSpacing: '-0.01em', color: 'var(--tdgflow-text-primary)', lineHeight: 1.25,
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', margin: 0,
+            }}>
+              {user.agency || 'TDG'}
+            </p>
+          )}
           <p style={{
             fontFamily: 'var(--tdgflow-font-sans)', fontSize: '0.5625rem', fontWeight: 400,
             letterSpacing: '0.1em', color: 'var(--tdgflow-text-faint)', textTransform: 'uppercase', margin: '2px 0 0',
           }}>
             powered by TDG Flow
           </p>
-          <div style={{ marginTop: 6, height: '1px', background: 'linear-gradient(90deg, var(--tdgflow-navy-dim) 0%, transparent 100%)', width: 48 }} />
+          <div style={{
+            marginTop: 6, height: '1px', width: 48,
+            background: brand?.primaryColor
+              ? `linear-gradient(90deg, ${brand.primaryColor} 0%, transparent 100%)`
+              : 'linear-gradient(90deg, var(--tdgflow-navy-dim) 0%, transparent 100%)',
+          }} />
         </div>
 
         {/* Primary nav */}

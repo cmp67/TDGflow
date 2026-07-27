@@ -110,6 +110,42 @@ export async function GET(req: Request) {
     )
   `
 
+  steps.push('create tdg_brand')
+  await sql`
+    CREATE TABLE IF NOT EXISTS tdg_brand (
+      id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      agency_id        UUID NOT NULL UNIQUE REFERENCES tdg_agencies(id) ON DELETE CASCADE,
+      logo_url         TEXT,
+      primary_color    TEXT,
+      secondary_color  TEXT,
+      footer_text      TEXT,
+      updated_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+      created_at       TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `
+  await sql`CREATE INDEX IF NOT EXISTS idx_tdg_brand_agency_id ON tdg_brand (agency_id)`
+
+  // tdg_knowledge nunca teve bootstrap em código nenhum — só existia em
+  // produção porque foi criada fora de banda (achado da migration 009).
+  // Um ambiente novo rodando /api/setup nunca teria essa tabela até agora.
+  steps.push('create tdg_knowledge')
+  await sql`
+    CREATE TABLE IF NOT EXISTS tdg_knowledge (
+      id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      hotel_id      UUID REFERENCES tdg_hotels(id) ON DELETE CASCADE,
+      type          TEXT NOT NULL CHECK (type IN ('fact', 'pdf', 'link', 'video', 'note')),
+      title         TEXT NOT NULL,
+      content       TEXT,
+      url           TEXT,
+      created_at    TIMESTAMPTZ DEFAULT now(),
+      source_date   DATE,
+      source_author TEXT
+    )
+  `
+  await sql`ALTER TABLE tdg_knowledge ADD COLUMN IF NOT EXISTS duration_seconds NUMERIC`
+  await sql`ALTER TABLE tdg_knowledge ADD COLUMN IF NOT EXISTS agreed_with_hotel BOOLEAN NOT NULL DEFAULT false`
+  await sql`CREATE INDEX IF NOT EXISTS idx_tdg_knowledge_hotel_type ON tdg_knowledge (hotel_id, type)`
+
   steps.push('seed admin user')
   const adminHash = await hash('tdgadmin2026', 12)
   await sql`

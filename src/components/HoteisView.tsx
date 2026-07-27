@@ -10,6 +10,28 @@ import {
 } from 'lucide-react'
 import { useRef } from 'react'
 import Link from 'next/link'
+import { readVideoDurationSeconds, MAX_VIDEO_DURATION_SECONDS } from '@/lib/video-upload'
+
+/* ── Ícones próprios pra vídeo — traço só, sem emoji/biblioteca genérica
+   (regra de personalidade do design system Bemgsy, mesma família visual do
+   sprite em DicasView.tsx). ────────────────────────────────────────── */
+function IconPlayClip({ size = 14, style }: { size?: number; style?: React.CSSProperties }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" style={style}>
+      <rect x="3" y="6" width="14" height="12" rx="2" />
+      <path d="M17 10l4-2.5v9L17 14" />
+      <path d="M8.5 10.5v3l3-1.5z" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+function IconHandshake({ size = 14, style }: { size?: number; style?: React.CSSProperties }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" style={style}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M8 12.3l2.4 2.4 5.6-6.2" />
+    </svg>
+  )
+}
 
 /* ── Types ──────────────────────────────────────────────────────── */
 interface Hotel {
@@ -475,6 +497,275 @@ function AddContactForm({ hotelId, onSaved }: { hotelId: string; onSaved: (c: Ho
   )
 }
 
+/* ── Vídeos da rede ─────────────────────────────────────────────────────
+   Nasce dentro da ficha do hotel, mesmo padrão de nesting dos contatos —
+   nunca uma galeria solta no menu. tdg_knowledge já suportava type=video
+   via Vercel Blob, mas era admin-only (KnowledgeAdmin.tsx); aqui abre pro
+   membro comum, com o limite de 30s por clipe e o aceite explícito do
+   hotel antes do vídeo circular além da rede interna. ─────────────────── */
+interface KnowledgeVideo {
+  id: string
+  hotel_id: string
+  title: string
+  url: string
+  duration_seconds: number | null
+  agreed_with_hotel: boolean
+  source_date: string | null   // filmado em
+  source_author: string | null // quem filmou
+  created_at: string
+}
+
+function fmtVideoDate(iso: string | null) {
+  if (!iso) return null
+  return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+function AddVideoForm({ hotelId, onSaved, onCancel }: {
+  hotelId: string
+  onSaved: (v: KnowledgeVideo) => void
+  onCancel: () => void
+}) {
+  const [file, setFile] = useState<File | null>(null)
+  const [duration, setDuration] = useState<number | null>(null)
+  const [title, setTitle] = useState('')
+  const [filmedAt, setFilmedAt] = useState('')
+  const [agreed, setAgreed] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  async function handleFile(f: File) {
+    setError('')
+    setFile(f)
+    setDuration(null)
+    try {
+      const d = await readVideoDurationSeconds(f)
+      setDuration(d)
+      if (d > MAX_VIDEO_DURATION_SECONDS) {
+        setError(`Esse vídeo tem ${Math.round(d)}s — o limite é ${MAX_VIDEO_DURATION_SECONDS}s por clipe. Escolha um trecho mais curto.`)
+      }
+    } catch {
+      setError('Não foi possível ler a duração do vídeo. Tente outro arquivo.')
+    }
+  }
+
+  const canSave = !!file && duration !== null && duration <= MAX_VIDEO_DURATION_SECONDS
+    && title.trim() && filmedAt && agreed
+
+  async function save() {
+    if (!canSave || !file) return
+    setSaving(true)
+    setError('')
+    try {
+      const fd = new FormData()
+      fd.append('hotel_id', hotelId)
+      fd.append('title', title.trim())
+      fd.append('file', file)
+      fd.append('duration_seconds', String(duration))
+      fd.append('agreed_with_hotel', 'true')
+      fd.append('filmed_at', filmedAt)
+      const res = await fetch('/api/knowledge', { method: 'POST', body: fd })
+      const data = await res.json()
+      if (!res.ok) { setError(data.error ?? 'Erro ao enviar o vídeo.'); setSaving(false); return }
+      onSaved(data.item)
+    } catch {
+      setError('Erro ao enviar. Tente novamente.')
+    }
+    setSaving(false)
+  }
+
+  return (
+    <div style={{ background: 'var(--tdgflow-surface-high)', border: '1px solid var(--tdgflow-border)', borderRadius: 12, padding: '14px 16px', marginTop: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <p style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--tdgflow-text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+          Novo vídeo — até {MAX_VIDEO_DURATION_SECONDS}s
+        </p>
+        <button onClick={onCancel} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tdgflow-text-muted)', padding: 2 }}>
+          <X size={14} />
+        </button>
+      </div>
+
+      <div
+        onClick={() => fileRef.current?.click()}
+        style={{
+          border: '2px dashed var(--tdgflow-border)', borderRadius: 10, padding: '16px', textAlign: 'center',
+          cursor: 'pointer', marginBottom: 10, background: 'var(--tdgflow-surface)',
+        }}
+      >
+        <input ref={fileRef} type="file" accept="video/*" style={{ display: 'none' }}
+          onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f) }} />
+        {file
+          ? <p style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-primary)', fontWeight: 500 }}>
+              {file.name}{duration !== null && ` · ${Math.round(duration)}s`}
+            </p>
+          : <p style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-muted)' }}>Toque pra escolher um vídeo curto</p>
+        }
+      </div>
+
+      <input
+        className="input"
+        placeholder="Título (ex: Vista da suíte master, Tour pelo restaurante...)"
+        value={title}
+        onChange={e => setTitle(e.target.value)}
+        style={{ width: '100%', marginBottom: 8, fontSize: '0.8125rem' }}
+      />
+
+      <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+        <div style={{ flex: 1 }}>
+          <label style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)', display: 'block', marginBottom: 3 }}>Filmado em</label>
+          <input className="input" type="date" value={filmedAt} onChange={e => setFilmedAt(e.target.value)} style={{ width: '100%', fontSize: '0.8125rem' }} />
+        </div>
+      </div>
+
+      <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 12, cursor: 'pointer' }}>
+        <input type="checkbox" checked={agreed} onChange={e => setAgreed(e.target.checked)} style={{ marginTop: 2 }} />
+        <span style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-secondary)', lineHeight: 1.4 }}>
+          Combinei com o hotel — esse vídeo pode circular além da rede interna e aparecer pro cliente final.
+        </span>
+      </label>
+
+      {error && <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-error)', marginBottom: 10 }}>{error}</p>}
+
+      <button
+        onClick={save}
+        disabled={!canSave || saving}
+        className="btn-gold"
+        style={{ width: '100%', justifyContent: 'center', padding: '9px 16px', opacity: canSave ? 1 : 0.5 }}
+      >
+        {saving ? <><Loader2 size={13} className="animate-spin" /> Enviando…</> : 'Publicar vídeo'}
+      </button>
+    </div>
+  )
+}
+
+function HotelVideos({ hotelId }: { hotelId: string }) {
+  const [videos, setVideos] = useState<KnowledgeVideo[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  const fetchVideos = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/knowledge?hotel_id=${hotelId}&type=video`)
+      const data = await res.json()
+      setVideos(data.items ?? [])
+    } catch { /* silent */ }
+    setLoading(false)
+  }, [hotelId])
+
+  useEffect(() => { fetchVideos() }, [fetchVideos])
+
+  async function deleteVideo(id: string) {
+    setDeletingId(id)
+    await fetch('/api/knowledge', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
+    setVideos(prev => prev.filter(v => v.id !== id))
+    setDeletingId(null)
+  }
+
+  function onVideoSaved(v: KnowledgeVideo) {
+    setVideos(prev => [v, ...prev])
+    setShowAddForm(false)
+  }
+
+  return (
+    <div style={{ marginBottom: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <p style={{ fontSize: '0.5875rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <IconPlayClip size={11} />
+          Vídeos da rede
+        </p>
+        <button onClick={() => setShowAddForm(s => !s)} className="btn-ghost" style={{ padding: '4px 10px', fontSize: '0.75rem', gap: 4 }}>
+          <Plus size={12} /> {showAddForm ? 'Cancelar' : 'Adicionar'}
+        </button>
+      </div>
+
+      {loading && (
+        <div style={{ textAlign: 'center', padding: '16px 0' }}>
+          <Loader2 size={16} className="animate-spin" style={{ color: 'var(--tdgflow-text-muted)', margin: '0 auto' }} />
+        </div>
+      )}
+
+      {!loading && videos.length === 0 && !showAddForm && (
+        <button
+          onClick={() => setShowAddForm(true)}
+          style={{
+            width: '100%', textAlign: 'center', padding: '16px',
+            border: '1px dashed var(--tdgflow-border)', borderRadius: 12,
+            background: 'transparent', cursor: 'pointer', color: 'var(--tdgflow-text-muted)',
+            fontSize: '0.8125rem',
+          }}
+        >
+          <IconPlayClip size={20} style={{ margin: '0 auto 6px', color: 'var(--tdgflow-border-light)' }} />
+          <p>Nenhum vídeo ainda.</p>
+          <p style={{ fontSize: '0.75rem', marginTop: 2 }}>Suba um clipe de até {MAX_VIDEO_DURATION_SECONDS}s de uma visita real.</p>
+        </button>
+      )}
+
+      <AnimatePresence>
+        {videos.map(v => (
+          <motion.div
+            key={v.id}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+            style={{
+              display: 'flex', alignItems: 'flex-start', gap: 12,
+              padding: '10px 14px', borderRadius: 12,
+              border: '1px solid var(--tdgflow-border)', background: 'var(--tdgflow-surface-high)',
+              marginBottom: 8,
+            }}
+          >
+            <a
+              href={v.url} target="_blank" rel="noreferrer"
+              style={{
+                width: 44, height: 44, borderRadius: 10, flexShrink: 0,
+                background: 'var(--tdgflow-navy-subtle)', border: '1px solid var(--tdgflow-navy-ring)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >
+              <IconPlayClip size={18} style={{ color: 'var(--tdgflow-navy)' }} />
+            </a>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)', lineHeight: 1.2 }}>{v.title}</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, flexWrap: 'wrap' }}>
+                {v.duration_seconds !== null && (
+                  <span style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)' }}>{Math.round(v.duration_seconds)}s</span>
+                )}
+                {v.source_date && (
+                  <span style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)' }}>· filmado {fmtVideoDate(v.source_date)}</span>
+                )}
+                {v.agreed_with_hotel && (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: '0.6875rem', color: 'var(--tdgflow-success)' }}>
+                    <IconHandshake size={10} /> combinado com o hotel
+                  </span>
+                )}
+              </div>
+              {v.source_author && (
+                <p style={{ fontSize: '0.625rem', color: 'var(--tdgflow-text-muted)', marginTop: 5, letterSpacing: '0.02em' }}>
+                  Filmado por {v.source_author}
+                </p>
+              )}
+            </div>
+            <button
+              onClick={() => deleteVideo(v.id)}
+              disabled={deletingId === v.id}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, flexShrink: 0 }}
+            >
+              {deletingId === v.id
+                ? <Loader2 size={13} className="animate-spin" style={{ color: 'var(--tdgflow-text-muted)' }} />
+                : <Trash2 size={13} style={{ color: 'var(--tdgflow-border-light)' }} />
+              }
+            </button>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+
+      {showAddForm && <AddVideoForm hotelId={hotelId} onSaved={onVideoSaved} onCancel={() => setShowAddForm(false)} />}
+    </div>
+  )
+}
+
 /* ── Hotel detail sheet ─────────────────────────────────────────── */
 function HotelDetail({ hotel, onClose }: { hotel: Hotel; onClose: () => void }) {
   const [contacts, setContacts] = useState<HotelContact[]>([])
@@ -738,6 +1029,9 @@ function HotelDetail({ hotel, onClose }: { hotel: Hotel; onClose: () => void }) 
               <AddContactForm hotelId={hotel.id} onSaved={onContactSaved} />
             )}
           </div>
+
+          {/* ── Vídeos da rede ──────────────────────────────────────── */}
+          <HotelVideos hotelId={hotel.id} />
 
           {/* Gallery links */}
           {hotel.gallery.length > 0 && (
