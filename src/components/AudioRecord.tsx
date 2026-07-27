@@ -119,16 +119,16 @@ export default function AudioRecord({ defaultAgentName = '', onSaved, onClose }:
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           className="w-full max-w-sm rounded-2xl p-8 text-center space-y-4"
-          style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+          style={{ background: 'var(--tdgflow-surface)', border: '1px solid var(--tdgflow-border)' }}
         >
           <div
             className="w-14 h-14 rounded-full flex items-center justify-center mx-auto"
             style={{ background: 'rgba(134,239,172,0.10)' }}
           >
-            <CheckCircle size={32} style={{ color: 'var(--success)' }} />
+            <CheckCircle size={32} style={{ color: 'var(--tdgflow-success)' }} />
           </div>
-          <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>Áudio salvo</p>
-          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+          <p className="font-semibold" style={{ color: 'var(--tdgflow-text-primary)' }}>Áudio salvo</p>
+          <p className="text-sm" style={{ color: 'var(--tdgflow-text-muted)' }}>
             Você pode transcrever depois na fila de áudios.
           </p>
           <div className="flex gap-2 pt-2">
@@ -150,13 +150,13 @@ export default function AudioRecord({ defaultAgentName = '', onSaved, onClose }:
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-xl rounded-2xl overflow-hidden"
-        style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+        style={{ background: 'var(--tdgflow-surface)', border: '1px solid var(--tdgflow-border)' }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
-          <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Registrar Reunião</h2>
+        <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--tdgflow-border)' }}>
+          <h2 className="text-base font-semibold" style={{ color: 'var(--tdgflow-text-primary)' }}>Registrar Reunião</h2>
           <button onClick={onClose} className="btn-ghost" style={{ padding: '4px', border: 'none' }}>
-            <X size={18} style={{ color: 'var(--text-muted)' }} />
+            <X size={18} style={{ color: 'var(--tdgflow-text-muted)' }} />
           </button>
         </div>
 
@@ -164,7 +164,7 @@ export default function AudioRecord({ defaultAgentName = '', onSaved, onClose }:
           {/* Participants */}
           <div className="space-y-3">
             <div>
-              <label className="text-xs font-medium uppercase tracking-wider mb-1.5 block" style={{ color: 'var(--text-muted)' }}>
+              <label className="text-xs font-medium uppercase tracking-wider mb-1.5 block" style={{ color: 'var(--tdgflow-text-muted)' }}>
                 Agente
               </label>
               <input
@@ -176,7 +176,7 @@ export default function AudioRecord({ defaultAgentName = '', onSaved, onClose }:
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-medium uppercase tracking-wider mb-1.5 block" style={{ color: 'var(--text-muted)' }}>
+                <label className="text-xs font-medium uppercase tracking-wider mb-1.5 block" style={{ color: 'var(--tdgflow-text-muted)' }}>
                   Interlocutor
                 </label>
                 <input
@@ -187,7 +187,7 @@ export default function AudioRecord({ defaultAgentName = '', onSaved, onClose }:
                 />
               </div>
               <div>
-                <label className="text-xs font-medium uppercase tracking-wider mb-1.5 block" style={{ color: 'var(--text-muted)' }}>
+                <label className="text-xs font-medium uppercase tracking-wider mb-1.5 block" style={{ color: 'var(--tdgflow-text-muted)' }}>
                   Empresa
                 </label>
                 <input
@@ -203,7 +203,7 @@ export default function AudioRecord({ defaultAgentName = '', onSaved, onClose }:
           {/* Mode toggle */}
           <div
             className="flex gap-1 p-1 rounded-xl"
-            style={{ background: 'var(--surface-high)' }}
+            style={{ background: 'var(--tdgflow-surface-high)' }}
           >
             {(['record', 'upload'] as InputMode[]).map(m => (
               <button
@@ -212,8 +212,8 @@ export default function AudioRecord({ defaultAgentName = '', onSaved, onClose }:
                 className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all"
                 style={
                   mode === m
-                    ? { background: 'var(--surface)', color: 'var(--text-primary)', boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }
-                    : { color: 'var(--text-muted)' }
+                    ? { background: 'var(--tdgflow-surface)', color: 'var(--tdgflow-text-primary)', boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }
+                    : { color: 'var(--tdgflow-text-muted)' }
                 }
               >
                 {m === 'record' ? <><Mic size={14} /> Gravar</> : <><Upload size={14} /> Enviar arquivo</>}
@@ -230,15 +230,15 @@ export default function AudioRecord({ defaultAgentName = '', onSaved, onClose }:
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 className="rounded-xl p-6 text-center space-y-3"
-                style={{ border: '1px dashed var(--border-light)', background: 'var(--surface-high)' }}
+                style={{ border: '1px dashed var(--tdgflow-border-light)', background: 'var(--tdgflow-surface-high)' }}
               >
                 {!recording && !stopping && !recordedFile && (
                   <>
                     <div
                       className="w-14 h-14 rounded-full flex items-center justify-center mx-auto"
-                      style={{ background: 'var(--gold-subtle)' }}
+                      style={{ background: 'var(--tdgflow-navy-subtle)' }}
                     >
-                      <Mic size={24} style={{ color: 'var(--gold)' }} />
+                      <Mic size={24} style={{ color: 'var(--tdgflow-navy)' }} />
                     </div>
                     <button onClick={startRecording} className="btn-gold mx-auto">
                       <Circle size={12} className="fill-current" /> Iniciar gravação
@@ -257,38 +257,38 @@ export default function AudioRecord({ defaultAgentName = '', onSaved, onClose }:
                         className="w-14 h-14 rounded-full flex items-center justify-center mx-auto recording-ring"
                         style={{ background: 'rgba(248,113,113,0.10)' }}
                       >
-                        <Mic size={24} style={{ color: 'var(--error)' }} />
+                        <Mic size={24} style={{ color: 'var(--tdgflow-error)' }} />
                       </div>
                       <p
                         className="text-2xl font-mono font-semibold"
-                        style={{ color: crit ? 'var(--error)' : 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}
+                        style={{ color: crit ? 'var(--tdgflow-error)' : 'var(--tdgflow-text-primary)', fontVariantNumeric: 'tabular-nums' }}
                       >
                         {formatSeconds(recordingSeconds)}
                       </p>
                       <div className="w-full space-y-1.5">
-                        <div className="h-1 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
+                        <div className="h-1 rounded-full overflow-hidden" style={{ background: 'var(--tdgflow-border)' }}>
                           <motion.div
                             className="h-full rounded-full"
                             style={{
-                              background: crit ? 'var(--error)' : warn ? 'var(--warning)' : 'var(--success)',
+                              background: crit ? 'var(--tdgflow-error)' : warn ? 'var(--tdgflow-warning)' : 'var(--tdgflow-success)',
                               width: `${pct}%`,
                             }}
                             transition={{ duration: 1 }}
                           />
                         </div>
                         {crit && (
-                          <p className="text-xs font-medium animate-pulse" style={{ color: 'var(--error)' }}>
+                          <p className="text-xs font-medium animate-pulse" style={{ color: 'var(--tdgflow-error)' }}>
                             Limite quase atingido — pare agora!
                           </p>
                         )}
                         {warn && !crit && (
-                          <p className="text-xs" style={{ color: 'var(--warning)' }}>Menos de 5 min restantes</p>
+                          <p className="text-xs" style={{ color: 'var(--tdgflow-warning)' }}>Menos de 5 min restantes</p>
                         )}
                       </div>
                       <button
                         onClick={stopRecording}
                         className="inline-flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold transition-colors"
-                        style={{ background: 'var(--error)', color: 'var(--surface)' }}
+                        style={{ background: 'var(--tdgflow-error)', color: 'var(--tdgflow-surface)' }}
                       >
                         <Square size={12} className="fill-current" /> Parar
                       </button>
@@ -297,7 +297,7 @@ export default function AudioRecord({ defaultAgentName = '', onSaved, onClose }:
                 })()}
 
                 {stopping && (
-                  <p className="py-2 text-sm" style={{ color: 'var(--text-muted)' }}>Processando gravação...</p>
+                  <p className="py-2 text-sm" style={{ color: 'var(--tdgflow-text-muted)' }}>Processando gravação...</p>
                 )}
 
                 {!recording && !stopping && recordedFile && (
@@ -306,15 +306,15 @@ export default function AudioRecord({ defaultAgentName = '', onSaved, onClose }:
                       className="w-14 h-14 rounded-full flex items-center justify-center mx-auto"
                       style={{ background: 'rgba(134,239,172,0.10)' }}
                     >
-                      <Mic size={24} style={{ color: 'var(--success)' }} />
+                      <Mic size={24} style={{ color: 'var(--tdgflow-success)' }} />
                     </div>
-                    <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                    <p className="text-sm font-medium" style={{ color: 'var(--tdgflow-text-primary)' }}>
                       {formatSeconds(recordingSeconds)} &middot; {(recordedFile.size / 1024 / 1024).toFixed(1)} MB
                     </p>
                     <button
                       onClick={() => { setRecordedFile(null); setRecordingSeconds(0) }}
                       className="text-xs underline"
-                      style={{ color: 'var(--text-muted)' }}
+                      style={{ color: 'var(--tdgflow-text-muted)' }}
                     >
                       Gravar novamente
                     </button>
@@ -330,21 +330,21 @@ export default function AudioRecord({ defaultAgentName = '', onSaved, onClose }:
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 className="rounded-xl p-6 text-center cursor-pointer transition-all"
-                style={{ border: '1px dashed var(--border-light)', background: 'var(--surface-high)' }}
+                style={{ border: '1px dashed var(--tdgflow-border-light)', background: 'var(--tdgflow-surface-high)' }}
                 onClick={() => fileRef.current?.click()}
-                onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--gold-dim)')}
-                onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border-light)')}
+                onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--tdgflow-navy-dim)')}
+                onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--tdgflow-border-light)')}
               >
                 <input ref={fileRef} type="file" accept="audio/*" className="hidden"
                   onChange={e => setUploadFile(e.target.files?.[0] || null)} />
                 {uploadFile ? (
-                  <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                  <p className="text-sm font-medium" style={{ color: 'var(--tdgflow-text-primary)' }}>
                     {uploadFile.name} &middot; {(uploadFile.size / 1024 / 1024).toFixed(1)} MB
                   </p>
                 ) : (
                   <>
-                    <Upload size={28} className="mx-auto mb-2" style={{ color: 'var(--text-muted)' }} />
-                    <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Clique para selecionar áudio</p>
+                    <Upload size={28} className="mx-auto mb-2" style={{ color: 'var(--tdgflow-text-muted)' }} />
+                    <p className="text-sm" style={{ color: 'var(--tdgflow-text-muted)' }}>Clique para selecionar áudio</p>
                   </>
                 )}
               </motion.div>

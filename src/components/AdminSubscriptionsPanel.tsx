@@ -52,18 +52,18 @@ export default function AdminSubscriptionsPanel() {
   if (!agencies && !error) {
     return (
       <div className="flex items-center justify-center py-10">
-        <Loader size={18} className="animate-spin" style={{ color: 'var(--text-muted)' }} />
+        <Loader size={18} className="animate-spin" style={{ color: 'var(--tdgflow-text-muted)' }} />
       </div>
     )
   }
 
-  if (error) return <p className="text-xs" style={{ color: 'var(--error)' }}>{error}</p>
+  if (error) return <p className="text-xs" style={{ color: 'var(--tdgflow-error)' }}>{error}</p>
 
   const activeCount = agencies!.filter(a => a.status === 'authorized').length
 
   return (
     <div className="space-y-3">
-      <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+      <p className="text-sm" style={{ color: 'var(--tdgflow-text-muted)' }}>
         {activeCount} de {agencies!.length} agências com assinatura ativa. Status sincronizado direto do Mercado Pago via webhook.
       </p>
 
@@ -75,18 +75,18 @@ export default function AdminSubscriptionsPanel() {
             <div
               key={a.id}
               className="flex items-center gap-3 p-3 rounded-xl flex-wrap"
-              style={{ background: 'var(--surface-high)', border: '1px solid var(--border)' }}
+              style={{ background: 'var(--tdgflow-surface-high)', border: '1px solid var(--tdgflow-border)' }}
             >
               <div className="flex-1 min-w-0">
-                <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{a.name}</span>
+                <span className="text-sm font-medium" style={{ color: 'var(--tdgflow-text-primary)' }}>{a.name}</span>
               </div>
               <span className={`badge ${meta.badge}`} style={{ fontSize: '0.6rem', display: 'flex', alignItems: 'center', gap: 3 }}>
                 <Icon size={11} /> {meta.label}
               </span>
-              <span className="text-xs" style={{ color: 'var(--text-muted)', minWidth: 76, textAlign: 'right' }}>
+              <span className="text-xs" style={{ color: 'var(--tdgflow-text-muted)', minWidth: 76, textAlign: 'right' }}>
                 {fmtAmount(a.transactionAmount)}
               </span>
-              <span className="text-xs" style={{ color: 'var(--text-faint)', minWidth: 96, textAlign: 'right' }}>
+              <span className="text-xs" style={{ color: 'var(--tdgflow-text-faint)', minWidth: 96, textAlign: 'right' }}>
                 {a.status === 'authorized' ? `próx.: ${fmtDate(a.nextPaymentDate)}` : ''}
               </span>
             </div>

@@ -68,10 +68,10 @@ export default function EquipeView({ agencyName }: Props) {
       <div className="flex items-start justify-between">
         <div>
           <p className="section-label mb-1">{agencyName || 'Minha Agência'}</p>
-          <h1 className="text-xl font-semibold" style={{ color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+          <h1 className="text-xl font-semibold" style={{ color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.02em' }}>
             Minha Equipe
           </h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-sm mt-1" style={{ color: 'var(--tdgflow-text-muted)' }}>
             Convide novos membros para a sua agência — cada link é pessoal e de uso único.
           </p>
         </div>
@@ -87,45 +87,45 @@ export default function EquipeView({ agencyName }: Props) {
       </div>
 
       {inviteError && (
-        <p className="text-xs" style={{ color: 'var(--error)' }}>{inviteError}</p>
+        <p className="text-xs" style={{ color: 'var(--tdgflow-error)' }}>{inviteError}</p>
       )}
 
       {inviteLink && (
         <div className="card space-y-2">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Link de convite gerado</h3>
+            <h3 className="text-sm font-semibold" style={{ color: 'var(--tdgflow-text-primary)' }}>Link de convite gerado</h3>
             <button
               onClick={() => setInviteLink(null)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 2 }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tdgflow-text-muted)', padding: 2 }}
               aria-label="Fechar"
             >
               <X size={14} />
             </button>
           </div>
-          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-xs" style={{ color: 'var(--tdgflow-text-muted)' }}>
             Envie este link para a pessoa que você quer adicionar à equipe. Ele expira em 30 dias e só pode ser usado uma vez.
           </p>
           <div className="flex gap-2">
             <input className="input flex-1" readOnly value={inviteLink} style={{ fontSize: '0.75rem' }} />
             <button onClick={copyLink} className="btn-ghost" style={{ padding: '8px 12px', fontSize: '0.8125rem', flexShrink: 0 }}>
-              {copied ? <Check size={13} style={{ color: 'var(--success)' }} /> : <Copy size={13} />}
+              {copied ? <Check size={13} style={{ color: 'var(--tdgflow-success)' }} /> : <Copy size={13} />}
               {copied ? 'Copiado!' : 'Copiar'}
             </button>
           </div>
         </div>
       )}
 
-      {loadError && <p className="text-xs" style={{ color: 'var(--error)' }}>{loadError}</p>}
+      {loadError && <p className="text-xs" style={{ color: 'var(--tdgflow-error)' }}>{loadError}</p>}
 
       {members === null && !loadError && (
         <div className="flex items-center justify-center py-10">
-          <Loader size={18} className="animate-spin" style={{ color: 'var(--text-muted)' }} />
+          <Loader size={18} className="animate-spin" style={{ color: 'var(--tdgflow-text-muted)' }} />
         </div>
       )}
 
       {members && (
         <div>
-          <p className="text-xs font-medium uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-xs font-medium uppercase tracking-wider mb-2" style={{ color: 'var(--tdgflow-text-muted)' }}>
             Equipe ({members.length})
           </p>
           <div className="space-y-2">
@@ -133,23 +133,23 @@ export default function EquipeView({ agencyName }: Props) {
               <div
                 key={m.id}
                 className="flex items-center gap-3 p-3 rounded-xl"
-                style={{ background: 'var(--surface-high)', border: '1px solid var(--border)', opacity: m.active ? 1 : 0.5 }}
+                style={{ background: 'var(--tdgflow-surface-high)', border: '1px solid var(--tdgflow-border)', opacity: m.active ? 1 : 0.5 }}
               >
                 <div
                   className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0"
-                  style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
+                  style={{ background: 'var(--tdgflow-surface)', border: '1px solid var(--tdgflow-border)', color: 'var(--tdgflow-text-secondary)' }}
                 >
                   {m.name[0].toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{m.name}</span>
-                    {m.role === 'agency_admin' && <Crown size={11} style={{ color: 'var(--gold)' }} />}
+                    <span className="text-sm font-medium" style={{ color: 'var(--tdgflow-text-primary)' }}>{m.name}</span>
+                    {m.role === 'agency_admin' && <Crown size={11} style={{ color: 'var(--tdgflow-navy)' }} />}
                     {!m.active && <span className="badge badge-muted" style={{ fontSize: '0.6rem' }}>inativo</span>}
                   </div>
-                  <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{m.email}</p>
+                  <p className="text-xs truncate" style={{ color: 'var(--tdgflow-text-muted)' }}>{m.email}</p>
                 </div>
-                <span className="text-xs flex-shrink-0" style={{ color: 'var(--text-muted)' }}>{formatDate(m.created_at)}</span>
+                <span className="text-xs flex-shrink-0" style={{ color: 'var(--tdgflow-text-muted)' }}>{formatDate(m.created_at)}</span>
               </div>
             ))}
           </div>

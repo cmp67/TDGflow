@@ -184,7 +184,7 @@ function HotelCard({ hotel, onClick }: { hotel: Hotel; onClick: () => void }) {
       animate={{ opacity: 1, y: 0 }}
       onClick={onClick}
       className="w-full text-left rounded-2xl overflow-hidden group"
-      style={{ background: 'var(--surface)', border: '1px solid var(--border)', cursor: 'pointer' }}
+      style={{ background: 'var(--tdgflow-surface)', cursor: 'pointer' }}
       whileHover={{ scale: 1.015, boxShadow: '0 6px 20px rgba(90,60,30,0.12)' }}
       whileTap={{ scale: 0.985 }}
       transition={{ duration: 0.16 }}
@@ -209,7 +209,7 @@ function HotelCard({ hotel, onClick }: { hotel: Hotel; onClick: () => void }) {
               {hotel.group}
             </p>
           )}
-          <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--surface)', letterSpacing: '-0.02em', lineHeight: 1.15 }}>
+          <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--tdgflow-surface)', letterSpacing: '-0.02em', lineHeight: 1.15 }}>
             {hotel.name}
           </h3>
         </div>
@@ -220,7 +220,7 @@ function HotelCard({ hotel, onClick }: { hotel: Hotel; onClick: () => void }) {
       <div style={{ padding: '10px 12px 12px', borderTop: `2px solid ${hotel.dot}` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 8 }}>
           <MapPin size={10} style={{ color: hotel.dot, flexShrink: 0 }} />
-          <span style={{ fontSize: '0.6875rem', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{hotel.location}</span>
+          <span style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{hotel.location}</span>
         </div>
         {/* Profile pills */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
@@ -230,8 +230,8 @@ function HotelCard({ hotel, onClick }: { hotel: Hotel; onClick: () => void }) {
               <span key={p} style={{
                 fontSize: '0.5625rem', fontWeight: 500, letterSpacing: '0.04em',
                 padding: '2px 7px', borderRadius: 999,
-                background: 'var(--surface-high)', border: '1px solid var(--border)',
-                color: 'var(--text-muted)',
+                background: 'var(--tdgflow-surface-high)', border: '1px solid var(--tdgflow-border)',
+                color: 'var(--tdgflow-text-muted)',
               }}>
                 {def?.emoji} {p}
               </span>
@@ -322,12 +322,12 @@ function AddContactForm({ hotelId, onSaved }: { hotelId: string; onSaved: (c: Ho
   }
 
   return (
-    <div style={{ background: 'var(--surface-high)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', marginTop: 12 }}>
+    <div style={{ background: 'var(--tdgflow-surface-high)', border: '1px solid var(--tdgflow-border)', borderRadius: 12, padding: '14px 16px', marginTop: 12 }}>
 
       {/* Mode chooser */}
       {mode === 'choose' && (
         <>
-          <p style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 12 }}>
+          <p style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--tdgflow-text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 12 }}>
             Como deseja adicionar?
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
@@ -336,30 +336,30 @@ function AddContactForm({ hotelId, onSaved }: { hotelId: string; onSaved: (c: Ho
               style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                 gap: 8, padding: '18px 12px', borderRadius: 10, cursor: 'pointer',
-                background: 'var(--surface)', border: '1px solid var(--border)',
+                background: 'var(--tdgflow-surface)', border: '1px solid var(--tdgflow-border)',
                 transition: 'all 150ms',
               }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--gold)'; (e.currentTarget as HTMLElement).style.background = 'var(--gold-subtle)' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.background = 'var(--surface)' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--tdgflow-navy)'; (e.currentTarget as HTMLElement).style.background = 'var(--tdgflow-navy-subtle)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--tdgflow-border)'; (e.currentTarget as HTMLElement).style.background = 'var(--tdgflow-surface)' }}
             >
-              <Camera size={22} style={{ color: 'var(--gold)' }} />
-              <span style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--text-primary)' }}>Fotografar cartão</span>
-              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.3 }}>Leitura automática via IA</span>
+              <Camera size={22} style={{ color: 'var(--tdgflow-navy)' }} />
+              <span style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--tdgflow-text-primary)' }}>Fotografar cartão</span>
+              <span style={{ fontSize: '0.7rem', color: 'var(--tdgflow-text-muted)', textAlign: 'center', lineHeight: 1.3 }}>Preenche os dados automaticamente</span>
             </button>
             <button
               onClick={() => setMode('manual')}
               style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                 gap: 8, padding: '18px 12px', borderRadius: 10, cursor: 'pointer',
-                background: 'var(--surface)', border: '1px solid var(--border)',
+                background: 'var(--tdgflow-surface)', border: '1px solid var(--tdgflow-border)',
                 transition: 'all 150ms',
               }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--gold)'; (e.currentTarget as HTMLElement).style.background = 'var(--gold-subtle)' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.background = 'var(--surface)' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--tdgflow-navy)'; (e.currentTarget as HTMLElement).style.background = 'var(--tdgflow-navy-subtle)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--tdgflow-border)'; (e.currentTarget as HTMLElement).style.background = 'var(--tdgflow-surface)' }}
             >
-              <PenLine size={22} style={{ color: 'var(--gold)' }} />
-              <span style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--text-primary)' }}>Inserir manualmente</span>
-              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.3 }}>Preencher os campos</span>
+              <PenLine size={22} style={{ color: 'var(--tdgflow-navy)' }} />
+              <span style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--tdgflow-text-primary)' }}>Inserir manualmente</span>
+              <span style={{ fontSize: '0.7rem', color: 'var(--tdgflow-text-muted)', textAlign: 'center', lineHeight: 1.3 }}>Preencher os campos</span>
             </button>
           </div>
         </>
@@ -369,10 +369,10 @@ function AddContactForm({ hotelId, onSaved }: { hotelId: string; onSaved: (c: Ho
       {mode === 'scan' && (
         <>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <p style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            <p style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--tdgflow-text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
               Fotografar cartão
             </p>
-            <button onClick={() => setMode('choose')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 2 }}>
+            <button onClick={() => setMode('choose')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tdgflow-text-muted)', padding: 2 }}>
               <X size={14} />
             </button>
           </div>
@@ -382,8 +382,8 @@ function AddContactForm({ hotelId, onSaved }: { hotelId: string; onSaved: (c: Ho
               {scanPreview && (
                 <img src={scanPreview} alt="cartão" style={{ width: '100%', maxHeight: 160, objectFit: 'contain', borderRadius: 8, marginBottom: 14, opacity: 0.7 }} />
               )}
-              <Loader2 size={24} className="animate-spin" style={{ color: 'var(--gold)', margin: '0 auto 10px' }} />
-              <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Lendo o cartão…</p>
+              <Loader2 size={24} className="animate-spin" style={{ color: 'var(--tdgflow-navy)', margin: '0 auto 10px' }} />
+              <p style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-muted)' }}>Lendo o cartão…</p>
             </div>
           ) : (
             <>
@@ -399,22 +399,22 @@ function AddContactForm({ hotelId, onSaved }: { hotelId: string; onSaved: (c: Ho
               <div
                 onClick={() => fileRef.current?.click()}
                 style={{
-                  border: '2px dashed var(--border-light)', borderRadius: 12, padding: '32px 20px',
+                  border: '2px dashed var(--tdgflow-border-light)', borderRadius: 12, padding: '32px 20px',
                   textAlign: 'center', cursor: 'pointer', transition: 'all 150ms',
-                  background: 'var(--surface)',
+                  background: 'var(--tdgflow-surface)',
                 }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--gold)'; (e.currentTarget as HTMLElement).style.background = 'var(--gold-subtle)' }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-light)'; (e.currentTarget as HTMLElement).style.background = 'var(--surface)' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--tdgflow-navy)'; (e.currentTarget as HTMLElement).style.background = 'var(--tdgflow-navy-subtle)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--tdgflow-border-light)'; (e.currentTarget as HTMLElement).style.background = 'var(--tdgflow-surface)' }}
               >
-                <ScanLine size={28} style={{ color: 'var(--gold)', margin: '0 auto 10px' }} />
-                <p style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-primary)', marginBottom: 4 }}>
+                <ScanLine size={28} style={{ color: 'var(--tdgflow-navy)', margin: '0 auto 10px' }} />
+                <p style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--tdgflow-text-primary)', marginBottom: 4 }}>
                   Tirar foto ou escolher imagem
                 </p>
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)' }}>
                   A IA extrai nome, cargo, email e WhatsApp automaticamente
                 </p>
               </div>
-              <button onClick={() => setMode('manual')} style={{ width: '100%', marginTop: 10, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.75rem', padding: '6px 0' }}>
+              <button onClick={() => setMode('manual')} style={{ width: '100%', marginTop: 10, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tdgflow-text-muted)', fontSize: '0.75rem', padding: '6px 0' }}>
                 Preferir inserir manualmente
               </button>
             </>
@@ -427,27 +427,27 @@ function AddContactForm({ hotelId, onSaved }: { hotelId: string; onSaved: (c: Ho
         <>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-              <p style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              <p style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--tdgflow-text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
                 {scanDone ? 'Dados extraídos — revise e salve' : 'Novo contato'}
               </p>
-              {scanDone && <CheckCircle2 size={13} style={{ color: 'var(--success)' }} />}
+              {scanDone && <CheckCircle2 size={13} style={{ color: 'var(--tdgflow-success)' }} />}
             </div>
-            <button onClick={() => { setMode('choose'); setScanPreview(null); setScanDone(false); setError('') }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 2 }}>
+            <button onClick={() => { setMode('choose'); setScanPreview(null); setScanDone(false); setError('') }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tdgflow-text-muted)', padding: 2 }}>
               <X size={14} />
             </button>
           </div>
 
           {/* Card thumbnail if scanned */}
           {scanPreview && (
-            <div style={{ marginBottom: 12, borderRadius: 8, overflow: 'hidden', border: '1px solid var(--border)', maxHeight: 100 }}>
+            <div style={{ marginBottom: 12, borderRadius: 8, overflow: 'hidden', border: '1px solid var(--tdgflow-border)', maxHeight: 100 }}>
               <img src={scanPreview} alt="cartão escaneado" style={{ width: '100%', height: 100, objectFit: 'cover' }} />
             </div>
           )}
 
           {error && (
             <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start', marginBottom: 10, padding: '8px 12px', borderRadius: 8, background: 'rgba(192,57,43,0.06)', border: '1px solid rgba(192,57,43,0.15)' }}>
-              <AlertCircle size={13} style={{ color: 'var(--error)', flexShrink: 0, marginTop: 1 }} />
-              <p style={{ fontSize: '0.75rem', color: 'var(--error)' }}>{error}</p>
+              <AlertCircle size={13} style={{ color: 'var(--tdgflow-error)', flexShrink: 0, marginTop: 1 }} />
+              <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-error)' }}>{error}</p>
             </div>
           )}
 
@@ -522,8 +522,8 @@ function HotelDetail({ hotel, onClose }: { hotel: Hotel; onClose: () => void }) 
         transition={{ type: 'spring', stiffness: 300, damping: 35 }}
         className="fixed bottom-0 inset-x-0 md:inset-x-auto md:right-0 md:top-0 md:bottom-0 z-50 flex flex-col"
         style={{
-          background: 'var(--surface)',
-          border: '1px solid var(--border)',
+          background: 'var(--tdgflow-surface)',
+          border: '1px solid var(--tdgflow-border)',
           borderBottom: 'none',
           borderRadius: '20px 20px 0 0',
           maxHeight: '94vh',
@@ -534,7 +534,7 @@ function HotelDetail({ hotel, onClose }: { hotel: Hotel; onClose: () => void }) 
       >
         {/* Handle (mobile) */}
         <div className="flex md:hidden justify-center pt-3 pb-0 flex-shrink-0">
-          <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--border)' }} />
+          <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--tdgflow-border)' }} />
         </div>
 
         {/* Hero photo */}
@@ -557,7 +557,7 @@ function HotelDetail({ hotel, onClose }: { hotel: Hotel; onClose: () => void }) 
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
           >
-            <X size={14} style={{ color: 'var(--surface)' }} />
+            <X size={14} style={{ color: 'var(--tdgflow-surface)' }} />
           </button>
           <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '12px 20px 16px' }}>
             {hotel.group && (
@@ -565,7 +565,7 @@ function HotelDetail({ hotel, onClose }: { hotel: Hotel; onClose: () => void }) 
                 {hotel.group}
               </p>
             )}
-            <h2 style={{ fontSize: 'clamp(1.2rem,5vw,1.6rem)', fontWeight: 500, color: 'var(--surface)', letterSpacing: '-0.025em', lineHeight: 1.15, marginBottom: 6 }}>
+            <h2 style={{ fontSize: 'clamp(1.2rem,5vw,1.6rem)', fontWeight: 500, color: 'var(--tdgflow-surface)', letterSpacing: '-0.025em', lineHeight: 1.15, marginBottom: 6 }}>
               {hotel.name}
             </h2>
             <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -584,8 +584,8 @@ function HotelDetail({ hotel, onClose }: { hotel: Hotel; onClose: () => void }) 
               <span key={tag} style={{
                 fontSize: '0.6875rem', fontWeight: 500, letterSpacing: '0.06em',
                 padding: '4px 10px', borderRadius: 999,
-                background: 'var(--surface-high)', border: '1px solid var(--border)',
-                color: 'var(--text-secondary)',
+                background: 'var(--tdgflow-surface-high)', border: '1px solid var(--tdgflow-border)',
+                color: 'var(--tdgflow-text-secondary)',
               }}>
                 {tag}
               </span>
@@ -593,35 +593,35 @@ function HotelDetail({ hotel, onClose }: { hotel: Hotel; onClose: () => void }) 
           </div>
 
           {/* Description */}
-          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.7, fontWeight: 400, marginBottom: 20 }}>
+          <p style={{ fontSize: '0.875rem', color: 'var(--tdgflow-text-secondary)', lineHeight: 1.7, fontWeight: 400, marginBottom: 20 }}>
             {hotel.description}
           </p>
 
           {/* Contact info */}
           <div style={{ marginBottom: 24 }}>
-            <p style={{ fontSize: '0.5875rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 10 }}>
+            <p style={{ fontSize: '0.5875rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)', marginBottom: 10 }}>
               Contato do hotel
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
               <a href={`mailto:${hotel.contact_email}`} style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-                <div style={{ width: 30, height: 30, borderRadius: 8, background: 'var(--surface-high)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Mail size={13} style={{ color: 'var(--gold)' }} />
+                <div style={{ width: 30, height: 30, borderRadius: 8, background: 'var(--tdgflow-surface-high)', border: '1px solid var(--tdgflow-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Mail size={13} style={{ color: 'var(--tdgflow-navy)' }} />
                 </div>
-                <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{hotel.contact_email}</span>
+                <span style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-secondary)' }}>{hotel.contact_email}</span>
               </a>
               <a href={`tel:${hotel.contact_phone}`} style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-                <div style={{ width: 30, height: 30, borderRadius: 8, background: 'var(--surface-high)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Phone size={13} style={{ color: 'var(--gold)' }} />
+                <div style={{ width: 30, height: 30, borderRadius: 8, background: 'var(--tdgflow-surface-high)', border: '1px solid var(--tdgflow-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Phone size={13} style={{ color: 'var(--tdgflow-navy)' }} />
                 </div>
-                <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{hotel.contact_phone}</span>
+                <span style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-secondary)' }}>{hotel.contact_phone}</span>
               </a>
               {hotel.website_url && (
                 <a href={hotel.website_url} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-                  <div style={{ width: 30, height: 30, borderRadius: 8, background: 'var(--surface-high)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <Globe size={13} style={{ color: 'var(--gold)' }} />
+                  <div style={{ width: 30, height: 30, borderRadius: 8, background: 'var(--tdgflow-surface-high)', border: '1px solid var(--tdgflow-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Globe size={13} style={{ color: 'var(--tdgflow-navy)' }} />
                   </div>
-                  <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{hotel.website_url.replace('https://', '')}</span>
-                  <ExternalLink size={10} style={{ color: 'var(--text-muted)' }} />
+                  <span style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-secondary)' }}>{hotel.website_url.replace('https://', '')}</span>
+                  <ExternalLink size={10} style={{ color: 'var(--tdgflow-text-muted)' }} />
                 </a>
               )}
             </div>
@@ -630,7 +630,7 @@ function HotelDetail({ hotel, onClose }: { hotel: Hotel; onClose: () => void }) 
           {/* ── Contacts from advisors ──────────────────────────────── */}
           <div style={{ marginBottom: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <p style={{ fontSize: '0.5875rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+              <p style={{ fontSize: '0.5875rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)' }}>
                 Contatos dos advisors
               </p>
               <button
@@ -644,7 +644,7 @@ function HotelDetail({ hotel, onClose }: { hotel: Hotel; onClose: () => void }) 
 
             {loadingContacts && (
               <div style={{ textAlign: 'center', padding: '16px 0' }}>
-                <Loader2 size={16} className="animate-spin" style={{ color: 'var(--text-muted)', margin: '0 auto' }} />
+                <Loader2 size={16} className="animate-spin" style={{ color: 'var(--tdgflow-text-muted)', margin: '0 auto' }} />
               </div>
             )}
 
@@ -653,12 +653,12 @@ function HotelDetail({ hotel, onClose }: { hotel: Hotel; onClose: () => void }) 
                 onClick={() => setShowAddForm(true)}
                 style={{
                   width: '100%', textAlign: 'center', padding: '16px',
-                  border: '1px dashed var(--border)', borderRadius: 12,
-                  background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)',
+                  border: '1px dashed var(--tdgflow-border)', borderRadius: 12,
+                  background: 'transparent', cursor: 'pointer', color: 'var(--tdgflow-text-muted)',
                   fontSize: '0.8125rem',
                 }}
               >
-                <UserCircle2 size={20} style={{ margin: '0 auto 6px', color: 'var(--border-light)' }} />
+                <UserCircle2 size={20} style={{ margin: '0 auto 6px', color: 'var(--tdgflow-border-light)' }} />
                 <p>Nenhum contato ainda.</p>
                 <p style={{ fontSize: '0.75rem', marginTop: 2 }}>Adicione o contato da feira ou da visita.</p>
               </button>
@@ -674,16 +674,16 @@ function HotelDetail({ hotel, onClose }: { hotel: Hotel; onClose: () => void }) 
                   style={{
                     display: 'flex', alignItems: 'flex-start', gap: 12,
                     padding: '12px 14px', borderRadius: 12,
-                    border: '1px solid var(--border)', background: 'var(--surface-high)',
+                    border: '1px solid var(--tdgflow-border)', background: 'var(--tdgflow-surface-high)',
                     marginBottom: 8,
                   }}
                 >
                   {/* Avatar */}
                   <div style={{
                     width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-                    background: 'var(--gold-subtle)', border: '1px solid var(--gold-ring)',
+                    background: 'var(--tdgflow-navy-subtle)', border: '1px solid var(--tdgflow-navy-ring)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '0.6875rem', fontWeight: 700, color: 'var(--gold-dim)',
+                    fontSize: '0.6875rem', fontWeight: 700, color: 'var(--tdgflow-navy-dim)',
                     letterSpacing: '0.02em',
                   }}>
                     {contactInitials(c)}
@@ -691,30 +691,30 @@ function HotelDetail({ hotel, onClose }: { hotel: Hotel; onClose: () => void }) 
 
                   {/* Info */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2 }}>
+                    <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)', lineHeight: 1.2 }}>
                       {c.name} {c.surname}
                     </p>
                     {c.title && (
-                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 1 }}>{c.title}</p>
+                      <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)', marginTop: 1 }}>{c.title}</p>
                     )}
                     <div style={{ display: 'flex', gap: 10, marginTop: 7, flexWrap: 'wrap' }}>
                       {c.email && (
                         <a href={`mailto:${c.email}`} style={{ display: 'flex', alignItems: 'center', gap: 4, textDecoration: 'none' }}>
-                          <Mail size={11} style={{ color: 'var(--gold)' }} />
-                          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{c.email}</span>
+                          <Mail size={11} style={{ color: 'var(--tdgflow-navy)' }} />
+                          <span style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-secondary)' }}>{c.email}</span>
                         </a>
                       )}
                       {c.whatsapp && (
                         <a href={`https://wa.me/${c.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 4, textDecoration: 'none' }}>
                           <MessageCircle size={11} style={{ color: '#25D366' }} />
-                          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{c.whatsapp}</span>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-secondary)' }}>{c.whatsapp}</span>
                         </a>
                       )}
                     </div>
                     {c.notes && (
-                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 5, fontStyle: 'italic' }}>{c.notes}</p>
+                      <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)', marginTop: 5, fontStyle: 'italic' }}>{c.notes}</p>
                     )}
-                    <p style={{ fontSize: '0.625rem', color: 'var(--text-muted)', marginTop: 5, letterSpacing: '0.02em' }}>
+                    <p style={{ fontSize: '0.625rem', color: 'var(--tdgflow-text-muted)', marginTop: 5, letterSpacing: '0.02em' }}>
                       Adicionado por {c.added_by}
                     </p>
                   </div>
@@ -726,8 +726,8 @@ function HotelDetail({ hotel, onClose }: { hotel: Hotel; onClose: () => void }) 
                     style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, flexShrink: 0 }}
                   >
                     {deletingId === c.id
-                      ? <Loader2 size={13} className="animate-spin" style={{ color: 'var(--text-muted)' }} />
-                      : <Trash2 size={13} style={{ color: 'var(--border-light)' }} />
+                      ? <Loader2 size={13} className="animate-spin" style={{ color: 'var(--tdgflow-text-muted)' }} />
+                      : <Trash2 size={13} style={{ color: 'var(--tdgflow-border-light)' }} />
                     }
                   </button>
                 </motion.div>
@@ -742,7 +742,7 @@ function HotelDetail({ hotel, onClose }: { hotel: Hotel; onClose: () => void }) 
           {/* Gallery links */}
           {hotel.gallery.length > 0 && (
             <div style={{ marginBottom: 20 }}>
-              <p style={{ fontSize: '0.5875rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 10 }}>
+              <p style={{ fontSize: '0.5875rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)', marginBottom: 10 }}>
                 Materiais
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -750,10 +750,10 @@ function HotelDetail({ hotel, onClose }: { hotel: Hotel; onClose: () => void }) 
                   <div key={g.label} style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     padding: '10px 14px', borderRadius: 10,
-                    background: 'var(--surface-high)', border: '1px solid var(--border)',
+                    background: 'var(--tdgflow-surface-high)', border: '1px solid var(--tdgflow-border)',
                   }}>
-                    <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{g.label}</span>
-                    <ExternalLink size={12} style={{ color: 'var(--text-muted)' }} />
+                    <span style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-secondary)' }}>{g.label}</span>
+                    <ExternalLink size={12} style={{ color: 'var(--tdgflow-text-muted)' }} />
                   </div>
                 ))}
               </div>
@@ -764,15 +764,15 @@ function HotelDetail({ hotel, onClose }: { hotel: Hotel; onClose: () => void }) 
           <Link href="/flow/dicas" className="no-underline" style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             padding: '14px 16px', borderRadius: 12,
-            background: 'var(--gold-subtle)', border: '1px solid var(--gold-ring)',
+            background: 'var(--tdgflow-navy-subtle)', border: '1px solid var(--tdgflow-navy-ring)',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Users size={15} style={{ color: 'var(--gold)' }} />
-              <span style={{ fontSize: '0.875rem', color: 'var(--gold)', fontWeight: 400 }}>
+              <Users size={15} style={{ color: 'var(--tdgflow-navy)' }} />
+              <span style={{ fontSize: '0.875rem', color: 'var(--tdgflow-navy)', fontWeight: 400 }}>
                 Ver dicas da rede sobre este hotel
               </span>
             </div>
-            <ArrowRight size={14} style={{ color: 'var(--gold)' }} />
+            <ArrowRight size={14} style={{ color: 'var(--tdgflow-navy)' }} />
           </Link>
         </div>
       </motion.div>
@@ -817,18 +817,18 @@ export default function HoteisView() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
 
       {/* ── Filter header ──────────────────────────────────────────── */}
-      <div style={{ flexShrink: 0, padding: '14px 16px 0', borderBottom: '1px solid var(--border)' }}>
+      <div style={{ flexShrink: 0, padding: '14px 16px 0', borderBottom: '1px solid var(--tdgflow-border)' }}>
 
         {/* Title row */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <div>
-            <h2 style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>Hotéis Parceiros</h2>
-            <p style={{ fontSize: '0.625rem', color: 'var(--text-muted)', marginTop: 1 }}>
+            <h2 style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.01em' }}>Hotéis Parceiros</h2>
+            <p style={{ fontSize: '0.625rem', color: 'var(--tdgflow-text-muted)', marginTop: 1 }}>
               {filtered.length} de {HOTELS.length} propriedades
             </p>
           </div>
           {activeCount > 0 && (
-            <button onClick={clearAll} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.6875rem', color: 'var(--gold)', padding: '4px 0' }}>
+            <button onClick={clearAll} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.6875rem', color: 'var(--tdgflow-navy)', padding: '4px 0' }}>
               <X size={11} /> Limpar ({activeCount})
             </button>
           )}
@@ -836,7 +836,7 @@ export default function HoteisView() {
 
         {/* Search */}
         <div style={{ position: 'relative', marginBottom: 10 }}>
-          <Search size={13} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
+          <Search size={13} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: 'var(--tdgflow-text-muted)', pointerEvents: 'none' }} />
           <input
             className="input"
             style={{ paddingLeft: 32, fontSize: '0.8125rem', padding: '8px 32px 8px 32px' }}
@@ -846,7 +846,7 @@ export default function HoteisView() {
           />
           {search && (
             <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}>
-              <X size={11} style={{ color: 'var(--text-muted)' }} />
+              <X size={11} style={{ color: 'var(--tdgflow-text-muted)' }} />
             </button>
           )}
         </div>
@@ -857,9 +857,9 @@ export default function HoteisView() {
             <button key={r} onClick={() => setRegion(r)} style={{
               padding: '4px 11px', borderRadius: 999, whiteSpace: 'nowrap', flexShrink: 0,
               fontSize: '0.6875rem', fontWeight: region === r ? 600 : 400, cursor: 'pointer', transition: 'all 0.15s',
-              background: region === r ? 'var(--gold-subtle)' : 'transparent',
-              border: `1px solid ${region === r ? 'var(--gold)' : 'var(--border)'}`,
-              color: region === r ? 'var(--gold-dim)' : 'var(--text-muted)',
+              background: region === r ? 'var(--tdgflow-navy-subtle)' : 'transparent',
+              border: `1px solid ${region === r ? 'var(--tdgflow-navy)' : 'var(--tdgflow-border)'}`,
+              color: region === r ? 'var(--tdgflow-navy-dim)' : 'var(--tdgflow-text-muted)',
             }}>
               {r}
             </button>
@@ -874,9 +874,9 @@ export default function HoteisView() {
               <button key={key} onClick={() => toggleProfile(key)} style={{
                 padding: '4px 10px', borderRadius: 999, whiteSpace: 'nowrap', flexShrink: 0,
                 fontSize: '0.6875rem', fontWeight: on ? 600 : 400, cursor: 'pointer', transition: 'all 0.15s',
-                background: on ? 'var(--gold-subtle)' : 'transparent',
-                border: `1px solid ${on ? 'var(--gold)' : 'var(--border)'}`,
-                color: on ? 'var(--gold-dim)' : 'var(--text-muted)',
+                background: on ? 'var(--tdgflow-navy-subtle)' : 'transparent',
+                border: `1px solid ${on ? 'var(--tdgflow-navy)' : 'var(--tdgflow-border)'}`,
+                color: on ? 'var(--tdgflow-navy-dim)' : 'var(--tdgflow-text-muted)',
                 display: 'flex', alignItems: 'center', gap: 4,
               }}>
                 <span style={{ fontSize: '0.7rem' }}>{emoji}</span> {label}
@@ -890,12 +890,12 @@ export default function HoteisView() {
       <div style={{ flex: 1, overflow: 'hidden auto', padding: '14px 16px' }}>
         {filtered.length === 0 ? (
           <div style={{ textAlign: 'center', paddingTop: 60 }}>
-            <Building2 size={28} style={{ color: 'var(--text-muted)', margin: '0 auto 12px' }} />
-            <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: 8 }}>Nenhum hotel encontrado.</p>
+            <Building2 size={28} style={{ color: 'var(--tdgflow-text-muted)', margin: '0 auto 12px' }} />
+            <p style={{ fontSize: '0.875rem', color: 'var(--tdgflow-text-muted)', marginBottom: 8 }}>Nenhum hotel encontrado.</p>
             <button onClick={clearAll} className="btn-ghost" style={{ fontSize: '0.75rem' }}>Limpar filtros</button>
           </div>
         ) : (
-          <div style={{ maxWidth: 720, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+          <div style={{ maxWidth: 1320, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 14 }}>
             {filtered.map(h => <HotelCard key={h.id} hotel={h} onClick={() => setSelected(h)} />)}
           </div>
         )}

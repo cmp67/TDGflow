@@ -121,13 +121,13 @@ const SECURITY_TABLE = [
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
-  'visa-free':       { label: 'Sem visto',       color: 'var(--success)', bg: 'rgba(46,125,79,.08)',   border: 'rgba(46,125,79,.22)' },
-  'visa-on-arrival': { label: 'Visto na chegada', color: 'var(--warning)', bg: 'rgba(182,65,15,.08)',  border: 'rgba(182,65,15,.22)' },
-  'e-visa':          { label: 'e-Visa',           color: 'var(--gold)', bg: 'rgba(0,140,148,.08)',  border: 'rgba(0,140,148,.22)' },
+  'visa-free':       { label: 'Sem visto',       color: 'var(--tdgflow-success)', bg: 'rgba(46,125,79,.08)',   border: 'rgba(46,125,79,.22)' },
+  'visa-on-arrival': { label: 'Visto na chegada', color: 'var(--tdgflow-warning)', bg: 'rgba(182,65,15,.08)',  border: 'rgba(182,65,15,.22)' },
+  'e-visa':          { label: 'e-Visa',           color: 'var(--tdgflow-navy)', bg: 'rgba(0,140,148,.08)',  border: 'rgba(0,140,148,.22)' },
   'eta':             { label: 'ETA',              color: '#6B21A8', bg: 'rgba(107,33,168,.08)', border: 'rgba(107,33,168,.22)' },
-  'visa-required':   { label: 'Visto obrigatório', color: 'var(--error)', bg: 'rgba(192,57,43,.08)', border: 'rgba(192,57,43,.22)' },
+  'visa-required':   { label: 'Visto obrigatório', color: 'var(--tdgflow-error)', bg: 'rgba(192,57,43,.08)', border: 'rgba(192,57,43,.22)' },
   'no-entry':        { label: 'Entrada proibida', color: '#7F1D1D', bg: 'rgba(127,29,29,.08)',  border: 'rgba(127,29,29,.22)' },
-  'unknown':         { label: 'Consultar',        color: 'var(--text-muted)', bg: 'rgba(74,117,128,.08)', border: 'rgba(74,117,128,.22)' },
+  'unknown':         { label: 'Consultar',        color: 'var(--tdgflow-text-muted)', bg: 'rgba(74,117,128,.08)', border: 'rgba(74,117,128,.22)' },
 }
 
 function VisaBadge({ status }: { status: string }) {
@@ -140,17 +140,17 @@ function VisaBadge({ status }: { status: string }) {
 }
 
 function SecurityIcon({ level }: { level: number }) {
-  if (level === 1) return <ShieldCheck size={14} style={{ color: 'var(--success)' }} />
-  if (level === 2) return <ShieldAlert size={14} style={{ color: 'var(--warning)' }} />
-  if (level === 3) return <ShieldX size={14} style={{ color: 'var(--error)' }} />
+  if (level === 1) return <ShieldCheck size={14} style={{ color: 'var(--tdgflow-success)' }} />
+  if (level === 2) return <ShieldAlert size={14} style={{ color: 'var(--tdgflow-warning)' }} />
+  if (level === 3) return <ShieldX size={14} style={{ color: 'var(--tdgflow-error)' }} />
   return <ShieldX size={14} style={{ color: '#7F1D1D' }} />
 }
 
 function SecurityBadge({ level, label }: { level: number; label: string }) {
   const colors: Record<number, { color: string; bg: string }> = {
-    1: { color: 'var(--success)', bg: 'rgba(46,125,79,.08)' },
-    2: { color: 'var(--warning)', bg: 'rgba(182,65,15,.08)' },
-    3: { color: 'var(--error)', bg: 'rgba(192,57,43,.08)' },
+    1: { color: 'var(--tdgflow-success)', bg: 'rgba(46,125,79,.08)' },
+    2: { color: 'var(--tdgflow-warning)', bg: 'rgba(182,65,15,.08)' },
+    3: { color: 'var(--tdgflow-error)', bg: 'rgba(192,57,43,.08)' },
     4: { color: '#7F1D1D', bg: 'rgba(127,29,29,.08)' },
   }
   const c = colors[level] ?? colors[4]
@@ -173,7 +173,7 @@ function ResultCard({ result, onClose }: { result: TravelRequirements; onClose: 
     >
       <button
         onClick={onClose}
-        style={{ position: 'absolute', top: 12, right: 12, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4 }}
+        style={{ position: 'absolute', top: 12, right: 12, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tdgflow-text-muted)', padding: 4 }}
       >
         <X size={14} />
       </button>
@@ -181,41 +181,41 @@ function ResultCard({ result, onClose }: { result: TravelRequirements; onClose: 
       {/* Destination header */}
       <div style={{ marginBottom: 16 }}>
         <p className="section-label mb-1">Resultado da consulta</p>
-        <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+        <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.02em' }}>
           {result.destination}
         </h2>
         {result.iso2 && result.iso2 !== 'XX' && (
-          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>Passaporte brasileiro · {result.iso2}</p>
+          <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)', marginTop: 2 }}>Passaporte brasileiro · {result.iso2}</p>
         )}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
         {/* Visa */}
         <div style={{ padding: '12px 14px', borderRadius: 10, background: visCfg.bg, border: `1px solid ${visCfg.border}` }}>
-          <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 6 }}>Visto</p>
+          <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)', marginBottom: 6 }}>Visto</p>
           <VisaBadge status={result.visa_status} />
           {result.visa_details && (
-            <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: 6, lineHeight: 1.4 }}>{result.visa_details}</p>
+            <p style={{ fontSize: '0.7rem', color: 'var(--tdgflow-text-secondary)', marginTop: 6, lineHeight: 1.4 }}>{result.visa_details}</p>
           )}
         </div>
 
         {/* Security */}
-        <div style={{ padding: '12px 14px', borderRadius: 10, background: 'var(--surface-high)', border: '1px solid var(--border)' }}>
-          <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 6 }}>Segurança</p>
+        <div style={{ padding: '12px 14px', borderRadius: 10, background: 'var(--tdgflow-surface-high)', border: '1px solid var(--tdgflow-border)' }}>
+          <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)', marginBottom: 6 }}>Segurança</p>
           {result.security_level ? (
             <>
               <SecurityBadge level={result.security_level} label={result.security_label ?? ''} />
               {result.security_message && (
-                <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: 6, lineHeight: 1.4 }}>{result.security_message}</p>
+                <p style={{ fontSize: '0.7rem', color: 'var(--tdgflow-text-secondary)', marginTop: 6, lineHeight: 1.4 }}>{result.security_message}</p>
               )}
               <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 6 }}>
-                <span style={{ fontSize: '0.5625rem', color: 'var(--text-faint)', background: 'var(--border-subtle)', borderRadius: 4, padding: '1px 6px', fontWeight: 500 }}>
+                <span style={{ fontSize: '0.5625rem', color: 'var(--tdgflow-text-faint)', background: 'var(--tdgflow-border-subtle)', borderRadius: 4, padding: '1px 6px', fontWeight: 500 }}>
                   US State Dept
                 </span>
                 {result.security_updated_at && (
                   <>
                     <span style={{ fontSize: '0.5625rem', color: '#B8CDD2' }}>·</span>
-                    <span style={{ fontSize: '0.5625rem', color: 'var(--text-faint)' }}>
+                    <span style={{ fontSize: '0.5625rem', color: 'var(--tdgflow-text-faint)' }}>
                       Aviso de {new Date(result.security_updated_at).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}
                     </span>
                   </>
@@ -223,7 +223,7 @@ function ResultCard({ result, onClose }: { result: TravelRequirements; onClose: 
               </div>
             </>
           ) : (
-            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Sem dados</span>
+            <span style={{ fontSize: '0.7rem', color: 'var(--tdgflow-text-muted)' }}>Sem dados</span>
           )}
         </div>
       </div>
@@ -231,10 +231,10 @@ function ResultCard({ result, onClose }: { result: TravelRequirements; onClose: 
       {/* CIVP */}
       {result.civp_required && (
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 14px', borderRadius: 10, background: 'rgba(182,65,15,.06)', border: '1px solid rgba(182,65,15,.2)', marginBottom: 10 }}>
-          <Syringe size={14} style={{ color: 'var(--warning)', flexShrink: 0, marginTop: 1 }} />
+          <Syringe size={14} style={{ color: 'var(--tdgflow-warning)', flexShrink: 0, marginTop: 1 }} />
           <div>
-            <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--warning)', marginBottom: 2 }}>CIVP obrigatório</p>
-            <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>Certificado Internacional de Vacinação contra febre amarela exigido para viajantes partindo do Brasil.</p>
+            <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--tdgflow-warning)', marginBottom: 2 }}>CIVP obrigatório</p>
+            <p style={{ fontSize: '0.7rem', color: 'var(--tdgflow-text-secondary)', lineHeight: 1.4 }}>Certificado Internacional de Vacinação contra febre amarela exigido para viajantes partindo do Brasil.</p>
           </div>
         </div>
       )}
@@ -243,7 +243,7 @@ function ResultCard({ result, onClose }: { result: TravelRequirements; onClose: 
       {result.eta_required && (
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 14px', borderRadius: 10, background: 'rgba(107,33,168,.05)', border: '1px solid rgba(107,33,168,.2)', marginBottom: 10 }}>
           <Globe size={14} style={{ color: '#6B21A8', flexShrink: 0, marginTop: 1 }} />
-          <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>Requer ETA (Autorização Eletrônica de Viagem) antes do embarque.</p>
+          <p style={{ fontSize: '0.7rem', color: 'var(--tdgflow-text-secondary)', lineHeight: 1.4 }}>Requer ETA (Autorização Eletrônica de Viagem) antes do embarque.</p>
         </div>
       )}
 
@@ -252,8 +252,8 @@ function ResultCard({ result, onClose }: { result: TravelRequirements; onClose: 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 4 }}>
           {result.notes.map((n, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 7 }}>
-              <ChevronRight size={11} style={{ color: 'var(--gold)', flexShrink: 0, marginTop: 2 }} />
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>{n}</p>
+              <ChevronRight size={11} style={{ color: 'var(--tdgflow-navy)', flexShrink: 0, marginTop: 2 }} />
+              <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-secondary)', lineHeight: 1.4 }}>{n}</p>
             </div>
           ))}
         </div>
@@ -261,10 +261,10 @@ function ResultCard({ result, onClose }: { result: TravelRequirements; onClose: 
 
       {/* Sources + timestamp */}
       {result.source?.length > 0 && (
-        <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
+        <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--tdgflow-border)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Fontes</span>
+              <span style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)' }}>Fontes</span>
               {result.source.map((s, i) => {
                 const SOURCE_LINKS: Record<string, { url: string; label: string }> = {
                   'Passport Index': { url: 'https://github.com/ilyankou/passport-index-dataset', label: 'Passport Index' },
@@ -277,16 +277,16 @@ function ResultCard({ result, onClose }: { result: TravelRequirements; onClose: 
                 const src = SOURCE_LINKS[s] ?? { url: '', label: s }
                 return src.url ? (
                   <a key={i} href={src.url} target="_blank" rel="noopener noreferrer"
-                    style={{ fontSize: '0.65rem', fontWeight: 500, color: 'var(--gold)', textDecoration: 'underline', textDecorationStyle: 'dotted', textUnderlineOffset: 2 }}>
+                    style={{ fontSize: '0.65rem', fontWeight: 500, color: 'var(--tdgflow-navy)', textDecoration: 'underline', textDecorationStyle: 'dotted', textUnderlineOffset: 2 }}>
                     {src.label}
                   </a>
                 ) : (
-                  <span key={i} style={{ fontSize: '0.65rem', fontWeight: 500, color: 'var(--text-muted)' }}>{src.label}</span>
+                  <span key={i} style={{ fontSize: '0.65rem', fontWeight: 500, color: 'var(--tdgflow-text-muted)' }}>{src.label}</span>
                 )
               })}
             </div>
             {result.fetched_at && (
-              <span style={{ fontSize: '0.6rem', color: 'var(--border-light)', whiteSpace: 'nowrap' }}>
+              <span style={{ fontSize: '0.6rem', color: 'var(--tdgflow-text-faint)', whiteSpace: 'nowrap' }}>
                 Atualizado {new Date(result.fetched_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
               </span>
             )}
@@ -357,26 +357,26 @@ export default function DocsView() {
       {/* Header */}
       <div style={{ marginBottom: 20 }}>
         <p className="section-label mb-1">Ferramentas</p>
-        <h1 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+        <h1 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.02em' }}>
           Documentação de Viagem
         </h1>
-        <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: 4 }}>
+        <p style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-muted)', marginTop: 4 }}>
           Vistos, saúde e segurança · passaporte{' '}
-          <strong style={{ color: 'var(--gold)' }}>
+          <strong style={{ color: 'var(--tdgflow-navy)' }}>
             {PASSPORTS.find(p => p.code === passport)?.flag}{' '}
             {PASSPORTS.find(p => p.code === passport)?.label}
           </strong>
         </p>
         {/* Data sources note */}
-        <div style={{ marginTop: 10, display: 'flex', alignItems: 'flex-start', gap: 7, padding: '8px 12px', background: '#F0F7F8', borderRadius: 8, border: '1px solid var(--border)' }}>
+        <div style={{ marginTop: 10, display: 'flex', alignItems: 'flex-start', gap: 7, padding: '8px 12px', background: '#F0F7F8', borderRadius: 8, border: '1px solid var(--tdgflow-border)' }}>
           <span style={{ fontSize: '0.65rem', marginTop: 1 }}>🔍</span>
-          <p style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', lineHeight: 1.5, margin: 0 }}>
+          <p style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)', lineHeight: 1.5, margin: 0 }}>
             Dados consultados em tempo real via{' '}
-            <a href="https://rapidapi.com/TravelBuddyAI/api/visa-requirement" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--gold)', textDecoration: 'underline', textDecorationStyle: 'dotted' }}>Travel Buddy AI</a>
+            <a href="https://rapidapi.com/TravelBuddyAI/api/visa-requirement" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--tdgflow-navy)', textDecoration: 'underline', textDecorationStyle: 'dotted' }}>Travel Buddy AI</a>
             {' '}· com dados complementares de{' '}
-            <a href="https://www.who.int/ith/en/" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--gold)', textDecoration: 'underline', textDecorationStyle: 'dotted' }}>WHO/ANVISA</a>
+            <a href="https://www.who.int/ith/en/" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--tdgflow-navy)', textDecoration: 'underline', textDecorationStyle: 'dotted' }}>WHO/ANVISA</a>
             {' '}e{' '}
-            <a href="https://travel.state.gov/content/travel/en/international-travel.html" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--gold)', textDecoration: 'underline', textDecorationStyle: 'dotted' }}>US State Dept</a>
+            <a href="https://travel.state.gov/content/travel/en/international-travel.html" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--tdgflow-navy)', textDecoration: 'underline', textDecorationStyle: 'dotted' }}>US State Dept</a>
             . Verifique sempre com a embaixada antes de viajar.
           </p>
         </div>
@@ -384,7 +384,7 @@ export default function DocsView() {
 
       {/* Passport selector */}
       <div style={{ marginBottom: 14 }}>
-        <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 7 }}>
+        <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)', marginBottom: 7 }}>
           Passaporte
         </p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
@@ -401,10 +401,10 @@ export default function DocsView() {
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: 5,
                   padding: '5px 11px', borderRadius: 999,
-                  background: active ? 'var(--gold-subtle)' : 'var(--surface)',
-                  border: active ? '1.5px solid var(--gold)' : '1px solid var(--border)',
+                  background: active ? 'var(--tdgflow-navy-subtle)' : 'var(--tdgflow-surface)',
+                  border: active ? '1.5px solid var(--tdgflow-navy)' : '1px solid var(--tdgflow-border)',
                   fontSize: '0.75rem', fontWeight: active ? 600 : 400,
-                  color: active ? 'var(--gold)' : 'var(--text-secondary)',
+                  color: active ? 'var(--tdgflow-navy)' : 'var(--tdgflow-text-secondary)',
                   cursor: 'pointer', transition: 'all 150ms',
                 }}
               >
@@ -417,7 +417,7 @@ export default function DocsView() {
 
       {/* Search bar */}
       <div style={{ position: 'relative', marginBottom: 16 }}>
-        <Search size={15} style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
+        <Search size={15} style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', color: 'var(--tdgflow-text-muted)', pointerEvents: 'none' }} />
         <input
           ref={inputRef}
           className="input"
@@ -428,7 +428,7 @@ export default function DocsView() {
           onKeyDown={e => e.key === 'Enter' && search(query, passport)}
         />
         {loading && (
-          <Loader2 size={14} className="animate-spin" style={{ position: 'absolute', right: 13, top: '50%', transform: 'translateY(-50%)', color: 'var(--gold)' }} />
+          <Loader2 size={14} className="animate-spin" style={{ position: 'absolute', right: 13, top: '50%', transform: 'translateY(-50%)', color: 'var(--tdgflow-navy)' }} />
         )}
       </div>
 
@@ -441,12 +441,12 @@ export default function DocsView() {
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 5,
               padding: '5px 11px', borderRadius: 999,
-              background: 'var(--surface)', border: '1px solid var(--border)',
-              fontSize: '0.75rem', color: 'var(--text-secondary)', cursor: 'pointer',
+              background: 'var(--tdgflow-surface)', border: '1px solid var(--tdgflow-border)',
+              fontSize: '0.75rem', color: 'var(--tdgflow-text-secondary)', cursor: 'pointer',
               transition: 'all 150ms', fontWeight: 500,
             }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--gold)'; (e.currentTarget as HTMLElement).style.color = 'var(--gold)' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--tdgflow-navy)'; (e.currentTarget as HTMLElement).style.color = 'var(--tdgflow-navy)' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--tdgflow-border)'; (e.currentTarget as HTMLElement).style.color = 'var(--tdgflow-text-secondary)' }}
           >
             <span>{d.flag}</span> {d.label}
           </button>
@@ -456,8 +456,8 @@ export default function DocsView() {
       {/* Error */}
       {error && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 10, background: 'rgba(192,57,43,.06)', border: '1px solid rgba(192,57,43,.2)', marginBottom: 16 }}>
-          <AlertTriangle size={14} style={{ color: 'var(--error)', flexShrink: 0 }} />
-          <p style={{ fontSize: '0.8125rem', color: 'var(--error)' }}>Destino não encontrado. Tente outro nome ou use o Modo Flow para perguntas detalhadas.</p>
+          <AlertTriangle size={14} style={{ color: 'var(--tdgflow-error)', flexShrink: 0 }} />
+          <p style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-error)' }}>Destino não encontrado. Tente outro nome ou use o Modo Flow para perguntas detalhadas.</p>
         </div>
       )}
 
@@ -465,7 +465,7 @@ export default function DocsView() {
       {result && <ResultCard result={result} onClose={() => { setResult(null); setQuery('') }} />}
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid var(--border)', marginBottom: 16 }}>
+      <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid var(--tdgflow-border)', marginBottom: 16 }}>
         {TABS.map(t => (
           <button
             key={t.key}
@@ -474,8 +474,8 @@ export default function DocsView() {
               display: 'inline-flex', alignItems: 'center', gap: 5,
               padding: '8px 12px', background: 'none', border: 'none', cursor: 'pointer',
               fontSize: '0.8125rem', fontWeight: tab === t.key ? 600 : 400,
-              color: tab === t.key ? 'var(--gold)' : 'var(--text-muted)',
-              borderBottom: tab === t.key ? '2px solid var(--gold)' : '2px solid transparent',
+              color: tab === t.key ? 'var(--tdgflow-navy)' : 'var(--tdgflow-text-muted)',
+              borderBottom: tab === t.key ? '2px solid var(--tdgflow-navy)' : '2px solid transparent',
               marginBottom: -1, transition: 'all 150ms',
             }}
           >
@@ -496,9 +496,9 @@ export default function DocsView() {
                 style={{
                   padding: '4px 10px', borderRadius: 999, fontSize: '0.7rem', fontWeight: 500,
                   cursor: 'pointer', transition: 'all 150ms',
-                  background: visaFilter === f ? 'var(--gold)' : 'var(--surface)',
-                  color: visaFilter === f ? 'var(--surface)' : 'var(--text-secondary)',
-                  border: visaFilter === f ? '1px solid var(--gold)' : '1px solid var(--border)',
+                  background: visaFilter === f ? 'var(--tdgflow-navy)' : 'var(--tdgflow-surface)',
+                  color: visaFilter === f ? 'var(--tdgflow-surface)' : 'var(--tdgflow-text-secondary)',
+                  border: visaFilter === f ? '1px solid var(--tdgflow-navy)' : '1px solid var(--tdgflow-border)',
                 }}
               >
                 {f === 'all' ? 'Todos' : STATUS_CONFIG[f]?.label ?? f}
@@ -512,23 +512,23 @@ export default function DocsView() {
                 key={i}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
-                  borderRadius: 8, background: i % 2 === 0 ? 'var(--surface)' : 'var(--bg)',
+                  borderRadius: 8, background: i % 2 === 0 ? 'var(--tdgflow-surface)' : 'var(--tdgflow-bg)',
                   border: '1px solid transparent',
                   cursor: 'pointer', transition: 'all 150ms',
                 }}
                 onClick={() => { setQuery(row.destination); search(row.destination) }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--tdgflow-border)' }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'transparent' }}
               >
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--text-primary)' }}>{row.destination}</p>
-                  <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 1 }}>{row.detail}</p>
+                  <p style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--tdgflow-text-primary)' }}>{row.destination}</p>
+                  <p style={{ fontSize: '0.7rem', color: 'var(--tdgflow-text-muted)', marginTop: 1 }}>{row.detail}</p>
                 </div>
                 <VisaBadge status={row.status} />
               </div>
             ))}
           </div>
-          <p style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', marginTop: 12, textAlign: 'center' }}>
+          <p style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)', marginTop: 12, textAlign: 'center' }}>
             Clique em qualquer destino para consulta completa · Dados para passaporte brasileiro
           </p>
         </div>
@@ -538,9 +538,9 @@ export default function DocsView() {
       {tab === 'saude' && (
         <div>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 14px', borderRadius: 10, background: 'rgba(182,65,15,.06)', border: '1px solid rgba(182,65,15,.2)', marginBottom: 16 }}>
-            <Syringe size={14} style={{ color: 'var(--warning)', flexShrink: 0, marginTop: 1 }} />
-            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-              <strong style={{ color: 'var(--warning)' }}>CIVP</strong> — Certificado Internacional de Vacinação contra Febre Amarela. Viajantes partindo do Brasil podem ser obrigados a apresentar o documento na chegada ao destino.
+            <Syringe size={14} style={{ color: 'var(--tdgflow-warning)', flexShrink: 0, marginTop: 1 }} />
+            <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-secondary)', lineHeight: 1.5 }}>
+              <strong style={{ color: 'var(--tdgflow-warning)' }}>CIVP</strong> — Certificado Internacional de Vacinação contra Febre Amarela. Viajantes partindo do Brasil podem ser obrigados a apresentar o documento na chegada ao destino.
             </p>
           </div>
 
@@ -550,23 +550,23 @@ export default function DocsView() {
                 key={i}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
-                  borderRadius: 8, background: i % 2 === 0 ? 'var(--surface)' : 'var(--bg)',
+                  borderRadius: 8, background: i % 2 === 0 ? 'var(--tdgflow-surface)' : 'var(--tdgflow-bg)',
                   border: '1px solid transparent', cursor: 'pointer', transition: 'all 150ms',
                 }}
                 onClick={() => { setQuery(row.destination); search(row.destination); setTab('vistos') }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--tdgflow-border)' }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'transparent' }}
               >
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--text-primary)' }}>{row.destination}</p>
-                  <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 1 }}>{row.notes}</p>
+                  <p style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--tdgflow-text-primary)' }}>{row.destination}</p>
+                  <p style={{ fontSize: '0.7rem', color: 'var(--tdgflow-text-muted)', marginTop: 1 }}>{row.notes}</p>
                 </div>
                 {row.civp ? (
-                  <span style={{ fontSize: '0.65rem', fontWeight: 600, padding: '3px 8px', borderRadius: 999, color: 'var(--warning)', background: 'rgba(182,65,15,.08)', border: '1px solid rgba(182,65,15,.2)', whiteSpace: 'nowrap' }}>
+                  <span style={{ fontSize: '0.65rem', fontWeight: 600, padding: '3px 8px', borderRadius: 999, color: 'var(--tdgflow-warning)', background: 'rgba(182,65,15,.08)', border: '1px solid rgba(182,65,15,.2)', whiteSpace: 'nowrap' }}>
                     CIVP obrigatório
                   </span>
                 ) : (
-                  <span style={{ fontSize: '0.65rem', fontWeight: 500, padding: '3px 8px', borderRadius: 999, color: 'var(--text-muted)', background: 'var(--bg)', border: '1px solid var(--border)', whiteSpace: 'nowrap' }}>
+                  <span style={{ fontSize: '0.65rem', fontWeight: 500, padding: '3px 8px', borderRadius: 999, color: 'var(--tdgflow-text-muted)', background: 'var(--tdgflow-bg)', border: '1px solid var(--tdgflow-border)', whiteSpace: 'nowrap' }}>
                     CIVP opcional
                   </span>
                 )}
@@ -581,9 +581,9 @@ export default function DocsView() {
         <div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
             {[
-              { level: 1, label: 'Nível 1 — Normal',       color: 'var(--success)' },
-              { level: 2, label: 'Nível 2 — Atenção',      color: 'var(--warning)' },
-              { level: 3, label: 'Nível 3 — Reconsiderar', color: 'var(--error)' },
+              { level: 1, label: 'Nível 1 — Normal',       color: 'var(--tdgflow-success)' },
+              { level: 2, label: 'Nível 2 — Atenção',      color: 'var(--tdgflow-warning)' },
+              { level: 3, label: 'Nível 3 — Reconsiderar', color: 'var(--tdgflow-error)' },
               { level: 4, label: 'Nível 4 — Não viaje',    color: '#7F1D1D' },
             ].map(l => (
               <div key={l.level} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -599,23 +599,23 @@ export default function DocsView() {
                 key={i}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
-                  borderRadius: 8, background: i % 2 === 0 ? 'var(--surface)' : 'var(--bg)',
+                  borderRadius: 8, background: i % 2 === 0 ? 'var(--tdgflow-surface)' : 'var(--tdgflow-bg)',
                   border: '1px solid transparent', cursor: 'pointer', transition: 'all 150ms',
                 }}
                 onClick={() => { setQuery(row.destination); search(row.destination) }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--tdgflow-border)' }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'transparent' }}
               >
                 <SecurityIcon level={row.level} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>{row.destination}</p>
-                  <p style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', marginTop: 3, lineHeight: 1.45, margin: '3px 0 0' }}>{row.detail}</p>
+                  <p style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--tdgflow-text-primary)', margin: 0 }}>{row.destination}</p>
+                  <p style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)', marginTop: 3, lineHeight: 1.45, margin: '3px 0 0' }}>{row.detail}</p>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 5 }}>
-                    <span style={{ fontSize: '0.5625rem', color: 'var(--text-faint)', background: 'var(--border-subtle)', borderRadius: 4, padding: '1px 6px', fontWeight: 500 }}>
+                    <span style={{ fontSize: '0.5625rem', color: 'var(--tdgflow-text-faint)', background: 'var(--tdgflow-border-subtle)', borderRadius: 4, padding: '1px 6px', fontWeight: 500 }}>
                       {row.source}
                     </span>
                     <span style={{ fontSize: '0.5625rem', color: '#B8CDD2' }}>·</span>
-                    <span style={{ fontSize: '0.5625rem', color: 'var(--text-faint)' }}>
+                    <span style={{ fontSize: '0.5625rem', color: 'var(--tdgflow-text-faint)' }}>
                       Aviso de {row.updatedAt}
                     </span>
                   </div>
@@ -630,11 +630,11 @@ export default function DocsView() {
       {/* ── Tab: Materiais ── */}
       {tab === 'materiais' && (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px', textAlign: 'center', gap: 12 }}>
-          <div style={{ width: 48, height: 48, borderRadius: 14, background: 'var(--surface-high)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <FileText size={20} style={{ color: 'var(--text-muted)' }} />
+          <div style={{ width: 48, height: 48, borderRadius: 14, background: 'var(--tdgflow-surface-high)', border: '1px solid var(--tdgflow-border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <FileText size={20} style={{ color: 'var(--tdgflow-text-muted)' }} />
           </div>
-          <p style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-primary)' }}>Materiais em breve</p>
-          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', maxWidth: 320, lineHeight: 1.5 }}>
+          <p style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--tdgflow-text-primary)' }}>Materiais em breve</p>
+          <p style={{ fontSize: '0.8rem', color: 'var(--tdgflow-text-muted)', maxWidth: 320, lineHeight: 1.5 }}>
             Fichas de hotel, contratos, políticas de comissão e materiais de treinamento da rede TDG serão disponibilizados aqui.
           </p>
         </div>

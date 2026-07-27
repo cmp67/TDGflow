@@ -83,10 +83,10 @@ export default function GestaoView({ users: initial }: Props) {
       <div className="flex items-start justify-between">
         <div>
           <p className="section-label mb-1">Administração</p>
-          <h1 className="text-xl font-semibold" style={{ color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+          <h1 className="text-xl font-semibold" style={{ color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.02em' }}>
             {tab === 'users' ? 'Gestão de Usuários' : tab === 'invites' ? 'Convites de Agência' : 'Assinaturas'}
           </h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-sm mt-1" style={{ color: 'var(--tdgflow-text-muted)' }}>
             {tab === 'users'
               ? `${Object.values(byAgency).flat().length} usuário${Object.values(byAgency).flat().length !== 1 ? 's' : ''} · ${Object.keys(byAgency).length} agênci${Object.keys(byAgency).length !== 1 ? 'as' : 'a'}`
               : tab === 'invites'
@@ -106,15 +106,15 @@ export default function GestaoView({ users: initial }: Props) {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1" style={{ borderBottom: '1px solid var(--border)' }}>
+      <div className="flex items-center gap-1" style={{ borderBottom: '1px solid var(--tdgflow-border)' }}>
         <button
           onClick={() => setTab('users')}
           className="flex items-center gap-1.5"
           style={{
             padding: '8px 12px', fontSize: '0.8125rem', fontWeight: tab === 'users' ? 600 : 400,
             background: 'none', border: 'none', cursor: 'pointer',
-            color: tab === 'users' ? 'var(--navy-dim)' : 'var(--text-muted)',
-            borderBottom: tab === 'users' ? '2px solid var(--navy)' : '2px solid transparent',
+            color: tab === 'users' ? 'var(--tdgflow-navy-dim)' : 'var(--tdgflow-text-muted)',
+            borderBottom: tab === 'users' ? '2px solid var(--tdgflow-navy)' : '2px solid transparent',
             marginBottom: -1,
           }}
         >
@@ -126,8 +126,8 @@ export default function GestaoView({ users: initial }: Props) {
           style={{
             padding: '8px 12px', fontSize: '0.8125rem', fontWeight: tab === 'invites' ? 600 : 400,
             background: 'none', border: 'none', cursor: 'pointer',
-            color: tab === 'invites' ? 'var(--navy-dim)' : 'var(--text-muted)',
-            borderBottom: tab === 'invites' ? '2px solid var(--navy)' : '2px solid transparent',
+            color: tab === 'invites' ? 'var(--tdgflow-navy-dim)' : 'var(--tdgflow-text-muted)',
+            borderBottom: tab === 'invites' ? '2px solid var(--tdgflow-navy)' : '2px solid transparent',
             marginBottom: -1,
           }}
         >
@@ -139,8 +139,8 @@ export default function GestaoView({ users: initial }: Props) {
           style={{
             padding: '8px 12px', fontSize: '0.8125rem', fontWeight: tab === 'assinaturas' ? 600 : 400,
             background: 'none', border: 'none', cursor: 'pointer',
-            color: tab === 'assinaturas' ? 'var(--navy-dim)' : 'var(--text-muted)',
-            borderBottom: tab === 'assinaturas' ? '2px solid var(--navy)' : '2px solid transparent',
+            color: tab === 'assinaturas' ? 'var(--tdgflow-navy-dim)' : 'var(--tdgflow-text-muted)',
+            borderBottom: tab === 'assinaturas' ? '2px solid var(--tdgflow-navy)' : '2px solid transparent',
             marginBottom: -1,
           }}
         >
@@ -154,7 +154,7 @@ export default function GestaoView({ users: initial }: Props) {
       {/* Create form */}
       {tab === 'users' && showForm && (
         <div className="card space-y-3">
-          <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Novo usuário</h3>
+          <h3 className="text-sm font-semibold" style={{ color: 'var(--tdgflow-text-primary)' }}>Novo usuário</h3>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <input className="input" placeholder="Nome completo" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} />
             <input className="input" placeholder="Email" type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} />
@@ -175,7 +175,7 @@ export default function GestaoView({ users: initial }: Props) {
                 style={{
                   position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
                   background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-                  color: 'var(--text-muted)', display: 'flex', alignItems: 'center',
+                  color: 'var(--tdgflow-text-muted)', display: 'flex', alignItems: 'center',
                 }}
                 tabIndex={-1}
                 aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
@@ -190,12 +190,12 @@ export default function GestaoView({ users: initial }: Props) {
                 type="checkbox"
                 checked={form.role === 'admin'}
                 onChange={e => setForm(p => ({ ...p, role: e.target.checked ? 'admin' : 'agent' }))}
-                style={{ accentColor: 'var(--navy)' }}
+                style={{ accentColor: 'var(--tdgflow-navy)' }}
               />
-              <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Permissão de administrador</span>
+              <span className="text-sm" style={{ color: 'var(--tdgflow-text-secondary)' }}>Permissão de administrador</span>
             </label>
           </div>
-          {error && <p className="text-xs" style={{ color: 'var(--error)' }}>{error}</p>}
+          {error && <p className="text-xs" style={{ color: 'var(--tdgflow-error)' }}>{error}</p>}
           <div className="flex gap-2">
             <button onClick={createUser} disabled={saving} className="btn-gold" style={{ padding: '7px 14px', fontSize: '0.8125rem' }}>
               {saving ? <Loader size={13} className="animate-spin" /> : <Check size={13} />} Criar
@@ -210,7 +210,7 @@ export default function GestaoView({ users: initial }: Props) {
       {/* Users by agency */}
       {tab === 'users' && Object.entries(byAgency).sort(([a], [b]) => a.localeCompare(b)).map(([agency, members]) => (
         <div key={agency}>
-          <p className="text-xs font-medium uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-xs font-medium uppercase tracking-wider mb-2" style={{ color: 'var(--tdgflow-text-muted)' }}>
             {agency} ({members.length})
           </p>
           <div className="space-y-2">
@@ -219,30 +219,30 @@ export default function GestaoView({ users: initial }: Props) {
                 key={u.id}
                 className="flex items-center gap-3 p-3 rounded-xl"
                 style={{
-                  background: 'var(--surface-high)',
-                  border: '1px solid var(--border)',
+                  background: 'var(--tdgflow-surface-high)',
+                  border: '1px solid var(--tdgflow-border)',
                   opacity: u.active ? 1 : 0.5,
                 }}
               >
                 <div
                   className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0"
-                  style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
+                  style={{ background: 'var(--tdgflow-surface)', border: '1px solid var(--tdgflow-border)', color: 'var(--tdgflow-text-secondary)' }}
                 >
                   {u.name[0].toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{u.name}</span>
-                    {u.role === 'admin' && <Crown size={11} style={{ color: 'var(--navy)' }} />}
+                    <span className="text-sm font-medium" style={{ color: 'var(--tdgflow-text-primary)' }}>{u.name}</span>
+                    {u.role === 'admin' && <Crown size={11} style={{ color: 'var(--tdgflow-navy)' }} />}
                     {!u.active && <span className="badge badge-muted" style={{ fontSize: '0.6rem' }}>inativo</span>}
                   </div>
-                  <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{u.email}</p>
+                  <p className="text-xs truncate" style={{ color: 'var(--tdgflow-text-muted)' }}>{u.email}</p>
                   <div className="flex items-center gap-3 flex-wrap mt-0.5">
                     {u.whatsapp && (
-                      <span className="text-xs" style={{ color: 'var(--text-muted)' }}>📱 +{u.whatsapp}</span>
+                      <span className="text-xs" style={{ color: 'var(--tdgflow-text-muted)' }}>📱 +{u.whatsapp}</span>
                     )}
                     {u.agent_interaction_id && (
-                      <span className="text-xs font-mono" style={{ color: 'var(--navy)' }}>ID: {u.agent_interaction_id}</span>
+                      <span className="text-xs font-mono" style={{ color: 'var(--tdgflow-navy)' }}>ID: {u.agent_interaction_id}</span>
                     )}
                   </div>
                 </div>
@@ -255,7 +255,7 @@ export default function GestaoView({ users: initial }: Props) {
                 >
                   {togglingId === u.id
                     ? <Loader size={12} className="animate-spin" />
-                    : u.active ? <UserX size={13} style={{ color: 'var(--error)' }} /> : <UserCheck size={13} style={{ color: 'var(--success)' }} />
+                    : u.active ? <UserX size={13} style={{ color: 'var(--tdgflow-error)' }} /> : <UserCheck size={13} style={{ color: 'var(--tdgflow-success)' }} />
                   }
                   {u.active ? 'Desativar' : 'Ativar'}
                 </button>

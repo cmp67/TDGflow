@@ -2,12 +2,12 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bell, Tag, Lightbulb, Mic, X } from 'lucide-react'
+import { Bell, Tag, Lightbulb, Mic, Send, X } from 'lucide-react'
 import { sounds } from '@/lib/sounds'
 
 interface Notification {
   id: string
-  type: 'offer' | 'review' | 'recording'
+  type: 'offer' | 'review' | 'recording' | 'guest_request'
   title: string
   body: string
   time: string
@@ -26,15 +26,17 @@ function timeAgo(dateStr: string): string {
 }
 
 const ICON: Record<string, React.ReactNode> = {
-  offer:     <Tag size={13} />,
-  review:    <Lightbulb size={13} />,
-  recording: <Mic size={13} />,
+  offer:         <Tag size={13} />,
+  review:        <Lightbulb size={13} />,
+  recording:     <Mic size={13} />,
+  guest_request: <Send size={13} />,
 }
 
 const ICON_COLOR: Record<string, string> = {
-  offer:     'var(--gold)',
-  review:    '#7DD3FC',
-  recording: '#86EFAC',
+  offer:         'var(--tdgflow-navy)',
+  review:        '#7DD3FC',
+  recording:     '#86EFAC',
+  guest_request: 'var(--tdgflow-gold-dim)',
 }
 
 export default function NotificationBell() {
@@ -87,6 +89,20 @@ export default function NotificationBell() {
         })
       }
 
+      // Pedidos de ativação GUEST pendentes (só existe pra admin — o backend
+      // já filtra por papel, aqui só reagimos ao número que veio)
+      if (ctx.pending_guest_requests > 0) {
+        const id = 'guest-requests-pending'
+        notifs.push({
+          id,
+          type: 'guest_request',
+          title: 'Pedidos de ativação GUEST',
+          body: `${ctx.pending_guest_requests} agência${ctx.pending_guest_requests > 1 ? 's' : ''} aguardando aprovação — veja em Billing → Rede TDG`,
+          time: new Date().toISOString(),
+          read: readIds.includes(id),
+        })
+      }
+
       // Reviews this week
       if (ctx.reviews_this_week > 0) {
         const id = 'reviews-week'
@@ -135,13 +151,13 @@ export default function NotificationBell() {
         style={{
           position: 'relative',
           background: 'none', border: 'none', cursor: 'pointer',
-          padding: 6, color: 'var(--text-muted)',
+          padding: 6, color: 'var(--tdgflow-text-muted)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           borderRadius: 8,
           transition: 'color 150ms',
         }}
-        onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
-        onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
+        onMouseEnter={e => (e.currentTarget.style.color = 'var(--tdgflow-text-primary)')}
+        onMouseLeave={e => (e.currentTarget.style.color = 'var(--tdgflow-text-muted)')}
       >
         <Bell size={16} strokeWidth={1.5} />
         {unread > 0 && (
@@ -151,8 +167,8 @@ export default function NotificationBell() {
             style={{
               position: 'absolute', top: 2, right: 2,
               width: 8, height: 8, borderRadius: '50%',
-              background: 'var(--error)',
-              border: '1.5px solid var(--surface)',
+              background: 'var(--tdgflow-error)',
+              border: '1.5px solid var(--tdgflow-surface)',
             }}
           />
         )}
@@ -170,8 +186,8 @@ export default function NotificationBell() {
               top: 'calc(100% + 8px)',
               right: 0,
               width: 300,
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
+              background: 'var(--tdgflow-surface)',
+              border: '1px solid var(--tdgflow-border)',
               borderRadius: 14,
               boxShadow: '0 8px 32px rgba(28,20,16,0.14)',
               zIndex: 200,
@@ -180,21 +196,21 @@ export default function NotificationBell() {
           >
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px 10px' }}>
-              <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+              <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.01em' }}>
                 Notificações
               </p>
-              <button onClick={() => setOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 2 }}>
+              <button onClick={() => setOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tdgflow-text-muted)', padding: 2 }}>
                 <X size={13} />
               </button>
             </div>
 
-            <div style={{ height: 1, background: 'var(--border)' }} />
+            <div style={{ height: 1, background: 'var(--tdgflow-border)' }} />
 
             {/* Items */}
             {notifications.length === 0 ? (
               <div style={{ padding: '24px 16px', textAlign: 'center' }}>
-                <Bell size={20} style={{ color: 'var(--border-light)', margin: '0 auto 8px' }} />
-                <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Sem notificações</p>
+                <Bell size={20} style={{ color: 'var(--tdgflow-border-light)', margin: '0 auto 8px' }} />
+                <p style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-muted)' }}>Sem notificações</p>
               </div>
             ) : (
               <div>
@@ -204,27 +220,27 @@ export default function NotificationBell() {
                     style={{
                       display: 'flex', alignItems: 'flex-start', gap: 12,
                       padding: '12px 16px',
-                      borderBottom: '1px solid var(--border)',
-                      background: n.read ? 'transparent' : 'var(--gold-subtle)',
+                      borderBottom: '1px solid var(--tdgflow-border)',
+                      background: n.read ? 'transparent' : 'var(--tdgflow-navy-subtle)',
                     }}
                   >
                     <div style={{
                       width: 28, height: 28, borderRadius: 8, flexShrink: 0,
-                      background: 'var(--surface-high)', border: '1px solid var(--border)',
+                      background: 'var(--tdgflow-surface-high)', border: '1px solid var(--tdgflow-border)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       color: ICON_COLOR[n.type],
                     }}>
                       {ICON[n.type]}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>
+                      <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)', marginBottom: 2 }}>
                         {n.title}
                       </p>
-                      <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                      <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-secondary)', lineHeight: 1.4 }}>
                         {n.body}
                       </p>
                     </div>
-                    <span style={{ fontSize: '0.625rem', color: 'var(--text-muted)', flexShrink: 0, paddingTop: 2 }}>
+                    <span style={{ fontSize: '0.625rem', color: 'var(--tdgflow-text-muted)', flexShrink: 0, paddingTop: 2 }}>
                       {timeAgo(n.time)}
                     </span>
                   </div>

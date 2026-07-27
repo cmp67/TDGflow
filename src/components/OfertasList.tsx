@@ -79,27 +79,31 @@ export default function OfertasList() {
     <div className="flex-1 overflow-y-auto" style={{ padding: '16px 20px' }}>
 
       {/* Header */}
-      <div style={{ maxWidth: 560, margin: '0 auto 20px' }}>
+      <div style={{ maxWidth: 1320, margin: '0 auto 20px' }}>
         <p className="section-label mb-1">Rede TDG</p>
-        <h1 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+        <h1 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.02em' }}>
           Ofertas ativas
         </h1>
-        <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: 4 }}>
+        <p style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-muted)', marginTop: 4 }}>
           {sorted.length} oferta{sorted.length !== 1 ? 's' : ''} disponível{sorted.length !== 1 ? 'is' : ''} · ordenadas por comissão
         </p>
       </div>
 
-      {/* List */}
-      <div style={{ maxWidth: 560, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {/* Grid — sem borda/sombra empilhadas: a foto e o espaço em branco entre
+          cards fazem a separação, não uma moldura (benchmark Airbnb, ver
+          skill bemgsy-design § Benchmarks Externos). Colunas responsivas em
+          vez de coluna única travada em 560px — a versão anterior desperdiçava
+          toda a largura do desktop e forçava um scroll enorme pra ver 5
+          ofertas; o Airbnb de verdade também usa grid multi-coluna, nunca uma
+          lista vertical estreita. */}
+      <div style={{ maxWidth: 1320, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
         {sorted.map(offer => (
           <div
             key={offer.id}
             style={{
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
+              background: 'var(--tdgflow-surface)',
               borderRadius: 20,
               overflow: 'hidden',
-              boxShadow: '0 2px 12px rgba(17,38,48,0.06)',
             }}
           >
             {/* Photo + commission overlay */}
@@ -120,7 +124,7 @@ export default function OfertasList() {
                 <p style={{ fontSize: '0.55rem', fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)', margin: '0 0 1px' }}>
                   Comissão
                 </p>
-                <p style={{ fontSize: '2.5rem', fontWeight: 200, color: 'var(--surface)', letterSpacing: '-0.04em', lineHeight: 1, margin: 0 }}>
+                <p style={{ fontSize: '2.5rem', fontWeight: 200, color: 'var(--tdgflow-surface)', letterSpacing: '-0.04em', lineHeight: 1, margin: 0 }}>
                   {offer.commission}%
                 </p>
               </div>
@@ -132,7 +136,7 @@ export default function OfertasList() {
                 padding: '4px 10px', borderRadius: 999,
                 background: 'rgba(255,255,255,0.15)',
                 border: '1px solid rgba(255,255,255,0.3)',
-                color: 'var(--surface)',
+                color: 'var(--tdgflow-surface)',
                 backdropFilter: 'blur(4px)',
               }}>
                 {offer.type}
@@ -141,24 +145,24 @@ export default function OfertasList() {
 
             {/* Info section */}
             <div style={{ padding: '14px 18px 16px' }}>
-              <h3 style={{ fontSize: '1rem', fontWeight: 500, color: 'var(--text-primary)', letterSpacing: '-0.01em', margin: '0 0 8px' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 500, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.01em', margin: '0 0 8px' }}>
                 {offer.hotel}
               </h3>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 12 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <MapPin size={11} style={{ color: 'var(--text-faint)', flexShrink: 0 }} />
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{offer.location}</span>
+                  <MapPin size={11} style={{ color: 'var(--tdgflow-text-faint)', flexShrink: 0 }} />
+                  <span style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)' }}>{offer.location}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <Calendar size={11} style={{ color: 'var(--text-faint)', flexShrink: 0 }} />
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{offer.validity}</span>
+                  <Calendar size={11} style={{ color: 'var(--tdgflow-text-faint)', flexShrink: 0 }} />
+                  <span style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)' }}>{offer.validity}</span>
                 </div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                 {offer.highlights.map((h, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
                     <div style={{ width: 4, height: 4, borderRadius: '50%', background: offer.accent, marginTop: 6, flexShrink: 0 }} />
-                    <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>{h}</span>
+                    <span style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-muted)', lineHeight: 1.5 }}>{h}</span>
                   </div>
                 ))}
               </div>

@@ -36,9 +36,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   }
 
   const colors: Record<ToastType, { bg: string; border: string; text: string; icon: string }> = {
-    success: { bg: 'var(--surface)', border: 'rgba(46,125,79,0.35)', text: 'var(--text-primary)', icon: 'var(--success)' },
-    error:   { bg: 'var(--surface)', border: 'rgba(192,57,43,0.35)', text: 'var(--text-primary)', icon: 'var(--error)' },
-    info:    { bg: 'var(--surface)', border: 'var(--border)',        text: 'var(--text-primary)', icon: 'var(--gold)' },
+    success: { bg: 'var(--tdgflow-surface)', border: 'rgba(46,125,79,0.35)', text: 'var(--tdgflow-text-primary)', icon: 'var(--tdgflow-success)' },
+    error:   { bg: 'var(--tdgflow-surface)', border: 'rgba(192,57,43,0.35)', text: 'var(--tdgflow-text-primary)', icon: 'var(--tdgflow-error)' },
+    info:    { bg: 'var(--tdgflow-surface)', border: 'var(--tdgflow-border)',        text: 'var(--tdgflow-text-primary)', icon: 'var(--tdgflow-navy)' },
   }
 
   return (
@@ -83,7 +83,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 </span>
                 <button
                   onClick={() => dismiss(t.id)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: 'var(--text-muted)', flexShrink: 0 }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: 'var(--tdgflow-text-muted)', flexShrink: 0 }}
                 >
                   <X size={12} />
                 </button>

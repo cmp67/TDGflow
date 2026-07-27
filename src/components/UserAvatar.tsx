@@ -50,10 +50,10 @@ export default function UserAvatar({ name, avatarUrl: initialUrl, size = 28, edi
         style={{
           width: size, height: size, borderRadius: '50%',
           overflow: 'hidden', flexShrink: 0,
-          background: url ? 'transparent' : 'var(--surface-high)',
-          border: `1px solid ${hover && editable ? 'var(--gold)' : 'var(--border-light)'}`,
+          background: url ? 'transparent' : 'var(--tdgflow-surface-high)',
+          border: `1px solid ${hover && editable ? 'var(--tdgflow-navy)' : 'var(--tdgflow-border-light)'}`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize, fontWeight: 600, color: 'var(--text-secondary)',
+          fontSize, fontWeight: 600, color: 'var(--tdgflow-text-secondary)',
           cursor: editable ? 'pointer' : 'default',
           transition: 'border-color 150ms',
           position: 'relative',
@@ -72,7 +72,7 @@ export default function UserAvatar({ name, avatarUrl: initialUrl, size = 28, edi
             background: 'rgba(0,0,0,0.45)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <Camera size={Math.round(size * 0.35)} style={{ color: 'var(--surface)' }} />
+            <Camera size={Math.round(size * 0.35)} style={{ color: 'var(--tdgflow-surface)' }} />
           </div>
         )}
 
@@ -83,7 +83,7 @@ export default function UserAvatar({ name, avatarUrl: initialUrl, size = 28, edi
             background: 'rgba(0,0,0,0.4)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <Loader2 size={Math.round(size * 0.38)} className="animate-spin" style={{ color: 'var(--surface)' }} />
+            <Loader2 size={Math.round(size * 0.38)} className="animate-spin" style={{ color: 'var(--tdgflow-surface)' }} />
           </div>
         )}
       </div>

@@ -68,7 +68,7 @@ export default function LandingPage() {
   }, [])
 
   return (
-    <div style={{ background: 'var(--bg)', color: 'var(--text-primary)', fontFamily: 'var(--font-sans)' }}>
+    <div style={{ background: 'var(--tdgflow-bg)', color: 'var(--tdgflow-text-primary)', fontFamily: 'var(--tdgflow-font-sans)' }}>
 
       {/* ── Nav ──────────────────────────────────────────────────── */}
       <header
@@ -79,11 +79,11 @@ export default function LandingPage() {
           <Link href="/" className="flex items-center gap-2 no-underline">
             <div
               className="w-7 h-7 rounded-lg flex items-center justify-center font-semibold"
-              style={{ background: 'var(--gold)', color: 'var(--surface)', fontSize: '0.625rem', letterSpacing: '0.05em' }}
+              style={{ background: 'var(--tdgflow-navy)', color: 'var(--tdgflow-surface)', fontSize: '0.625rem', letterSpacing: '0.05em' }}
             >
               TDG
             </div>
-            <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+            <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.01em' }}>
               Travel Designers Group
             </span>
           </Link>
@@ -94,9 +94,9 @@ export default function LandingPage() {
                 key={href}
                 href={href}
                 className="no-underline transition-colors duration-150"
-                style={{ fontSize: '0.8125rem', fontWeight: 400, color: 'var(--text-muted)', letterSpacing: '0.01em' }}
-                onMouseEnter={e => ((e.target as HTMLElement).style.color = 'var(--text-primary)')}
-                onMouseLeave={e => ((e.target as HTMLElement).style.color = 'var(--text-muted)')}
+                style={{ fontSize: '0.8125rem', fontWeight: 400, color: 'var(--tdgflow-text-muted)', letterSpacing: '0.01em' }}
+                onMouseEnter={e => ((e.target as HTMLElement).style.color = 'var(--tdgflow-text-primary)')}
+                onMouseLeave={e => ((e.target as HTMLElement).style.color = 'var(--tdgflow-text-muted)')}
               >
                 {['A Rede', 'Parceiros', 'O Grupo'][i]}
               </a>
@@ -106,9 +106,9 @@ export default function LandingPage() {
           <Link
             href="/flow"
             className="no-underline flex items-center gap-1.5 transition-colors duration-150"
-            style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--gold)' }}
-            onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = 'var(--gold-hover)')}
-            onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = 'var(--gold)')}
+            style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--tdgflow-navy)' }}
+            onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = 'var(--tdgflow-navy-hover)')}
+            onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = 'var(--tdgflow-navy)')}
           >
             Acessar o Flow
             <ArrowRight size={13} />
@@ -161,20 +161,20 @@ export default function LandingPage() {
               fontWeight: 200,
               letterSpacing: '-0.035em',
               lineHeight: 1.08,
-              color: 'var(--text-primary)',
+              color: 'var(--tdgflow-text-primary)',
               marginBottom: '1.75rem',
             }}
           >
             Dezenove agências.
             <br />
-            <span style={{ color: 'var(--gold)', fontWeight: 300 }}>Uma visão do luxo.</span>
+            <span style={{ color: 'var(--tdgflow-navy)', fontWeight: 300 }}>Uma visão do luxo.</span>
           </motion.h1>
 
           <motion.p
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.5 }}
-            style={{ fontSize: '1rem', color: 'var(--text-muted)', lineHeight: 1.8, fontWeight: 300, maxWidth: '440px', margin: '0 auto 2.5rem' }}
+            style={{ fontSize: '1rem', color: 'var(--tdgflow-text-muted)', lineHeight: 1.8, fontWeight: 300, maxWidth: '440px', margin: '0 auto 2.5rem' }}
           >
             Um grupo de especialistas que compartilham clientes, conhecimento e o mesmo padrão exigente de excelência.
           </motion.p>
@@ -201,7 +201,7 @@ export default function LandingPage() {
           transition={{ delay: 1.1, duration: 0.5 }}
         >
           <motion.div animate={{ y: [0, 5, 0] }} transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}>
-            <ChevronDown size={18} style={{ color: 'var(--text-muted)' }} />
+            <ChevronDown size={18} style={{ color: 'var(--tdgflow-text-muted)' }} />
           </motion.div>
         </motion.div>
       </section>
@@ -209,7 +209,7 @@ export default function LandingPage() {
       {/* ── Stats ────────────────────────────────────────────────── */}
       <section
         id="rede"
-        style={{ borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', background: 'var(--surface)' }}
+        style={{ borderTop: '1px solid var(--tdgflow-border)', borderBottom: '1px solid var(--tdgflow-border)', background: 'var(--tdgflow-surface)' }}
       >
         <div className="max-w-4xl mx-auto px-6 py-12 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
           {[
@@ -219,10 +219,10 @@ export default function LandingPage() {
             { value: '25 anos',  label: 'No setor de luxo' },
           ].map(({ value, label }, i) => (
             <FadeUp key={label} delay={i * 0.07}>
-              <p style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)', fontWeight: 200, color: 'var(--gold)', letterSpacing: '-0.03em', lineHeight: 1, marginBottom: '0.375rem' }}>
+              <p style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)', fontWeight: 200, color: 'var(--tdgflow-navy)', letterSpacing: '-0.03em', lineHeight: 1, marginBottom: '0.375rem' }}>
                 {value}
               </p>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase', fontWeight: 500 }}>
+              <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase', fontWeight: 500 }}>
                 {label}
               </p>
             </FadeUp>
@@ -231,18 +231,18 @@ export default function LandingPage() {
       </section>
 
       {/* ── Programs strip ───────────────────────────────────────── */}
-      <section style={{ background: 'var(--bg)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', padding: '18px 24px' }}>
+      <section style={{ background: 'var(--tdgflow-bg)', borderTop: '1px solid var(--tdgflow-border)', borderBottom: '1px solid var(--tdgflow-border)', padding: '18px 24px' }}>
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-10 text-center">
-          <p style={{ fontSize: '0.625rem', fontWeight: 400, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+          <p style={{ fontSize: '0.625rem', fontWeight: 400, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)', whiteSpace: 'nowrap' }}>
             Reconhecidos por
           </p>
           <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2">
             {PROGRAMS.map((name, i) => (
               <span
                 key={name}
-                style={{ fontSize: '0.75rem', fontWeight: 300, color: 'var(--text-secondary)', letterSpacing: '0.02em' }}
+                style={{ fontSize: '0.75rem', fontWeight: 300, color: 'var(--tdgflow-text-secondary)', letterSpacing: '0.02em' }}
               >
-                {name}{i < PROGRAMS.length - 1 && <span style={{ margin: '0 0 0 32px', color: 'var(--border-light)' }} />}
+                {name}{i < PROGRAMS.length - 1 && <span style={{ margin: '0 0 0 32px', color: 'var(--tdgflow-border-light)' }} />}
               </span>
             ))}
           </div>
@@ -250,13 +250,13 @@ export default function LandingPage() {
       </section>
 
       {/* ── Properties ───────────────────────────────────────────── */}
-      <section id="parceiros" className="py-24 px-6 relative grain overflow-hidden" style={{ background: 'var(--bg)' }}>
+      <section id="parceiros" className="py-24 px-6 relative grain overflow-hidden" style={{ background: 'var(--tdgflow-bg)' }}>
         <div className="max-w-6xl mx-auto">
           <FadeUp className="mb-2">
             <p className="section-label">Onde já estivemos</p>
           </FadeUp>
           <FadeUp delay={0.08}>
-            <h2 style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)', fontWeight: 200, letterSpacing: '-0.03em', color: 'var(--text-primary)', marginBottom: '2.5rem', lineHeight: 1.15 }}>
+            <h2 style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)', fontWeight: 200, letterSpacing: '-0.03em', color: 'var(--tdgflow-text-primary)', marginBottom: '2.5rem', lineHeight: 1.15 }}>
               Lugares que conhecemos<br />por dentro
             </h2>
           </FadeUp>
@@ -272,12 +272,12 @@ export default function LandingPage() {
                 <div className="prop-card-overlay" />
                 <div className="relative z-10">
                   <span className="badge badge-gold mb-2" style={{ fontSize: '0.6rem' }}>{PROPERTIES[0].tag}</span>
-                  <h3 style={{ fontSize: '1.5rem', fontWeight: 300, color: 'var(--text-primary)', letterSpacing: '-0.02em', lineHeight: 1.2, marginBottom: '0.25rem' }}>
+                  <h3 style={{ fontSize: '1.5rem', fontWeight: 300, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.02em', lineHeight: 1.2, marginBottom: '0.25rem' }}>
                     {PROPERTIES[0].name}
                   </h3>
                   <div className="flex items-center gap-1">
-                    <MapPin size={11} style={{ color: 'var(--gold-dim)' }} />
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{PROPERTIES[0].location}</span>
+                    <MapPin size={11} style={{ color: 'var(--tdgflow-navy-dim)' }} />
+                    <span style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)' }}>{PROPERTIES[0].location}</span>
                   </div>
                 </div>
               </div>
@@ -293,12 +293,12 @@ export default function LandingPage() {
                   <div className="prop-card-overlay" />
                   <div className="relative z-10">
                     <span className="badge badge-muted mb-1.5" style={{ fontSize: '0.58rem' }}>{p.tag}</span>
-                    <h3 style={{ fontSize: '1.125rem', fontWeight: 300, color: 'var(--text-primary)', letterSpacing: '-0.015em', lineHeight: 1.2 }}>
+                    <h3 style={{ fontSize: '1.125rem', fontWeight: 300, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.015em', lineHeight: 1.2 }}>
                       {p.name}
                     </h3>
                     <div className="flex items-center gap-1 mt-0.5">
-                      <MapPin size={10} style={{ color: 'var(--gold-dim)' }} />
-                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{p.location}</span>
+                      <MapPin size={10} style={{ color: 'var(--tdgflow-navy-dim)' }} />
+                      <span style={{ fontSize: '0.7rem', color: 'var(--tdgflow-text-muted)' }}>{p.location}</span>
                     </div>
                   </div>
                 </div>
@@ -317,7 +317,7 @@ export default function LandingPage() {
       {/* ── Pillars ──────────────────────────────────────────────── */}
       <section
         className="py-20 px-6"
-        style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}
+        style={{ background: 'var(--tdgflow-surface)', borderTop: '1px solid var(--tdgflow-border)', borderBottom: '1px solid var(--tdgflow-border)' }}
       >
         <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-10">
           {PILLARS.map(({ icon: Icon, title, desc }, i) => (
@@ -325,12 +325,12 @@ export default function LandingPage() {
               <div className="space-y-3">
                 <div
                   className="w-9 h-9 rounded-lg flex items-center justify-center"
-                  style={{ background: 'var(--gold-subtle)', border: '1px solid var(--gold-ring)' }}
+                  style={{ background: 'var(--tdgflow-navy-subtle)', border: '1px solid var(--tdgflow-navy-ring)' }}
                 >
-                  <Icon size={16} style={{ color: 'var(--gold)' }} />
+                  <Icon size={16} style={{ color: 'var(--tdgflow-navy)' }} />
                 </div>
-                <p style={{ fontSize: '0.9375rem', fontWeight: 500, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>{title}</p>
-                <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', lineHeight: 1.7, fontWeight: 300 }}>{desc}</p>
+                <p style={{ fontSize: '0.9375rem', fontWeight: 500, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.01em' }}>{title}</p>
+                <p style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-muted)', lineHeight: 1.7, fontWeight: 300 }}>{desc}</p>
               </div>
             </FadeUp>
           ))}
@@ -341,19 +341,19 @@ export default function LandingPage() {
       <section
         id="grupo"
         className="relative grain overflow-hidden py-24 px-6 text-center"
-        style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)' }}
+        style={{ background: 'var(--tdgflow-surface)', borderTop: '1px solid var(--tdgflow-border)' }}
       >
         <div className="max-w-xl mx-auto">
           <FadeUp>
             <p className="section-label mb-5">O grupo</p>
           </FadeUp>
           <FadeUp delay={0.08}>
-            <h2 style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.75rem)', fontWeight: 200, letterSpacing: '-0.03em', lineHeight: 1.2, color: 'var(--text-primary)', marginBottom: '1.25rem' }}>
+            <h2 style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.75rem)', fontWeight: 200, letterSpacing: '-0.03em', lineHeight: 1.2, color: 'var(--tdgflow-text-primary)', marginBottom: '1.25rem' }}>
               Algumas parcerias chegam<br />a uma agência. Esta<br />chega a dezenove.
             </h2>
           </FadeUp>
           <FadeUp delay={0.12}>
-            <p style={{ fontSize: '0.9375rem', color: 'var(--text-muted)', lineHeight: 1.85, fontWeight: 300, marginBottom: '2rem' }}>
+            <p style={{ fontSize: '0.9375rem', color: 'var(--tdgflow-text-muted)', lineHeight: 1.85, fontWeight: 300, marginBottom: '2rem' }}>
               O TDG não é uma rede de distribuição. É uma comunidade de especialistas que viajam juntos, aprendem juntos e constroem relações duradouras com as marcas em que acreditam.
             </p>
           </FadeUp>
@@ -369,11 +369,11 @@ export default function LandingPage() {
       </section>
 
       {/* ── Footer ───────────────────────────────────────────────── */}
-      <footer className="px-6 py-10" style={{ background: '#0A0909', borderTop: '1px solid var(--border)' }}>
+      <footer className="px-6 py-10" style={{ background: '#0A0909', borderTop: '1px solid var(--tdgflow-border)' }}>
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center font-semibold" style={{ background: 'var(--gold)', color: 'var(--surface)', fontSize: '0.625rem' }}>TDG</div>
-            <span style={{ fontSize: '0.875rem', fontWeight: 400, color: 'var(--text-secondary)' }}>Travel Designers Group</span>
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center font-semibold" style={{ background: 'var(--tdgflow-navy)', color: 'var(--tdgflow-surface)', fontSize: '0.625rem' }}>TDG</div>
+            <span style={{ fontSize: '0.875rem', fontWeight: 400, color: 'var(--tdgflow-text-secondary)' }}>Travel Designers Group</span>
           </div>
           <div className="flex flex-wrap gap-6">
             {[
@@ -383,13 +383,13 @@ export default function LandingPage() {
               { label: 'Instagram', href: 'https://www.instagram.com/traveldesignersgroup' },
             ].map(({ label, href }) => (
               <a key={label} href={href} target={href.startsWith('http') ? '_blank' : undefined} rel="noreferrer"
-                className="no-underline" style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', fontWeight: 300 }}
-                onMouseEnter={e => ((e.target as HTMLElement).style.color = 'var(--text-secondary)')}
-                onMouseLeave={e => ((e.target as HTMLElement).style.color = 'var(--text-muted)')}
+                className="no-underline" style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-muted)', fontWeight: 300 }}
+                onMouseEnter={e => ((e.target as HTMLElement).style.color = 'var(--tdgflow-text-secondary)')}
+                onMouseLeave={e => ((e.target as HTMLElement).style.color = 'var(--tdgflow-text-muted)')}
               >{label}</a>
             ))}
           </div>
-          <p style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
+          <p style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)' }}>
             © {new Date().getFullYear()} Travel Designers Group
           </p>
         </div>

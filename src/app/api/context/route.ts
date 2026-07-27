@@ -12,8 +12,20 @@ export async function GET() {
 
   // Ensure avatar column exists and fetch it
   await sql`ALTER TABLE tdg_users ADD COLUMN IF NOT EXISTS avatar_url TEXT`
-  const avatarRes = await sql`SELECT avatar_url FROM tdg_users WHERE email = ${session.user?.email ?? ''} LIMIT 1`
-  const avatarUrl: string | null = avatarRes.rows[0]?.avatar_url ?? null
+  const profileRes = await sql`SELECT avatar_url, role FROM tdg_users WHERE email = ${session.user?.email ?? ''} LIMIT 1`
+  const avatarUrl: string | null = profileRes.rows[0]?.avatar_url ?? null
+  const isAdmin = profileRes.rows[0]?.role === 'admin'
+
+  // Pedidos de ativação GUEST pendentes — só existe pro admin global (a mesma
+  // pessoa que os aprova na aba "Rede TDG" do Billing). A tabela pode ainda
+  // não existir se ninguém pediu ativação ainda — tratado como 0, não erro.
+  let pendingGuestRequests = 0
+  if (isAdmin) {
+    try {
+      const { rows } = await sql`SELECT COUNT(*)::int AS count FROM tdg_guest_activation_requests WHERE status = 'pending'`
+      pendingGuestRequests = rows[0]?.count ?? 0
+    } catch { /* tabela ainda não existe — sem pedidos */ }
+  }
 
   const [pendingRes, reviewsRes, promotionsRes, lastReviewRes] = await Promise.all([
     // Gravações pendentes de transcrição
@@ -54,5 +66,6 @@ export async function GET() {
     reviews_this_week: reviewsRes.rows[0]?.count ?? 0,
     expiring_promotions: promotionsRes.rows,
     last_review_date: lastReviewRes.rows[0]?.created_at ?? null,
+    pending_guest_requests: pendingGuestRequests,
   })
 }

@@ -6,7 +6,7 @@ import { TrendingUp, Building2, Users, Star, BarChart2, Award, Sparkles, MapPin,
 import { useLanguage } from '@/contexts/LanguageContext'
 
 const VISIT_TYPE_COLORS: Record<string, string> = {
-  fam_trip:           'var(--gold)',
+  fam_trip:           'var(--tdgflow-navy)',
   site_inspection:    '#7DD3FC',
   personal_stay:      '#86EFAC',
   commercial_meeting: '#C4B5FD',
@@ -65,22 +65,21 @@ function StatCard({ value, label, icon, accent = false, delay = 0 }: {
   const isNumeric = typeof value === 'number'
   const animated = useCountUp(isNumeric ? numericTarget : 0, 900)
 
+  // Sem card/borda — número solto sobre o fundo, cor faz o trabalho de
+  // destaque no lugar de uma caixa tintada (Stripe/Linear, skill
+  // bemgsy-design § Benchmarks Externos).
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.35 }}
-      style={{
-        background: accent ? 'linear-gradient(135deg, var(--gold-subtle) 0%, transparent 100%)' : 'var(--surface)',
-        border: `1px solid ${accent ? 'var(--gold-ring)' : 'var(--border)'}`,
-        borderRadius: 14, padding: '16px 18px',
-      }}
+      style={{ padding: '4px 2px' }}
     >
-      <div style={{ color: accent ? 'var(--gold)' : 'var(--text-muted)', marginBottom: 10 }}>{icon}</div>
-      <p style={{ fontSize: '2rem', fontWeight: 700, letterSpacing: '-0.04em', color: accent ? 'var(--gold)' : 'var(--text-primary)', lineHeight: 1, marginBottom: 5 }}>
+      <div style={{ color: accent ? 'var(--tdgflow-navy)' : 'var(--tdgflow-text-faint)', marginBottom: 8 }}>{icon}</div>
+      <p style={{ fontSize: '2rem', fontWeight: 800, letterSpacing: '-0.04em', color: accent ? 'var(--tdgflow-navy)' : 'var(--tdgflow-text-primary)', lineHeight: 1, marginBottom: 5 }}>
         {isNumeric ? animated.toLocaleString('pt-BR') : value}
       </p>
-      <p style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', letterSpacing: '0.01em' }}>{label}</p>
+      <p style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-faint)', letterSpacing: '0.01em' }}>{label}</p>
     </motion.div>
   )
 }
@@ -89,7 +88,7 @@ function StatCard({ value, label, icon, accent = false, delay = 0 }: {
 function MiniBar({ value, max, color }: { value: number; max: number; color: string }) {
   const pct = max > 0 ? (value / max) * 100 : 0
   return (
-    <div style={{ flex: 1, height: 5, background: 'var(--border)', borderRadius: 3, overflow: 'hidden' }}>
+    <div style={{ flex: 1, height: 5, background: 'var(--tdgflow-border)', borderRadius: 3, overflow: 'hidden' }}>
       <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.7, ease: [0.4, 0, 0.2, 1] }}
         style={{ height: '100%', background: color, borderRadius: 3 }} />
     </div>
@@ -97,8 +96,8 @@ function MiniBar({ value, max, color }: { value: number; max: number; color: str
 }
 
 /* ── Trend chart ─────────────────────────────────────────────────────── */
-function TrendChart({ data, color = 'var(--gold)' }: { data: MonthStat[]; color?: string }) {
-  if (!data.length) return <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', padding: '8px 0' }}>Sem dados suficientes.</p>
+function TrendChart({ data, color = 'var(--tdgflow-navy)' }: { data: MonthStat[]; color?: string }) {
+  if (!data.length) return <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)', padding: '8px 0' }}>Sem dados suficientes.</p>
   const max = Math.max(...data.map(d => d.reviews), 1)
   const height = 52
   return (
@@ -115,7 +114,7 @@ function TrendChart({ data, color = 'var(--gold)' }: { data: MonthStat[]; color?
               title={`${d.reviews} dicas`}
               style={{ width: '100%', background: color, borderRadius: '3px 3px 0 0', opacity: i === data.length - 1 ? 1 : 0.5 }}
             />
-            <span style={{ fontSize: '0.45rem', color: 'var(--text-muted)', letterSpacing: '0.02em' }}>{label}</span>
+            <span style={{ fontSize: '0.45rem', color: 'var(--tdgflow-text-muted)', letterSpacing: '0.02em' }}>{label}</span>
           </div>
         )
       })}
@@ -125,25 +124,25 @@ function TrendChart({ data, color = 'var(--gold)' }: { data: MonthStat[]; color?
 
 /* ── Activity item ───────────────────────────────────────────────────── */
 function ActivityRow({ item }: { item: ActivityItem }) {
-  const color = VISIT_TYPE_COLORS[item.visit_type ?? ''] ?? 'var(--border-light)'
+  const color = VISIT_TYPE_COLORS[item.visit_type ?? ''] ?? 'var(--tdgflow-border-light)'
   const elapsed = Date.now() - new Date(item.created_at).getTime()
   const days = Math.floor(elapsed / 86400000)
   const hours = Math.floor(elapsed / 3600000)
   const timeStr = days > 0 ? `há ${days}d` : hours > 0 ? `há ${hours}h` : 'agora'
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid var(--tdgflow-border)' }}>
       <div style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
       <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        <p style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--tdgflow-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {item.hotel_name}
-          {item.country && <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}> · {item.country}</span>}
+          {item.country && <span style={{ color: 'var(--tdgflow-text-muted)', fontWeight: 400 }}> · {item.country}</span>}
         </p>
-        <p style={{ fontSize: '0.6875rem', color: 'var(--text-secondary)' }}>{item.agent_name} · {item.agency_name}</p>
+        <p style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-secondary)' }}>{item.agent_name} · {item.agency_name}</p>
       </div>
       <div style={{ textAlign: 'right', flexShrink: 0 }}>
-        <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--gold)' }}>{item.overall_rating} ★</p>
-        <p style={{ fontSize: '0.625rem', color: 'var(--text-muted)' }}>{timeStr}</p>
+        <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--tdgflow-navy)' }}>{item.overall_rating} ★</p>
+        <p style={{ fontSize: '0.625rem', color: 'var(--tdgflow-text-muted)' }}>{timeStr}</p>
       </div>
     </div>
   )
@@ -162,17 +161,17 @@ function InsightsBlock() {
   }, [])
 
   return (
-    <div style={{ background: 'linear-gradient(135deg, var(--gold-subtle) 0%, var(--surface) 60%)', border: '1px solid var(--gold-ring)', borderRadius: 14, padding: '16px 18px' }}>
+    <div style={{ background: 'linear-gradient(135deg, var(--tdgflow-navy-subtle) 0%, var(--tdgflow-surface) 60%)', border: '1px solid var(--tdgflow-navy-ring)', borderRadius: 14, padding: '16px 18px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-        <Sparkles size={13} style={{ color: 'var(--gold)' }} />
-        <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--gold-dim)' }}>
+        <Sparkles size={13} style={{ color: 'var(--tdgflow-navy)' }} />
+        <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--tdgflow-navy-dim)' }}>
           Insights da rede · gerado por IA
         </p>
       </div>
       {loading ? (
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--gold)', opacity: 0.6, animation: 'pulse 1.2s ease-in-out infinite' }} />
-          <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Analisando dados...</p>
+          <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--tdgflow-navy)', opacity: 0.6, animation: 'pulse 1.2s ease-in-out infinite' }} />
+          <p style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-muted)' }}>Analisando dados...</p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -184,8 +183,8 @@ function InsightsBlock() {
               transition={{ delay: i * 0.12 }}
               style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}
             >
-              <span style={{ color: 'var(--gold)', fontSize: '0.6rem', marginTop: 4, flexShrink: 0 }}>◆</span>
-              <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{text}</p>
+              <span style={{ color: 'var(--tdgflow-navy)', fontSize: '0.6rem', marginTop: 4, flexShrink: 0 }}>◆</span>
+              <p style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-secondary)', lineHeight: 1.5 }}>{text}</p>
             </motion.div>
           ))}
         </div>
@@ -230,7 +229,7 @@ export default function AnalyticsView() {
 
   if (loading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-      <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Carregando dados...</p>
+      <p style={{ color: 'var(--tdgflow-text-muted)', fontSize: '0.875rem' }}>Carregando dados...</p>
     </div>
   )
   if (!data) return null
@@ -256,26 +255,26 @@ export default function AnalyticsView() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
 
       {/* ── Header ─────────────────────────────────────────────────── */}
-      <div style={{ flexShrink: 0, background: 'var(--surface)', borderBottom: '1px solid var(--border)', padding: '18px 20px 0' }}>
+      <div style={{ flexShrink: 0, background: 'var(--tdgflow-surface)', borderBottom: '1px solid var(--tdgflow-border)', padding: '18px 20px 0' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
           <div>
-            <p style={{ fontSize: '0.5625rem', fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--gold-dim)', marginBottom: 3 }}>
+            <p style={{ fontSize: '0.5625rem', fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--tdgflow-navy-dim)', marginBottom: 3 }}>
               Intelligence
             </p>
-            <h2 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.025em' }}>
+            <h2 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.025em' }}>
               Analytics TDG
             </h2>
           </div>
           {/* Period selector */}
-          <div style={{ display: 'flex', gap: 3, background: 'var(--bg)', borderRadius: 10, padding: 3, border: '1px solid var(--border)' }}>
+          <div style={{ display: 'flex', gap: 3, background: 'var(--tdgflow-bg)', borderRadius: 10, padding: 3, border: '1px solid var(--tdgflow-border)' }}>
             {(['month', 'quarter', 'year', 'all'] as Period[]).map(p => (
               <button
                 key={p}
                 onClick={() => setPeriod(p)}
                 style={{
                   padding: '4px 9px', borderRadius: 7, fontSize: '0.6875rem', cursor: 'pointer', border: 'none',
-                  background: period === p ? 'var(--surface)' : 'transparent',
-                  color: period === p ? 'var(--text-primary)' : 'var(--text-muted)',
+                  background: period === p ? 'var(--tdgflow-surface)' : 'transparent',
+                  color: period === p ? 'var(--tdgflow-text-primary)' : 'var(--tdgflow-text-muted)',
                   fontWeight: period === p ? 600 : 400,
                   boxShadow: period === p ? '0 1px 3px rgba(28,20,16,0.10)' : 'none',
                   transition: 'all 150ms',
@@ -288,7 +287,7 @@ export default function AnalyticsView() {
         </div>
 
         {/* Tabs */}
-        <div style={{ display: 'flex', borderTop: '1px solid var(--border)' }}>
+        <div style={{ display: 'flex', borderTop: '1px solid var(--tdgflow-border)' }}>
           {[
             { id: 'network', label: tr('analytics.network') },
             { id: 'me', label: tr('analytics.me') },
@@ -299,8 +298,8 @@ export default function AnalyticsView() {
               style={{
                 padding: '10px 16px', background: 'none', border: 'none', cursor: 'pointer',
                 fontSize: '0.875rem', fontWeight: tab === t.id ? 600 : 500,
-                color: tab === t.id ? 'var(--text-primary)' : 'var(--text-muted)',
-                borderBottom: tab === t.id ? '2px solid var(--gold)' : '2px solid transparent',
+                color: tab === t.id ? 'var(--tdgflow-text-primary)' : 'var(--tdgflow-text-muted)',
+                borderBottom: tab === t.id ? '2px solid var(--tdgflow-navy)' : '2px solid transparent',
                 transition: 'all 150ms',
               }}
             >
@@ -334,29 +333,29 @@ export default function AnalyticsView() {
               {topHotel && (
                 <motion.div
                   initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-                  style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '16px 18px', position: 'relative', overflow: 'hidden' }}
+                  style={{ background: 'var(--tdgflow-surface)', border: '1px solid var(--tdgflow-border)', borderRadius: 14, padding: '16px 18px', position: 'relative', overflow: 'hidden' }}
                 >
-                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'linear-gradient(90deg, var(--gold) 0%, var(--gold-dim) 100%)' }} />
+                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'linear-gradient(90deg, var(--tdgflow-navy) 0%, var(--tdgflow-navy-dim) 100%)' }} />
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                    <Trophy size={13} style={{ color: 'var(--gold)' }} />
-                    <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                    <Trophy size={13} style={{ color: 'var(--tdgflow-navy)' }} />
+                    <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)' }}>
                       Hotel mais avaliado da rede
                     </p>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div>
-                      <p style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.02em', marginBottom: 3 }}>
+                      <p style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.02em', marginBottom: 3 }}>
                         {topHotel.hotel_name}
                       </p>
-                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                      <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)' }}>
                         {topHotel.agency_count} agênci{topHotel.agency_count !== 1 ? 'as' : 'a'} visitaram
                       </p>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <p style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--gold)', letterSpacing: '-0.04em', lineHeight: 1 }}>
+                      <p style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--tdgflow-navy)', letterSpacing: '-0.04em', lineHeight: 1 }}>
                         {topHotel.visit_count}
                       </p>
-                      <p style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
+                      <p style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)' }}>
                         visitas · {Number(topHotel.avg_rating).toFixed(1)} ★
                       </p>
                     </div>
@@ -365,24 +364,24 @@ export default function AnalyticsView() {
               )}
 
               {/* ── Por tipo de visita ── */}
-              <div style={{ background: 'var(--surface)', borderRadius: 14, border: '1px solid var(--border)', padding: '16px 18px' }}>
-                <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 14 }}>
+              <div style={{ background: 'var(--tdgflow-surface)', borderRadius: 14, border: '1px solid var(--tdgflow-border)', padding: '16px 18px' }}>
+                <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)', marginBottom: 14 }}>
                   {tr('analytics.byType')} · {PERIOD_LABELS[period]}
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                   {byTypeSorted.map(s => {
                     const v = periodCount(s, period)
-                    const color = VISIT_TYPE_COLORS[s.visit_type] ?? 'var(--text-muted)'
+                    const color = VISIT_TYPE_COLORS[s.visit_type] ?? 'var(--tdgflow-text-muted)'
                     return (
                       <div key={s.visit_type}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <div style={{ width: 9, height: 9, borderRadius: '50%', background: color, flexShrink: 0 }} />
-                            <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-secondary)' }}>
+                            <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--tdgflow-text-secondary)' }}>
                               {VISIT_TYPE_LABELS[s.visit_type] ?? s.visit_type}
                             </span>
                           </div>
-                          <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
+                          <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.03em' }}>
                             {v.toLocaleString('pt-BR')}
                           </span>
                         </div>
@@ -395,10 +394,10 @@ export default function AnalyticsView() {
 
               {/* ── Top países ── */}
               {(network.top_countries ?? []).length > 0 && (
-                <div style={{ background: 'var(--surface)', borderRadius: 14, border: '1px solid var(--border)', padding: '16px 18px' }}>
+                <div style={{ background: 'var(--tdgflow-surface)', borderRadius: 14, border: '1px solid var(--tdgflow-border)', padding: '16px 18px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-                    <MapPin size={13} style={{ color: 'var(--gold)' }} />
-                    <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                    <MapPin size={13} style={{ color: 'var(--tdgflow-navy)' }} />
+                    <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)' }}>
                       Destinos mais avaliados
                     </p>
                   </div>
@@ -406,10 +405,10 @@ export default function AnalyticsView() {
                     {network.top_countries.map(c => (
                       <div key={c.country}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                          <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-secondary)' }}>{c.country}</span>
-                          <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>{c.visit_count}</span>
+                          <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--tdgflow-text-secondary)' }}>{c.country}</span>
+                          <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)' }}>{c.visit_count}</span>
                         </div>
-                        <MiniBar value={c.visit_count} max={maxCountry} color="var(--gold)" />
+                        <MiniBar value={c.visit_count} max={maxCountry} color="var(--tdgflow-navy)" />
                       </div>
                     ))}
                   </div>
@@ -417,8 +416,8 @@ export default function AnalyticsView() {
               )}
 
               {/* ── Tendência mensal ── */}
-              <div style={{ background: 'var(--surface)', borderRadius: 14, border: '1px solid var(--border)', padding: '16px 18px' }}>
-                <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 16 }}>
+              <div style={{ background: 'var(--tdgflow-surface)', borderRadius: 14, border: '1px solid var(--tdgflow-border)', padding: '16px 18px' }}>
+                <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)', marginBottom: 16 }}>
                   {tr('analytics.trend')}
                 </p>
                 <TrendChart data={network.monthly_trend} />
@@ -426,10 +425,10 @@ export default function AnalyticsView() {
 
               {/* ── Feed de atividade ── */}
               {(network.recent_activity ?? []).length > 0 && (
-                <div style={{ background: 'var(--surface)', borderRadius: 14, border: '1px solid var(--border)', padding: '16px 18px' }}>
+                <div style={{ background: 'var(--tdgflow-surface)', borderRadius: 14, border: '1px solid var(--tdgflow-border)', padding: '16px 18px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <Activity size={13} style={{ color: 'var(--gold)' }} />
-                    <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                    <Activity size={13} style={{ color: 'var(--tdgflow-navy)' }} />
+                    <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)' }}>
                       Atividade recente da rede
                     </p>
                   </div>
@@ -440,50 +439,50 @@ export default function AnalyticsView() {
               )}
 
               {/* ── Top hotéis ── */}
-              <div style={{ background: 'var(--surface)', borderRadius: 14, border: '1px solid var(--border)', overflow: 'hidden' }}>
+              <div style={{ background: 'var(--tdgflow-surface)', borderRadius: 14, border: '1px solid var(--tdgflow-border)', overflow: 'hidden' }}>
                 <div style={{ padding: '16px 18px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Award size={13} style={{ color: 'var(--gold)' }} />
-                  <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                  <Award size={13} style={{ color: 'var(--tdgflow-navy)' }} />
+                  <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)' }}>
                     {tr('analytics.topHotels')}
                   </p>
                 </div>
                 {network.top_hotels.map((h, i) => (
-                  <div key={h.hotel_name} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 18px', borderTop: '1px solid var(--border)', background: i === 0 ? 'var(--gold-subtle)' : 'transparent' }}>
-                    <span style={{ width: 22, height: 22, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '0.6875rem', fontWeight: 700, background: i < 3 ? 'var(--gold-subtle)' : 'var(--surface-high)', color: i < 3 ? 'var(--gold)' : 'var(--text-muted)', border: i < 3 ? '1px solid var(--gold-ring)' : '1px solid var(--border)' }}>
+                  <div key={h.hotel_name} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 18px', borderTop: '1px solid var(--tdgflow-border)', background: i === 0 ? 'var(--tdgflow-navy-subtle)' : 'transparent' }}>
+                    <span style={{ width: 22, height: 22, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '0.6875rem', fontWeight: 700, background: i < 3 ? 'var(--tdgflow-navy-subtle)' : 'var(--tdgflow-surface-high)', color: i < 3 ? 'var(--tdgflow-navy)' : 'var(--tdgflow-text-muted)', border: i < 3 ? '1px solid var(--tdgflow-navy-ring)' : '1px solid var(--tdgflow-border)' }}>
                       {i + 1}
                     </span>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{h.hotel_name}</p>
-                      <p style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>{h.agency_count} agênci{h.agency_count !== 1 ? 'as' : 'a'}</p>
+                      <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{h.hotel_name}</p>
+                      <p style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)' }}>{h.agency_count} agênci{h.agency_count !== 1 ? 'as' : 'a'}</p>
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <p style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>{h.visit_count}</p>
-                      <p style={{ fontSize: '0.6rem', color: 'var(--gold)' }}>{Number(h.avg_rating).toFixed(1)} ★</p>
+                      <p style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.03em' }}>{h.visit_count}</p>
+                      <p style={{ fontSize: '0.6rem', color: 'var(--tdgflow-navy)' }}>{Number(h.avg_rating).toFixed(1)} ★</p>
                     </div>
                   </div>
                 ))}
               </div>
 
               {/* ── Top agências ── */}
-              <div style={{ background: 'var(--surface)', borderRadius: 14, border: '1px solid var(--border)', overflow: 'hidden' }}>
+              <div style={{ background: 'var(--tdgflow-surface)', borderRadius: 14, border: '1px solid var(--tdgflow-border)', overflow: 'hidden' }}>
                 <div style={{ padding: '16px 18px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <BarChart2 size={13} style={{ color: 'var(--gold)' }} />
-                  <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                  <BarChart2 size={13} style={{ color: 'var(--tdgflow-navy)' }} />
+                  <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)' }}>
                     {tr('analytics.topAgencies')}
                   </p>
                 </div>
                 {network.top_agencies.map(a => (
-                  <div key={a.agency_name} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 18px', borderTop: '1px solid var(--border)' }}>
-                    <div style={{ width: 30, height: 30, borderRadius: 8, flexShrink: 0, background: 'var(--surface-high)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6875rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                  <div key={a.agency_name} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 18px', borderTop: '1px solid var(--tdgflow-border)' }}>
+                    <div style={{ width: 30, height: 30, borderRadius: 8, flexShrink: 0, background: 'var(--tdgflow-surface-high)', border: '1px solid var(--tdgflow-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6875rem', fontWeight: 700, color: 'var(--tdgflow-text-secondary)' }}>
                       {a.agency_name.slice(0, 2).toUpperCase()}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{a.agency_name}</p>
-                      <p style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>{a.unique_hotels} hotéis únicos</p>
+                      <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{a.agency_name}</p>
+                      <p style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)' }}>{a.unique_hotels} hotéis únicos</p>
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <p style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>{a.review_count}</p>
-                      <p style={{ fontSize: '0.6rem', color: 'var(--gold)' }}>{Number(a.avg_rating).toFixed(1)} ★</p>
+                      <p style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.03em' }}>{a.review_count}</p>
+                      <p style={{ fontSize: '0.6rem', color: 'var(--tdgflow-navy)' }}>{Number(a.avg_rating).toFixed(1)} ★</p>
                     </div>
                   </div>
                 ))}
@@ -504,22 +503,22 @@ export default function AnalyticsView() {
               </div>
 
               {me.by_visit_type.length > 0 && (
-                <div style={{ background: 'var(--surface)', borderRadius: 14, border: '1px solid var(--border)', padding: '16px 18px' }}>
-                  <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 14 }}>
+                <div style={{ background: 'var(--tdgflow-surface)', borderRadius: 14, border: '1px solid var(--tdgflow-border)', padding: '16px 18px' }}>
+                  <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)', marginBottom: 14 }}>
                     Minhas visitas por tipo
                   </p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                     {me.by_visit_type.map(s => {
-                      const color = VISIT_TYPE_COLORS[s.visit_type] ?? 'var(--text-muted)'
+                      const color = VISIT_TYPE_COLORS[s.visit_type] ?? 'var(--tdgflow-text-muted)'
                       const maxMe = Math.max(...me.by_visit_type.map(x => x.count), 1)
                       return (
                         <div key={s.visit_type}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 7 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                               <div style={{ width: 9, height: 9, borderRadius: '50%', background: color }} />
-                              <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-secondary)' }}>{VISIT_TYPE_LABELS[s.visit_type] ?? s.visit_type}</span>
+                              <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--tdgflow-text-secondary)' }}>{VISIT_TYPE_LABELS[s.visit_type] ?? s.visit_type}</span>
                             </div>
-                            <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>{s.count}</span>
+                            <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--tdgflow-text-primary)' }}>{s.count}</span>
                           </div>
                           <MiniBar value={s.count} max={maxMe} color={color} />
                         </div>
@@ -530,8 +529,8 @@ export default function AnalyticsView() {
               )}
 
               {me.monthly_trend.length > 0 && (
-                <div style={{ background: 'var(--surface)', borderRadius: 14, border: '1px solid var(--border)', padding: '16px 18px' }}>
-                  <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 16 }}>
+                <div style={{ background: 'var(--tdgflow-surface)', borderRadius: 14, border: '1px solid var(--tdgflow-border)', padding: '16px 18px' }}>
+                  <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)', marginBottom: 16 }}>
                     Minha atividade — últimos 6 meses
                   </p>
                   <TrendChart data={me.monthly_trend} color="#86EFAC" />
@@ -540,9 +539,9 @@ export default function AnalyticsView() {
 
               {me.total_reviews === 0 && (
                 <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-                  <TrendingUp size={28} style={{ color: 'var(--text-muted)', margin: '0 auto 12px' }} />
-                  <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Você ainda não registrou nenhuma dica.</p>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>Vá em Dicas → Nova visita para começar.</p>
+                  <TrendingUp size={28} style={{ color: 'var(--tdgflow-text-muted)', margin: '0 auto 12px' }} />
+                  <p style={{ fontSize: '0.875rem', color: 'var(--tdgflow-text-muted)' }}>Você ainda não registrou nenhuma dica.</p>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)', marginTop: 4 }}>Vá em Dicas → Nova visita para começar.</p>
                 </div>
               )}
             </motion.div>

@@ -1,85 +1,116 @@
-@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@200;300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 /* ── Design System — TDG Flow ───────────────────────────────────────────── */
 
+/* Todos os tokens abaixo usam o prefixo --tdgflow- de propósito — nomes
+   genéricos como --text-primary ou --bg vivem em :root, escopo do documento
+   inteiro, e uma extensão de navegador mal-escrita que declare uma variável
+   de mesmo nome (ex.: pra sua própria UI injetada) vence silenciosamente a
+   nossa na cascata. Foi exatamente isso que causou o bug de texto invisível
+   investigado em 26/07/2026 — uma extensão redefinia --text-primary global.
+   Prefixo exclusivo blinda contra essa classe inteira de colisão. */
 :root {
   /* Backgrounds — cool neutral */
-  --bg:            #F3F7F8;
-  --surface:       #FFFFFF;
-  --surface-high:  #E8F0F2;
-  --border:        #D0E2E5;
-  --border-light:  #B8D0D5;
-  --border-subtle: #E4EEF0; /* mais clara que --border — contorno discreto de card, não divisor de seção */
+  --tdgflow-bg:            #F3F7F8;
+  --tdgflow-surface:       #FFFFFF;
+  --tdgflow-surface-high:  #E8F0F2;
+  --tdgflow-border:        #D0E2E5;
+  --tdgflow-border-light:  #B8D0D5;
+  --tdgflow-border-subtle: #E4EEF0; /* mais clara que --tdgflow-border — contorno discreto de card, não divisor de seção */
 
-  /* Teal — TDG Brand Primary (#008C94) */
-  --gold:         #008C94;
-  --gold-hover:   #00A0A9;
-  --gold-dim:     #006B72;
-  --gold-subtle:  rgba(0, 140, 148, 0.10);
-  --gold-ring:    rgba(0, 140, 148, 0.22);
+  /* Navy — Bemgsy structural/dominant color (WCAG AA/AAA text-safe: 13:1+ contra
+     --tdgflow-bg e --tdgflow-surface). Substitui o teal (#008C94) como cor "de
+     todo dia" — estado ativo de navegação, ícones, bordas coloridas, focus
+     ring: qualquer coisa que se repete em toda tela ou item de lista. */
+  --tdgflow-navy:         #1A2B4C;
+  --tdgflow-navy-hover:   #24395F;
+  --tdgflow-navy-dim:     #0D1826;
+  --tdgflow-navy-subtle:  rgba(26, 43, 76, 0.10);
+  --tdgflow-navy-ring:    rgba(26, 43, 76, 0.22);
+
+  /* Gold — Bemgsy acento raro (dourado real #D4AF37, não mais o teal). Só para
+     CTA principal, destaques "Membro Fundador" e frisos decorativos — nunca
+     para UI recorrente. Dourado puro reprova WCAG como texto (~2:1): texto
+     SOBRE fundo dourado tem que ser --tdgflow-navy/--tdgflow-navy-dim (6,7:1+),
+     nunca branco; texto SOBRE dourado (ex.: rótulo de badge) tem que ser
+     --tdgflow-gold-dim (4,5:1+), nunca --tdgflow-gold puro. */
+  --tdgflow-gold:         #D4AF37;
+  --tdgflow-gold-hover:   #C4A030;
+  --tdgflow-gold-dim:     #8A6D1F;
+  --tdgflow-gold-subtle:  rgba(212, 175, 55, 0.12);
+  --tdgflow-gold-ring:    rgba(212, 175, 55, 0.28);
 
   /* Acento quente — tiers/preço, distinto do warning semântico (mais terracota) */
-  --accent-warm:        #C97B20;
-  --accent-warm-subtle: #FEF3E2;
+  --tdgflow-accent-warm:        #C97B20;
+  --tdgflow-accent-warm-subtle: #FEF3E2;
 
   /* Acento informativo — 3ª cor categórica (Stella/IA, transferência entre agências,
      integrações). Substitui roxo (#6B4FA0/#F3EEF9), que violava a regra "sem roxo". */
-  --accent-info:        #1565C0;
-  --accent-info-subtle: #E3F2FD;
+  --tdgflow-accent-info:        #1565C0;
+  --tdgflow-accent-info-subtle: #E3F2FD;
 
   /* Text — TDG navy tones (WCAG AA+) */
-  --text-primary:   #112630;
-  --text-secondary: #104C64;
-  --text-muted:     #4A7580;
-  --text-faint:     #7BA8B2; /* labels de seção, unidades, legendas — mais claro que --text-muted */
+  --tdgflow-text-primary:   #112630;
+  --tdgflow-text-secondary: #104C64;
+  --tdgflow-text-muted:     #4A7580;
+  --tdgflow-text-faint:     #4C7680; /* labels de seção, unidades, legendas — WCAG AA (4.5:1+) contra --tdgflow-bg e
+                                 --tdgflow-surface; mais claro que --tdgflow-text-secondary porém quase igual a
+                                 --tdgflow-text-muted: em fontes de 9-11px (uso real deste token) não há espaço
+                                 pra ficar mais claro sem furar AA */
 
   /* Functional */
-  --success:        #2E7D4F;
-  --success-subtle: #E8F5E9;
-  --warning:        #B6410F;
-  --error:          #C0392B;
-  --error-subtle:   #FFEBEE;
+  --tdgflow-success:        #2E7D4F;
+  --tdgflow-success-subtle: #E8F5E9;
+  --tdgflow-warning:        #B6410F;
+  --tdgflow-error:          #C0392B;
+  --tdgflow-error-subtle:   #FFEBEE;
 
   /* Easing */
-  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --tdgflow-ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --tdgflow-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @theme inline {
-  /* Colors available as Tailwind utilities */
-  --color-bg:           var(--bg);
-  --color-surface:      var(--surface);
-  --color-surface-high: var(--surface-high);
-  --color-border:       var(--border);
-  --color-border-light: var(--border-light);
-  --color-border-subtle: var(--border-subtle);
-  --color-gold:         var(--gold);
-  --color-gold-hover:   var(--gold-hover);
-  --color-gold-dim:     var(--gold-dim);
-  --color-gold-subtle:  var(--gold-subtle);
-  --color-accent-warm:  var(--accent-warm);
-  --color-accent-warm-subtle: var(--accent-warm-subtle);
-  --color-text-primary: var(--text-primary);
-  --color-text-secondary: var(--text-secondary);
-  --color-text-muted:   var(--text-muted);
-  --color-text-faint:   var(--text-faint);
-  --color-success:      var(--success);
-  --color-success-subtle: var(--success-subtle);
-  --color-warning:      var(--warning);
-  --color-error:        var(--error);
-  --color-error-subtle: var(--error-subtle);
+  /* Colors available as Tailwind utilities (nenhuma classe gerada aqui é
+     usada no app hoje — todo o código usa var(--tdgflow-*) via style inline —
+     mas o prefixo --color-* é exigido pelo Tailwind pra geração de utilitário
+     e fica como está; só a referência interna aponta pro token renomeado). */
+  --color-bg:           var(--tdgflow-bg);
+  --color-surface:      var(--tdgflow-surface);
+  --color-surface-high: var(--tdgflow-surface-high);
+  --color-border:       var(--tdgflow-border);
+  --color-border-light: var(--tdgflow-border-light);
+  --color-border-subtle: var(--tdgflow-border-subtle);
+  --color-navy:         var(--tdgflow-navy);
+  --color-navy-hover:   var(--tdgflow-navy-hover);
+  --color-navy-dim:     var(--tdgflow-navy-dim);
+  --color-navy-subtle:  var(--tdgflow-navy-subtle);
+  --color-gold:         var(--tdgflow-gold);
+  --color-gold-hover:   var(--tdgflow-gold-hover);
+  --color-gold-dim:     var(--tdgflow-gold-dim);
+  --color-gold-subtle:  var(--tdgflow-gold-subtle);
+  --color-accent-warm:  var(--tdgflow-accent-warm);
+  --color-accent-warm-subtle: var(--tdgflow-accent-warm-subtle);
+  --color-text-primary: var(--tdgflow-text-primary);
+  --color-text-secondary: var(--tdgflow-text-secondary);
+  --color-text-muted:   var(--tdgflow-text-muted);
+  --color-text-faint:   var(--tdgflow-text-faint);
+  --color-success:      var(--tdgflow-success);
+  --color-success-subtle: var(--tdgflow-success-subtle);
+  --color-warning:      var(--tdgflow-warning);
+  --color-error:        var(--tdgflow-error);
+  --color-error-subtle: var(--tdgflow-error-subtle);
 
   /* Typography */
-  --font-sans: 'Raleway', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
-  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  --tdgflow-font-sans: var(--tdgflow-font-raleway), -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  --tdgflow-font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
 
   /* Radius */
-  --radius-sm:  6px;
-  --radius-md:  10px;
-  --radius-lg:  14px;
-  --radius-xl:  20px;
-  --radius-full: 9999px;
+  --tdgflow-radius-sm:  6px;
+  --tdgflow-radius-md:  10px;
+  --tdgflow-radius-lg:  14px;
+  --tdgflow-radius-xl:  20px;
+  --tdgflow-radius-full: 9999px;
 }
 
 /* ── Base ────────────────────────────────────────────────────────────────── */
@@ -88,42 +119,49 @@
 
 html, body {
   height: 100%;
-  background: var(--bg);
-  color: var(--text-primary);
-  font-family: var(--font-sans);
+  background: var(--tdgflow-bg);
+  color: var(--tdgflow-text-primary);
+  font-family: var(--tdgflow-font-sans);
   font-size: 15px;
   font-weight: 400;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* O app é 100% claro hoje (dark mode é ideia futura da Onda 3, não
+     implementada). Sem isso, navegador/SO em modo escuro tentam "adivinhar"
+     inversão por elemento — texto simples sem fundo explícito ao lado (ex.:
+     um <h2> solto) é invertido pra quase-branco, enquanto o elemento vizinho
+     com fundo explícito (ex.: um card) não é — resultado: texto quase
+     invisível de forma aparentemente aleatória, mesmo token, mesmo arquivo. */
+  color-scheme: light;
 }
 
 /* ── Scrollbar ───────────────────────────────────────────────────────────── */
 
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+::-webkit-scrollbar-thumb { background: var(--tdgflow-border-light); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--tdgflow-text-muted); }
 
 /* ── Selection ───────────────────────────────────────────────────────────── */
 
-::selection { background: var(--gold-ring); color: var(--text-primary); }
+::selection { background: var(--tdgflow-navy-ring); color: var(--tdgflow-text-primary); }
 
 /* ── Autofill override (prevent browser blue/yellow overriding colors) ───── */
 
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus {
-  -webkit-text-fill-color: var(--text-primary);
-  -webkit-box-shadow: 0 0 0px 1000px var(--surface) inset;
+  -webkit-text-fill-color: var(--tdgflow-text-primary);
+  -webkit-box-shadow: 0 0 0px 1000px var(--tdgflow-surface) inset;
   transition: background-color 5000s ease-in-out 0s;
 }
 
 /* ── Focus ring ──────────────────────────────────────────────────────────── */
 
 :focus-visible {
-  outline: 2px solid var(--gold);
+  outline: 2px solid var(--tdgflow-navy);
   outline-offset: 2px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--tdgflow-radius-sm);
 }
 
 /* ── Typography ──────────────────────────────────────────────────────────── */
@@ -131,7 +169,7 @@ input:-webkit-autofill:focus {
 h1, h2, h3, h4 {
   font-weight: 600;
   letter-spacing: -0.025em;
-  color: var(--text-primary);
+  color: var(--tdgflow-text-primary);
   line-height: 1.3;
 }
 
@@ -144,18 +182,18 @@ p, span, li { line-height: 1.6; }
   align-items: center;
   justify-content: center;
   gap: 6px;
-  background: var(--gold);
-  color: #FDFCFA;
+  background: var(--tdgflow-gold);
+  color: var(--tdgflow-navy-dim); /* dourado real reprova WCAG com texto branco (~2:1) — navy passa 8,5:1 */
   font-weight: 600;
   font-size: 0.875rem;
   padding: 10px 18px;
-  border-radius: var(--radius-md);
+  border-radius: var(--tdgflow-radius-md);
   border: none;
   cursor: pointer;
-  transition: background 150ms var(--ease-smooth), transform 100ms var(--ease-smooth), opacity 150ms;
+  transition: background 150ms var(--tdgflow-ease-smooth), color 150ms var(--tdgflow-ease-smooth), transform 100ms var(--tdgflow-ease-smooth), opacity 150ms;
 }
-.btn-gold:hover  { background: var(--gold-hover); transform: translateY(-1px); }
-.btn-gold:active { background: var(--gold-dim); transform: scale(0.98); }
+.btn-gold:hover  { background: var(--tdgflow-gold-hover); transform: translateY(-1px); }
+.btn-gold:active { background: var(--tdgflow-gold-dim); color: var(--tdgflow-surface); transform: scale(0.98); } /* fundo escurece — volta a precisar de texto claro */
 .btn-gold:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
 
 /* ── Ghost button ────────────────────────────────────────────────────────── */
@@ -166,16 +204,16 @@ p, span, li { line-height: 1.6; }
   justify-content: center;
   gap: 6px;
   background: transparent;
-  color: var(--text-secondary);
+  color: var(--tdgflow-text-secondary);
   font-weight: 500;
   font-size: 0.875rem;
   padding: 8px 14px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border);
+  border-radius: var(--tdgflow-radius-md);
+  border: 1px solid var(--tdgflow-border);
   cursor: pointer;
-  transition: all 150ms var(--ease-smooth);
+  transition: all 150ms var(--tdgflow-ease-smooth);
 }
-.btn-ghost:hover  { color: var(--text-primary); border-color: var(--border-light); background: var(--surface-high); }
+.btn-ghost:hover  { color: var(--tdgflow-text-primary); border-color: var(--tdgflow-border-light); background: var(--tdgflow-surface-high); }
 .btn-ghost:active { transform: scale(0.98); }
 .btn-ghost:disabled { opacity: 0.35; cursor: not-allowed; }
 
@@ -188,11 +226,11 @@ p, span, li { line-height: 1.6; }
   color: #112630;
   -webkit-text-fill-color: #112630;
   caret-color: #112630;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  border: 1px solid var(--tdgflow-border);
+  border-radius: var(--tdgflow-radius-md);
   padding: 10px 14px;
   font-size: 0.875rem;
-  font-family: var(--font-sans);
+  font-family: var(--tdgflow-font-sans);
   transition: border-color 150ms, box-shadow 150ms;
   outline: none;
 }
@@ -202,25 +240,25 @@ p, span, li { line-height: 1.6; }
   opacity: 1;
 }
 .input:focus {
-  border-color: var(--gold);
-  box-shadow: 0 0 0 3px var(--gold-ring);
+  border-color: var(--tdgflow-navy);
+  box-shadow: 0 0 0 3px var(--tdgflow-navy-ring);
 }
 
 /* ── Card ────────────────────────────────────────────────────────────────── */
 
 .card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  background: var(--tdgflow-surface);
+  border: 1px solid var(--tdgflow-border);
+  border-radius: var(--tdgflow-radius-lg);
   padding: 20px;
   transition: border-color 200ms, box-shadow 200ms;
 }
 .card:hover {
-  border-color: var(--border-light);
+  border-color: var(--tdgflow-border-light);
   box-shadow: 0 6px 20px rgba(90, 60, 30, 0.10);
 }
 .card-gold {
-  border-top: 2px solid var(--gold);
+  border-top: 2px solid var(--tdgflow-gold);
 }
 
 /* ── Badge ───────────────────────────────────────────────────────────────── */
@@ -233,17 +271,17 @@ p, span, li { line-height: 1.6; }
   font-weight: 600;
   letter-spacing: 0.04em;
   padding: 3px 8px;
-  border-radius: var(--radius-full);
+  border-radius: var(--tdgflow-radius-full);
   text-transform: uppercase;
 }
-.badge-gold    { background: rgba(168,124,79,.12); color: var(--gold); }
-.badge-success { background: rgba(46,125,79,.10); color: var(--success); }
-.badge-muted   { background: var(--surface-high); color: var(--text-muted); }
-.badge-warning { background: rgba(180,83,9,.10); color: var(--warning); }
+.badge-gold    { background: rgba(168,124,79,.12); color: var(--tdgflow-gold-dim); } /* --gold puro reprova WCAG como texto */
+.badge-success { background: rgba(46,125,79,.10); color: var(--tdgflow-success); }
+.badge-muted   { background: var(--tdgflow-surface-high); color: var(--tdgflow-text-muted); }
+.badge-warning { background: rgba(180,83,9,.10); color: var(--tdgflow-warning); }
 
 /* ── Divider ─────────────────────────────────────────────────────────────── */
 
-.divider { height: 1px; background: var(--border); margin: 0; }
+.divider { height: 1px; background: var(--tdgflow-border); margin: 0; }
 
 /* ── Prose (markdown) ────────────────────────────────────────────────────── */
 
@@ -257,19 +295,19 @@ p, span, li { line-height: 1.6; }
 .prose-dark hr { border-color: #D0E2E5; margin: 1em 0; }
 .prose-dark code {
   background: #E8F0F2;
-  color: #008C94;
-  -webkit-text-fill-color: #008C94;
+  color: #1A2B4C;
+  -webkit-text-fill-color: #1A2B4C;
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 0.85em;
   border: 1px solid #D0E2E5;
 }
-.prose-dark a { color: #008C94; text-decoration: underline; }
+.prose-dark a { color: #1A2B4C; text-decoration: underline; }
 
 /* ── Animations ──────────────────────────────────────────────────────────── */
 
 @keyframes pulse-gold {
-  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 var(--gold-ring); }
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 var(--tdgflow-gold-ring); }
   50%       { opacity: 0.8; box-shadow: 0 0 0 6px transparent; }
 }
 
@@ -281,19 +319,19 @@ p, span, li { line-height: 1.6; }
 @keyframes spin-slow { to { transform: rotate(360deg); } }
 
 .animate-pulse-gold { animation: pulse-gold 2s ease-in-out infinite; }
-.animate-fade-up    { animation: fade-up 300ms var(--ease-smooth) forwards; }
+.animate-fade-up    { animation: fade-up 300ms var(--tdgflow-ease-smooth) forwards; }
 .animate-spin-slow  { animation: spin-slow 2s linear infinite; }
 
 /* ── Skeleton loading ────────────────────────────────────────────────────── */
 
 @keyframes skeleton-shimmer {
-  0%, 100% { background-color: var(--surface-high); }
-  50%       { background-color: var(--border-light); }
+  0%, 100% { background-color: var(--tdgflow-surface-high); }
+  50%       { background-color: var(--tdgflow-border-light); }
 }
 
 .skeleton {
-  border-radius: var(--radius-sm);
-  animation: skeleton-shimmer 1.4s var(--ease-smooth) infinite;
+  border-radius: var(--tdgflow-radius-sm);
+  animation: skeleton-shimmer 1.4s var(--tdgflow-ease-smooth) infinite;
 }
 
 /* ── Recording pulse ─────────────────────────────────────────────────────── */
@@ -306,7 +344,7 @@ p, span, li { line-height: 1.6; }
   position: absolute;
   inset: -4px;
   border-radius: 50%;
-  border: 2px solid var(--error);
+  border: 2px solid var(--tdgflow-error);
   animation: pulse-gold 1.5s ease-in-out infinite;
 }
 
@@ -317,19 +355,19 @@ p, span, li { line-height: 1.6; }
 .gold-rule {
   width: 80px;
   height: 1px;
-  background: linear-gradient(90deg, transparent 0%, var(--gold-dim) 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, var(--tdgflow-gold-dim) 50%, transparent 100%);
   margin: 0 auto;
 }
 
 /* ── Two-tier section heading ────────────────────────────────────────────── */
 
 .section-label {
-  font-family: var(--font-sans);
+  font-family: var(--tdgflow-font-sans);
   font-size: 0.6875rem;
   font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--gold-dim);
+  color: var(--tdgflow-navy-dim);
 }
 
 .section-heading {
@@ -338,7 +376,7 @@ p, span, li { line-height: 1.6; }
   font-size: clamp(2rem, 4vw, 3.25rem);
   letter-spacing: -0.01em;
   line-height: 1.2;
-  color: var(--text-primary);
+  color: var(--tdgflow-text-primary);
 }
 
 /* ── Grain texture overlay ───────────────────────────────────────────────── */
@@ -359,9 +397,9 @@ p, span, li { line-height: 1.6; }
 .prop-card {
   position: relative;
   overflow: hidden;
-  border-radius: var(--radius-lg);
-  background: var(--surface);
-  border: 1px solid var(--border);
+  border-radius: var(--tdgflow-radius-lg);
+  background: var(--tdgflow-surface);
+  border: 1px solid var(--tdgflow-border);
   cursor: pointer;
 }
 
@@ -408,5 +446,5 @@ p, span, li { line-height: 1.6; }
 .nav-opaque {
   background: rgba(246, 241, 235, 0.92) !important;
   backdrop-filter: blur(12px);
-  border-bottom-color: var(--border) !important;
+  border-bottom-color: var(--tdgflow-border) !important;
 }
