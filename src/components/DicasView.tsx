@@ -1262,6 +1262,27 @@ const VISIT_FILTER_TABS = [
 
 const ENTITY_FILTER_TABS = [{ id: 'all', label: 'Todos os tipos' }, ...Object.entries(ENTITY_TYPE_LABELS).map(([id, label]) => ({ id, label }))]
 
+const PERIOD_FILTER_TABS = [
+  { id: 'all',       label: 'Todo o período' },
+  { id: '30d',       label: 'Últimos 30 dias' },
+  { id: '90d',       label: 'Últimos 90 dias' },
+  { id: 'year',      label: 'Este ano' },
+  { id: 'last_year', label: 'Ano passado' },
+]
+
+const DAY_MS = 24 * 60 * 60 * 1000
+
+function matchesPeriod(dateStr: string | null, period: string, now: Date): boolean {
+  if (period === 'all') return true
+  if (!dateStr) return false
+  const d = new Date(dateStr)
+  if (period === '30d') return now.getTime() - d.getTime() <= 30 * DAY_MS
+  if (period === '90d') return now.getTime() - d.getTime() <= 90 * DAY_MS
+  if (period === 'year') return d.getFullYear() === now.getFullYear()
+  if (period === 'last_year') return d.getFullYear() === now.getFullYear() - 1
+  return true
+}
+
 /* ── Main export ────────────────────────────────────────────────── */
 export default function DicasView() {
   const searchParams = useSearchParams()
@@ -1283,6 +1304,8 @@ export default function DicasView() {
   const [activeVisitType, setActiveVisitType] = useState('all')
   const [activeEntityType, setActiveEntityType] = useState('all')
   const [activeCountry, setActiveCountry] = useState('all')
+  const [activePeriod, setActivePeriod] = useState('all')
+  const [activeAgency, setActiveAgency] = useState('all')
 
   const loadReviews = useCallback(async () => {
     const [pubRes, leadRes] = await Promise.all([
@@ -1313,12 +1336,16 @@ export default function DicasView() {
   const allReviews = [...publishedReviews, ...leadReviews]
   const q = search.trim().toLowerCase()
   const countries = ['all', ...Array.from(new Set(allReviews.map(r => r.country).filter(Boolean))).sort()] as string[]
+  const agencies = ['all', ...Array.from(new Set(allReviews.map(r => r.agency_name).filter(Boolean))).sort()] as string[]
+  const now = new Date()
 
   function matches(r: Review) {
     if (activeVisitType === 'favorites' && !r.is_favorite) return false
     if (activeVisitType !== 'all' && activeVisitType !== 'favorites' && r.visit_type !== activeVisitType) return false
     if (activeEntityType !== 'all' && r.entity_type !== activeEntityType) return false
     if (activeCountry !== 'all' && r.country !== activeCountry) return false
+    if (activeAgency !== 'all' && r.agency_name !== activeAgency) return false
+    if (!matchesPeriod(r.visit_date ?? r.created_at, activePeriod, now)) return false
     if (!q) return true
     return (
       r.hotel_name.toLowerCase().includes(q) ||
@@ -1335,7 +1362,7 @@ export default function DicasView() {
   const filteredPublished = publishedReviews.filter(matches)
   const filteredLeads = leadReviews.filter(matches)
   const hasResults = filteredPublished.length > 0 || filteredLeads.length > 0
-  const hasActiveFilter = activeVisitType !== 'all' || activeEntityType !== 'all' || activeCountry !== 'all' || !!q
+  const hasActiveFilter = activeVisitType !== 'all' || activeEntityType !== 'all' || activeCountry !== 'all' || activePeriod !== 'all' || activeAgency !== 'all' || !!q
 
   // Hero — a review confirmada com melhor nota que tenha foto real anexada.
   // Sem foto, não vira hero (nunca finge com gradiente).
@@ -1345,6 +1372,7 @@ export default function DicasView() {
 
   function clearFilters() {
     setSearch(''); setActiveVisitType('all'); setActiveEntityType('all'); setActiveCountry('all')
+    setActivePeriod('all'); setActiveAgency('all')
   }
 
   return (
@@ -1494,6 +1522,50 @@ export default function DicasView() {
                 }}
               >
                 {c === 'all' ? 'Todos os países' : c}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Period filter chips */}
+        <div style={{ display: 'flex', gap: 6, padding: '0 20px 8px', overflowX: 'auto', scrollbarWidth: 'none' }}>
+          {PERIOD_FILTER_TABS.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActivePeriod(tab.id)}
+              style={{
+                flexShrink: 0, padding: '3px 11px', borderRadius: 999,
+                fontSize: '0.625rem', fontWeight: activePeriod === tab.id ? 600 : 400,
+                letterSpacing: '0.02em', cursor: 'pointer',
+                background: activePeriod === tab.id ? 'var(--tdgflow-surface-high)' : 'transparent',
+                color: activePeriod === tab.id ? 'var(--tdgflow-text-primary)' : 'var(--tdgflow-text-muted)',
+                border: activePeriod === tab.id ? '1px solid var(--tdgflow-border-light)' : '1px solid transparent',
+                transition: 'all 150ms',
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Agency filter chips */}
+        {agencies.length > 1 && (
+          <div style={{ display: 'flex', gap: 6, padding: '0 20px 14px', overflowX: 'auto', scrollbarWidth: 'none' }}>
+            {agencies.map(a => (
+              <button
+                key={a}
+                onClick={() => setActiveAgency(a)}
+                style={{
+                  flexShrink: 0, padding: '3px 11px', borderRadius: 999,
+                  fontSize: '0.625rem', fontWeight: activeAgency === a ? 600 : 400,
+                  letterSpacing: '0.02em', cursor: 'pointer',
+                  background: activeAgency === a ? 'var(--tdgflow-surface-high)' : 'transparent',
+                  color: activeAgency === a ? 'var(--tdgflow-text-primary)' : 'var(--tdgflow-text-muted)',
+                  border: activeAgency === a ? '1px solid var(--tdgflow-border-light)' : '1px solid transparent',
+                  transition: 'all 150ms',
+                }}
+              >
+                {a === 'all' ? 'Todas as agências' : a}
               </button>
             ))}
           </div>
