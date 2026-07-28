@@ -51,7 +51,7 @@ const TOOLS = [
   {
     name: 'register_tip',
     description:
-      'Registrar uma dica ou relato de visita de um Travel Advisor no TDG Flow. Use quando o TD compartilhar uma experiência ou dica via WhatsApp.',
+      'Registrar uma visita ou relato de experiência de um Travel Advisor no TDG Flow. Use quando o TD compartilhar uma experiência via WhatsApp.',
     inputSchema: {
       type: 'object',
       required: ['hotel_name', 'agent_name', 'agency_name'],

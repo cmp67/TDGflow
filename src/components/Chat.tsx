@@ -159,9 +159,9 @@ function buildActionCards(ctx: AgentContext): ActionCard[] {
 
   cards.push({
     icon: <IconTip size={14} />,
-    label: 'Registrar dica',
+    label: 'Registrar visita',
     sublabel: 'Visita a hotel',
-    prompt: 'Quero registrar uma dica de hotel que visitei recentemente.',
+    prompt: 'Quero registrar uma visita a um hotel que fiz recentemente.',
   })
 
   return cards.slice(0, 4)

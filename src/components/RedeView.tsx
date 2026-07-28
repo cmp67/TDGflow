@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, Phone, Users, MessageCircle, CheckCircle2, Loader2, Lightbulb, AlertTriangle } from 'lucide-react'
+import { Search, Phone, Users, MessageCircle, CheckCircle2, Loader2 } from 'lucide-react'
 import { useToast } from '@/contexts/ToastContext'
 import TdgIconSprite from '@/components/TdgIconSprite'
 
@@ -19,14 +19,6 @@ interface NetworkContact {
   source_author: string
   source_date: string
   notes: string
-}
-
-interface KnowledgeTip {
-  id: string
-  title: string
-  content: string
-  source_author: string
-  source_date: string
 }
 
 /* ── Category config ────────────────────────────────────────────── */
@@ -223,77 +215,13 @@ function ContactCard({ contact, copiedId, onCopy }: {
   )
 }
 
-/* ── Tip Card ───────────────────────────────────────────────────── */
-function TipCard({ tip }: { tip: KnowledgeTip }) {
-  const [expanded, setExpanded] = useState(false)
-
-  // Detect if tip is a warning/critical tip
-  const isAlert = /⚠️|NÃO|exige|proibido|impede|risco|atenção|jurídico|greve/i.test(tip.content ?? '')
-
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -4 }}
-      transition={{ duration: 0.18 }}
-      onClick={() => setExpanded(e => !e)}
-      style={{
-        background: 'var(--tdgflow-surface)',
-        border: `1px solid ${isAlert ? '#fca5a5' : 'var(--tdgflow-border)'}`,
-        borderLeft: `3px solid ${isAlert ? '#dc2626' : 'var(--tdgflow-navy-dim)'}`,
-        borderRadius: 10,
-        padding: '13px 15px',
-        cursor: 'pointer',
-        transition: 'box-shadow 150ms',
-      }}
-      onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.07)')}
-      onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}
-    >
-      <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-        {isAlert
-          ? <AlertTriangle size={14} style={{ color: '#dc2626', flexShrink: 0, marginTop: 1 }} />
-          : <Lightbulb size={14} style={{ color: 'var(--tdgflow-navy-dim)', flexShrink: 0, marginTop: 1 }} />
-        }
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)', lineHeight: 1.3, marginBottom: 5 }}>
-            {tip.title}
-          </p>
-          <p style={{
-            fontSize: '0.75rem', color: '#2d4a52', lineHeight: 1.5,
-            display: expanded ? 'block' : '-webkit-box',
-            WebkitLineClamp: expanded ? undefined : 2,
-            WebkitBoxOrient: 'vertical' as const,
-            overflow: expanded ? 'visible' : 'hidden',
-          }}>
-            {tip.content}
-          </p>
-        </div>
-      </div>
-      <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
-        <Users size={9} style={{ color: 'var(--tdgflow-text-muted)' }} />
-        <span style={{ fontSize: '0.5625rem', color: 'var(--tdgflow-text-muted)', letterSpacing: '0.04em' }}>
-          {tip.source_author ?? 'Galera do Turismo'}
-          {tip.source_date && <span style={{ opacity: 0.7 }}> · {formatDate(tip.source_date)}</span>}
-        </span>
-      </div>
-    </motion.div>
-  )
-}
-
 /* ── Main export ────────────────────────────────────────────────── */
 export default function RedeView() {
-  const [activeTab, setActiveTab] = useState<'contacts' | 'tips'>('contacts')
-
   // Contacts state
   const [contacts, setContacts] = useState<NetworkContact[]>([])
   const [counts, setCounts] = useState<Record<string, number>>({})
   const [totalContacts, setTotalContacts] = useState(0)
   const [activeCategory, setActiveCategory] = useState('all')
-
-  // Tips state
-  const [tips, setTips] = useState<KnowledgeTip[]>([])
-  const [totalTips, setTotalTips] = useState(0)
 
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -302,32 +230,19 @@ export default function RedeView() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const params = new URLSearchParams({ tab: activeTab })
-    if (activeTab === 'contacts' && activeCategory !== 'all') params.set('category', activeCategory)
+    const params = new URLSearchParams({ tab: 'contacts' })
+    if (activeCategory !== 'all') params.set('category', activeCategory)
     if (search.trim()) params.set('search', search.trim())
 
     const res = await fetch(`/api/network-contacts?${params}`)
     const data = await res.json()
-
-    if (activeTab === 'tips') {
-      setTips(data.tips ?? [])
-      setTotalTips(data.total ?? 0)
-    } else {
-      setContacts(data.contacts ?? [])
-      setCounts(data.counts ?? {})
-      setTotalContacts(data.total ?? 0)
-    }
+    setContacts(data.contacts ?? [])
+    setCounts(data.counts ?? {})
+    setTotalContacts(data.total ?? 0)
     setLoading(false)
-  }, [activeTab, activeCategory, search])
+  }, [activeCategory, search])
 
   useEffect(() => { load() }, [load])
-
-  // Reset category filter when switching tabs
-  const switchTab = (tab: 'contacts' | 'tips') => {
-    setActiveTab(tab)
-    setSearch('')
-    setActiveCategory('all')
-  }
 
   function handleCopy(id: string, phone: string) {
     navigator.clipboard.writeText(phone).then(() => {
@@ -355,49 +270,19 @@ export default function RedeView() {
               </svg>
               Galera do Turismo
             </p>
-            <h2 style={{ fontSize: '1.125rem', fontWeight: 500, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.025em', lineHeight: 1, marginBottom: activeTab === 'contacts' ? 4 : 0 }}>
-              Inteligência Coletiva
+            <h2 style={{ fontSize: '1.125rem', fontWeight: 500, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.025em', lineHeight: 1, marginBottom: 4 }}>
+              Contatos
             </h2>
-            {activeTab === 'contacts' && (
-              <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)' }}>
-                Quem ligar: reps, DMCs, direto na fonte
-              </p>
-            )}
+            <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)' }}>
+              Quem ligar: reps, DMCs, direto na fonte
+            </p>
           </div>
           {!loading && (
-            <div style={{ display: 'flex', gap: 16, paddingTop: 4 }}>
-              <div style={{ textAlign: 'right' }}>
-                <p style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.02em', lineHeight: 1 }}>{totalContacts}</p>
-                <p style={{ fontSize: '0.55rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)', marginTop: 2 }}>contatos</p>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <p style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.02em', lineHeight: 1 }}>{totalTips || 22}</p>
-                <p style={{ fontSize: '0.55rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)', marginTop: 2 }}>dicas</p>
-              </div>
+            <div style={{ textAlign: 'right', paddingTop: 4 }}>
+              <p style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.02em', lineHeight: 1 }}>{totalContacts}</p>
+              <p style={{ fontSize: '0.55rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)', marginTop: 2 }}>contatos</p>
             </div>
           )}
-        </div>
-
-        {/* Tab switcher */}
-        <div style={{ display: 'flex', gap: 0, padding: '0 20px 0', borderBottom: '1px solid var(--tdgflow-border)' }}>
-          {([
-            { key: 'contacts', label: 'Contatos' },
-            { key: 'tips',     label: 'Dicas de Destino' },
-          ] as const).map(tab => (
-            <button
-              key={tab.key}
-              onClick={() => switchTab(tab.key)}
-              style={{
-                padding: '8px 16px', fontSize: '0.75rem', fontWeight: activeTab === tab.key ? 600 : 400,
-                color: activeTab === tab.key ? 'var(--tdgflow-navy-dim)' : 'var(--tdgflow-text-muted)',
-                background: 'none', border: 'none', cursor: 'pointer',
-                borderBottom: activeTab === tab.key ? '2px solid var(--tdgflow-navy-dim)' : '2px solid transparent',
-                marginBottom: -1, transition: 'all 150ms',
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
         </div>
 
         {/* Search */}
@@ -405,44 +290,42 @@ export default function RedeView() {
           <Search size={14} style={{ position: 'absolute', left: 34, top: '50%', transform: 'translateY(-50%)', color: 'var(--tdgflow-text-muted)', pointerEvents: 'none' }} />
           <input
             className="input"
-            placeholder={activeTab === 'contacts' ? 'Nome, hotel, contexto, quem indicou...' : 'Destino, país, palavra-chave...'}
+            placeholder="Nome, hotel, contexto, quem indicou..."
             value={search}
             onChange={e => setSearch(e.target.value)}
             style={{ paddingLeft: 38, fontSize: '0.8125rem', background: 'var(--tdgflow-bg)' }}
           />
         </div>
 
-        {/* Category chips — contacts only */}
-        {activeTab === 'contacts' && (
-          <div style={{ display: 'flex', gap: 6, padding: '0 20px 12px', overflowX: 'auto', scrollbarWidth: 'none' }}>
-            {visibleCategories.map(cat => {
-              const count = cat.key === 'all' ? totalContacts : (counts[cat.key] ?? 0)
-              const active = activeCategory === cat.key
-              return (
-                <button
-                  key={cat.key}
-                  onClick={() => setActiveCategory(cat.key)}
-                  style={{
-                    flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 5,
-                    padding: '4px 12px', borderRadius: 999,
-                    fontSize: '0.6875rem', fontWeight: active ? 600 : 400,
-                    cursor: 'pointer',
-                    background: active ? cat.color : 'var(--tdgflow-surface-high)',
-                    color: active ? 'var(--tdgflow-surface)' : 'var(--tdgflow-text-muted)',
-                    border: active ? 'none' : '1px solid var(--tdgflow-border)',
-                    transition: 'all 150ms',
-                  }}
-                >
-                  {cat.key !== 'all' && <CategoryIcon categoryKey={cat.key} size={11} />}
-                  {cat.label}
-                  {count > 0 && (
-                    <span style={{ opacity: active ? 0.8 : 0.6, fontSize: '0.625rem' }}>{count}</span>
-                  )}
-                </button>
-              )
-            })}
-          </div>
-        )}
+        {/* Category chips */}
+        <div style={{ display: 'flex', gap: 6, padding: '0 20px 12px', overflowX: 'auto', scrollbarWidth: 'none' }}>
+          {visibleCategories.map(cat => {
+            const count = cat.key === 'all' ? totalContacts : (counts[cat.key] ?? 0)
+            const active = activeCategory === cat.key
+            return (
+              <button
+                key={cat.key}
+                onClick={() => setActiveCategory(cat.key)}
+                style={{
+                  flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 5,
+                  padding: '4px 12px', borderRadius: 999,
+                  fontSize: '0.6875rem', fontWeight: active ? 600 : 400,
+                  cursor: 'pointer',
+                  background: active ? cat.color : 'var(--tdgflow-surface-high)',
+                  color: active ? 'var(--tdgflow-surface)' : 'var(--tdgflow-text-muted)',
+                  border: active ? 'none' : '1px solid var(--tdgflow-border)',
+                  transition: 'all 150ms',
+                }}
+              >
+                {cat.key !== 'all' && <CategoryIcon categoryKey={cat.key} size={11} />}
+                {cat.label}
+                {count > 0 && (
+                  <span style={{ opacity: active ? 0.8 : 0.6, fontSize: '0.625rem' }}>{count}</span>
+                )}
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       {/* ── List ─────────────────────────────────────────────────── */}
@@ -454,58 +337,31 @@ export default function RedeView() {
           </div>
         )}
 
-        {/* Contacts grid */}
-        {!loading && activeTab === 'contacts' && (
-          <>
-            {contacts.length === 0 ? (
-              <div style={{ textAlign: 'center', paddingTop: 60 }}>
-                <Search size={24} style={{ color: 'var(--tdgflow-text-muted)', margin: '0 auto 12px' }} />
-                <p style={{ fontSize: '0.875rem', color: 'var(--tdgflow-text-muted)' }}>Nenhum contato encontrado.</p>
-                {(search || activeCategory !== 'all') && (
-                  <button onClick={() => { setSearch(''); setActiveCategory('all') }}
-                    style={{ marginTop: 12, fontSize: '0.75rem', color: 'var(--tdgflow-navy)', background: 'none', border: 'none', cursor: 'pointer' }}>
-                    Limpar filtros
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 10 }}>
-                <AnimatePresence mode="popLayout">
-                  {contacts.map(contact => (
-                    <ContactCard key={contact.id} contact={contact} copiedId={copiedId} onCopy={handleCopy} />
-                  ))}
-                </AnimatePresence>
-              </div>
+        {!loading && contacts.length === 0 && (
+          <div style={{ textAlign: 'center', paddingTop: 60 }}>
+            <Search size={24} style={{ color: 'var(--tdgflow-text-muted)', margin: '0 auto 12px' }} />
+            <p style={{ fontSize: '0.875rem', color: 'var(--tdgflow-text-muted)' }}>Nenhum contato encontrado.</p>
+            {(search || activeCategory !== 'all') && (
+              <button onClick={() => { setSearch(''); setActiveCategory('all') }}
+                style={{ marginTop: 12, fontSize: '0.75rem', color: 'var(--tdgflow-navy)', background: 'none', border: 'none', cursor: 'pointer' }}>
+                Limpar filtros
+              </button>
             )}
-          </>
+          </div>
         )}
 
-        {/* Tips grid */}
-        {!loading && activeTab === 'tips' && (
-          <>
-            {tips.length === 0 ? (
-              <div style={{ textAlign: 'center', paddingTop: 60 }}>
-                <Search size={24} style={{ color: 'var(--tdgflow-text-muted)', margin: '0 auto 12px' }} />
-                <p style={{ fontSize: '0.875rem', color: 'var(--tdgflow-text-muted)' }}>Nenhuma dica encontrada.</p>
-                {search && (
-                  <button onClick={() => setSearch('')}
-                    style={{ marginTop: 12, fontSize: '0.75rem', color: 'var(--tdgflow-navy)', background: 'none', border: 'none', cursor: 'pointer' }}>
-                    Limpar filtro
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 10 }}>
-                <AnimatePresence mode="popLayout">
-                  {tips.map(tip => <TipCard key={tip.id} tip={tip} />)}
-                </AnimatePresence>
-              </div>
-            )}
-          </>
+        {!loading && contacts.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 10 }}>
+            <AnimatePresence mode="popLayout">
+              {contacts.map(contact => (
+                <ContactCard key={contact.id} contact={contact} copiedId={copiedId} onCopy={handleCopy} />
+              ))}
+            </AnimatePresence>
+          </div>
         )}
 
         {/* Attribution footer */}
-        {!loading && (contacts.length > 0 || tips.length > 0) && (
+        {!loading && contacts.length > 0 && (
           <p style={{ textAlign: 'center', fontSize: '0.625rem', color: 'var(--tdgflow-text-muted)', opacity: 0.6, letterSpacing: '0.08em', marginTop: 24, marginBottom: 8 }}>
             FONTE · GRUPO GALERA DO TURISMO · SET 2024 – MAR 2026
           </p>

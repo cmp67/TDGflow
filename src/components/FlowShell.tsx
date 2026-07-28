@@ -7,7 +7,7 @@ import { signOut } from 'next-auth/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Mail, Sparkles, Tag, Lightbulb, FileText, Building2,
-  Mic, LogOut, MoreHorizontal, X, Users, BarChart2, MessageSquarePlus, CreditCard, Network, UserPlus
+  Mic, LogOut, MoreHorizontal, X, Users, BarChart2, MessageSquarePlus, CreditCard, Network, UserPlus, Globe
 } from 'lucide-react'
 import { LanguageProvider, useLanguage } from '@/contexts/LanguageContext'
 import { APP_VERSION } from '@/lib/version'
@@ -50,6 +50,7 @@ const PRIMARY_NAV: NavItem[] = [
 const RESOURCE_ITEMS: NavItem[] = [
   { href: '/flow/gravacoes', icon: Mic,      tkey: 'gravacoes' },
   { href: '/flow/docs',      icon: FileText, tkey: 'docs' },
+  { href: '/flow/destinos',  icon: Globe,    tkey: 'destinos' },
   { href: '/flow/inbox',     icon: Mail,     tkey: 'inbox', soon: true },
 ]
 

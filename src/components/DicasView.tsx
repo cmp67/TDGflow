@@ -871,11 +871,11 @@ function Questionnaire({ onClose, onSaved, initialAnswers, relatedLeadId }: {
       setDone(true)
       sounds.saved()
       toast(
-        isLeadSubmission(answers) ? 'Descoberta registrada — vamos testar!' : 'Dica registrada com sucesso!',
+        isLeadSubmission(answers) ? 'Descoberta registrada — vamos testar!' : 'Visita registrada com sucesso!',
         'success'
       )
     } catch (err) {
-      toast(`Erro ao salvar dica: ${err instanceof Error ? err.message : 'Tente novamente'}`, 'error')
+      toast(`Erro ao salvar visita: ${err instanceof Error ? err.message : 'Tente novamente'}`, 'error')
     } finally {
       setSaving(false)
     }
@@ -893,7 +893,7 @@ function Questionnaire({ onClose, onSaved, initialAnswers, relatedLeadId }: {
             <CheckCircle size={28} style={{ color: 'var(--tdgflow-success)' }} />
           </div>
           <p style={{ fontSize: '1rem', fontWeight: 500, color: 'var(--tdgflow-text-primary)', marginBottom: 8 }}>
-            {isLeadSubmission(answers) ? 'Registrado — vamos testar' : 'Dica registrada'}
+            {isLeadSubmission(answers) ? 'Registrado — vamos testar' : 'Visita registrada'}
           </p>
           <p style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-muted)', lineHeight: 1.6, marginBottom: 24 }}>
             {isLeadSubmission(answers)
