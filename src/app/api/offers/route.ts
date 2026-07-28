@@ -40,6 +40,25 @@ function offerTypeLabel(type: string | null): string {
   }
 }
 
+const DESCRIPTION_HIGHLIGHT_MAX = 140
+
+/* Nem toda oferta em Bemgsy Central tem smart_tags preenchidas — algumas só
+   têm uma description longa em markdown (às vezes com imagem embutida).
+   Sem isso, o card vira uma parede de texto cru enquanto os outros ficam
+   curtos e escaneáveis. Aqui sempre normaliza pro mesmo peso visual. */
+function summarizeDescription(description: string | null): string | null {
+  if (!description) return null
+  const cleaned = description
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim()
+  if (!cleaned) return null
+  return cleaned.length > DESCRIPTION_HIGHLIGHT_MAX
+    ? `${cleaned.slice(0, DESCRIPTION_HIGHLIGHT_MAX).trim()}…`
+    : cleaned
+}
+
 /* Ofertas reais vêm do Bemgsy Central (mesmo banco de imagens/dados já
    usado no redesenho de "Na prática" e nas fotos de Hotéis) — nunca mais
    mock hardcoded. Filtro espelha a RLS de lá: só oferta pública, ativa,
@@ -99,7 +118,7 @@ export async function GET() {
       offer_type: offerTypeLabel(o.offer_type),
       commission: o.commission_percentage ?? 0,
       valid_until: o.valid_until,
-      highlights: highlights.length > 0 ? highlights : [o.description ?? ''].filter(Boolean),
+      highlights: highlights.length > 0 ? highlights : [summarizeDescription(o.description)].filter((h): h is string => !!h),
       image_url: o.image_url ?? hotel?.image_url ?? null,
       accent: ACCENTS[i % ACCENTS.length],
     }

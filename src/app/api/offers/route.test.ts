@@ -98,6 +98,42 @@ describe('GET /api/offers (ofertas reais do Bemgsy Central, nunca mock)', () => 
     fetchSpy.mockRestore()
   })
 
+  it('sem smart_tags, resume a description em markdown pra uma linha curta e limpa (nunca parede de texto cru)', async () => {
+    mockAuth.mockResolvedValueOnce(sessionFor('any@example.com'))
+    const longMarkdownDescription =
+      'Desfrute de uma experiência inesquecível em Lisboa com o **Lisboa Card**, que permite ' +
+      'viagem gratuita e acesso privilegiado aos museus mais emblemáticos da cidade.\n\n' +
+      'Condições: estadia mínima de 5 noites, limitado a 2 cartões por reserva.\n' +
+      '![Imagem](https://example.com/foto.png)\n'
+    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ([
+        {
+          id: 'offer-markdown',
+          hotel_id: hotelId,
+          title: 'Lisboa Card grátis',
+          description: longMarkdownDescription,
+          commission_percentage: 10,
+          valid_until: '2027-01-01T00:00:00+00:00',
+          offer_type: 'seasonal',
+          image_url: null,
+          smart_tags: [],
+        },
+      ]),
+    } as Response)
+
+    const res = await GET()
+    const body = await res.json()
+    const highlight = body.offers[0].highlights[0]
+
+    expect(highlight).not.toContain('![Imagem]')
+    expect(highlight).not.toContain('**')
+    expect(highlight).not.toContain('\n')
+    expect(highlight.length).toBeLessThanOrEqual(141) // 140 chars + reticências
+
+    fetchSpy.mockRestore()
+  })
+
   it('rota externa fora do ar não quebra a resposta — devolve lista vazia', async () => {
     mockAuth.mockResolvedValueOnce(sessionFor('any@example.com'))
     const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValueOnce({ ok: false } as Response)
