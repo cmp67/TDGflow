@@ -46,4 +46,17 @@ describe('GET /api/hotels (catálogo de fornecedores)', () => {
     const backfilled = body.hotels.find((h: { name: string }) => h.name === 'La Sivoliere')
     expect(backfilled).toBeTruthy()
   })
+
+  it('reports tested_count from published reviews linked by hotel_id', async () => {
+    mockAuth.mockResolvedValueOnce(sessionFor('any@example.com'))
+    const res  = await GET()
+    const body = await res.json()
+
+    const testado = body.hotels.find((h: { name: string }) => h.name === 'La Sivoliere')
+    expect(testado.tested_count).toBeGreaterThanOrEqual(1)
+
+    const semReview = body.hotels.find((h: { name: string }) => h.name === 'Martinhal Sagres')
+    expect(semReview.tested_count).toBe(0)
+    expect(semReview.pending_lead_count).toBe(0)
+  })
 })

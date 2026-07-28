@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
@@ -36,6 +36,27 @@ const PRIMARY_NAV: NavItem[] = [
   { href: '/flow/hoteis',  icon: Building2, tkey: 'hoteis' },
   { href: '/flow/rede',    icon: Network,   tkey: 'rede' },
 ]
+
+// Dica de uma linha por item — autoexplicação antes do clique (achado da
+// Carla: nomes com personalidade própria, tipo "Na prática", não dizem o
+// que tem lá até você entrar). Só PT por ora — é um reforço supplementary,
+// não texto crítico de UI.
+const NAV_HINTS: Record<string, string> = {
+  assistente: 'Converse com a IA — busca de hotéis, promoções e dúvidas do sistema',
+  ofertas:    'Promoções ativas da rede, ordenadas por comissão e prazo',
+  dicas:      'Avaliações reais de fornecedores, por quem visitou de verdade',
+  hoteis:     'Catálogo de hotéis parceiros — contatos, contratos, avaliações',
+  rede:       'Contatos da rede — reps, DMCs, fornecedores',
+  analytics:  'Seu desempenho e o da rede',
+  agencia:    'Seu perfil e dados da agência',
+  gestao:     'Usuários e permissões da agência',
+  equipe:     'Convide e gerencie sua equipe',
+  docs:       'Documentação e materiais de apoio',
+  destinos:   'Conhecimento prático por país — vistos, costumes, avisos',
+  inbox:      'Em breve',
+  sugestoes:  'Sugestões e melhorias pro Flow',
+  billing:    'Assinatura e uso de Lumis',
+}
 
 // Regrupado por contexto de uso real (não mais um "Ferramentas" catch-all
 // misturando insight + gestão + referência): Desempenho (acompanhar como vai
@@ -112,6 +133,16 @@ function FlowShellInner({ children, user, brand }: Props) {
   const [showMore, setShowMore] = useState(false)
   const { lang, setLang, tr } = useLanguage()
 
+  // Antecipação: quantas descobertas da rede aguardam teste real, visível
+  // na sidebar sem precisar entrar em "Na prática" pra saber que existem.
+  const [pendingLeads, setPendingLeads] = useState(0)
+  useEffect(() => {
+    fetch('/api/context')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => { if (data) setPendingLeads(data.pending_leads ?? 0) })
+      .catch(() => {})
+  }, [])
+
   const isAdmin = user.role === 'admin'
   const isAgencyAdmin = user.role === 'agency_admin'
   const NAV_GROUPS = isAdmin ? NAV_GROUPS_ADMIN : isAgencyAdmin ? NAV_GROUPS_AGENCY_ADMIN : NAV_GROUPS_AGENT
@@ -177,6 +208,7 @@ function FlowShellInner({ children, user, brand }: Props) {
               <Link
                 key={href}
                 href={href}
+                title={NAV_HINTS[tkey]}
                 onClick={() => !active && sounds.nav()}
                 className="flex items-center gap-3 no-underline relative"
                 style={{
@@ -195,6 +227,16 @@ function FlowShellInner({ children, user, brand }: Props) {
                 <span style={{ fontSize: '0.875rem', fontWeight: active ? 600 : 500, letterSpacing: '-0.005em', color: active ? 'var(--tdgflow-navy-dim)' : 'inherit' }}>
                   {tr(`nav.${tkey}`)}
                 </span>
+                {tkey === 'dicas' && pendingLeads > 0 && (
+                  <span style={{
+                    marginLeft: 'auto', minWidth: 16, height: 16, padding: '0 4px', borderRadius: 999,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: 'var(--tdgflow-accent-warm)', color: '#fff',
+                    fontSize: '0.625rem', fontWeight: 700, lineHeight: 1,
+                  }}>
+                    {pendingLeads}
+                  </span>
+                )}
               </Link>
             )
           })}
@@ -211,6 +253,7 @@ function FlowShellInner({ children, user, brand }: Props) {
                   <Link
                     key={href}
                     href={soon ? '#' : href}
+                    title={NAV_HINTS[tkey]}
                     onClick={e => { if (soon) e.preventDefault(); else if (!active) sounds.nav() }}
                     className="flex items-center gap-3 no-underline"
                     style={{
@@ -376,7 +419,15 @@ function FlowShellInner({ children, user, brand }: Props) {
           return (
             <Link key={href} href={href} className="flex-1 flex flex-col items-center justify-center gap-1 no-underline relative" style={{ minWidth: 0, paddingTop: 2 }}>
               {active && <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 20, height: 1, background: 'var(--tdgflow-navy)', borderRadius: '0 0 2px 2px' }} />}
-              <Icon size={18} strokeWidth={active ? 2 : 1.5} style={{ color: active ? 'var(--tdgflow-navy)' : 'var(--tdgflow-text-muted)', transition: 'color 0.15s' }} />
+              <span style={{ position: 'relative' }}>
+                <Icon size={18} strokeWidth={active ? 2 : 1.5} style={{ color: active ? 'var(--tdgflow-navy)' : 'var(--tdgflow-text-muted)', transition: 'color 0.15s' }} />
+                {tkey === 'dicas' && pendingLeads > 0 && (
+                  <span style={{
+                    position: 'absolute', top: -3, right: -6, width: 8, height: 8, borderRadius: '50%',
+                    background: 'var(--tdgflow-accent-warm)', border: '1.5px solid var(--tdgflow-surface)',
+                  }} />
+                )}
+              </span>
               <span style={{ fontSize: '0.5rem', fontWeight: active ? 600 : 400, letterSpacing: '0.06em', textTransform: 'uppercase', color: active ? 'var(--tdgflow-navy)' : 'var(--tdgflow-text-muted)', transition: 'color 0.15s' }}>
                 {tr(`nav.${tkey}`)}
               </span>

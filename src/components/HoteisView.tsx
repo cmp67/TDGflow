@@ -77,10 +77,25 @@ interface Hotel {
   currency: string
   group: string | null
   image_url: string
-  dot: string
   tags: string[]
   profiles: string[]   // advisor-facing filter categories
   gallery: { label: string; url: string }[]
+  testedCount: number
+  pendingLeadCount: number
+}
+
+/* Status do fornecedor — a bolinha do card e a borda deixam de ser decoração
+   (cores aleatórias por hotel, sem relação com nada) e passam a reaproveitar
+   o MESMO vocabulário de cor já usado em "Na prática": dourado = confirmado
+   pela rede, coral = descoberto/aguardando teste. */
+function supplierStatus(hotel: Pick<Hotel, 'testedCount' | 'pendingLeadCount'>) {
+  if (hotel.testedCount > 0) {
+    return { color: 'var(--tdgflow-gold-dim, #8C6436)', label: `Testado pela rede (${hotel.testedCount})` }
+  }
+  if (hotel.pendingLeadCount > 0) {
+    return { color: 'var(--tdgflow-accent-warm)', label: 'Descoberto pela rede — aguardando teste' }
+  }
+  return { color: 'var(--tdgflow-border-light)', label: 'Ainda sem informação da rede' }
 }
 
 /* ── Filter definitions ─────────────────────────────────────────── */
@@ -118,8 +133,9 @@ interface HotelContact {
    Fase 1 da reorganização de caixinhas: catálogo deixou de ser um array
    fixo aqui e passou a vir de /api/hotels (tabela real tdg_hotels, que já
    existia no banco esperando por isso — ver migration 012). Mapeamento
-   abaixo só converte snake_case do banco (group_name/dot_color) pros nomes
-   já usados no resto deste arquivo (group/dot), sem tocar em renderização.
+   abaixo só converte snake_case do banco (group_name) pro nome já usado
+   no resto deste arquivo (group). tested_count/pending_lead_count vêm de
+   um join com reviews — ver supplierStatus() acima pra como isso vira cor.
 ──────────────────────────────────────────────────────────────────── */
 interface HotelApiRow {
   id: string
@@ -138,6 +154,8 @@ interface HotelApiRow {
   tags: string[] | null
   profiles: string[] | null
   gallery: { label: string; url: string }[] | null
+  tested_count: number
+  pending_lead_count: number
 }
 
 function mapHotelApiRow(row: HotelApiRow): Hotel {
@@ -154,15 +172,17 @@ function mapHotelApiRow(row: HotelApiRow): Hotel {
     currency: row.currency ?? '',
     group: row.group_name,
     image_url: row.image_url ?? '',
-    dot: row.dot_color ?? '#94A3B8',
     tags: row.tags ?? [],
     profiles: row.profiles ?? [],
     gallery: row.gallery ?? [],
+    testedCount: row.tested_count ?? 0,
+    pendingLeadCount: row.pending_lead_count ?? 0,
   }
 }
 
 /* ── Hotel card ─────────────────────────────────────────────────── */
 function HotelCard({ hotel, onClick }: { hotel: Hotel; onClick: () => void }) {
+  const status = supplierStatus(hotel)
   return (
     <motion.button
       initial={{ opacity: 0, y: 10 }}
@@ -198,13 +218,13 @@ function HotelCard({ hotel, onClick }: { hotel: Hotel; onClick: () => void }) {
             {hotel.name}
           </h3>
         </div>
-        <div style={{ position: 'absolute', top: 8, right: 8, width: 7, height: 7, borderRadius: '50%', background: hotel.dot, boxShadow: '0 0 0 2px rgba(255,255,255,0.3)' }} />
+        <div title={status.label} style={{ position: 'absolute', top: 8, right: 8, width: 7, height: 7, borderRadius: '50%', background: status.color, boxShadow: '0 0 0 2px rgba(255,255,255,0.3)' }} />
       </div>
 
       {/* Card body — tight */}
-      <div style={{ padding: '10px 12px 12px', borderTop: `2px solid ${hotel.dot}` }}>
+      <div style={{ padding: '10px 12px 12px', borderTop: `2px solid ${status.color}` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 8 }}>
-          <svg style={{ width: 10, height: 10, stroke: hotel.dot, fill: 'none', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round', flexShrink: 0 }}>
+          <svg style={{ width: 10, height: 10, stroke: 'var(--tdgflow-text-muted)', fill: 'none', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round', flexShrink: 0 }}>
             <use href="#i-pin" />
           </svg>
           <span style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{hotel.location}</span>
@@ -919,7 +939,7 @@ function HotelDetail({ hotel, onClose }: { hotel: Hotel; onClose: () => void }) 
               {hotel.name}
             </h2>
             <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              <svg style={{ width: 12, height: 12, stroke: hotel.dot, fill: 'none', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+              <svg style={{ width: 12, height: 12, stroke: 'rgba(255,255,255,0.7)', fill: 'none', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
                 <use href="#i-pin" />
               </svg>
               <span style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.7)' }}>{hotel.location}</span>
@@ -929,6 +949,25 @@ function HotelDetail({ hotel, onClose }: { hotel: Hotel; onClose: () => void }) 
 
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto" style={{ padding: '20px', paddingBottom: 'calc(20px + env(safe-area-inset-bottom))' }}>
+
+          {/* Descoberto pela rede, ainda sem teste real — a review não é
+              pública (status a_testar), mas o interesse já existe e merece
+              aparecer aqui, não só escondido em "Na prática". */}
+          {hotel.testedCount === 0 && hotel.pendingLeadCount > 0 && (
+            <div style={{
+              display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 16,
+              padding: '10px 14px', borderRadius: 12,
+              background: 'var(--tdgflow-accent-warm-subtle)',
+              border: '1px solid var(--tdgflow-accent-warm)',
+            }}>
+              <svg style={{ width: 14, height: 14, marginTop: 2, flexShrink: 0, fill: 'var(--tdgflow-accent-warm)' }}>
+                <use href="#i-spark" />
+              </svg>
+              <p style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-secondary)', lineHeight: 1.5, margin: 0 }}>
+                <strong style={{ color: 'var(--tdgflow-accent-warm)' }}>Descoberto pela rede</strong> — alguém já indicou este fornecedor numa feira ou reunião, mas ninguém foi lá pessoalmente ainda. Veja em &quot;Na prática&quot;.
+              </p>
+            </div>
+          )}
 
           {/* Tags */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>

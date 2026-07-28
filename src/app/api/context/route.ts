@@ -27,7 +27,7 @@ export async function GET() {
     } catch { /* tabela ainda não existe — sem pedidos */ }
   }
 
-  const [pendingRes, reviewsRes, promotionsRes, lastReviewRes] = await Promise.all([
+  const [pendingRes, reviewsRes, promotionsRes, lastReviewRes, pendingLeadsRes] = await Promise.all([
     // Gravações pendentes de transcrição
     sql`
       SELECT COUNT(*)::int AS count
@@ -57,6 +57,12 @@ export async function GET() {
       ORDER BY created_at DESC
       LIMIT 1
     `,
+    // Descobertas da rede aguardando teste real (prateleira — ver "Na prática")
+    sql`
+      SELECT COUNT(*)::int AS count
+      FROM tdg_hotel_reviews
+      WHERE status = 'a_testar'
+    `,
   ])
 
   return NextResponse.json({
@@ -67,5 +73,6 @@ export async function GET() {
     expiring_promotions: promotionsRes.rows,
     last_review_date: lastReviewRes.rows[0]?.created_at ?? null,
     pending_guest_requests: pendingGuestRequests,
+    pending_leads: pendingLeadsRes.rows[0]?.count ?? 0,
   })
 }
