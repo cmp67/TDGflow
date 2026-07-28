@@ -24,6 +24,8 @@ export interface TravelRequirements {
   eta_required?: boolean
   notes: string[]
   source: string[]
+  embassy_link: string
+  embassy_link_specific: boolean  // true = official authority for this exact country; false = generic Itamaraty fallback
   fetched_at: string  // ISO timestamp of when data was fetched
 }
 
@@ -215,7 +217,7 @@ const ETA_COUNTRIES: Record<string, { cost: string; link: string; notes: string 
   },
   NZ: {
     cost: 'NZD 23',
-    link: 'https://www.immigration.govt.nz/new-zealand-visas/visa-types/nzeta',
+    link: 'https://www.immigration.govt.nz/new-zealand-visas/visas/visa/nzeta',
     notes: 'NZeTA — solicitar com app antes de viajar.',
   },
   MV: {
@@ -224,6 +226,43 @@ const ETA_COUNTRIES: Record<string, { cost: string; link: string; notes: string 
     notes: 'IMUGA — declaração obrigatória 96h antes. Não pagar intermediários.',
   },
 }
+
+// ── Official visa/immigration authority per destination ──────────────────────
+//
+// Combinado na reunião com Adriano: além do resultado da API (que pode estar
+// desatualizada), o consultor precisa de um link direto pra fonte oficial do
+// governo de destino, pra verificar manualmente antes de orientar o cliente.
+// Cada URL abaixo foi verificada (domínio oficial .gov/.gob/.go + página
+// carrega) antes de entrar aqui — nunca um link adivinhado.
+const EMBASSY_LINKS: Record<string, string> = {
+  US: 'https://travel.state.gov/content/travel/en/us-visas.html',
+  GB: 'https://www.gov.uk/get-electronic-travel-authorisation',
+  FR: 'https://france-visas.gouv.fr/en/',
+  IT: 'https://vistoperitalia.esteri.it/',
+  ES: 'https://www.exteriores.gob.es/en/ServiciosAlCiudadano/Paginas/Servicios-consulares.aspx',
+  PT: 'https://vistos.mne.gov.pt/en/',
+  DE: 'https://www.auswaertiges-amt.de/en/visa-service',
+  CH: 'https://www.sem.admin.ch/sem/en/home/themen/einreise/info-einreise.html',
+  AU: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/electronic-travel-authority-601',
+  NZ: 'https://www.immigration.govt.nz/new-zealand-visas/visas/visa/nzeta',
+  JP: 'https://www.mofa.go.jp/j_info/visit/visa/index.html',
+  AE: 'https://u.ae/en/information-and-services/visa-and-emirates-id',
+  MV: 'https://imuga.immigration.gov.mv/',
+  TH: 'https://www.thaievisa.go.th/',
+  ID: 'https://evisa.imigrasi.go.id/',
+  MX: 'https://www.gob.mx/inm',
+  CA: 'https://www.canada.ca/en/immigration-refugees-citizenship/services/visit-canada/eta.html',
+  ZA: 'https://www.dha.gov.za/index.php/immigration-services',
+  EG: 'https://visa2egypt.gov.eg/',
+  IN: 'https://indianvisaonline.gov.in/evisa/',
+  CN: 'https://consular.mfa.gov.cn/VISA/',
+  TR: 'https://www.evisa.gov.tr/en/',
+  GR: 'https://www.mfa.gr/en/services/visas-for-foreigners-traveling-to-greece/',
+  AR: 'https://www.argentina.gob.ar/migraciones',
+}
+
+// Sem link curado pro destino → fonte de verificação genérica, nunca um link adivinhado
+const EMBASSY_FALLBACK_LINK = 'https://www.gov.br/mre/pt-br'
 
 // Schengen countries (same visa rules apply to all)
 const SCHENGEN_COUNTRIES = new Set([
@@ -479,7 +518,7 @@ export async function checkTravelRequirements(destination: string, passport = 'B
   const civpRequired = isBrazilian && CIVP_REQUIRED_ISO2.has(iso2)
   if (civpRequired) {
     notes.push(getCivpNote(iso2))
-    sources.push('ANVISA/OMS')
+    sources.push('WHO/ANVISA')
   }
 
   // ── Layer 4: US State Dept security advisory ──────────────────────────────
@@ -488,6 +527,8 @@ export async function checkTravelRequirements(destination: string, passport = 'B
   if (advisory && advisory.level >= 3) {
     notes.push(`🚨 Alerta de segurança nível ${advisory.level}/4 (${advisory.label}): ${advisory.message}`)
   }
+
+  const curatedEmbassyLink = EMBASSY_LINKS[iso2]
 
   return {
     destination,
@@ -503,6 +544,8 @@ export async function checkTravelRequirements(destination: string, passport = 'B
     eta_required: !!etaInfo,
     notes,
     source: sources,
+    embassy_link: curatedEmbassyLink ?? EMBASSY_FALLBACK_LINK,
+    embassy_link_specific: !!curatedEmbassyLink,
     fetched_at: new Date().toISOString(),
   }
 }

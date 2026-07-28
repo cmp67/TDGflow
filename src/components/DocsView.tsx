@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
-import { Search, Loader2, ShieldCheck, ShieldAlert, ShieldX, Syringe, AlertTriangle, X, ChevronRight } from 'lucide-react'
+import { Search, Loader2, ShieldCheck, ShieldAlert, ShieldX, Syringe, AlertTriangle, X, ChevronRight, ExternalLink } from 'lucide-react'
 import InsufficientBalanceModal from './InsufficientBalanceModal'
 
 /* ── Ícones próprios — traço só (regra de personalidade Bemgsy) pros
@@ -181,6 +181,14 @@ function SecurityBadge({ level, label }: { level: number; label: string }) {
   )
 }
 
+function hostnameOf(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '')
+  } catch {
+    return url
+  }
+}
+
 // ── Result card ───────────────────────────────────────────────────────────────
 
 function ResultCard({ result, onClose }: { result: TravelRequirements; onClose: () => void }) {
@@ -279,6 +287,33 @@ function ResultCard({ result, onClose }: { result: TravelRequirements; onClose: 
         </div>
       )}
 
+      {/* Fonte oficial — combinado com Adriano: a API pode estar desatualizada,
+          o consultor sempre tem um link direto pra conferir na fonte certa */}
+      {result.embassy_link && (
+        <a
+          href={result.embassy_link}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: 'flex', alignItems: 'center', gap: 10, marginTop: 10,
+            padding: '10px 14px', borderRadius: 10, textDecoration: 'none',
+            background: 'var(--tdgflow-navy-subtle)', border: '1px solid var(--tdgflow-navy)',
+          }}
+        >
+          <ExternalLink size={14} style={{ color: 'var(--tdgflow-navy)', flexShrink: 0 }} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--tdgflow-navy)', margin: 0 }}>
+              {result.embassy_link_specific ? 'Verificar na fonte oficial' : 'Verificar com o Itamaraty'}
+            </p>
+            <p style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)', margin: '2px 0 0' }}>
+              {result.embassy_link_specific
+                ? `Portal oficial de imigração/visto — ${hostnameOf(result.embassy_link)}`
+                : 'Sem portal oficial específico deste destino cadastrado — consulte o Ministério das Relações Exteriores'}
+            </p>
+          </div>
+        </a>
+      )}
+
       {/* Sources + timestamp */}
       {result.source?.length > 0 && (
         <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--tdgflow-border)' }}>
@@ -288,7 +323,7 @@ function ResultCard({ result, onClose }: { result: TravelRequirements; onClose: 
               {result.source.map((s, i) => {
                 const SOURCE_LINKS: Record<string, { url: string; label: string }> = {
                   'Passport Index': { url: 'https://github.com/ilyankou/passport-index-dataset', label: 'Passport Index' },
-                  'WHO/ANVISA':     { url: 'https://www.anvisa.gov.br/publicacoes/livros/serie_dc_vol14.pdf', label: 'ANVISA' },
+                  'WHO/ANVISA':     { url: 'https://www.who.int/ith/en/', label: 'WHO/ANVISA' },
                   'US State Dept':  { url: 'https://travel.state.gov/content/travel/en/international-travel.html', label: 'State Dept' },
                   'Travel Buddy AI':{ url: 'https://rapidapi.com/ugoBayon/api/visa-requirement', label: 'Travel Buddy' },
                   'IMUGA':          { url: 'https://imuga.immigration.gov.mv/', label: 'IMUGA' },
