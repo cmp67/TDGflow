@@ -1,7 +1,7 @@
 export interface ReviewQuestion {
   id: string
   text: string
-  type: 'text' | 'date' | 'select' | 'sentiment' | 'sub_sentiment' | 'sentiment_map' | 'voice_text' | 'photo'
+  type: 'text' | 'date' | 'select' | 'sentiment' | 'sentiment_map' | 'voice_text' | 'photo'
   placeholder?: string
   options?: string[]
 }
@@ -36,7 +36,12 @@ const PHOTO_QUESTION: ReviewQuestion = {
 
 const STAY_QUESTIONS: ReviewQuestion[] = [
   { id: 'overall_rating', text: 'Qual a sua avaliação geral?', type: 'sentiment' },
-  { id: 'sub_ratings', text: 'Como você avalia cada aspecto?', type: 'sub_sentiment' },
+  // sub_ratings (4 sub-notas numéricas fixas: Acomodações/Serviço/Gastronomia/
+  // Localização) removido — Fase 3. Repetia a mesma pergunta 2x (achado do
+  // parecer de design: overall → sub-notas → sentiment_map perguntavam a
+  // mesma coisa 3 vezes). sentiment_map já cobre aspectos específicos de
+  // forma mais leve (tags reais, não 4 categorias forçadas mesmo quando não
+  // se aplicam à visita).
   { id: 'sentiment_map', text: 'Quer mapear sentimentos por aspecto?', type: 'sentiment_map' },
   { id: 'impressions', text: 'O que mais te impressionou durante a visita?', type: 'voice_text', placeholder: 'Descreva os pontos de destaque...' },
   { id: 'client_profile', text: 'Para qual perfil de cliente você recomendaria?', type: 'voice_text', placeholder: 'Famílias, casais, golf...' },
@@ -55,8 +60,8 @@ const LIGHT_TIP_QUESTIONS: ReviewQuestion[] = [
 /**
  * Ramifica o questionário por entity_type e visit_type. Reunião comercial
  * nunca pergunta sobre estadia (não houve estadia) — ganha só a pergunta do
- * porquê. Fora de hotel, pula sub-notas e mapa de sentimento por aspecto,
- * que não fazem sentido pra beach club/transfer/guia/restaurante.
+ * porquê. Fora de hotel, pula mapa de sentimento por aspecto, que não faz
+ * sentido pra beach club/transfer/guia/restaurante.
  */
 export function getQuestions(answers: Record<string, unknown>): ReviewQuestion[] {
   const entityType = (answers.entity_type as string) || 'hotel'

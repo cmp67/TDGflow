@@ -152,107 +152,68 @@ function ratingAccent(r: number) {
   return 'var(--tdgflow-text-muted)'
 }
 
-/* ── Sentiment slider — −5 a +5 com escala musical ─────────────── */
-const SCALE = [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5] as const
+/* ── Sentiment chips — Fase 3 ─────────────────────────────────────
+   Substitui os 11 dots de -5 a +5. Achado do parecer de design: o produto
+   já precisava de SCORE_LABEL pra traduzir número em palavra — prova de
+   que o número sozinho não comunica. Um chip com palavra já é a resposta
+   decodificada, sem precisar mapear posição+polaridade+cor e checar
+   legenda. Escala positiva em intensidade de navy, negativo é a única cor
+   de alerta (exceção, não polo simétrico) — nunca vermelho/teal como par. */
+const SENTIMENT_CHIPS = [
+  { value: 5,  label: 'Excepcional' },
+  { value: 3,  label: 'Muito bom' },
+  { value: 0,  label: 'Neutro' },
+  { value: -3, label: 'Ficou devendo' },
+  { value: -5, label: 'Decepcionou' },
+] as const
 
-function SentimentSlider({
+function sentimentChipTone(value: number) {
+  if (value >= 5) return { color: 'var(--tdgflow-surface)', bg: 'var(--tdgflow-navy)', border: 'var(--tdgflow-navy)' }
+  if (value > 0)  return { color: 'var(--tdgflow-navy)', bg: 'var(--tdgflow-navy-subtle)', border: 'var(--tdgflow-navy-ring)' }
+  if (value === 0) return { color: 'var(--tdgflow-text-muted)', bg: 'var(--tdgflow-surface-high)', border: 'var(--tdgflow-border)' }
+  if (value <= -5) return { color: 'var(--tdgflow-surface)', bg: 'var(--tdgflow-error)', border: 'var(--tdgflow-error)' }
+  return { color: 'var(--tdgflow-error)', bg: 'var(--tdgflow-error-subtle)', border: 'var(--tdgflow-error)' }
+}
+
+function SentimentChips({
   value, onChange, size = 'large',
 }: {
   value: number | null
   onChange: (v: number) => void
   size?: 'large' | 'small'
 }) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const lastVal = useRef<number | null>(value)
-
   function select(v: number) {
-    if (v === lastVal.current) return
-    lastVal.current = v
+    if (v === value) return
     sounds.tick(v)
     try { navigator.vibrate?.(40) } catch { /* not supported */ }
     onChange(v)
   }
 
-  // Touch drag — slide across dots
-  function handleTouch(e: React.TouchEvent) {
-    e.preventDefault()
-    const el = containerRef.current
-    if (!el) return
-    const rect = el.getBoundingClientRect()
-    const x = e.touches[0].clientX - rect.left
-    const idx = Math.max(0, Math.min(10, Math.round((x / rect.width) * 10)))
-    select(SCALE[idx])
-  }
-
-  const dotSz   = size === 'large' ? 28 : 20
-  const gapSz   = size === 'large' ? 6  : 4
-  const fontSize = size === 'large' ? '0.5625rem' : '0.5rem'
+  const padding = size === 'large' ? '10px 16px' : '6px 11px'
+  const fontSize = size === 'large' ? '0.8125rem' : '0.6875rem'
 
   return (
-    <div style={{ userSelect: 'none' }}>
-      <div
-        ref={containerRef}
-        onTouchMove={handleTouch}
-        onTouchStart={handleTouch}
-        style={{ display: 'flex', gap: gapSz, alignItems: 'center', padding: `${size === 'large' ? 12 : 6}px 0`, touchAction: 'none', cursor: 'pointer' }}
-      >
-        {SCALE.map((p) => {
-          const isSelected = value === p
-          const isFilled = value !== null && (
-            p === 0
-              ? false
-              : value > 0 ? p > 0 && p <= value
-              : p < 0 && p >= value
-          )
-
-          const intensity = Math.abs(p) / 5
-          const tealBase  = `rgba(0,140,148,${0.25 + intensity * 0.75})`
-          const redBase   = `rgba(198,40,40,${0.25 + intensity * 0.75})`
-          const dotColor  = p < 0 ? redBase : p > 0 ? tealBase : '#94A3B8'
-          const emptyColor = p === 0 ? 'var(--tdgflow-border)' : 'var(--tdgflow-surface-high)'
-
-          return (
-            <motion.button
-              key={p}
-              onClick={() => select(p)}
-              animate={{
-                scale: isSelected ? 1.25 : 1,
-                opacity: value === null && p !== 0 ? 0.4 : 1,
-              }}
-              transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-              style={{
-                width:  dotSz,
-                height: dotSz,
-                borderRadius: '50%',
-                background: (isFilled || isSelected) ? dotColor : emptyColor,
-                border: `2px solid ${isSelected ? dotColor : 'transparent'}`,
-                boxShadow: isSelected ? `0 0 0 4px ${dotColor}25` : 'none',
-                cursor: 'pointer',
-                flexShrink: 0,
-                transition: 'background 0.12s, box-shadow 0.12s',
-                padding: 0,
-              }}
-            />
-          )
-        })}
-      </div>
-
-      {/* Labels */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: 2, paddingRight: 2 }}>
-        <span style={{ fontSize, color: 'var(--tdgflow-error)', fontWeight: 600 }}>−5</span>
-        <span style={{ fontSize, color: '#94A3B8' }}>0</span>
-        <span style={{ fontSize, color: 'var(--tdgflow-navy)', fontWeight: 600 }}>+5</span>
-      </div>
-
-      {/* Current value indicator */}
-      {value !== null && value !== 0 && (
-        <p style={{ textAlign: 'center', marginTop: 8, fontSize: '0.875rem', fontWeight: 700, color: value > 0 ? 'var(--tdgflow-navy)' : 'var(--tdgflow-error)', margin: '8px 0 0' }}>
-          {value > 0 ? `+${value}` : value}
-        </p>
-      )}
-      {value === 0 && (
-        <p style={{ textAlign: 'center', marginTop: 8, fontSize: '0.875rem', color: '#94A3B8', margin: '8px 0 0' }}>neutro</p>
-      )}
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: size === 'large' ? 8 : 6, padding: `${size === 'large' ? 4 : 0}px 0` }}>
+      {SENTIMENT_CHIPS.map(({ value: v, label }) => {
+        const selected = value === v
+        const tone = sentimentChipTone(v)
+        return (
+          <motion.button
+            key={v}
+            onClick={() => select(v)}
+            whileTap={{ scale: 0.96 }}
+            style={{
+              padding, borderRadius: 999, fontSize, fontWeight: selected ? 700 : 500,
+              border: `1.5px solid ${selected ? tone.border : 'var(--tdgflow-border)'}`,
+              background: selected ? tone.bg : 'var(--tdgflow-surface-high)',
+              color: selected ? tone.color : 'var(--tdgflow-text-secondary)',
+              cursor: 'pointer', transition: 'all 0.15s',
+            }}
+          >
+            {label}
+          </motion.button>
+        )
+      })}
     </div>
   )
 }
@@ -391,7 +352,7 @@ function SentimentMapStep({ value, onChange }: {
                     <X size={12} style={{ color: 'var(--tdgflow-text-faint)' }} />
                   </button>
                 </div>
-                <SentimentSlider
+                <SentimentChips
                   value={entry.score}
                   onChange={v => updateEntry(name, { score: v })}
                   size="small"
@@ -808,7 +769,6 @@ function Questionnaire({ onClose, onSaved, initialAnswers, relatedLeadId }: {
 
   function canAdvance() {
     if (q.id === 'heads_up') return true          // optional
-    if (q.type === 'sub_sentiment') return true   // optional
     if (q.type === 'sentiment_map') return true   // optional
     if (q.type === 'photo') return !uploadingPhoto // optional, só trava durante upload
     if (q.type === 'sentiment') return currentAnswer !== undefined  // allow 0
@@ -1042,40 +1002,13 @@ function Questionnaire({ onClose, onSaved, initialAnswers, relatedLeadId }: {
                 </div>
               )}
 
-              {/* Sentiment slider — overall */}
+              {/* Sentiment chips — overall (Fase 3: substitui o slider de dots) */}
               {q.type === 'sentiment' && (
-                <SentimentSlider
+                <SentimentChips
                   value={currentAnswer !== undefined ? (currentAnswer as number) : null}
                   onChange={setAnswer}
                   size="large"
                 />
-              )}
-
-              {/* Sub-sentiment sliders — per category */}
-              {q.type === 'sub_sentiment' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                  {[
-                    { key: 'rooms',    label: 'Acomodações' },
-                    { key: 'service',  label: 'Serviço' },
-                    { key: 'food',     label: 'Gastronomia' },
-                    { key: 'location', label: 'Localização' },
-                  ].map(({ key, label }) => {
-                    const subs = (currentAnswer as Record<string, number>) ?? {}
-                    return (
-                      <div key={key} style={{ padding: '10px 14px', borderRadius: 12, background: 'var(--tdgflow-surface-high)', border: '1px solid var(--tdgflow-border)' }}>
-                        <p style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-secondary)', marginBottom: 2, margin: '0 0 2px' }}>{label}</p>
-                        <SentimentSlider
-                          value={subs[key] !== undefined ? subs[key] : null}
-                          onChange={v => setAnswer({ ...subs, [key]: v })}
-                          size="small"
-                        />
-                      </div>
-                    )
-                  })}
-                  <p style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-faint)', textAlign: 'center' }}>
-                    Opcional — pule se preferir
-                  </p>
-                </div>
               )}
 
               {/* Sentiment map */}

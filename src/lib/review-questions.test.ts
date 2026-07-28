@@ -35,13 +35,12 @@ describe('getQuestions', () => {
     // é isso que garante que o step atual nunca aponta pra fora do array
     // quando o usuário responde a última pergunta base (visit_type, índice 4)
     expect(ids.slice(0, 5)).toEqual(['entity_type', 'hotel_name', 'country', 'visit_date', 'visit_type'])
-    expect(ids).not.toContain('sub_ratings')
   })
 
-  it('site inspection de hotel pede sub-notas de quarto/comida/localização, mapa de sentimento e foto', () => {
+  it('site inspection de hotel pede mapa de sentimento e foto, nunca sub-notas fixas (Fase 3 — removidas)', () => {
     const qs = getQuestions({ entity_type: 'hotel', visit_type: 'site_inspection' })
     const ids = qs.map(q => q.id)
-    expect(ids).toContain('sub_ratings')
+    expect(ids).not.toContain('sub_ratings')
     expect(ids).toContain('sentiment_map')
     expect(ids).toContain('photo')
   })
@@ -63,7 +62,7 @@ describe('getQuestions', () => {
 
   it('sem entity_type ainda respondido, assume hotel como default (trilho completo)', () => {
     const qs = getQuestions({ visit_type: 'fam_trip' })
-    expect(qs.map(q => q.id)).toContain('sub_ratings')
+    expect(qs.map(q => q.id)).toContain('sentiment_map')
   })
 })
 
