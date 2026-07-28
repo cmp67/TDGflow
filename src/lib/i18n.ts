@@ -10,8 +10,7 @@ export const t: Record<Lang, Record<string, string>> = {
   'pt-BR': {
     // Nav sections
     'nav.principal':   'Principal',
-    'nav.groupDesempenho': 'Desempenho',
-    'nav.groupGestao':     'Gestão',
+    'nav.groupFerramentas': 'Ferramentas',
     'nav.groupRecursos':   'Recursos',
 
     // Nav items
@@ -24,7 +23,6 @@ export const t: Record<Lang, Record<string, string>> = {
     'nav.agencia':    'Minha Agência',
     'nav.gestao':     'Gestão de Usuários',
     'nav.equipe':     'Minha Equipe',
-    'nav.gravacoes':  'Da mesa',
     'nav.docs':       'Documentação',
     'nav.destinos':   'Destinos',
     'nav.inbox':      'Inbox',
@@ -84,8 +82,7 @@ export const t: Record<Lang, Record<string, string>> = {
 
   'en': {
     'nav.principal':   'Main',
-    'nav.groupDesempenho': 'Insights',
-    'nav.groupGestao':     'Management',
+    'nav.groupFerramentas': 'Tools',
     'nav.groupRecursos':   'Resources',
     'nav.assistente':  'Flow Mode',
     'nav.ofertas':     'Offers',
@@ -96,7 +93,6 @@ export const t: Record<Lang, Record<string, string>> = {
     'nav.agencia':     'My Agency',
     'nav.gestao':      'User Management',
     'nav.equipe':      'My Team',
-    'nav.gravacoes':   'Recordings',
     'nav.docs':        'Documentation',
     'nav.destinos':    'Destinations',
     'nav.inbox':       'Inbox',
@@ -152,8 +148,7 @@ export const t: Record<Lang, Record<string, string>> = {
 
   'es': {
     'nav.principal':   'Principal',
-    'nav.groupDesempenho': 'Desempeño',
-    'nav.groupGestao':     'Gestión',
+    'nav.groupFerramentas': 'Herramientas',
     'nav.groupRecursos':   'Recursos',
     'nav.assistente':  'Modo Flow',
     'nav.ofertas':     'Ofertas',
@@ -164,7 +159,6 @@ export const t: Record<Lang, Record<string, string>> = {
     'nav.agencia':     'Mi Agencia',
     'nav.gestao':      'Gestión de Usuarios',
     'nav.equipe':      'Mi Equipo',
-    'nav.gravacoes':   'Grabaciones',
     'nav.docs':        'Documentación',
     'nav.destinos':    'Destinos',
     'nav.inbox':       'Bandeja',

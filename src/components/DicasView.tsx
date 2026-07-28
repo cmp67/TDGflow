@@ -13,6 +13,20 @@ import { sounds } from '@/lib/sounds'
 import { useToast } from '@/contexts/ToastContext'
 import { getQuestions, isLeadSubmission } from '@/lib/review-questions'
 import TdgIconSprite, { ENTITY_SCENE_ID } from '@/components/TdgIconSprite'
+import AudioRecord from '@/components/AudioRecord'
+import AudioQueue from '@/components/AudioQueue'
+
+/* Fase 6: "Da mesa" saiu da navegação — seu próprio texto já dizia "não é
+   conteúdo pra navegar direto" (só 2 botões abrindo modal, nenhum conteúdo
+   pra rolar). Vira ação "Gravar" aqui dentro, coerente com o que ela sempre
+   foi de fato. */
+function IconQueue({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 6h16M4 12h16M4 18h10" />
+    </svg>
+  )
+}
 
 /* ── Types ─────────────────────────────────────────────────────── */
 interface AspectEntry { score: number | null; note: string }
@@ -1260,6 +1274,9 @@ export default function DicasView() {
   const [leadReviews, setLeadReviews] = useState<Review[]>([])
   const [loading, setLoading] = useState(true)
   const [showQuestionnaire, setShowQuestionnaire] = useState(!!prefillHotelName)
+  const [showRecord, setShowRecord] = useState(false)
+  const [showQueue, setShowQueue] = useState(false)
+  const [queueCount, setQueueCount] = useState(0)
   const [confirmingLead, setConfirmingLead] = useState<Review | null>(null)
   const [historyHotel, setHistoryHotel] = useState<string | null>(null)
   const [search, setSearch] = useState('')
@@ -1369,6 +1386,29 @@ export default function DicasView() {
                 </div>
               </div>
             )}
+            <button
+              onClick={() => setShowQueue(true)}
+              className="btn-ghost relative"
+              style={{ padding: '8px 13px', fontSize: '0.8125rem' }}
+            >
+              <IconQueue size={13} /> Fila
+              {queueCount > 0 && (
+                <span style={{
+                  position: 'absolute', top: -5, right: -5, width: 16, height: 16, borderRadius: '50%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, lineHeight: 1,
+                  background: 'var(--tdgflow-navy)', color: 'var(--tdgflow-surface)', fontSize: '0.625rem',
+                }}>
+                  {queueCount}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setShowRecord(true)}
+              className="btn-ghost"
+              style={{ padding: '8px 13px', fontSize: '0.8125rem' }}
+            >
+              <Mic size={13} /> Gravar
+            </button>
             <button
               onClick={() => setShowQuestionnaire(true)}
               className="btn-gold"
@@ -1604,6 +1644,14 @@ export default function DicasView() {
           />
         )}
       </AnimatePresence>
+
+      {showRecord && (
+        <AudioRecord
+          onSaved={() => { setQueueCount(c => c + 1); setShowRecord(false) }}
+          onClose={() => setShowRecord(false)}
+        />
+      )}
+      {showQueue && <AudioQueue onClose={() => { setShowQueue(false); setQueueCount(0) }} />}
     </div>
   )
 }

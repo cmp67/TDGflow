@@ -7,7 +7,7 @@ import { signOut } from 'next-auth/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Mail, Sparkles, Tag, Lightbulb, FileText, Building2,
-  Mic, LogOut, MoreHorizontal, X, Users, BarChart2, MessageSquarePlus, CreditCard, Network, UserPlus, Globe
+  LogOut, MoreHorizontal, X, Users, BarChart2, MessageSquarePlus, CreditCard, Network, UserPlus, Globe
 } from 'lucide-react'
 import { LanguageProvider, useLanguage } from '@/contexts/LanguageContext'
 import { APP_VERSION } from '@/lib/version'
@@ -25,7 +25,7 @@ interface NavItem {
 }
 
 interface NavGroup {
-  labelKey: string   // i18n key for the group header, e.g. 'nav.groupDesempenho'
+  labelKey: string   // i18n key for the group header, e.g. 'nav.groupFerramentas'
   items: NavItem[]
 }
 
@@ -47,40 +47,42 @@ const PRIMARY_NAV: NavItem[] = [
 // sob o rótulo "Minha Agência" confundia: o destino real é uma tela de perfil
 // pessoal (nome, senha), não configurações de agência — dois links, dois
 // rótulos, o mesmo lugar.
+// "Da mesa" saiu daqui (Fase 6) — o próprio texto da página já dizia "não é
+// conteúdo pra navegar direto" (só 2 botões modais, zero conteúdo pra rolar).
+// Virou ação "Gravar" dentro de "Na prática".
 const RESOURCE_ITEMS: NavItem[] = [
-  { href: '/flow/gravacoes', icon: Mic,      tkey: 'gravacoes' },
   { href: '/flow/docs',      icon: FileText, tkey: 'docs' },
   { href: '/flow/destinos',  icon: Globe,    tkey: 'destinos' },
   { href: '/flow/inbox',     icon: Mail,     tkey: 'inbox', soon: true },
 ]
 
+// Fase 6: "Desempenho" era um cabeçalho de grupo pra 1 item só (Analytics) —
+// não ganha peso próprio no mental model de quem usa o app todo dia (achado
+// do arquiteto). Um único bloco "Ferramentas" por papel, sem cabeçalho que
+// não se paga.
 const NAV_GROUPS_AGENT: NavGroup[] = [
-  { labelKey: 'nav.groupDesempenho', items: [
+  { labelKey: 'nav.groupFerramentas', items: [
     { href: '/flow/analytics', icon: BarChart2, tkey: 'analytics' },
+    ...RESOURCE_ITEMS,
   ] },
-  { labelKey: 'nav.groupRecursos', items: RESOURCE_ITEMS },
 ]
 
 const NAV_GROUPS_ADMIN: NavGroup[] = [
-  { labelKey: 'nav.groupDesempenho', items: [
+  { labelKey: 'nav.groupFerramentas', items: [
     { href: '/flow/analytics', icon: BarChart2, tkey: 'analytics' },
-  ] },
-  { labelKey: 'nav.groupGestao', items: [
     { href: '/flow/gestao', icon: Users, tkey: 'gestao' },
+    ...RESOURCE_ITEMS,
   ] },
-  { labelKey: 'nav.groupRecursos', items: RESOURCE_ITEMS },
 ]
 
 // agency_admin: administra só a equipe da própria agência (nunca entre
 // agências — isso fica exclusivo do admin global via NAV_GROUPS_ADMIN acima).
 const NAV_GROUPS_AGENCY_ADMIN: NavGroup[] = [
-  { labelKey: 'nav.groupDesempenho', items: [
+  { labelKey: 'nav.groupFerramentas', items: [
     { href: '/flow/analytics', icon: BarChart2, tkey: 'analytics' },
-  ] },
-  { labelKey: 'nav.groupGestao', items: [
     { href: '/flow/equipe', icon: UserPlus, tkey: 'equipe' },
+    ...RESOURCE_ITEMS,
   ] },
-  { labelKey: 'nav.groupRecursos', items: RESOURCE_ITEMS },
 ]
 
 interface Brand {
