@@ -16,6 +16,7 @@ export async function GET(req: NextRequest) {
   const agentEmail = session.user?.email ?? ''
   const { searchParams } = new URL(req.url)
   const hotel = searchParams.get('hotel')
+  const hotelId = searchParams.get('hotelId')
   const entityType = searchParams.get('entity_type')
   // Sem status explícito, só o que já foi confirmado pela rede — lead
   // ("a_testar") é opt-in, nunca aparece por padrão misturado com o resto.
@@ -28,7 +29,21 @@ export async function GET(req: NextRequest) {
   const agentId = userRows[0]?.id ?? null
 
   let reviewRows
-  if (hotel) {
+  if (hotelId) {
+    // Fase 2: a ficha do fornecedor pede as próprias reviews por hotel_id
+    // real — exato, sem depender de casar hotel_name por texto.
+    const { rows } = await sql`
+      SELECT r.*,
+             CASE WHEN f.review_id IS NOT NULL THEN true ELSE false END AS is_favorite
+      FROM tdg_hotel_reviews r
+      LEFT JOIN tdg_review_favorites f
+        ON f.review_id = r.id AND f.agent_id = ${agentId}
+      WHERE r.hotel_id = ${hotelId}
+        AND r.status = ${status}
+      ORDER BY r.visit_date DESC NULLS LAST
+    `
+    reviewRows = rows
+  } else if (hotel) {
     const { rows } = await sql`
       SELECT r.*,
              CASE WHEN f.review_id IS NOT NULL THEN true ELSE false END AS is_favorite

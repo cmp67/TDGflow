@@ -4,7 +4,7 @@ import { sql } from '@vercel/postgres'
 vi.mock('@/auth', () => ({ auth: vi.fn() }))
 
 import { auth } from '@/auth'
-import { POST } from './route'
+import { POST, GET } from './route'
 
 const mockAuth = auth as unknown as ReturnType<typeof vi.fn>
 
@@ -18,6 +18,10 @@ function postReq(body: unknown) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   }) as unknown as Parameters<typeof POST>[0]
+}
+
+function getReq(query: string) {
+  return new Request(`http://localhost/api/reviews?${query}`) as unknown as Parameters<typeof GET>[0]
 }
 
 describe('POST /api/reviews — hotel_id find-or-create (Fase 1)', () => {
@@ -90,5 +94,44 @@ describe('POST /api/reviews — hotel_id find-or-create (Fase 1)', () => {
     expect(res.status).toBe(200)
     createdReviewIds.push(body.review.id)
     expect(body.review.hotel_id).toBeNull()
+  })
+})
+
+describe('GET /api/reviews?hotelId= (Fase 2 — ficha do fornecedor puxa as próprias reviews)', () => {
+  const email = `tdd-reviews-gethotelid-${Date.now()}@example.com`
+  let hotelId: string
+  let reviewId: string
+
+  beforeAll(async () => {
+    await sql`
+      INSERT INTO tdg_users (name, email, agency_name, password_hash, role)
+      VALUES ('TDD Reviewer GET', ${email}, '__TDD_AGENCY__', 'x', 'agent')
+    `
+    const { rows } = await sql`
+      INSERT INTO tdg_hotels (name) VALUES (${`__TDD Ficha Hotel ${Date.now()}__`}) RETURNING id
+    `
+    hotelId = rows[0].id as string
+    const { rows: reviewRows } = await sql`
+      INSERT INTO tdg_hotel_reviews (hotel_name, hotel_id, entity_type, agent_name, agency_name, overall_rating, status)
+      VALUES ('N/A', ${hotelId}, 'hotel', 'TDD', 'TDD', 4, 'published')
+      RETURNING id
+    `
+    reviewId = reviewRows[0].id as string
+  })
+
+  afterAll(async () => {
+    await sql`DELETE FROM tdg_hotel_reviews WHERE id = ${reviewId}`
+    await sql`DELETE FROM tdg_users WHERE email = ${email}`
+    await sql`DELETE FROM tdg_hotels WHERE id = ${hotelId}`
+  })
+
+  it('returns only reviews for that exact hotel_id', async () => {
+    mockAuth.mockResolvedValueOnce(sessionFor(email))
+    const res = await GET(getReq(`hotelId=${hotelId}`))
+    const body = await res.json()
+
+    expect(res.status).toBe(200)
+    expect(body.reviews).toHaveLength(1)
+    expect(body.reviews[0].id).toBe(reviewId)
   })
 })

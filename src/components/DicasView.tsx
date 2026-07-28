@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, Heart, ChevronDown, ChevronUp,
@@ -19,6 +21,7 @@ type SentimentMapValue = Record<string, AspectEntry>
 interface Review {
   id: string
   hotel_name: string
+  hotel_id: string | null
   entity_type: string
   country: string | null
   agent_name: string
@@ -746,7 +749,17 @@ function HotelCard({ review, onToggleFavorite, onViewHistory, onConfirmLead }: {
             {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
             {expanded ? 'Fechar' : 'Ver detalhes'}
           </button>
-          {visitCount > 1 && (
+          {visitCount > 1 && review.entity_type === 'hotel' && review.hotel_id ? (
+            // Hotel tem ficha própria — a lista de visitas mora lá (Fase 2),
+            // não num drawer separado que só sabia casar por nome.
+            <Link
+              href={`/flow/hoteis?hotelId=${review.hotel_id}`}
+              className="no-underline"
+              style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.6875rem', color: accent }}
+            >
+              Ver ficha do hotel <ArrowRight size={10} />
+            </Link>
+          ) : visitCount > 1 && (
             <button
               onClick={() => onViewHistory(review.hotel_name)}
               style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.6875rem', color: accent, padding: 0 }}
@@ -1304,10 +1317,16 @@ const ENTITY_FILTER_TABS = [{ id: 'all', label: 'Todos os tipos' }, ...Object.en
 
 /* ── Main export ────────────────────────────────────────────────── */
 export default function DicasView() {
+  const searchParams = useSearchParams()
+  // Antecipação: vindo da ficha de um fornecedor ("Registrar nova visita"),
+  // já chega aqui com o nome preenchido — nunca pergunta de novo algo que o
+  // sistema já sabe.
+  const prefillHotelName = searchParams.get('hotel')
+
   const [publishedReviews, setPublishedReviews] = useState<Review[]>([])
   const [leadReviews, setLeadReviews] = useState<Review[]>([])
   const [loading, setLoading] = useState(true)
-  const [showQuestionnaire, setShowQuestionnaire] = useState(false)
+  const [showQuestionnaire, setShowQuestionnaire] = useState(!!prefillHotelName)
   const [confirmingLead, setConfirmingLead] = useState<Review | null>(null)
   const [historyHotel, setHistoryHotel] = useState<string | null>(null)
   const [search, setSearch] = useState('')
@@ -1629,6 +1648,7 @@ export default function DicasView() {
           <Questionnaire
             onClose={() => setShowQuestionnaire(false)}
             onSaved={() => { loadReviews() }}
+            initialAnswers={prefillHotelName ? { entity_type: 'hotel', hotel_name: prefillHotelName } : undefined}
           />
         )}
         {confirmingLead && (

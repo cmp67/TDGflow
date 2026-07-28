@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useMemo, useEffect, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, X, Phone, Mail, ExternalLink,
-  Building2, ChevronRight, Globe, Users, ArrowRight,
+  Building2, ChevronRight, Globe, ArrowRight,
   MessageCircle, Plus, Loader2, Trash2, UserCircle2,
   Camera, ScanLine, PenLine, CheckCircle2, AlertCircle,
 } from 'lucide-react'
@@ -728,6 +729,102 @@ function HotelVideos({ hotelId }: { hotelId: string }) {
   )
 }
 
+/* ── Reviews reais dentro da ficha ────────────────────────────────
+   Fase 2: review não tem seção própria, vive dentro do anúncio (mesmo
+   princípio Airbnb já aplicado ao entity_type). Antes disso a ficha
+   terminava num link morto pro feed inteiro de "Na prática", sem filtro. */
+interface HotelReviewRow {
+  id: string
+  agent_name: string
+  agency_name: string
+  visit_date: string | null
+  overall_rating: number
+  highlights: string[] | null
+  client_profile: string | null
+}
+
+function fmtReviewDate(d: string | null) {
+  if (!d) return null
+  return new Date(d).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })
+}
+
+function HotelReviews({ hotelId, hotelName }: { hotelId: string; hotelName: string }) {
+  const [reviews, setReviews] = useState<HotelReviewRow[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    fetch(`/api/reviews?hotelId=${hotelId}`)
+      .then(res => res.json())
+      .then(data => { if (!cancelled) setReviews(data.reviews ?? []) })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [hotelId])
+
+  return (
+    <div style={{ marginBottom: 20 }}>
+      <p style={{ fontSize: '0.5875rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)', marginBottom: 12 }}>
+        O que a rede achou
+      </p>
+
+      {loading && (
+        <div style={{ textAlign: 'center', padding: '16px 0' }}>
+          <Loader2 size={16} className="animate-spin" style={{ color: 'var(--tdgflow-text-muted)', margin: '0 auto' }} />
+        </div>
+      )}
+
+      {!loading && reviews.length === 0 && (
+        <p style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-muted)', padding: '4px 0' }}>
+          Ninguém da rede visitou ainda.
+        </p>
+      )}
+
+      {!loading && reviews.map(r => (
+        <div key={r.id} style={{
+          padding: '12px 14px', borderRadius: 12, marginBottom: 8,
+          border: '1px solid var(--tdgflow-border)', background: 'var(--tdgflow-surface-high)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+            <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)' }}>
+              {r.agent_name} <span style={{ fontWeight: 400, color: 'var(--tdgflow-text-muted)' }}>· {r.agency_name}</span>
+            </span>
+            <span style={{
+              fontSize: '0.6875rem', fontWeight: 700, padding: '2px 8px', borderRadius: 999,
+              color: 'var(--tdgflow-navy-dim)', background: 'var(--tdgflow-navy-subtle)',
+            }}>
+              {r.overall_rating > 0 ? `+${r.overall_rating}` : r.overall_rating}
+            </span>
+          </div>
+          {r.highlights && r.highlights.length > 0 && (
+            <p style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-secondary)', lineHeight: 1.5 }}>
+              {r.highlights[0]}
+            </p>
+          )}
+          {fmtReviewDate(r.visit_date) && (
+            <p style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)', marginTop: 5 }}>{fmtReviewDate(r.visit_date)}</p>
+          )}
+        </div>
+      ))}
+
+      <Link href={`/flow/dicas?hotel=${encodeURIComponent(hotelName)}`} className="no-underline" style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '14px 16px', borderRadius: 12, marginTop: 4,
+        background: 'var(--tdgflow-navy-subtle)', border: '1px solid var(--tdgflow-navy-ring)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Plus size={15} style={{ color: 'var(--tdgflow-navy)' }} />
+          <span style={{ fontSize: '0.875rem', color: 'var(--tdgflow-navy)', fontWeight: 400 }}>
+            Registrar nova visita
+          </span>
+        </div>
+        <ArrowRight size={14} style={{ color: 'var(--tdgflow-navy)' }} />
+      </Link>
+    </div>
+  )
+}
+
 /* ── Hotel detail sheet ─────────────────────────────────────────── */
 function HotelDetail({ hotel, onClose }: { hotel: Hotel; onClose: () => void }) {
   const [contacts, setContacts] = useState<HotelContact[]>([])
@@ -1018,20 +1115,8 @@ function HotelDetail({ hotel, onClose }: { hotel: Hotel; onClose: () => void }) 
             </div>
           )}
 
-          {/* Link to Dicas */}
-          <Link href="/flow/dicas" className="no-underline" style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '14px 16px', borderRadius: 12,
-            background: 'var(--tdgflow-navy-subtle)', border: '1px solid var(--tdgflow-navy-ring)',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Users size={15} style={{ color: 'var(--tdgflow-navy)' }} />
-              <span style={{ fontSize: '0.875rem', color: 'var(--tdgflow-navy)', fontWeight: 400 }}>
-                Ver dicas da rede sobre este hotel
-              </span>
-            </div>
-            <ArrowRight size={14} style={{ color: 'var(--tdgflow-navy)' }} />
-          </Link>
+          {/* Reviews reais desta ficha — Fase 2 */}
+          <HotelReviews hotelId={hotel.id} hotelName={hotel.name} />
         </div>
       </motion.div>
     </>
@@ -1040,6 +1125,9 @@ function HotelDetail({ hotel, onClose }: { hotel: Hotel; onClose: () => void }) 
 
 /* ── Main view ──────────────────────────────────────────────────── */
 export default function HoteisView() {
+  const searchParams = useSearchParams()
+  const deepLinkHotelId = searchParams.get('hotelId')
+
   const [search, setSearch] = useState('')
   const [region, setRegion] = useState('Todos')
   const [activeProfiles, setActiveProfiles] = useState<Set<string>>(new Set())
@@ -1064,6 +1152,14 @@ export default function HoteisView() {
   }, [])
 
   useEffect(() => { loadHotels() }, [loadHotels])
+
+  // Deep link vindo de uma review em "Na prática" ("Ver ficha do hotel") —
+  // abre a ficha certa assim que o catálogo carregar, sem precisar buscar.
+  useEffect(() => {
+    if (!deepLinkHotelId || hotels.length === 0) return
+    const match = hotels.find(h => h.id === deepLinkHotelId)
+    if (match) setSelected(match)
+  }, [deepLinkHotelId, hotels])
 
   function toggleProfile(key: string) {
     setActiveProfiles(prev => {
