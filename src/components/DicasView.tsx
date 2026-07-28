@@ -1416,7 +1416,7 @@ export default function DicasView() {
               <div style={{ display: 'flex', gap: 16 }}>
                 <div style={{ textAlign: 'right' }}>
                   <p style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.02em', lineHeight: 1 }}>{publishedReviews.length}</p>
-                  <p style={{ fontSize: '0.55rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)', marginTop: 2 }}>aprovadas</p>
+                  <p style={{ fontSize: '0.55rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)', marginTop: 2 }}>testadas</p>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <p style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--tdgflow-accent-warm)', letterSpacing: '-0.02em', lineHeight: 1 }}>{leadReviews.length}</p>
