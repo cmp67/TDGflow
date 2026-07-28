@@ -7,16 +7,22 @@ export const dynamic = 'force-dynamic'
 async function ensureTable() {
   await sql`
     CREATE TABLE IF NOT EXISTS tdg_hotel_contacts (
-      id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      hotel_id    UUID NOT NULL,
-      added_by    TEXT,
-      name        TEXT NOT NULL,
-      surname     TEXT NOT NULL,
-      title       TEXT,
-      email       TEXT,
-      whatsapp    TEXT,
-      notes       TEXT,
-      created_at  TIMESTAMPTZ DEFAULT NOW()
+      id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      hotel_id            UUID NOT NULL,
+      added_by            TEXT,
+      name                TEXT NOT NULL,
+      surname             TEXT NOT NULL,
+      title               TEXT,
+      email               TEXT,
+      whatsapp            TEXT,
+      notes               TEXT,
+      created_at          TIMESTAMPTZ DEFAULT NOW(),
+      source_author       TEXT,
+      source_date         DATE,
+      category            TEXT,
+      context_trigger     TEXT,
+      organization        TEXT,
+      is_network_contact  BOOLEAN DEFAULT false
     )
   `
 }
@@ -55,9 +61,19 @@ export async function POST(req: NextRequest) {
 
   const addedBy = session.user?.name ?? 'Agente'
 
+  // Fase 5: contato de hotel é sempre um contato de rede também — uma fonte,
+  // duas vistas (achado do arquiteto: contato cadastrado na ficha ficava
+  // invisível em Rede, que só lista is_network_contact=true). category
+  // 'hotel' já existe nos filtros de Rede, não precisa de opção nova.
+  // organization guarda o nome do hotel — é o que aparece como subtítulo
+  // do contato quando ele é visto de dentro de Rede, não da ficha.
+  const { rows: hotelRows } = await sql`SELECT name FROM tdg_hotels WHERE id = ${hotelId}`
+  const hotelName = hotelRows[0]?.name ?? null
+
   const { rows } = await sql`
-    INSERT INTO tdg_hotel_contacts (hotel_id, added_by, name, surname, title, email, whatsapp, notes)
-    VALUES (${hotelId}, ${addedBy}, ${name}, ${surname}, ${title ?? null}, ${email ?? null}, ${whatsapp ?? null}, ${notes ?? null})
+    INSERT INTO tdg_hotel_contacts
+      (hotel_id, added_by, name, surname, title, email, whatsapp, notes, category, is_network_contact, organization)
+    VALUES (${hotelId}, ${addedBy}, ${name}, ${surname}, ${title ?? null}, ${email ?? null}, ${whatsapp ?? null}, ${notes ?? null}, 'hotel', TRUE, ${hotelName})
     RETURNING *
   `
 
