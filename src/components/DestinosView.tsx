@@ -81,8 +81,9 @@ function TipCard({ tip }: { tip: KnowledgeTip }) {
 /* ── Main export ────────────────────────────────────────────────────
    Fase 4 da reorganização de caixinhas: "Dicas de Destino" morava dentro
    de Rede/Contatos (achado do arquiteto — conhecimento fragmentado numa
-   tela cujo header se chamava "Contatos"). Vira item próprio na navegação,
-   sem mudar a fonte de dado (mesmo /api/network-contacts?tab=tips). */
+   tela cujo header se chamava "Contatos"). Vira item próprio na navegação.
+   Fonte de dado agora é /api/knowledge-tips (separado do Contact Hub, que
+   ficou só com contatos de pessoas/fornecedores em /api/hotel-contacts). */
 export default function DestinosView() {
   const [tips, setTips] = useState<KnowledgeTip[]>([])
   const [total, setTotal] = useState(0)
@@ -91,9 +92,9 @@ export default function DestinosView() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const params = new URLSearchParams({ tab: 'tips' })
+    const params = new URLSearchParams()
     if (search.trim()) params.set('search', search.trim())
-    const res = await fetch(`/api/network-contacts?${params}`)
+    const res = await fetch(`/api/knowledge-tips?${params}`)
     const data = await res.json()
     setTips(data.tips ?? [])
     setTotal(data.total ?? 0)

@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Mail, Sparkles, Tag, Lightbulb, FileText, Building2,
+  Mail, Sparkles, Tag, Lightbulb, FileText,
   LogOut, MoreHorizontal, X, Users, BarChart2, MessageSquarePlus, CreditCard, Network, UserPlus, Globe
 } from 'lucide-react'
 import { LanguageProvider, useLanguage } from '@/contexts/LanguageContext'
@@ -33,7 +33,6 @@ const PRIMARY_NAV: NavItem[] = [
   { href: '/flow/chat',    icon: Sparkles,  tkey: 'assistente' },
   { href: '/flow/ofertas', icon: Tag,       tkey: 'ofertas' },
   { href: '/flow/dicas',   icon: Lightbulb, tkey: 'dicas' },
-  { href: '/flow/hoteis',  icon: Building2, tkey: 'hoteis' },
   { href: '/flow/rede',    icon: Network,   tkey: 'rede' },
 ]
 
@@ -45,8 +44,7 @@ const NAV_HINTS: Record<string, string> = {
   assistente: 'Converse com a IA — busca de hotéis, promoções e dúvidas do sistema',
   ofertas:    'Promoções ativas da rede, ordenadas por comissão e prazo',
   dicas:      'Avaliações reais de fornecedores, por quem visitou de verdade',
-  hoteis:     'Catálogo de fornecedores parceiros — contatos, contratos, avaliações',
-  rede:       'Contatos da rede — reps, DMCs, fornecedores',
+  rede:       'Fornecedores parceiros e contatos da rede — reps, DMCs, pessoas',
   analytics:  'Seu desempenho e o da rede',
   agencia:    'Seu perfil e dados da agência',
   gestao:     'Usuários e permissões da agência',

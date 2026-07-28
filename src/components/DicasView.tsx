@@ -728,7 +728,7 @@ function HotelCard({ review, onToggleFavorite, onViewHistory, onConfirmLead }: {
             // Hotel tem ficha própria — a lista de visitas mora lá (Fase 2),
             // não num drawer separado que só sabia casar por nome.
             <Link
-              href={`/flow/hoteis?hotelId=${review.hotel_id}`}
+              href={`/flow/rede?tab=fornecedores&hotelId=${review.hotel_id}`}
               className="no-underline"
               style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.6875rem', color: accent }}
             >
