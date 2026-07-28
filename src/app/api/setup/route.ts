@@ -100,6 +100,10 @@ export async function GET(req: Request) {
   steps.push('add photo_url column (reviews)')
   await sql`ALTER TABLE tdg_hotel_reviews ADD COLUMN IF NOT EXISTS photo_url TEXT`
 
+  steps.push('add hotel_id column (reviews) — Fase 1, ver migration 012')
+  await sql`ALTER TABLE tdg_hotel_reviews ADD COLUMN IF NOT EXISTS hotel_id UUID REFERENCES tdg_hotels(id) ON DELETE SET NULL`
+  await sql`CREATE INDEX IF NOT EXISTS idx_tdg_hotel_reviews_hotel_id ON tdg_hotel_reviews (hotel_id)`
+
   steps.push('create tdg_review_favorites')
   await sql`
     CREATE TABLE IF NOT EXISTS tdg_review_favorites (
@@ -124,6 +128,36 @@ export async function GET(req: Request) {
     )
   `
   await sql`CREATE INDEX IF NOT EXISTS idx_tdg_brand_agency_id ON tdg_brand (agency_id)`
+
+  // tdg_hotels também nunca teve bootstrap em código — existia em produção
+  // criada fora de banda, com FKs de tdg_contracts/tdg_promotions/tdg_knowledge/
+  // tdg_audio_inputs já apontando pra ela (achado da Fase 1 da reorganização
+  // de caixinhas, ver supabase/migrations/012_hotels_catalog.sql).
+  steps.push('create tdg_hotels')
+  await sql`
+    CREATE TABLE IF NOT EXISTS tdg_hotels (
+      id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      name           TEXT NOT NULL,
+      location       TEXT,
+      country        TEXT,
+      region         TEXT,
+      networks       TEXT[] DEFAULT '{}',
+      room_types     TEXT[] DEFAULT '{}',
+      description    TEXT,
+      tags           TEXT[] DEFAULT '{}',
+      contact_email  TEXT,
+      contact_phone  TEXT,
+      website_url    TEXT,
+      currency       TEXT,
+      group_name     TEXT,
+      image_url      TEXT,
+      dot_color      TEXT,
+      profiles       TEXT[] DEFAULT '{}',
+      gallery        JSONB DEFAULT '[]',
+      created_at     TIMESTAMPTZ DEFAULT now()
+    )
+  `
+  await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_tdg_hotels_name_unique ON tdg_hotels (lower(trim(name)))`
 
   // tdg_knowledge nunca teve bootstrap em código nenhum — só existia em
   // produção porque foi criada fora de banda (achado da migration 009).
@@ -226,6 +260,31 @@ export async function GET(req: Request) {
       ('Soneva Jani','Maldivas','Camila Torres','Luxe Destinations','2025-08-15','personal_stay',5,to_jsonb(ARRAY['Water villas com slide privativo para o lagoon','Cinema subaquático']),NOW() - INTERVAL '232 days'),
       ('Como Laucala Island','Fiji','Ana Oliveira','TDG Travel','2026-03-01','site_inspection',5,to_jsonb(ARRAY['Apenas 25 villas em ilha privada de Fiji','Fazenda orgânica abastece 90% do restaurante']),NOW() - INTERVAL '34 days')
     ON CONFLICT DO NOTHING
+  `
+
+  steps.push('backfill hotel_id on reviews from tdg_hotels (match-or-create)')
+  await sql`
+    UPDATE tdg_hotel_reviews r
+    SET hotel_id = h.id
+    FROM tdg_hotels h
+    WHERE r.entity_type = 'hotel'
+      AND r.hotel_id IS NULL
+      AND lower(trim(r.hotel_name)) = lower(trim(h.name))
+  `
+  await sql`
+    INSERT INTO tdg_hotels (name)
+    SELECT DISTINCT trim(r.hotel_name)
+    FROM tdg_hotel_reviews r
+    WHERE r.entity_type = 'hotel' AND r.hotel_id IS NULL
+    ON CONFLICT (lower(trim(name))) DO NOTHING
+  `
+  await sql`
+    UPDATE tdg_hotel_reviews r
+    SET hotel_id = h.id
+    FROM tdg_hotels h
+    WHERE r.entity_type = 'hotel'
+      AND r.hotel_id IS NULL
+      AND lower(trim(r.hotel_name)) = lower(trim(h.name))
   `
 
   return NextResponse.json({ ok: true, message: 'All tables created and seeded.', steps })

@@ -113,119 +113,52 @@ interface HotelContact {
   created_at: string
 }
 
-/* ── Hotel data ─────────────────────────────────────────────────── */
-const HOTELS: Hotel[] = [
-  {
-    id: 'dd3cfd92-ab2e-465d-a49b-dc8de1b5a402',
-    name: 'Martinhal Sagres',
-    location: 'Sagres, Algarve, Portugal',
-    country: 'Portugal',
-    region: 'Algarve',
-    description: 'Resort 5 estrelas para famílias com quartos e villas de luxo no Parque Natural da Costa Vicentina, junto à praia do Martinhal. Baby concierge, atividades familiares e restaurantes premiados.',
-    contact_email: 'res@martinhal.com',
-    contact_phone: '+351 282 240 200',
-    website_url: 'https://www.martinhal.com/sagres',
-    currency: 'EUR',
-    group: 'Martinhal',
-    image_url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=900&q=80&auto=format&fit=crop',
-    dot: '#7aaa5a',
-    tags: ['Beach Resort', 'Família', '5 Estrelas', 'Villas'],
-    profiles: ['Família', 'Resort', 'Praia', 'Villas', 'Natureza'],
-    gallery: [
-      { label: 'Acomodações', url: '#' },
-      { label: 'Atividades Família', url: '#' },
-      { label: 'Praia do Martinhal', url: '#' },
-    ],
-  },
-  {
-    id: 'c626c5ce-f740-445b-ba3e-d746f30a7a5a',
-    name: 'Martinhal Lisboa Chiado',
-    location: 'Chiado, Lisboa, Portugal',
-    country: 'Portugal',
-    region: 'Lisboa',
-    description: 'Apartamentos de luxo com serviços 5 estrelas num edifício histórico de 1855 no Chiado/Bairro Alto. Kids Club, Baby Concierge, Bar 1855 Gin Garden.',
-    contact_email: 'res@martinhal.com',
-    contact_phone: '+351 218 507 788',
-    website_url: 'https://www.martinhal.com/lisbon',
-    currency: 'EUR',
-    group: 'Martinhal',
-    image_url: 'https://images.unsplash.com/photo-1555881400-74d7acaacd8b?w=900&q=80&auto=format&fit=crop',
-    dot: '#8080c8',
-    tags: ['Urban Luxury', 'Família', 'Apartamentos', 'Histórico'],
-    profiles: ['Família', 'Urban', 'Boutique', 'Casais', 'Negócios'],
-    gallery: [
-      { label: 'Acomodações', url: '#' },
-      { label: 'Bar 1855', url: '#' },
-      { label: 'Kids Club', url: '#' },
-    ],
-  },
-  {
-    id: '91a653bd-88ec-4c50-9968-345662a09388',
-    name: 'Martinhal Lisboa Oriente',
-    location: 'Parque das Nações, Lisboa, Portugal',
-    country: 'Portugal',
-    region: 'Lisboa',
-    description: 'Apartamentos e residências de luxo junto ao Rio Tejo. Piscina, spa, restaurante terraço e espaço kids.',
-    contact_email: 'res@martinhal.com',
-    contact_phone: '+351 210 029 600',
-    website_url: 'https://www.martinhal.com/lisbon-oriente',
-    currency: 'EUR',
-    group: 'Martinhal',
-    image_url: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=900&q=80&auto=format&fit=crop',
-    dot: '#4a8abe',
-    tags: ['Urban Luxury', 'Apartamentos', 'Riverside', 'Moderno'],
-    profiles: ['Família', 'Urban', 'Casais', 'Negócios'],
-    gallery: [
-      { label: 'Acomodações', url: '#' },
-      { label: 'Spa & Piscina', url: '#' },
-      { label: 'Restaurante Terraço', url: '#' },
-    ],
-  },
-  {
-    id: '223dd537-61ee-45a3-8d00-22cf893a7c12',
-    name: 'Martinhal Quinta do Lago',
-    location: 'Quinta do Lago, Algarve, Portugal',
-    country: 'Portugal',
-    region: 'Algarve',
-    description: 'Resort familiar de luxo com villas privadas e piscinas próprias. Localizado na exclusiva Quinta do Lago, a poucos minutos dos melhores campos de golfe de Portugal.',
-    contact_email: 'res@martinhal.com',
-    contact_phone: '+351 289 008 300',
-    website_url: 'https://www.martinhal.com/quinta',
-    currency: 'EUR',
-    group: 'Martinhal',
-    image_url: 'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=900&q=80&auto=format&fit=crop',
-    dot: '#c8a060',
-    tags: ['Golf', 'Família', 'Villas', 'Quinta do Lago'],
-    profiles: ['Família', 'Golf', 'Resort', 'Villas', 'Casais'],
-    gallery: [
-      { label: 'Villas', url: '#' },
-      { label: 'Atividades Família', url: '#' },
-      { label: 'Piscina & Hangout', url: '#' },
-    ],
-  },
-  {
-    id: '3791765b-3358-4ed2-beea-a6668dba16fc',
-    name: 'Velaa Private Island',
-    location: 'Noonu Atoll, Maldivas',
-    country: 'Maldivas',
-    region: 'Maldivas',
-    description: 'Resort ultra-luxo em ilha privativa nas Maldivas com villas exclusivas, gastronomia de autor e serviço excepcional. Uma das experiências mais exclusivas do Índico.',
-    contact_email: 'reservations@velaaprivateisland.com',
-    contact_phone: '+960 656 1111',
-    website_url: 'https://www.velaaprivateisland.com',
-    currency: 'USD',
-    group: null,
-    image_url: 'https://images.unsplash.com/photo-1514282401047-d79a71a590e8?w=900&q=80&auto=format&fit=crop',
-    dot: '#4a9bbe',
-    tags: ['Private Island', 'Ultra Luxury', 'Overwater', 'Maldivas'],
-    profiles: ['Casais', 'Ultra Luxury', 'Overwater', 'Resort', 'Natureza'],
-    gallery: [
-      { label: 'Acomodações', url: '#' },
-      { label: 'Aragu Restaurant', url: '#' },
-      { label: 'Wellbeing Village', url: '#' },
-    ],
-  },
-]
+/* ── Hotel data ─────────────────────────────────────────────────────
+   Fase 1 da reorganização de caixinhas: catálogo deixou de ser um array
+   fixo aqui e passou a vir de /api/hotels (tabela real tdg_hotels, que já
+   existia no banco esperando por isso — ver migration 012). Mapeamento
+   abaixo só converte snake_case do banco (group_name/dot_color) pros nomes
+   já usados no resto deste arquivo (group/dot), sem tocar em renderização.
+──────────────────────────────────────────────────────────────────── */
+interface HotelApiRow {
+  id: string
+  name: string
+  location: string | null
+  country: string | null
+  region: string | null
+  description: string | null
+  contact_email: string | null
+  contact_phone: string | null
+  website_url: string | null
+  currency: string | null
+  group_name: string | null
+  image_url: string | null
+  dot_color: string | null
+  tags: string[] | null
+  profiles: string[] | null
+  gallery: { label: string; url: string }[] | null
+}
+
+function mapHotelApiRow(row: HotelApiRow): Hotel {
+  return {
+    id: row.id,
+    name: row.name,
+    location: row.location ?? '',
+    country: row.country ?? '',
+    region: row.region ?? '',
+    description: row.description ?? '',
+    contact_email: row.contact_email ?? '',
+    contact_phone: row.contact_phone ?? '',
+    website_url: row.website_url,
+    currency: row.currency ?? '',
+    group: row.group_name,
+    image_url: row.image_url ?? '',
+    dot: row.dot_color ?? '#94A3B8',
+    tags: row.tags ?? [],
+    profiles: row.profiles ?? [],
+    gallery: row.gallery ?? [],
+  }
+}
 
 /* ── Hotel card ─────────────────────────────────────────────────── */
 function HotelCard({ hotel, onClick }: { hotel: Hotel; onClick: () => void }) {
@@ -1111,6 +1044,26 @@ export default function HoteisView() {
   const [region, setRegion] = useState('Todos')
   const [activeProfiles, setActiveProfiles] = useState<Set<string>>(new Set())
   const [selected, setSelected] = useState<Hotel | null>(null)
+  const [hotels, setHotels] = useState<Hotel[]>([])
+  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
+
+  const loadHotels = useCallback(async () => {
+    setLoading(true)
+    setLoadError(false)
+    try {
+      const res = await fetch('/api/hotels')
+      if (!res.ok) throw new Error()
+      const data = await res.json()
+      setHotels((data.hotels as HotelApiRow[]).map(mapHotelApiRow))
+    } catch {
+      setLoadError(true)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { loadHotels() }, [loadHotels])
 
   function toggleProfile(key: string) {
     setActiveProfiles(prev => {
@@ -1121,14 +1074,14 @@ export default function HoteisView() {
   }
 
   const filtered = useMemo(() => {
-    return HOTELS.filter(h => {
+    return hotels.filter(h => {
       const q = search.toLowerCase()
       const matchSearch = !search || h.name.toLowerCase().includes(q) || h.location.toLowerCase().includes(q)
       const matchRegion = region === 'Todos' || h.region === region
       const matchProfile = activeProfiles.size === 0 || [...activeProfiles].some(p => h.profiles.includes(p))
       return matchSearch && matchRegion && matchProfile
     })
-  }, [search, region, activeProfiles])
+  }, [hotels, search, region, activeProfiles])
 
   const activeCount = (region !== 'Todos' ? 1 : 0) + activeProfiles.size
 
@@ -1163,7 +1116,7 @@ export default function HoteisView() {
               Ficha do hotel: rede, perfil, contratos permanentes
             </p>
             <p style={{ fontSize: '0.625rem', color: 'var(--tdgflow-text-muted)', marginTop: 1 }}>
-              {filtered.length} de {HOTELS.length} propriedades
+              {filtered.length} de {hotels.length} propriedades
             </p>
           </div>
           {activeCount > 0 && (
@@ -1227,7 +1180,18 @@ export default function HoteisView() {
 
       {/* ── Grid ───────────────────────────────────────────────────── */}
       <div style={{ flex: 1, overflow: 'hidden auto', padding: '14px 16px' }}>
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div style={{ textAlign: 'center', paddingTop: 60 }}>
+            <Loader2 size={24} className="animate-spin" style={{ color: 'var(--tdgflow-text-muted)', margin: '0 auto 12px' }} />
+            <p style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-muted)' }}>Carregando fornecedores…</p>
+          </div>
+        ) : loadError ? (
+          <div style={{ textAlign: 'center', paddingTop: 60 }}>
+            <AlertCircle size={28} style={{ color: 'var(--tdgflow-text-muted)', margin: '0 auto 12px' }} />
+            <p style={{ fontSize: '0.875rem', color: 'var(--tdgflow-text-muted)', marginBottom: 8 }}>Não foi possível carregar o catálogo de fornecedores.</p>
+            <button onClick={loadHotels} className="btn-ghost" style={{ fontSize: '0.75rem' }}>Tentar novamente</button>
+          </div>
+        ) : filtered.length === 0 ? (
           <div style={{ textAlign: 'center', paddingTop: 60 }}>
             <Building2 size={28} style={{ color: 'var(--tdgflow-text-muted)', margin: '0 auto 12px' }} />
             <p style={{ fontSize: '0.875rem', color: 'var(--tdgflow-text-muted)', marginBottom: 8 }}>Nenhum hotel encontrado.</p>

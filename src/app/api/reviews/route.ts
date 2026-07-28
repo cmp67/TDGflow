@@ -100,6 +100,11 @@ export async function POST(req: NextRequest) {
     // Add sentiment_map column (idempotent)
     await sql`ALTER TABLE tdg_hotel_reviews ADD COLUMN IF NOT EXISTS sentiment_map JSONB`
 
+    // hotel_id — Fase 1 da reorganização de caixinhas (ver migration 012):
+    // liga a review ao catálogo real de fornecedores em vez de só um texto
+    // livre, pra permitir a ficha do hotel puxar suas próprias reviews depois.
+    await sql`ALTER TABLE tdg_hotel_reviews ADD COLUMN IF NOT EXISTS hotel_id UUID REFERENCES tdg_hotels(id) ON DELETE SET NULL`
+
     // Migrate highlights from TEXT[] to JSONB (idempotent via column type check)
     await sql`
       ALTER TABLE tdg_hotel_reviews
@@ -168,13 +173,45 @@ Retorne APENAS um JSON válido com esta estrutura:
     // volta pro lead original que ela testou.
     const finalRelatedLeadId = isLead ? null : (related_lead_id || null)
 
+    // Fase 1: toda review de hotel liga a um fornecedor real no catálogo —
+    // acha por nome (case-insensitive) ou cria a linha na hora. Assim o
+    // catálogo cresce organicamente a partir de reviews reais, nunca fica
+    // review nenhuma órfã. Só se aplica a entity_type=hotel — os demais
+    // tipos (beach_club/transfer/guia/restaurante) não têm ficha própria.
+    const finalEntityType = entity_type || 'hotel'
+    let hotelId: string | null = null
+    if (finalEntityType === 'hotel') {
+      const trimmedName = String(hotel_name).trim()
+      const { rows: existingHotel } = await sql`
+        SELECT id FROM tdg_hotels WHERE lower(trim(name)) = lower(${trimmedName})
+      `
+      if (existingHotel[0]) {
+        hotelId = existingHotel[0].id as string
+      } else {
+        const { rows: createdHotel } = await sql`
+          INSERT INTO tdg_hotels (name) VALUES (${trimmedName})
+          ON CONFLICT (lower(trim(name))) DO NOTHING
+          RETURNING id
+        `
+        if (createdHotel[0]) {
+          hotelId = createdHotel[0].id as string
+        } else {
+          // Corrida: outra requisição criou o mesmo hotel entre o SELECT e o INSERT.
+          const { rows: racedHotel } = await sql`
+            SELECT id FROM tdg_hotels WHERE lower(trim(name)) = lower(${trimmedName})
+          `
+          hotelId = racedHotel[0]?.id ?? null
+        }
+      }
+    }
+
     const { rows } = await sql`
       INSERT INTO tdg_hotel_reviews
-        (hotel_name, entity_type, country, agent_id, agent_name, agency_name, visit_date, visit_type,
+        (hotel_name, hotel_id, entity_type, country, agent_id, agent_name, agency_name, visit_date, visit_type,
          overall_rating, rooms_rating, service_rating, food_rating, location_rating,
          highlights, client_profile, must_experience, heads_up, status, photo_url, related_lead_id, raw_answers, sentiment_map)
       VALUES (
-        ${hotel_name}, ${entity_type || 'hotel'}, ${country || null}, ${user.id}, ${user.name}, ${user.agency_name},
+        ${hotel_name}, ${hotelId}, ${finalEntityType}, ${country || null}, ${user.id}, ${user.name}, ${user.agency_name},
         ${visit_date || null}, ${visit_type || null},
         ${overall_rating}, ${rooms_rating || null}, ${service_rating || null},
         ${food_rating || null}, ${location_rating || null},
