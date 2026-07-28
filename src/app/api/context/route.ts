@@ -40,9 +40,10 @@ export async function GET() {
       FROM tdg_hotel_reviews
       WHERE created_at >= NOW() - INTERVAL '7 days'
     `,
-    // Promoções expirando em 7 dias
+    // Promoções expirando em 7 dias — foto real do hotel junto (Modo Flow
+    // deixa de ser só texto quando já temos a foto certa em mãos).
     sql`
-      SELECT p.title, h.name AS hotel_name, p.booking_deadline, p.commission_rate
+      SELECT p.title, h.name AS hotel_name, h.image_url, p.booking_deadline, p.commission_rate
       FROM tdg_promotions p
       JOIN tdg_hotels h ON h.id = p.hotel_id
       WHERE p.is_active = true

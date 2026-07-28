@@ -87,12 +87,14 @@ interface AgentContext {
   avatar_url: string | null
   pending_recordings: number
   reviews_this_week: number
-  expiring_promotions: { hotel_name: string; title: string; booking_deadline: string; commission_rate: number }[]
+  expiring_promotions: { hotel_name: string; title: string; image_url: string | null; booking_deadline: string; commission_rate: number }[]
   last_review_date: string | null
+  pending_leads: number
 }
 
 interface ActionCard {
   icon: React.ReactNode
+  image?: string | null
   label: string
   sublabel: string
   prompt: string
@@ -113,6 +115,10 @@ function buildGreeting(ctx: AgentContext): string {
   if (ctx.expiring_promotions.length > 0) {
     const hotels = ctx.expiring_promotions.slice(0, 2).map(p => p.hotel_name).join(' e ')
     lines.push(`**${ctx.expiring_promotions.length} promoção${ctx.expiring_promotions.length > 1 ? 'ões expirando' : ' expirando'} esta semana** — ${hotels}.`)
+  }
+
+  if (ctx.pending_leads > 0) {
+    lines.push(`**${ctx.pending_leads} descoberta${ctx.pending_leads > 1 ? 's' : ''}** da rede ainda ${ctx.pending_leads > 1 ? 'aguardam' : 'aguarda'} teste real.`)
   }
 
   if (ctx.reviews_this_week === 0 && !ctx.last_review_date) {
@@ -143,9 +149,23 @@ function buildActionCards(ctx: AgentContext): ActionCard[] {
   if (ctx.expiring_promotions.length > 0) {
     cards.push({
       icon: <IconExpiring size={14} />,
+      image: ctx.expiring_promotions[0].image_url,
       label: 'Promoções expirando',
       sublabel: `${ctx.expiring_promotions.length} offer${ctx.expiring_promotions.length > 1 ? 's' : ''} esta semana`,
       prompt: 'Quais promoções estão expirando esta semana? Me dá os detalhes para eu comunicar aos clientes.',
+      urgent: true,
+    })
+  }
+
+  // Prateleira — mesma descoberta visível na sidebar agora também aqui,
+  // com CTA direto pra virar teste real (achado: "Na prática" sozinho não
+  // basta como antecipação, o app inteiro devia lembrar disso).
+  if (ctx.pending_leads > 0) {
+    cards.push({
+      icon: <IconExpiring size={14} />,
+      label: 'Descobertas aguardando teste',
+      sublabel: `${ctx.pending_leads} da rede, ainda sem visita real`,
+      prompt: 'Quais fornecedores a rede descobriu recentemente e ainda estão aguardando alguém testar de perto?',
       urgent: true,
     })
   }
@@ -281,7 +301,14 @@ export default function Chat() {
       </div>
 
       {/* ── Messages ───────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-5">
+      {/* Estado vazio centraliza o convite na área disponível — antes ficava
+        tudo colado no topo com um vazio grande embaixo ("folha em branco",
+        achado da Carla). Assim que a conversa começa, volta ao fluxo normal
+        de cima pra baixo. */}
+      <div className={messages.length === 0
+        ? 'flex-1 overflow-y-auto px-4 flex items-center justify-center'
+        : 'flex-1 overflow-y-auto px-4 py-6 space-y-5'
+      }>
         <AnimatePresence initial={false}>
 
           {/* Proactive greeting */}
@@ -352,9 +379,9 @@ export default function Chat() {
                     <button
                       key={i}
                       onClick={() => sendMessage(card.prompt)}
-                      className="text-left rounded-xl transition-all"
+                      className="text-left rounded-xl transition-all overflow-hidden"
                       style={{
-                        padding: '11px 13px',
+                        padding: card.image ? 0 : '11px 13px',
                         background: card.urgent ? 'rgba(212,165,116,0.06)' : 'var(--tdgflow-surface)',
                         border: `1px solid ${card.urgent ? 'var(--tdgflow-navy-ring)' : 'var(--tdgflow-border)'}`,
                         cursor: 'pointer',
@@ -368,13 +395,19 @@ export default function Chat() {
                         ;(e.currentTarget as HTMLElement).style.background = card.urgent ? 'rgba(212,165,116,0.06)' : 'var(--tdgflow-surface)'
                       }}
                     >
-                      <div className="flex items-center gap-2 mb-1" style={{ color: card.urgent ? 'var(--tdgflow-navy)' : 'var(--tdgflow-text-muted)' }}>
-                        {card.icon}
-                        <span style={{ fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.01em', color: card.urgent ? 'var(--tdgflow-navy)' : 'var(--tdgflow-text-primary)' }}>
-                          {card.label}
-                        </span>
+                      {card.image && (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img src={card.image} alt="" style={{ width: '100%', height: 56, objectFit: 'cover', display: 'block' }} />
+                      )}
+                      <div style={{ padding: card.image ? '9px 13px 11px' : 0 }}>
+                        <div className="flex items-center gap-2 mb-1" style={{ color: card.urgent ? 'var(--tdgflow-navy)' : 'var(--tdgflow-text-muted)' }}>
+                          {card.icon}
+                          <span style={{ fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.01em', color: card.urgent ? 'var(--tdgflow-navy)' : 'var(--tdgflow-text-primary)' }}>
+                            {card.label}
+                          </span>
+                        </div>
+                        <p style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)', lineHeight: 1.4 }}>{card.sublabel}</p>
                       </div>
-                      <p style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)', lineHeight: 1.4 }}>{card.sublabel}</p>
                     </button>
                   ))}
                 </motion.div>
