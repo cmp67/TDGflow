@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback } from 'react'
 import { Search, Loader2, ShieldCheck, ShieldAlert, ShieldX, Syringe, AlertTriangle, X, ChevronRight, ExternalLink } from 'lucide-react'
 import InsufficientBalanceModal from './InsufficientBalanceModal'
+import MaterialsTab from './MaterialsTab'
 
 /* ── Ícones próprios — traço só (regra de personalidade Bemgsy) pros
    marcadores de identidade das abas (Vistos/Materiais). Selos semânticos
@@ -683,17 +684,7 @@ export default function DocsView() {
       )}
 
       {/* ── Tab: Materiais ── */}
-      {tab === 'materiais' && (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px', textAlign: 'center', gap: 12 }}>
-          <div style={{ width: 48, height: 48, borderRadius: 14, background: 'var(--tdgflow-surface-high)', border: '1px solid var(--tdgflow-border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <IconDoc size={20} style={{ color: 'var(--tdgflow-text-muted)' }} />
-          </div>
-          <p style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--tdgflow-text-primary)' }}>Materiais em breve</p>
-          <p style={{ fontSize: '0.8rem', color: 'var(--tdgflow-text-muted)', maxWidth: 320, lineHeight: 1.5 }}>
-            Fichas de hotel, contratos, políticas de comissão e materiais de treinamento da rede TDG serão disponibilizados aqui.
-          </p>
-        </div>
-      )}
+      {tab === 'materiais' && <MaterialsTab />}
 
       <div style={{ height: 24 }} />
     </div>

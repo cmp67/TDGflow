@@ -75,5 +75,6 @@ export async function GET() {
     last_review_date: lastReviewRes.rows[0]?.created_at ?? null,
     pending_guest_requests: pendingGuestRequests,
     pending_leads: pendingLeadsRes.rows[0]?.count ?? 0,
+    is_admin: isAdmin,
   })
 }
