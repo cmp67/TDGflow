@@ -118,6 +118,23 @@ interface Props {
   brand?: Brand | null
 }
 
+function NavTooltip({ text }: { text: string }) {
+  return (
+    <span
+      role="tooltip"
+      style={{
+        position: 'absolute', left: 'calc(100% + 8px)', top: '50%', transform: 'translateY(-50%)',
+        background: 'var(--tdgflow-navy-dim)', color: 'var(--tdgflow-surface)',
+        fontSize: '0.6875rem', fontWeight: 500, lineHeight: 1.4,
+        padding: '6px 10px', borderRadius: 8, whiteSpace: 'nowrap',
+        boxShadow: '0 4px 14px rgba(0,0,0,0.18)', pointerEvents: 'none', zIndex: 50,
+      }}
+    >
+      {text}
+    </span>
+  )
+}
+
 export default function FlowShell({ children, user, brand }: Props) {
   return (
     <LanguageProvider>
@@ -132,6 +149,11 @@ function FlowShellInner({ children, user, brand }: Props) {
   const pathname = usePathname()
   const [showMore, setShowMore] = useState(false)
   const { lang, setLang, tr } = useLanguage()
+
+  // Tooltip próprio, não o `title` nativo do navegador — nativo só aparece
+  // depois de hover sustentado e não é capturável em print de tela (achado
+  // da Carla testando). Renderizado no DOM, some rápido, some previsível.
+  const [hoveredNav, setHoveredNav] = useState<string | null>(null)
 
   // Antecipação: quantas descobertas da rede aguardam teste real, visível
   // na sidebar sem precisar entrar em "Na prática" pra saber que existem.
@@ -208,7 +230,6 @@ function FlowShellInner({ children, user, brand }: Props) {
               <Link
                 key={href}
                 href={href}
-                title={NAV_HINTS[tkey]}
                 onClick={() => !active && sounds.nav()}
                 className="flex items-center gap-3 no-underline relative"
                 style={{
@@ -220,9 +241,10 @@ function FlowShellInner({ children, user, brand }: Props) {
                   borderLeft: active ? '2px solid var(--tdgflow-navy)' : '2px solid transparent',
                   transition: 'all 150ms',
                 }}
-                onMouseEnter={e => { if (!active) { (e.currentTarget as HTMLElement).style.color = 'var(--tdgflow-text-primary)'; (e.currentTarget as HTMLElement).style.background = 'var(--tdgflow-surface-high)' } }}
-                onMouseLeave={e => { if (!active) { (e.currentTarget as HTMLElement).style.color = 'var(--tdgflow-text-secondary)'; (e.currentTarget as HTMLElement).style.background = 'transparent' } }}
+                onMouseEnter={e => { setHoveredNav(tkey); if (!active) { (e.currentTarget as HTMLElement).style.color = 'var(--tdgflow-text-primary)'; (e.currentTarget as HTMLElement).style.background = 'var(--tdgflow-surface-high)' } }}
+                onMouseLeave={e => { setHoveredNav(null); if (!active) { (e.currentTarget as HTMLElement).style.color = 'var(--tdgflow-text-secondary)'; (e.currentTarget as HTMLElement).style.background = 'transparent' } }}
               >
+                {hoveredNav === tkey && NAV_HINTS[tkey] && <NavTooltip text={NAV_HINTS[tkey]} />}
                 <Icon size={14} strokeWidth={active ? 2 : 1.5} style={{ color: active ? 'var(--tdgflow-navy)' : 'var(--tdgflow-text-secondary)', flexShrink: 0, transition: 'color 150ms' }} />
                 <span style={{ fontSize: '0.875rem', fontWeight: active ? 600 : 500, letterSpacing: '-0.005em', color: active ? 'var(--tdgflow-navy-dim)' : 'inherit' }}>
                   {tr(`nav.${tkey}`)}
@@ -253,9 +275,8 @@ function FlowShellInner({ children, user, brand }: Props) {
                   <Link
                     key={href}
                     href={soon ? '#' : href}
-                    title={NAV_HINTS[tkey]}
                     onClick={e => { if (soon) e.preventDefault(); else if (!active) sounds.nav() }}
-                    className="flex items-center gap-3 no-underline"
+                    className="flex items-center gap-3 no-underline relative"
                     style={{
                       padding: '8px 10px 8px 10px',
                       borderRadius: 8,
@@ -267,9 +288,10 @@ function FlowShellInner({ children, user, brand }: Props) {
                       opacity: soon ? 0.55 : 1,
                       cursor: soon ? 'default' : 'pointer',
                     }}
-                    onMouseEnter={e => { if (!active && !soon) { (e.currentTarget as HTMLElement).style.color = 'var(--tdgflow-text-primary)'; (e.currentTarget as HTMLElement).style.background = 'var(--tdgflow-surface-high)' } }}
-                    onMouseLeave={e => { if (!active && !soon) { (e.currentTarget as HTMLElement).style.color = 'var(--tdgflow-text-secondary)'; (e.currentTarget as HTMLElement).style.background = 'transparent' } }}
+                    onMouseEnter={e => { setHoveredNav(tkey); if (!active && !soon) { (e.currentTarget as HTMLElement).style.color = 'var(--tdgflow-text-primary)'; (e.currentTarget as HTMLElement).style.background = 'var(--tdgflow-surface-high)' } }}
+                    onMouseLeave={e => { setHoveredNav(null); if (!active && !soon) { (e.currentTarget as HTMLElement).style.color = 'var(--tdgflow-text-secondary)'; (e.currentTarget as HTMLElement).style.background = 'transparent' } }}
                   >
+                    {hoveredNav === tkey && NAV_HINTS[tkey] && <NavTooltip text={NAV_HINTS[tkey]} />}
                     <Icon size={14} strokeWidth={active ? 2 : 1.5} style={{ color: active ? 'var(--tdgflow-navy)' : 'var(--tdgflow-text-secondary)', flexShrink: 0, transition: 'color 150ms' }} />
                     <span style={{ fontSize: '0.875rem', fontWeight: active ? 600 : 500, letterSpacing: '-0.005em', color: active ? 'var(--tdgflow-navy-dim)' : 'inherit' }}>
                       {tr(`nav.${tkey}`)}

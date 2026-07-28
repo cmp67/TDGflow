@@ -84,18 +84,33 @@ interface Hotel {
   pendingLeadCount: number
 }
 
-/* Status do fornecedor — a bolinha do card e a borda deixam de ser decoração
-   (cores aleatórias por hotel, sem relação com nada) e passam a reaproveitar
-   o MESMO vocabulário de cor já usado em "Na prática": dourado = confirmado
-   pela rede, coral = descoberto/aguardando teste. */
-function supplierStatus(hotel: Pick<Hotel, 'testedCount' | 'pendingLeadCount'>) {
+/* Status do fornecedor — antes uma bolinha discreta sem legenda em lugar
+   nenhum (achado da Carla: "mal dá pra ver e não tá escrito o significado").
+   Vira selo com ícone+texto, reaproveitando os mesmos símbolos e cores já
+   usados em "Na prática" (i-verified/dourado = confirmado, i-spark/coral =
+   a testar) — e some de vez quando não há nada a dizer, em vez de mostrar
+   uma terceira cor "neutra" que ninguém decoraria de qualquer forma. */
+function supplierStatus(hotel: Pick<Hotel, 'testedCount' | 'pendingLeadCount'>): {
+  variant: 'testado' | 'descoberto'
+  icon: string
+  label: string
+  color: string
+  bg: string
+  border: string
+} | null {
   if (hotel.testedCount > 0) {
-    return { color: 'var(--tdgflow-gold-dim, #8C6436)', label: `Testado pela rede (${hotel.testedCount})` }
+    return {
+      variant: 'testado', icon: 'i-verified', label: 'Testado',
+      color: 'var(--tdgflow-gold-dim)', bg: 'var(--tdgflow-gold-subtle)', border: 'var(--tdgflow-gold-dim)',
+    }
   }
   if (hotel.pendingLeadCount > 0) {
-    return { color: 'var(--tdgflow-accent-warm)', label: 'Descoberto pela rede — aguardando teste' }
+    return {
+      variant: 'descoberto', icon: 'i-spark', label: 'Aguardando teste',
+      color: 'var(--tdgflow-accent-warm)', bg: 'var(--tdgflow-accent-warm-subtle)', border: 'var(--tdgflow-accent-warm)',
+    }
   }
-  return { color: 'var(--tdgflow-border-light)', label: 'Ainda sem informação da rede' }
+  return null
 }
 
 /* ── Filter definitions ─────────────────────────────────────────── */
@@ -218,11 +233,24 @@ function HotelCard({ hotel, onClick }: { hotel: Hotel; onClick: () => void }) {
             {hotel.name}
           </h3>
         </div>
-        <div title={status.label} style={{ position: 'absolute', top: 8, right: 8, width: 7, height: 7, borderRadius: '50%', background: status.color, boxShadow: '0 0 0 2px rgba(255,255,255,0.3)' }} />
+        {status && (
+          <span style={{
+            position: 'absolute', top: 8, right: 8,
+            display: 'inline-flex', alignItems: 'center', gap: 4,
+            padding: '3px 8px 3px 6px', borderRadius: 999,
+            background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(4px)',
+            fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.02em', color: status.color,
+          }}>
+            <svg style={{ width: 9, height: 9, fill: status.icon === 'i-verified' ? 'none' : status.color, stroke: status.color, strokeWidth: 1.8 }}>
+              <use href={`#${status.icon}`} />
+            </svg>
+            {status.label}
+          </span>
+        )}
       </div>
 
       {/* Card body — tight */}
-      <div style={{ padding: '10px 12px 12px', borderTop: `2px solid ${status.color}` }}>
+      <div style={{ padding: '10px 12px 12px', borderTop: `2px solid ${status ? status.color : 'var(--tdgflow-border)'}` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 8 }}>
           <svg style={{ width: 10, height: 10, stroke: 'var(--tdgflow-text-muted)', fill: 'none', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round', flexShrink: 0 }}>
             <use href="#i-pin" />
@@ -1253,6 +1281,18 @@ export default function HoteisView() {
             <p style={{ fontSize: '0.625rem', color: 'var(--tdgflow-text-muted)', marginTop: 1 }}>
               {filtered.length} de {hotels.length} propriedades
             </p>
+            {/* Legenda do selo — achado da Carla: sem isso, ninguém decora o
+                que a cor do card significa. */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: '0.625rem', color: 'var(--tdgflow-gold-dim)' }}>
+                <svg style={{ width: 8, height: 8, stroke: 'var(--tdgflow-gold-dim)', strokeWidth: 1.8, fill: 'none' }}><use href="#i-verified" /></svg>
+                Testado pela rede
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: '0.625rem', color: 'var(--tdgflow-accent-warm)' }}>
+                <svg style={{ width: 8, height: 8, fill: 'var(--tdgflow-accent-warm)' }}><use href="#i-spark" /></svg>
+                Aguardando teste
+              </span>
+            </div>
           </div>
           {activeCount > 0 && (
             <button onClick={clearAll} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.6875rem', color: 'var(--tdgflow-navy)', padding: '4px 0' }}>
