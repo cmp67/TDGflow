@@ -1252,12 +1252,13 @@ function HistoryDrawer({ hotelName, onClose, onToggleFavorite }: {
   )
 }
 
+/* Favoritos saiu daqui — não é taxonomia de visita, é estado pessoal
+   salvo. Virou um toggle próprio ao lado da busca (revisão Tesla). */
 const VISIT_FILTER_TABS = [
   { id: 'all',               label: 'Tudo' },
   { id: 'fam_trip',          label: 'FAM Trip' },
   { id: 'site_inspection',   label: 'Site Inspection' },
   { id: 'personal_stay',     label: 'Personal Stay' },
-  { id: 'favorites',         label: 'Favoritos' },
 ]
 
 const ENTITY_FILTER_TABS = [{ id: 'all', label: 'Todos os tipos' }, ...Object.entries(ENTITY_TYPE_LABELS).map(([id, label]) => ({ id, label }))]
@@ -1301,11 +1302,13 @@ export default function DicasView() {
   const [confirmingLead, setConfirmingLead] = useState<Review | null>(null)
   const [historyHotel, setHistoryHotel] = useState<string | null>(null)
   const [search, setSearch] = useState('')
+  const [favoritesOnly, setFavoritesOnly] = useState(false)
   const [activeVisitType, setActiveVisitType] = useState('all')
   const [activeEntityType, setActiveEntityType] = useState('all')
   const [activeCountry, setActiveCountry] = useState('all')
   const [activePeriod, setActivePeriod] = useState('all')
   const [activeAgency, setActiveAgency] = useState('all')
+  const [showFilterSheet, setShowFilterSheet] = useState(false)
 
   const loadReviews = useCallback(async () => {
     const [pubRes, leadRes] = await Promise.all([
@@ -1340,8 +1343,8 @@ export default function DicasView() {
   const now = new Date()
 
   function matches(r: Review) {
-    if (activeVisitType === 'favorites' && !r.is_favorite) return false
-    if (activeVisitType !== 'all' && activeVisitType !== 'favorites' && r.visit_type !== activeVisitType) return false
+    if (favoritesOnly && !r.is_favorite) return false
+    if (activeVisitType !== 'all' && r.visit_type !== activeVisitType) return false
     if (activeEntityType !== 'all' && r.entity_type !== activeEntityType) return false
     if (activeCountry !== 'all' && r.country !== activeCountry) return false
     if (activeAgency !== 'all' && r.agency_name !== activeAgency) return false
@@ -1362,7 +1365,10 @@ export default function DicasView() {
   const filteredPublished = publishedReviews.filter(matches)
   const filteredLeads = leadReviews.filter(matches)
   const hasResults = filteredPublished.length > 0 || filteredLeads.length > 0
-  const hasActiveFilter = activeVisitType !== 'all' || activeEntityType !== 'all' || activeCountry !== 'all' || activePeriod !== 'all' || activeAgency !== 'all' || !!q
+  // Contador do botão "Filtros" — só o que mora no sheet (tipo de fornecedor
+  // fica sempre visível fora dele, favoritos tem o próprio toggle).
+  const sheetActiveCount = [activeVisitType !== 'all', activeCountry !== 'all', activePeriod !== 'all', activeAgency !== 'all'].filter(Boolean).length
+  const hasActiveFilter = activeVisitType !== 'all' || activeEntityType !== 'all' || activeCountry !== 'all' || activePeriod !== 'all' || activeAgency !== 'all' || favoritesOnly || !!q
 
   // Hero — a review confirmada com melhor nota que tenha foto real anexada.
   // Sem foto, não vira hero (nunca finge com gradiente).
@@ -1372,7 +1378,11 @@ export default function DicasView() {
 
   function clearFilters() {
     setSearch(''); setActiveVisitType('all'); setActiveEntityType('all'); setActiveCountry('all')
-    setActivePeriod('all'); setActiveAgency('all')
+    setActivePeriod('all'); setActiveAgency('all'); setFavoritesOnly(false)
+  }
+
+  function clearSheetFilters() {
+    setActiveVisitType('all'); setActiveCountry('all'); setActivePeriod('all'); setActiveAgency('all')
   }
 
   return (
@@ -1447,130 +1457,205 @@ export default function DicasView() {
           </div>
         </div>
 
-        {/* Search */}
-        <div style={{ padding: '0 20px 12px', position: 'relative' }}>
-          <Search size={14} style={{ position: 'absolute', left: 34, top: '50%', transform: 'translateY(-50%)', color: 'var(--tdgflow-text-muted)', pointerEvents: 'none' }} />
-          <input
-            className="input"
-            placeholder="Fornecedor, advisor, perfil de cliente, palavra-chave..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            style={{ paddingLeft: 38, fontSize: '0.8125rem', background: 'var(--tdgflow-bg)' }}
-          />
+        {/* Search + favoritos (estado pessoal, não taxonomia — toggle próprio) */}
+        <div style={{ display: 'flex', gap: 8, padding: '0 20px 10px', alignItems: 'center' }}>
+          <div style={{ position: 'relative', flex: 1 }}>
+            <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--tdgflow-text-muted)', pointerEvents: 'none' }} />
+            <input
+              className="input"
+              placeholder="Fornecedor, advisor, perfil de cliente, palavra-chave..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={{ paddingLeft: 34, fontSize: '0.8125rem', background: 'var(--tdgflow-bg)' }}
+            />
+          </div>
+          <button
+            onClick={() => setFavoritesOnly(v => !v)}
+            title="Só favoritos"
+            style={{
+              flexShrink: 0, width: 38, height: 38, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: favoritesOnly ? 'var(--tdgflow-navy)' : 'var(--tdgflow-surface-high)',
+              border: favoritesOnly ? 'none' : '1px solid var(--tdgflow-border)',
+              cursor: 'pointer', transition: 'all 150ms',
+            }}
+          >
+            <Heart size={15} fill={favoritesOnly ? 'currentColor' : 'none'} style={{ color: favoritesOnly ? 'var(--tdgflow-surface)' : 'var(--tdgflow-text-muted)' }} />
+          </button>
         </div>
 
-        {/* Entity type filter chips */}
-        <div style={{ display: 'flex', gap: 6, padding: '0 20px 8px', overflowX: 'auto', scrollbarWidth: 'none' }}>
-          {ENTITY_FILTER_TABS.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveEntityType(tab.id)}
-              style={{
-                flexShrink: 0, padding: '4px 12px', borderRadius: 999,
-                fontSize: '0.6875rem', fontWeight: activeEntityType === tab.id ? 600 : 400,
-                cursor: 'pointer',
-                background: activeEntityType === tab.id ? 'var(--tdgflow-text-primary)' : 'var(--tdgflow-surface-high)',
-                color: activeEntityType === tab.id ? 'var(--tdgflow-surface)' : 'var(--tdgflow-text-muted)',
-                border: activeEntityType === tab.id ? 'none' : '1px solid var(--tdgflow-border)',
-                transition: 'all 150ms',
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Visit type + favorites filter chips */}
-        <div style={{ display: 'flex', gap: 6, padding: '0 20px 8px', overflowX: 'auto', scrollbarWidth: 'none' }}>
-          {VISIT_FILTER_TABS.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveVisitType(tab.id)}
-              style={{
-                flexShrink: 0, padding: '4px 12px', borderRadius: 999,
-                fontSize: '0.6875rem', fontWeight: activeVisitType === tab.id ? 600 : 400,
-                cursor: 'pointer',
-                background: activeVisitType === tab.id ? 'var(--tdgflow-navy)' : 'var(--tdgflow-surface-high)',
-                color: activeVisitType === tab.id ? 'var(--tdgflow-surface)' : 'var(--tdgflow-text-muted)',
-                border: activeVisitType === tab.id ? 'none' : '1px solid var(--tdgflow-border)',
-                transition: 'all 150ms',
-              }}
-            >
-              {tab.label}
-              {tab.id === 'favorites' && allReviews.filter(r => r.is_favorite).length > 0 && (
-                <span style={{ marginLeft: 5, opacity: 0.7 }}>{allReviews.filter(r => r.is_favorite).length}</span>
-              )}
-            </button>
-          ))}
-        </div>
-
-        {/* Country filter chips */}
-        {countries.length > 1 && (
-          <div style={{ display: 'flex', gap: 6, padding: '0 20px 14px', overflowX: 'auto', scrollbarWidth: 'none' }}>
-            {countries.map(c => (
+        {/* Tipo de fornecedor — único chip sempre visível (eixo de navegação
+            primário, largura previsível); tudo o mais mora no sheet "Filtros" */}
+        <div style={{ display: 'flex', gap: 8, padding: '0 20px 14px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none', flex: 1, minWidth: 0 }}>
+            {ENTITY_FILTER_TABS.map(tab => (
               <button
-                key={c}
-                onClick={() => setActiveCountry(c)}
+                key={tab.id}
+                onClick={() => setActiveEntityType(tab.id)}
                 style={{
-                  flexShrink: 0, padding: '3px 11px', borderRadius: 999,
-                  fontSize: '0.625rem', fontWeight: activeCountry === c ? 600 : 400,
-                  letterSpacing: '0.02em', cursor: 'pointer',
-                  background: activeCountry === c ? 'var(--tdgflow-surface-high)' : 'transparent',
-                  color: activeCountry === c ? 'var(--tdgflow-text-primary)' : 'var(--tdgflow-text-muted)',
-                  border: activeCountry === c ? '1px solid var(--tdgflow-border-light)' : '1px solid transparent',
+                  flexShrink: 0, padding: '4px 12px', borderRadius: 999,
+                  fontSize: '0.6875rem', fontWeight: activeEntityType === tab.id ? 600 : 400,
+                  cursor: 'pointer',
+                  background: activeEntityType === tab.id ? 'var(--tdgflow-text-primary)' : 'var(--tdgflow-surface-high)',
+                  color: activeEntityType === tab.id ? 'var(--tdgflow-surface)' : 'var(--tdgflow-text-muted)',
+                  border: activeEntityType === tab.id ? 'none' : '1px solid var(--tdgflow-border)',
                   transition: 'all 150ms',
                 }}
               >
-                {c === 'all' ? 'Todos os países' : c}
+                {tab.label}
               </button>
             ))}
           </div>
-        )}
-
-        {/* Period filter chips */}
-        <div style={{ display: 'flex', gap: 6, padding: '0 20px 8px', overflowX: 'auto', scrollbarWidth: 'none' }}>
-          {PERIOD_FILTER_TABS.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActivePeriod(tab.id)}
-              style={{
-                flexShrink: 0, padding: '3px 11px', borderRadius: 999,
-                fontSize: '0.625rem', fontWeight: activePeriod === tab.id ? 600 : 400,
-                letterSpacing: '0.02em', cursor: 'pointer',
-                background: activePeriod === tab.id ? 'var(--tdgflow-surface-high)' : 'transparent',
-                color: activePeriod === tab.id ? 'var(--tdgflow-text-primary)' : 'var(--tdgflow-text-muted)',
-                border: activePeriod === tab.id ? '1px solid var(--tdgflow-border-light)' : '1px solid transparent',
-                transition: 'all 150ms',
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
+          <button
+            onClick={() => setShowFilterSheet(true)}
+            style={{
+              flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 999,
+              fontSize: '0.6875rem', fontWeight: 500, cursor: 'pointer', transition: 'all 150ms',
+              background: sheetActiveCount > 0 ? 'var(--tdgflow-navy-subtle)' : 'var(--tdgflow-surface)',
+              color: sheetActiveCount > 0 ? 'var(--tdgflow-navy)' : 'var(--tdgflow-text-muted)',
+              border: sheetActiveCount > 0 ? '1.5px solid var(--tdgflow-navy)' : '1px solid var(--tdgflow-border)',
+            }}
+          >
+            <SlidersHorizontal size={12} /> Filtros{sheetActiveCount > 0 ? ` · ${sheetActiveCount}` : ''}
+          </button>
         </div>
-
-        {/* Agency filter chips */}
-        {agencies.length > 1 && (
-          <div style={{ display: 'flex', gap: 6, padding: '0 20px 14px', overflowX: 'auto', scrollbarWidth: 'none' }}>
-            {agencies.map(a => (
-              <button
-                key={a}
-                onClick={() => setActiveAgency(a)}
-                style={{
-                  flexShrink: 0, padding: '3px 11px', borderRadius: 999,
-                  fontSize: '0.625rem', fontWeight: activeAgency === a ? 600 : 400,
-                  letterSpacing: '0.02em', cursor: 'pointer',
-                  background: activeAgency === a ? 'var(--tdgflow-surface-high)' : 'transparent',
-                  color: activeAgency === a ? 'var(--tdgflow-text-primary)' : 'var(--tdgflow-text-muted)',
-                  border: activeAgency === a ? '1px solid var(--tdgflow-border-light)' : '1px solid transparent',
-                  transition: 'all 150ms',
-                }}
-              >
-                {a === 'all' ? 'Todas as agências' : a}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
+
+      {/* ── Sheet: Tipo de visita / País / Período / Agência ────────── */}
+      <AnimatePresence>
+        {showFilterSheet && (
+          <div
+            onClick={() => setShowFilterSheet(false)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 60 }}
+          >
+            <motion.div
+              onClick={e => e.stopPropagation()}
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', stiffness: 300, damping: 35 }}
+              style={{
+                background: 'var(--tdgflow-surface)', borderRadius: '20px 20px 0 0',
+                border: '1px solid var(--tdgflow-border)', borderBottom: 'none',
+                width: '100%', maxWidth: 560, maxHeight: '85vh',
+                display: 'flex', flexDirection: 'column',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}>
+                <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--tdgflow-border)' }} />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 20px 16px' }}>
+                <p style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)' }}>Filtros</p>
+                <button onClick={() => setShowFilterSheet(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
+                  <X size={16} style={{ color: 'var(--tdgflow-text-muted)' }} />
+                </button>
+              </div>
+
+              <div style={{ flex: 1, overflowY: 'auto', padding: '0 20px 20px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+                <div>
+                  <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)', marginBottom: 8 }}>Tipo de visita</p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {VISIT_FILTER_TABS.map(tab => (
+                      <button
+                        key={tab.id}
+                        onClick={() => setActiveVisitType(tab.id)}
+                        style={{
+                          padding: '4px 12px', borderRadius: 999,
+                          fontSize: '0.6875rem', fontWeight: activeVisitType === tab.id ? 600 : 400,
+                          cursor: 'pointer',
+                          background: activeVisitType === tab.id ? 'var(--tdgflow-navy)' : 'var(--tdgflow-surface-high)',
+                          color: activeVisitType === tab.id ? 'var(--tdgflow-surface)' : 'var(--tdgflow-text-muted)',
+                          border: activeVisitType === tab.id ? 'none' : '1px solid var(--tdgflow-border)',
+                          transition: 'all 150ms',
+                        }}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {countries.length > 1 && (
+                  <div>
+                    <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)', marginBottom: 8 }}>País</p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      {countries.map(c => (
+                        <button
+                          key={c}
+                          onClick={() => setActiveCountry(c)}
+                          style={{
+                            padding: '3px 11px', borderRadius: 999,
+                            fontSize: '0.625rem', fontWeight: activeCountry === c ? 600 : 400,
+                            letterSpacing: '0.02em', cursor: 'pointer',
+                            background: activeCountry === c ? 'var(--tdgflow-surface-high)' : 'transparent',
+                            color: activeCountry === c ? 'var(--tdgflow-text-primary)' : 'var(--tdgflow-text-muted)',
+                            border: activeCountry === c ? '1px solid var(--tdgflow-border-light)' : '1px solid var(--tdgflow-border)',
+                            transition: 'all 150ms',
+                          }}
+                        >
+                          {c === 'all' ? 'Todos os países' : c}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)', marginBottom: 8 }}>Período</p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {PERIOD_FILTER_TABS.map(tab => (
+                      <button
+                        key={tab.id}
+                        onClick={() => setActivePeriod(tab.id)}
+                        style={{
+                          padding: '3px 11px', borderRadius: 999,
+                          fontSize: '0.625rem', fontWeight: activePeriod === tab.id ? 600 : 400,
+                          letterSpacing: '0.02em', cursor: 'pointer',
+                          background: activePeriod === tab.id ? 'var(--tdgflow-surface-high)' : 'transparent',
+                          color: activePeriod === tab.id ? 'var(--tdgflow-text-primary)' : 'var(--tdgflow-text-muted)',
+                          border: activePeriod === tab.id ? '1px solid var(--tdgflow-border-light)' : '1px solid var(--tdgflow-border)',
+                          transition: 'all 150ms',
+                        }}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {agencies.length > 1 && (
+                  <div>
+                    <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)', marginBottom: 8 }}>Agência</p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      {agencies.map(a => (
+                        <button
+                          key={a}
+                          onClick={() => setActiveAgency(a)}
+                          style={{
+                            padding: '3px 11px', borderRadius: 999,
+                            fontSize: '0.625rem', fontWeight: activeAgency === a ? 600 : 400,
+                            letterSpacing: '0.02em', cursor: 'pointer',
+                            background: activeAgency === a ? 'var(--tdgflow-surface-high)' : 'transparent',
+                            color: activeAgency === a ? 'var(--tdgflow-text-primary)' : 'var(--tdgflow-text-muted)',
+                            border: activeAgency === a ? '1px solid var(--tdgflow-border-light)' : '1px solid var(--tdgflow-border)',
+                            transition: 'all 150ms',
+                          }}
+                        >
+                          {a === 'all' ? 'Todas as agências' : a}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div style={{ padding: '12px 20px', borderTop: '1px solid var(--tdgflow-border)', display: 'flex', gap: 10 }}>
+                <button onClick={clearSheetFilters} className="btn-ghost" style={{ flex: 1, justifyContent: 'center', fontSize: '0.8125rem' }}>Limpar filtros</button>
+                <button onClick={() => setShowFilterSheet(false)} className="btn-gold" style={{ flex: 1, justifyContent: 'center', fontSize: '0.8125rem' }}>Aplicar</button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* ── Feed ─────────────────────────────────────────────────── */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '18px 16px 40px' }}>
