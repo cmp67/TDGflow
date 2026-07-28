@@ -40,6 +40,7 @@ export default function MaterialsTab() {
   const [materials, setMaterials] = useState<Material[]>([])
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [userEmail, setUserEmail] = useState<string | null>(null)
   const [activeCategory, setActiveCategory] = useState<string>('all')
   const [showAddForm, setShowAddForm] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -55,14 +56,17 @@ export default function MaterialsTab() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const [materialsRes, contextRes] = await Promise.all([
+    const [materialsRes, contextRes, sessionRes] = await Promise.all([
       fetch('/api/materials'),
       fetch('/api/context'),
+      fetch('/api/auth/session'),
     ])
     const materialsData = await materialsRes.json()
     const contextData = await contextRes.json()
+    const sessionData = await sessionRes.json().catch(() => null)
     setMaterials(materialsData.materials ?? [])
     setIsAdmin(!!contextData.is_admin)
+    setUserEmail(sessionData?.user?.email ?? null)
     setLoading(false)
   }, [])
 
@@ -131,15 +135,13 @@ export default function MaterialsTab() {
             </button>
           ))}
         </div>
-        {isAdmin && (
-          <button
-            onClick={() => setShowAddForm(v => !v)}
-            className="btn-gold"
-            style={{ padding: '6px 12px', fontSize: '0.75rem' }}
-          >
-            <Plus size={13} /> Adicionar material
-          </button>
-        )}
+        <button
+          onClick={() => setShowAddForm(v => !v)}
+          className="btn-gold"
+          style={{ padding: '6px 12px', fontSize: '0.75rem' }}
+        >
+          <Plus size={13} /> Adicionar material
+        </button>
       </div>
 
       {showAddForm && (
@@ -237,7 +239,7 @@ export default function MaterialsTab() {
               >
                 Abrir <ExternalLink size={11} />
               </a>
-              {isAdmin && (
+              {(isAdmin || m.created_by === userEmail) && (
                 <button
                   onClick={() => handleDelete(m.id)}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tdgflow-text-faint)', flexShrink: 0, marginTop: 2 }}

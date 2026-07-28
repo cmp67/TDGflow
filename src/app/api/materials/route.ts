@@ -40,14 +40,14 @@ export async function GET() {
   return NextResponse.json({ materials: rows })
 }
 
-// POST — só admin da rede. Aceita multipart/form-data pra cobrir os dois
-// casos (arquivo OU link) com um único endpoint: manda "file" pra upload,
-// ou "link_url" pra material tipo link (vídeo de treinamento, pasta de
-// terceiro com atribuição etc.)
+// POST — qualquer agente autenticado da rede pode contribuir (mesmo espírito
+// de "Na prática": qualquer um adiciona, não é conteúdo fechado do admin).
+// Aceita multipart/form-data pra cobrir os dois casos (arquivo OU link) com
+// um único endpoint: manda "file" pra upload, ou "link_url" pra material
+// tipo link (vídeo de treinamento, pasta de terceiro com atribuição etc.)
 export async function POST(req: NextRequest) {
   const session = await auth()
   if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  if (!(await isAdmin(session.user.email))) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const formData = await req.formData()
   const category = formData.get('category') as string | null
@@ -85,18 +85,27 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ material: rows[0] }, { status: 201 })
 }
 
+// DELETE — quem criou o material pode remover o próprio; admin remove
+// qualquer um. Todos podem contribuir, mas não todos podem apagar o que
+// outro colega adicionou.
 export async function DELETE(req: NextRequest) {
   const session = await auth()
   if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  if (!(await isAdmin(session.user.email))) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const id = req.nextUrl.searchParams.get('id')
   if (!id) return NextResponse.json({ error: 'id é obrigatório' }, { status: 400 })
 
+  const { rows: existing } = await sql<{ created_by: string }>`SELECT created_by FROM tdg_materials WHERE id = ${id}`
+  if (existing.length === 0) return NextResponse.json({ error: 'Material não encontrado' }, { status: 404 })
+
+  const isOwner = existing[0].created_by === session.user.email
+  if (!isOwner && !(await isAdmin(session.user.email))) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   const { rows } = await sql<{ file_url: string | null }>`
     DELETE FROM tdg_materials WHERE id = ${id} RETURNING file_url
   `
-  if (rows.length === 0) return NextResponse.json({ error: 'Material não encontrado' }, { status: 404 })
 
   if (rows[0].file_url) {
     await del(rows[0].file_url).catch(() => {}) // blob órfão não deve travar a exclusão do registro
