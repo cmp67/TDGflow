@@ -238,7 +238,8 @@ function HotelCard({ hotel, onClick }: { hotel: Hotel; onClick: () => void }) {
             position: 'absolute', top: 8, right: 8,
             display: 'inline-flex', alignItems: 'center', gap: 4,
             padding: '3px 8px 3px 6px', borderRadius: 999,
-            background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(4px)',
+            background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(4px)',
+            border: `1px solid ${status.border}`, boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
             fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.02em', color: status.color,
           }}>
             <svg style={{ width: 9, height: 9, fill: status.icon === 'i-verified' ? 'none' : status.color, stroke: status.color, strokeWidth: 1.8 }}>
