@@ -188,32 +188,34 @@ Retorne APENAS um JSON válido com esta estrutura:
     // volta pro lead original que ela testou.
     const finalRelatedLeadId = isLead ? null : (related_lead_id || null)
 
-    // Fase 1: toda review de hotel liga a um fornecedor real no catálogo —
-    // acha por nome (case-insensitive) ou cria a linha na hora. Assim o
-    // catálogo cresce organicamente a partir de reviews reais, nunca fica
-    // review nenhuma órfã. Só se aplica a entity_type=hotel — os demais
-    // tipos (beach_club/transfer/guia/restaurante) não têm ficha própria.
+    // Toda review liga a um fornecedor real no catálogo — acha por nome +
+    // tipo (case-insensitive) ou cria a linha na hora. Catálogo cresce
+    // organicamente a partir de reviews reais, nunca fica review órfã.
+    // Corrigido (28/07): antes só rodava pra entity_type=hotel — o catálogo
+    // era "Hotéis" de fato, apesar de ter sido pedido pra nascer como
+    // "Fornecedores" cobrindo todos os tipos desde a Fase 1. Agora vale pra
+    // beach_club/transfer/guia/restaurante/outro igual.
     const finalEntityType = entity_type || 'hotel'
     let hotelId: string | null = null
-    if (finalEntityType === 'hotel') {
+    {
       const trimmedName = String(hotel_name).trim()
       const { rows: existingHotel } = await sql`
-        SELECT id FROM tdg_hotels WHERE lower(trim(name)) = lower(${trimmedName})
+        SELECT id FROM tdg_hotels WHERE lower(trim(name)) = lower(${trimmedName}) AND entity_type = ${finalEntityType}
       `
       if (existingHotel[0]) {
         hotelId = existingHotel[0].id as string
       } else {
         const { rows: createdHotel } = await sql`
-          INSERT INTO tdg_hotels (name) VALUES (${trimmedName})
-          ON CONFLICT (lower(trim(name))) DO NOTHING
+          INSERT INTO tdg_hotels (name, entity_type) VALUES (${trimmedName}, ${finalEntityType})
+          ON CONFLICT (lower(trim(name)), entity_type) DO NOTHING
           RETURNING id
         `
         if (createdHotel[0]) {
           hotelId = createdHotel[0].id as string
         } else {
-          // Corrida: outra requisição criou o mesmo hotel entre o SELECT e o INSERT.
+          // Corrida: outra requisição criou o mesmo fornecedor entre o SELECT e o INSERT.
           const { rows: racedHotel } = await sql`
-            SELECT id FROM tdg_hotels WHERE lower(trim(name)) = lower(${trimmedName})
+            SELECT id FROM tdg_hotels WHERE lower(trim(name)) = lower(${trimmedName}) AND entity_type = ${finalEntityType}
           `
           hotelId = racedHotel[0]?.id ?? null
         }

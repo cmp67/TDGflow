@@ -138,6 +138,7 @@ export async function GET(req: Request) {
     CREATE TABLE IF NOT EXISTS tdg_hotels (
       id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       name           TEXT NOT NULL,
+      entity_type    TEXT NOT NULL DEFAULT 'hotel',
       location       TEXT,
       country        TEXT,
       region         TEXT,
@@ -157,7 +158,23 @@ export async function GET(req: Request) {
       created_at     TIMESTAMPTZ DEFAULT now()
     )
   `
-  await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_tdg_hotels_name_unique ON tdg_hotels (lower(trim(name)))`
+  // Catálogo de FORNECEDORES, não só hotel — ver migration 013. entity_type
+  // some no nome da tabela/rota por razão histórica (tdg_hotels/api/hotels),
+  // mas cobre beach_club/transfer/guia/restaurante/outro igualmente.
+  await sql`
+    DO $$ BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'tdg_hotels_entity_type_check'
+      ) THEN
+        ALTER TABLE tdg_hotels
+          ADD CONSTRAINT tdg_hotels_entity_type_check
+          CHECK (entity_type IN ('hotel', 'beach_club', 'transfer', 'guide', 'restaurant', 'other'));
+      END IF;
+    END $$
+  `
+  await sql`CREATE INDEX IF NOT EXISTS idx_tdg_hotels_entity_type ON tdg_hotels (entity_type)`
+  await sql`DROP INDEX IF EXISTS idx_tdg_hotels_name_unique`
+  await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_tdg_hotels_name_type_unique ON tdg_hotels (lower(trim(name)), entity_type)`
 
   // tdg_knowledge nunca teve bootstrap em código nenhum — só existia em
   // produção porque foi criada fora de banda (achado da migration 009).
@@ -262,28 +279,28 @@ export async function GET(req: Request) {
     ON CONFLICT DO NOTHING
   `
 
-  steps.push('backfill hotel_id on reviews from tdg_hotels (match-or-create)')
+  steps.push('backfill hotel_id on reviews from tdg_hotels (match-or-create, todos os entity_type)')
   await sql`
     UPDATE tdg_hotel_reviews r
     SET hotel_id = h.id
     FROM tdg_hotels h
-    WHERE r.entity_type = 'hotel'
-      AND r.hotel_id IS NULL
+    WHERE r.hotel_id IS NULL
+      AND h.entity_type = r.entity_type
       AND lower(trim(r.hotel_name)) = lower(trim(h.name))
   `
   await sql`
-    INSERT INTO tdg_hotels (name)
-    SELECT DISTINCT trim(r.hotel_name)
+    INSERT INTO tdg_hotels (name, entity_type)
+    SELECT DISTINCT trim(r.hotel_name), r.entity_type
     FROM tdg_hotel_reviews r
-    WHERE r.entity_type = 'hotel' AND r.hotel_id IS NULL
-    ON CONFLICT (lower(trim(name))) DO NOTHING
+    WHERE r.hotel_id IS NULL
+    ON CONFLICT (lower(trim(name)), entity_type) DO NOTHING
   `
   await sql`
     UPDATE tdg_hotel_reviews r
     SET hotel_id = h.id
     FROM tdg_hotels h
-    WHERE r.entity_type = 'hotel'
-      AND r.hotel_id IS NULL
+    WHERE r.hotel_id IS NULL
+      AND h.entity_type = r.entity_type
       AND lower(trim(r.hotel_name)) = lower(trim(h.name))
   `
 

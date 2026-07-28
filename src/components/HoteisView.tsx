@@ -67,6 +67,7 @@ function ProfileIcon({ profileKey, size = 12 }: { profileKey: string; size?: num
 interface Hotel {
   id: string
   name: string
+  entityType: string
   location: string
   country: string
   region: string
@@ -155,6 +156,7 @@ interface HotelContact {
 interface HotelApiRow {
   id: string
   name: string
+  entity_type: string
   location: string | null
   country: string | null
   region: string | null
@@ -177,6 +179,7 @@ function mapHotelApiRow(row: HotelApiRow): Hotel {
   return {
     id: row.id,
     name: row.name,
+    entityType: row.entity_type,
     location: row.location ?? '',
     country: row.country ?? '',
     region: row.region ?? '',
@@ -1275,12 +1278,12 @@ export default function HoteisView() {
               </svg>
               Rede TDG
             </p>
-            <h2 style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.01em' }}>Hotéis Parceiros</h2>
+            <h2 style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.01em' }}>Fornecedores Parceiros</h2>
             <p style={{ fontSize: '0.625rem', color: 'var(--tdgflow-text-muted)', marginTop: 1 }}>
-              Ficha do hotel: rede, perfil, contratos permanentes
+              Ficha do fornecedor: rede, perfil, contratos permanentes
             </p>
             <p style={{ fontSize: '0.625rem', color: 'var(--tdgflow-text-muted)', marginTop: 1 }}>
-              {filtered.length} de {hotels.length} propriedades
+              {filtered.length} de {hotels.length} fornecedores
             </p>
             {/* Legenda do selo — achado da Carla: sem isso, ninguém decora o
                 que a cor do card significa. */}
@@ -1308,7 +1311,7 @@ export default function HoteisView() {
           <input
             className="input"
             style={{ paddingLeft: 32, fontSize: '0.8125rem', padding: '8px 32px 8px 32px' }}
-            placeholder="Buscar hotel ou destino…"
+            placeholder="Buscar fornecedor ou destino…"
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -1370,7 +1373,7 @@ export default function HoteisView() {
         ) : filtered.length === 0 ? (
           <div style={{ textAlign: 'center', paddingTop: 60 }}>
             <Building2 size={28} style={{ color: 'var(--tdgflow-text-muted)', margin: '0 auto 12px' }} />
-            <p style={{ fontSize: '0.875rem', color: 'var(--tdgflow-text-muted)', marginBottom: 8 }}>Nenhum hotel encontrado.</p>
+            <p style={{ fontSize: '0.875rem', color: 'var(--tdgflow-text-muted)', marginBottom: 8 }}>Nenhum fornecedor encontrado.</p>
             <button onClick={clearAll} className="btn-ghost" style={{ fontSize: '0.75rem' }}>Limpar filtros</button>
           </div>
         ) : (

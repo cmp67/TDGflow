@@ -45,7 +45,7 @@ const NAV_HINTS: Record<string, string> = {
   assistente: 'Converse com a IA — busca de hotéis, promoções e dúvidas do sistema',
   ofertas:    'Promoções ativas da rede, ordenadas por comissão e prazo',
   dicas:      'Avaliações reais de fornecedores, por quem visitou de verdade',
-  hoteis:     'Catálogo de hotéis parceiros — contatos, contratos, avaliações',
+  hoteis:     'Catálogo de fornecedores parceiros — contatos, contratos, avaliações',
   rede:       'Contatos da rede — reps, DMCs, fornecedores',
   analytics:  'Seu desempenho e o da rede',
   agencia:    'Seu perfil e dados da agência',

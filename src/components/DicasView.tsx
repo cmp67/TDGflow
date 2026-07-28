@@ -1424,7 +1424,7 @@ export default function DicasView() {
           <Search size={14} style={{ position: 'absolute', left: 34, top: '50%', transform: 'translateY(-50%)', color: 'var(--tdgflow-text-muted)', pointerEvents: 'none' }} />
           <input
             className="input"
-            placeholder="Hotel, advisor, perfil de cliente, palavra-chave..."
+            placeholder="Fornecedor, advisor, perfil de cliente, palavra-chave..."
             value={search}
             onChange={e => setSearch(e.target.value)}
             style={{ paddingLeft: 38, fontSize: '0.8125rem', background: 'var(--tdgflow-bg)' }}

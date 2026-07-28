@@ -571,7 +571,7 @@ export default function AnalyticsView() {
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
                 <StatCard value={meTotal} label={`Minhas dicas · ${PERIOD_LABELS[period].toLowerCase()}`} icon={<IconTrend size={15} />} accent delay={0} />
-                <StatCard value={me.unique_hotels} label="Hotéis únicos visitados" icon={<IconHotelBuilding size={15} />} delay={0.06} />
+                <StatCard value={me.unique_hotels} label="Fornecedores únicos visitados" icon={<IconHotelBuilding size={15} />} delay={0.06} />
                 <StatCard value={me.avg_rating ? `${Number(me.avg_rating).toFixed(1)} ★` : '—'} label="Meu rating médio" icon={<IconStarOutline size={15} />} delay={0.12} />
                 <StatCard value={`${meTotal > 0 && networkTotal > 0 ? ((meTotal / networkTotal) * 100).toFixed(0) : 0}%`} label="Da atividade da rede" icon={<IconBars size={15} />} delay={0.18} />
               </div>

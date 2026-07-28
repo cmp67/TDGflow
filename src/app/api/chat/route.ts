@@ -54,8 +54,8 @@ get_hotel_full_details retorna um campo "knowledge" com fatos, notas e materiais
 Se o consultor perguntar como registrar uma visita, gravar áudio, ou usar qualquer funcionalidade:
 - Explique de forma simples e direta em PT-BR
 - Visitas/avaliações: menu "Na prática" → botão "Nova visita" → responder o questionário guiado
-- Gravações: menu "Da mesa" → botão "Nova gravação" → depois ir em "Fila" para transcrever
-- Hotéis: menu "Hotéis" → ver catálogo parceiro TDG com contatos e descrições
+- Gravações: dentro de "Na prática" → botão "Gravar" → depois ir em "Fila" para transcrever (não é mais um menu próprio)
+- Fornecedores: menu "Fornecedores" → catálogo de hotéis, beach clubs, transfers, guias e restaurantes parceiros, com contatos e descrições
 
 ## Documentação de viagem
 

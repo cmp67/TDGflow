@@ -82,10 +82,12 @@ describe('POST /api/reviews — hotel_id find-or-create (Fase 1)', () => {
     expect(rows[0]?.name).toBe(createdHotelNames[0])
   })
 
-  it('does not attach hotel_id for non-hotel entity types', async () => {
+  it('generaliza o find-or-create pra qualquer entity_type — catálogo é de fornecedores, não só hotel', async () => {
     mockAuth.mockResolvedValueOnce(sessionFor(email))
+    const beachClubName = `__TDD Beach Club ${Date.now()}__`
+    createdHotelNames.push(beachClubName)
     const res = await POST(postReq({
-      hotel_name: 'Bar da Praia',
+      hotel_name: beachClubName,
       entity_type: 'beach_club',
       overall_rating: 2,
       raw_answers: { impressions: 'legal' },
@@ -93,7 +95,32 @@ describe('POST /api/reviews — hotel_id find-or-create (Fase 1)', () => {
     const body = await res.json()
     expect(res.status).toBe(200)
     createdReviewIds.push(body.review.id)
-    expect(body.review.hotel_id).toBeNull()
+    expect(body.review.hotel_id).toBeTruthy()
+
+    const { rows } = await sql`SELECT name, entity_type FROM tdg_hotels WHERE id = ${body.review.hotel_id}`
+    expect(rows[0]?.name).toBe(beachClubName)
+    expect(rows[0]?.entity_type).toBe('beach_club')
+  })
+
+  it('um hotel e um beach club podem coincidir de nome sem conflito (catálogo escopado por nome+tipo)', async () => {
+    const sharedName = `__TDD Nome Compartilhado ${Date.now()}__`
+    createdHotelNames.push(sharedName)
+
+    mockAuth.mockResolvedValueOnce(sessionFor(email))
+    const hotelRes = await POST(postReq({
+      hotel_name: sharedName, entity_type: 'hotel', overall_rating: 5, raw_answers: { impressions: 'ótimo' },
+    }))
+    const hotelBody = await hotelRes.json()
+    createdReviewIds.push(hotelBody.review.id)
+
+    mockAuth.mockResolvedValueOnce(sessionFor(email))
+    const beachRes = await POST(postReq({
+      hotel_name: sharedName, entity_type: 'beach_club', overall_rating: 4, raw_answers: { impressions: 'bom' },
+    }))
+    const beachBody = await beachRes.json()
+    createdReviewIds.push(beachBody.review.id)
+
+    expect(hotelBody.review.hotel_id).not.toBe(beachBody.review.hotel_id)
   })
 })
 

@@ -7,6 +7,7 @@ export const dynamic = 'force-dynamic'
 export interface HotelRow {
   id: string
   name: string
+  entity_type: string
   location: string | null
   country: string | null
   region: string | null
@@ -34,7 +35,7 @@ export async function GET() {
   // um badge novo, a própria bolinha do card (antes decorativa) passa a
   // significar algo real.
   const { rows } = await sql`
-    SELECT h.id, h.name, h.location, h.country, h.region, h.description,
+    SELECT h.id, h.name, h.entity_type, h.location, h.country, h.region, h.description,
            h.contact_email, h.contact_phone, h.website_url, h.currency, h.group_name,
            h.image_url, h.dot_color, h.tags, h.profiles, h.gallery,
            COUNT(*) FILTER (WHERE r.status = 'published')::int AS tested_count,
