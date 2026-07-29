@@ -95,3 +95,67 @@ describe('MCP — ferramentas novas pro GUEST consumir (search_tdg_suppliers/get
     expect(Array.isArray(result.offers)).toBe(true)
   })
 })
+
+describe('MCP register_tip — agency_name validado contra tdg_agencies (achado da auditoria de 29/07)', () => {
+  const agencyName = `__TDD MCP Agency ${Date.now()}__`
+  let agencyId: string
+  const agentEmail = `tdd-mcp-register-tip-${Date.now()}@example.com`
+  const agentName = `__TDD MCP Advisor ${Date.now()}__`
+  const createdReviewIds: string[] = []
+
+  beforeAll(async () => {
+    const { rows } = await sql`
+      INSERT INTO tdg_agencies (name, cnpj) VALUES (${agencyName}, ${`__TDD_CNPJ_MCP_${Date.now()}__`}) RETURNING id
+    `
+    agencyId = rows[0].id as string
+    await sql`
+      INSERT INTO tdg_users (name, email, agency_name, agency_id, password_hash, role)
+      VALUES (${agentName}, ${agentEmail}, ${agencyName}, ${agencyId}, 'x', 'agent')
+    `
+  })
+
+  afterAll(async () => {
+    if (createdReviewIds.length) await sql`DELETE FROM tdg_hotel_reviews WHERE id = ANY(${createdReviewIds})`
+    await sql`DELETE FROM tdg_users WHERE email = ${agentEmail}`
+    await sql`DELETE FROM tdg_agencies WHERE id = ${agencyId}`
+  })
+
+  it('rejeita agency_name que não existe na rede — não grava review nenhuma', async () => {
+    const res = await POST(rpcReq('tools/call', {
+      name: 'register_tip',
+      arguments: {
+        hotel_name: `__TDD Hotel MCP Fake Agency ${Date.now()}__`,
+        agent_name: agentName,
+        agency_name: '__AGENCIA_QUE_NAO_EXISTE__',
+        overall_rating: 5,
+      },
+    }))
+    const body = await res.json()
+    const result = JSON.parse(body.result.content[0].text)
+    expect(result.error).toBeTruthy()
+
+    const { rows } = await sql`SELECT id FROM tdg_hotel_reviews WHERE hotel_name ILIKE '__TDD Hotel MCP Fake Agency%'`
+    expect(rows).toHaveLength(0)
+  })
+
+  it('aceita agency_name real (case-insensitive) e grava agency_id + agent_id resolvidos', async () => {
+    const hotelName = `__TDD Hotel MCP Real Agency ${Date.now()}__`
+    const res = await POST(rpcReq('tools/call', {
+      name: 'register_tip',
+      arguments: {
+        hotel_name: hotelName,
+        agent_name: agentName,
+        agency_name: agencyName.toUpperCase(),
+        overall_rating: 5,
+      },
+    }))
+    const body = await res.json()
+    const result = JSON.parse(body.result.content[0].text)
+    expect(result.success).toBe(true)
+    createdReviewIds.push(result.review.id)
+
+    const { rows } = await sql`SELECT agency_id, agency_name, agent_id FROM tdg_hotel_reviews WHERE id = ${result.review.id}`
+    expect(rows[0].agency_id).toBe(agencyId)
+    expect(rows[0].agency_name).toBe(agencyName)
+  })
+})
