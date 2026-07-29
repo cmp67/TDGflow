@@ -13,6 +13,7 @@ import { sounds } from '@/lib/sounds'
 import { useToast } from '@/contexts/ToastContext'
 import { getQuestions, isLeadSubmission } from '@/lib/review-questions'
 import TdgIconSprite, { ENTITY_SCENE_ID } from '@/components/TdgIconSprite'
+import ResponsiveSheet from '@/components/ResponsiveSheet'
 import AudioRecord from '@/components/AudioRecord'
 import AudioQueue from '@/components/AudioQueue'
 
@@ -963,24 +964,7 @@ function Questionnaire({ onClose, onSaved, initialAnswers, relatedLeadId }: {
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 50 }}>
-      <motion.div
-        initial={{ y: '100%' }}
-        animate={{ y: 0 }}
-        exit={{ y: '100%' }}
-        transition={{ type: 'spring', stiffness: 300, damping: 35 }}
-        style={{
-          background: 'var(--tdgflow-surface)', borderRadius: '20px 20px 0 0',
-          border: '1px solid var(--tdgflow-border)', borderBottom: 'none',
-          width: '100%', maxWidth: 520, maxHeight: '90vh',
-          display: 'flex', flexDirection: 'column',
-        }}
-      >
-        {/* Handle */}
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}>
-          <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--tdgflow-border)' }} />
-        </div>
-
+    <ResponsiveSheet onClose={onClose} maxWidth={520}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 20px 16px' }}>
           <p style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
@@ -1182,8 +1166,7 @@ function Questionnaire({ onClose, onSaved, initialAnswers, relatedLeadId }: {
             }
           </button>
         </div>
-      </motion.div>
-    </div>
+    </ResponsiveSheet>
   )
 }
 
@@ -1564,26 +1547,7 @@ export default function DicasView() {
       {/* ── Sheet: Tipo de visita / País / Período / Agência ────────── */}
       <AnimatePresence>
         {showFilterSheet && (
-          <div
-            onClick={() => setShowFilterSheet(false)}
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 60 }}
-          >
-            <motion.div
-              onClick={e => e.stopPropagation()}
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', stiffness: 300, damping: 35 }}
-              style={{
-                background: 'var(--tdgflow-surface)', borderRadius: '20px 20px 0 0',
-                border: '1px solid var(--tdgflow-border)', borderBottom: 'none',
-                width: '100%', maxWidth: 560, maxHeight: '85vh',
-                display: 'flex', flexDirection: 'column',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}>
-                <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--tdgflow-border)' }} />
-              </div>
+          <ResponsiveSheet onClose={() => setShowFilterSheet(false)} maxWidth={560} zIndex={60}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 20px 16px' }}>
                 <p style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)' }}>Filtros</p>
                 <button onClick={() => setShowFilterSheet(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
@@ -1693,8 +1657,7 @@ export default function DicasView() {
                 <button onClick={clearSheetFilters} className="btn-ghost" style={{ flex: 1, justifyContent: 'center', fontSize: '0.8125rem' }}>Limpar filtros</button>
                 <button onClick={() => setShowFilterSheet(false)} className="btn-gold" style={{ flex: 1, justifyContent: 'center', fontSize: '0.8125rem' }}>Aplicar</button>
               </div>
-            </motion.div>
-          </div>
+          </ResponsiveSheet>
         )}
       </AnimatePresence>
 

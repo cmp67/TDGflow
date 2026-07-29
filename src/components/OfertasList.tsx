@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { Search, Loader2, AlertCircle, X, ExternalLink } from 'lucide-react'
 import TdgIconSprite from '@/components/TdgIconSprite'
+import ResponsiveSheet from '@/components/ResponsiveSheet'
 
 interface Offer {
   id: string
@@ -254,27 +255,7 @@ export default function OfertasList() {
           secundário aqui dentro, não como destino do clique no card. */}
       <AnimatePresence>
         {selectedOffer && (
-          <div
-            onClick={() => setSelectedOffer(null)}
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 60 }}
-          >
-            <motion.div
-              onClick={e => e.stopPropagation()}
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', stiffness: 300, damping: 35 }}
-              style={{
-                position: 'relative',
-                background: 'var(--tdgflow-surface)', borderRadius: '20px 20px 0 0',
-                border: '1px solid var(--tdgflow-border)', borderBottom: 'none',
-                width: '100%', maxWidth: 560, maxHeight: '88vh',
-                display: 'flex', flexDirection: 'column',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px', flexShrink: 0 }}>
-                <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--tdgflow-border)' }} />
-              </div>
+          <ResponsiveSheet onClose={() => setSelectedOffer(null)} maxWidth={560} zIndex={60}>
               <button
                 onClick={() => setSelectedOffer(null)}
                 style={{ position: 'absolute', top: 16, right: 16, background: 'rgba(0,0,0,0.4)', border: 'none', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 1 }}
@@ -351,8 +332,7 @@ export default function OfertasList() {
                   )}
                 </div>
               </div>
-            </motion.div>
-          </div>
+          </ResponsiveSheet>
         )}
       </AnimatePresence>
     </div>
