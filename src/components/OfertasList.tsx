@@ -19,6 +19,26 @@ interface Offer {
   full_description: string | null
   image_url: string | null
   accent: string
+  curated: boolean
+}
+
+/* Selo de origem — combinado com Adriano: fonte precisa ficar visível.
+   Ponto sólido = curadoria (mesma linguagem já desenhada pro catálogo de
+   Fornecedores), texto sem ícone de "aprovação social" tipo joinha —
+   curadoria não é sobre alguém ter gostado, é sobre a origem do dado. */
+function CuratedBadge() {
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 5,
+      fontSize: '0.5625rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase',
+      padding: '3px 9px 3px 7px', borderRadius: 999,
+      background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)',
+      color: '#fff', backdropFilter: 'blur(4px)',
+    }}>
+      <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#fff', flexShrink: 0 }} />
+      Curada
+    </span>
+  )
 }
 
 /* Super Busca (padrão obrigatório em todo campo de busca Bemgsy) —
@@ -182,6 +202,13 @@ export default function OfertasList() {
                   background: 'linear-gradient(to bottom, rgba(17,38,48,0.12) 0%, rgba(17,38,48,0.62) 100%)',
                 }} />
 
+                {/* Selo de origem — top left */}
+                {offer.curated && (
+                  <div style={{ position: 'absolute', top: 14, left: 14 }}>
+                    <CuratedBadge />
+                  </div>
+                )}
+
                 {/* Commission — bottom left */}
                 <div style={{ position: 'absolute', bottom: 14, left: 18 }}>
                   <p style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.55rem', fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)', margin: '0 0 1px' }}>
@@ -271,11 +298,19 @@ export default function OfertasList() {
                 )}
 
                 <div style={{ padding: '18px 22px 24px' }}>
-                  {selectedOffer.offer_type && (
-                    <p style={{ fontSize: '0.625rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: selectedOffer.accent, marginBottom: 6 }}>
-                      {selectedOffer.offer_type}
-                    </p>
-                  )}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
+                    {selectedOffer.offer_type && (
+                      <p style={{ fontSize: '0.625rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: selectedOffer.accent, margin: 0 }}>
+                        {selectedOffer.offer_type}
+                      </p>
+                    )}
+                    {selectedOffer.curated && (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: '0.625rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)' }}>
+                        <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--tdgflow-navy)', flexShrink: 0 }} />
+                        Curada
+                      </span>
+                    )}
+                  </div>
                   <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.02em', marginBottom: 4 }}>
                     {selectedOffer.hotel_name}
                   </h2>

@@ -28,6 +28,7 @@ export interface OfferRow {
   full_description: string | null
   image_url: string | null
   accent: string
+  curated: boolean
 }
 
 const ACCENTS = ['#4a9bbe', '#7aaa5a', '#c8a060', '#8080c8', '#c07840', '#6b9080', '#a0616a']
@@ -130,6 +131,11 @@ export async function GET() {
       full_description: cleanDescription(o.description),
       image_url: o.image_url ?? hotel?.image_url ?? null,
       accent: ACCENTS[i % ACCENTS.length],
+      // Toda oferta hoje vem do Bemgsy Central (fonte central com processo
+      // de aprovação — is_active+is_public+share_slug), nunca solta de
+      // agente. Combinado com Adriano: fonte precisa ficar visível — quando
+      // a ingestão por e-mail existir, essa flag para de ser sempre true.
+      curated: true,
     }
   })
 
