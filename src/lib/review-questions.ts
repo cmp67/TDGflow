@@ -17,7 +17,7 @@ const BASE_QUESTIONS: ReviewQuestion[] = [
   { id: 'hotel_name', text: 'Qual o nome?', type: 'text', placeholder: 'Hotel, beach club, guia, transfer...' },
   { id: 'country', text: 'Onde fica?', type: 'text', placeholder: 'Ex: Portugal, Comporta, Maldivas...' },
   { id: 'visit_date', text: 'Quando foi?', type: 'date' },
-  { id: 'visit_type', text: 'Qual o tipo de visita?', type: 'select', options: [...VISIT_TYPES] },
+  { id: 'visit_type', text: 'O que você está registrando?', type: 'select', options: [...VISIT_TYPES] },
 ]
 
 const COMMERCIAL_MEETING_QUESTION: ReviewQuestion = {

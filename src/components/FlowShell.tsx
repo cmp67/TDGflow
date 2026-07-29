@@ -56,10 +56,12 @@ const NAV_HINTS: Record<string, string> = {
   billing:    'Assinatura e uso de Lumis',
 }
 
-// Regrupado por contexto de uso real (não mais um "Ferramentas" catch-all
-// misturando insight + gestão + referência): Desempenho (acompanhar como vai
-// o uso), Gestão (quem tem acesso — só pra quem administra alguém) e Recursos
-// (ferramentas de apoio/consulta ocasional).
+// Regrupado por natureza de uso (achado da Carla, 29/07): Gestão (uso
+// administrativo recorrente sobre a própria operação — "como está minha
+// agência") e Referência (consulta pontual, conteúdo de apoio — "preciso
+// checar algo"). Billing entra em Gestão — antes vivia isolado no rodapé
+// por convenção genérica de SaaS ("billing fica perto do perfil"), mas aqui
+// é dado de negócio da agência, não conta pessoal.
 //
 // 'agencia' (Meu Perfil) fica de fora daqui de propósito — já é acessível pelo
 // card de identidade no rodapé (avatar + nome + agência). Tê-lo duplicado aqui
@@ -69,39 +71,40 @@ const NAV_HINTS: Record<string, string> = {
 // "Da mesa" saiu daqui (Fase 6) — o próprio texto da página já dizia "não é
 // conteúdo pra navegar direto" (só 2 botões modais, zero conteúdo pra rolar).
 // Virou ação "Gravar" dentro de "Na prática".
-const RESOURCE_ITEMS: NavItem[] = [
+const REFERENCE_ITEMS: NavItem[] = [
   { href: '/flow/docs',      icon: FileText, tkey: 'docs' },
   { href: '/flow/destinos',  icon: Globe,    tkey: 'destinos' },
   { href: '/flow/inbox',     icon: Mail,     tkey: 'inbox', soon: true },
 ]
 
-// Fase 6: "Desempenho" era um cabeçalho de grupo pra 1 item só (Analytics) —
-// não ganha peso próprio no mental model de quem usa o app todo dia (achado
-// do arquiteto). Um único bloco "Ferramentas" por papel, sem cabeçalho que
-// não se paga.
+const BILLING_ITEM: NavItem = { href: '/flow/billing', icon: CreditCard, tkey: 'billing' }
+
 const NAV_GROUPS_AGENT: NavGroup[] = [
-  { labelKey: 'nav.groupFerramentas', items: [
+  { labelKey: 'nav.groupGestao', items: [
     { href: '/flow/analytics', icon: BarChart2, tkey: 'analytics' },
-    ...RESOURCE_ITEMS,
+    BILLING_ITEM,
   ] },
+  { labelKey: 'nav.groupReferencia', items: REFERENCE_ITEMS },
 ]
 
 const NAV_GROUPS_ADMIN: NavGroup[] = [
-  { labelKey: 'nav.groupFerramentas', items: [
+  { labelKey: 'nav.groupGestao', items: [
     { href: '/flow/analytics', icon: BarChart2, tkey: 'analytics' },
     { href: '/flow/gestao', icon: Users, tkey: 'gestao' },
-    ...RESOURCE_ITEMS,
+    BILLING_ITEM,
   ] },
+  { labelKey: 'nav.groupReferencia', items: REFERENCE_ITEMS },
 ]
 
 // agency_admin: administra só a equipe da própria agência (nunca entre
 // agências — isso fica exclusivo do admin global via NAV_GROUPS_ADMIN acima).
 const NAV_GROUPS_AGENCY_ADMIN: NavGroup[] = [
-  { labelKey: 'nav.groupFerramentas', items: [
+  { labelKey: 'nav.groupGestao', items: [
     { href: '/flow/analytics', icon: BarChart2, tkey: 'analytics' },
     { href: '/flow/equipe', icon: UserPlus, tkey: 'equipe' },
-    ...RESOURCE_ITEMS,
+    BILLING_ITEM,
   ] },
+  { labelKey: 'nav.groupReferencia', items: REFERENCE_ITEMS },
 ]
 
 interface Brand {
@@ -156,10 +159,18 @@ function FlowShellInner({ children, user, brand }: Props) {
   // Antecipação: quantas descobertas da rede aguardam teste real, visível
   // na sidebar sem precisar entrar em "Na prática" pra saber que existem.
   const [pendingLeads, setPendingLeads] = useState(0)
+  // Pedidos de ativação GUEST pendentes — fila de trabalho do Admin da Rede
+  // (0 pra qualquer outro papel, o backend já filtra). Saiu do sino (29/07):
+  // vira badge no item onde se resolve de fato, não aviso passageiro.
+  const [pendingGuestRequests, setPendingGuestRequests] = useState(0)
   useEffect(() => {
     fetch('/api/context')
       .then(res => res.ok ? res.json() : null)
-      .then(data => { if (data) setPendingLeads(data.pending_leads ?? 0) })
+      .then(data => {
+        if (!data) return
+        setPendingLeads(data.pending_leads ?? 0)
+        setPendingGuestRequests(data.pending_guest_requests ?? 0)
+      })
       .catch(() => {})
   }, [])
 
@@ -185,24 +196,34 @@ function FlowShellInner({ children, user, brand }: Props) {
         {/* Logotype — pele da agência (logo + acento de cor) sobre o
             esqueleto Bemgsy, nunca o contrário. "powered by TDG Flow" fica
             sempre visível: white-label de pele, não de estrutura — a
-            agência nunca deixa de ser reconhecível como família Bemgsy. */}
-        <div className="px-6 pt-7 pb-6 flex-shrink-0">
-          {brand?.logoUrl ? (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
-              src={brand.logoUrl}
-              alt={user.agency || 'Logo da agência'}
-              style={{ maxHeight: 28, maxWidth: '100%', objectFit: 'contain', display: 'block' }}
-            />
-          ) : (
-            <p style={{
-              fontFamily: 'var(--tdgflow-font-sans)', fontSize: '0.8125rem', fontWeight: 700,
-              letterSpacing: '-0.01em', color: 'var(--tdgflow-text-primary)', lineHeight: 1.25,
-              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', margin: 0,
-            }}>
-              {user.agency || 'TDG'}
-            </p>
-          )}
+            agência nunca deixa de ser reconhecível como família Bemgsy.
+            Sino sobe pra cá (29/07) — antes vivia no rodapé colado ao "Sair",
+            posição que sinalizava baixa prioridade mesmo sem intenção. Único
+            lugar de notificação no desktop agora (sidebar não tem topbar). */}
+        <div className="px-6 pt-7 flex-shrink-0 flex items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            {brand?.logoUrl ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={brand.logoUrl}
+                alt={user.agency || 'Logo da agência'}
+                style={{ maxHeight: 28, maxWidth: '100%', objectFit: 'contain', display: 'block' }}
+              />
+            ) : (
+              <p style={{
+                fontFamily: 'var(--tdgflow-font-sans)', fontSize: '0.8125rem', fontWeight: 700,
+                letterSpacing: '-0.01em', color: 'var(--tdgflow-text-primary)', lineHeight: 1.25,
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', margin: 0,
+              }}>
+                {user.agency || 'TDG'}
+              </p>
+            )}
+          </div>
+          <div style={{ flexShrink: 0, marginTop: -2 }}>
+            <NotificationBell />
+          </div>
+        </div>
+        <div className="px-6 pb-6 flex-shrink-0">
           <p style={{
             fontFamily: 'var(--tdgflow-font-sans)', fontSize: '0.5625rem', fontWeight: 400,
             letterSpacing: '0.1em', color: 'var(--tdgflow-text-faint)', textTransform: 'uppercase', margin: '2px 0 0',
@@ -295,6 +316,16 @@ function FlowShellInner({ children, user, brand }: Props) {
                       {tr(`nav.${tkey}`)}
                     </span>
                     {soon && <span style={{ marginLeft: 'auto', fontSize: '0.6rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)' }}>{tr('nav.breve')}</span>}
+                    {tkey === 'billing' && pendingGuestRequests > 0 && (
+                      <span style={{
+                        marginLeft: 'auto', minWidth: 16, height: 16, padding: '0 4px', borderRadius: 999,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: 'var(--tdgflow-accent-warm)', color: '#fff',
+                        fontSize: '0.625rem', fontWeight: 700, lineHeight: 1,
+                      }}>
+                        {pendingGuestRequests}
+                      </span>
+                    )}
                   </Link>
                 )
               })}
@@ -328,25 +359,7 @@ function FlowShellInner({ children, user, brand }: Props) {
             ))}
           </div>
 
-          {/* Billing — junto ao perfil */}
-          <Link
-            href="/flow/billing"
-            className="flex items-center gap-2 no-underline mb-1"
-            style={{
-              padding: '6px 8px', margin: '0 -8px', borderRadius: 8,
-              background: isActive('/flow/billing') ? 'var(--tdgflow-navy-subtle)' : 'transparent',
-              transition: 'background 150ms',
-            }}
-            onMouseEnter={e => { if (!isActive('/flow/billing')) (e.currentTarget as HTMLElement).style.background = 'var(--tdgflow-surface-high)' }}
-            onMouseLeave={e => { if (!isActive('/flow/billing')) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
-          >
-            <CreditCard size={12} style={{ color: isActive('/flow/billing') ? 'var(--tdgflow-navy)' : 'var(--tdgflow-text-muted)', flexShrink: 0 }} />
-            <span style={{ fontSize: '0.75rem', color: isActive('/flow/billing') ? 'var(--tdgflow-navy-dim)' : 'var(--tdgflow-text-muted)', fontWeight: isActive('/flow/billing') ? 600 : 400 }}>
-              {tr('nav.billing')}
-            </span>
-          </Link>
-
-          {/* Sugestões de Melhoria — junto ao perfil */}
+          {/* Sugestões de Melhoria — junto ao perfil (Billing agora mora no grupo Gestão, na nav principal) */}
           <Link
             href="/flow/sugestoes"
             className="flex items-center gap-2 no-underline mb-2"
@@ -388,18 +401,15 @@ function FlowShellInner({ children, user, brand }: Props) {
               </p>
             </div>
           </Link>
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => signOut({ callbackUrl: '/flow/login' })}
-              className="flex items-center gap-1.5"
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)', letterSpacing: '0.02em', transition: 'color 150ms' }}
-              onMouseEnter={e => (e.currentTarget.style.color = 'var(--tdgflow-error)')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'var(--tdgflow-text-muted)')}
-            >
-              <LogOut size={11} /> {tr('auth.signout')}
-            </button>
-            <NotificationBell />
-          </div>
+          <button
+            onClick={() => signOut({ callbackUrl: '/flow/login' })}
+            className="flex items-center gap-1.5"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)', letterSpacing: '0.02em', transition: 'color 150ms' }}
+            onMouseEnter={e => (e.currentTarget.style.color = 'var(--tdgflow-error)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'var(--tdgflow-text-muted)')}
+          >
+            <LogOut size={11} /> {tr('auth.signout')}
+          </button>
           <p style={{ marginTop: 10, fontSize: '0.5625rem', letterSpacing: '0.1em', color: 'var(--tdgflow-text-faint)', textAlign: 'center' }}>
             {APP_VERSION}
           </p>
@@ -523,24 +533,23 @@ function FlowShellInner({ children, user, brand }: Props) {
                       <Icon size={16} strokeWidth={active ? 2 : 1.5} style={{ color: 'inherit', flexShrink: 0 }} />
                       <span style={{ fontSize: '0.9375rem', fontWeight: active ? 500 : 400 }}>{tr(`nav.${tkey}`)}</span>
                       {soon && <span style={{ marginLeft: 'auto', fontSize: '0.55rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)' }}>{tr('nav.breve')}</span>}
+                      {tkey === 'billing' && pendingGuestRequests > 0 && (
+                        <span style={{
+                          marginLeft: 'auto', minWidth: 18, height: 18, padding: '0 5px', borderRadius: 999,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          background: 'var(--tdgflow-accent-warm)', color: '#fff',
+                          fontSize: '0.6875rem', fontWeight: 700, lineHeight: 1,
+                        }}>
+                          {pendingGuestRequests}
+                        </span>
+                      )}
                     </Link>
                   )
                 })}
 
                 <div style={{ height: 1, background: 'var(--tdgflow-border)', margin: '8px 14px' }} />
 
-                {/* Billing */}
-                <Link
-                  href="/flow/billing"
-                  onClick={() => setShowMore(false)}
-                  className="flex items-center gap-3.5 no-underline"
-                  style={{ padding: '12px 14px', color: isActive('/flow/billing') ? 'var(--tdgflow-navy)' : 'var(--tdgflow-text-secondary)', borderLeft: isActive('/flow/billing') ? '1px solid var(--tdgflow-navy)' : '1px solid transparent', borderRadius: 2 }}
-                >
-                  <CreditCard size={16} strokeWidth={isActive('/flow/billing') ? 2 : 1.5} style={{ color: 'inherit', flexShrink: 0 }} />
-                  <span style={{ fontSize: '0.9375rem', fontWeight: isActive('/flow/billing') ? 500 : 400 }}>{tr('nav.billing')}</span>
-                </Link>
-
-                {/* Sugestões — junto ao perfil no mobile também */}
+                {/* Sugestões — junto ao perfil no mobile também (Billing agora mora em SECONDARY_NAV, grupo Gestão) */}
                 <Link
                   href="/flow/sugestoes"
                   onClick={() => setShowMore(false)}

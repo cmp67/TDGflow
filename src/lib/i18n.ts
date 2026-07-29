@@ -10,7 +10,8 @@ export const t: Record<Lang, Record<string, string>> = {
   'pt-BR': {
     // Nav sections
     'nav.principal':   'Principal',
-    'nav.groupFerramentas': 'Ferramentas',
+    'nav.groupGestao':      'Gestão',
+    'nav.groupReferencia':  'Referência',
     'nav.groupRecursos':   'Recursos',
 
     // Nav items
@@ -83,7 +84,8 @@ export const t: Record<Lang, Record<string, string>> = {
 
   'en': {
     'nav.principal':   'Main',
-    'nav.groupFerramentas': 'Tools',
+    'nav.groupGestao':      'Management',
+    'nav.groupReferencia':  'Reference',
     'nav.groupRecursos':   'Resources',
     'nav.assistente':  'Flow Mode',
     'nav.ofertas':     'Offers',
@@ -150,7 +152,8 @@ export const t: Record<Lang, Record<string, string>> = {
 
   'es': {
     'nav.principal':   'Principal',
-    'nav.groupFerramentas': 'Herramientas',
+    'nav.groupGestao':      'Gestión',
+    'nav.groupReferencia':  'Referencia',
     'nav.groupRecursos':   'Recursos',
     'nav.assistente':  'Modo Flow',
     'nav.ofertas':     'Ofertas',

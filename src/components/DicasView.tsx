@@ -968,7 +968,7 @@ function Questionnaire({ onClose, onSaved, initialAnswers, relatedLeadId }: {
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 20px 16px' }}>
           <p style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-            Registrar visita · {step + 1} de {QUESTIONS.length}
+            Registrar experiência · {step + 1} de {QUESTIONS.length}
           </p>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
             <X size={16} style={{ color: 'var(--tdgflow-text-muted)' }} />
@@ -1476,7 +1476,7 @@ export default function DicasView() {
               className="btn-gold"
               style={{ padding: '8px 13px', fontSize: '0.8125rem' }}
             >
-              <Plus size={13} /> Nova visita
+              <Plus size={13} /> Registrar experiência
             </button>
           </div>
         </div>
@@ -1680,7 +1680,7 @@ export default function DicasView() {
               <>
                 <Building2 size={24} style={{ color: 'var(--tdgflow-text-muted)', margin: '0 auto 12px' }} />
                 <p style={{ fontSize: '0.875rem', color: 'var(--tdgflow-text-muted)' }}>Nenhuma visita registrada ainda.</p>
-                <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)', marginTop: 4 }}>Clique em &quot;Nova visita&quot; para começar.</p>
+                <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)', marginTop: 4 }}>Clique em &quot;Registrar experiência&quot; para começar.</p>
               </>
             )}
           </div>

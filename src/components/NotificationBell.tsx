@@ -2,12 +2,12 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bell, Tag, Lightbulb, Mic, Send, X } from 'lucide-react'
+import { Bell, Tag, Lightbulb, Mic, X } from 'lucide-react'
 import { sounds } from '@/lib/sounds'
 
 interface Notification {
   id: string
-  type: 'offer' | 'review' | 'recording' | 'guest_request'
+  type: 'offer' | 'review' | 'recording'
   title: string
   body: string
   time: string
@@ -26,17 +26,15 @@ function timeAgo(dateStr: string): string {
 }
 
 const ICON: Record<string, React.ReactNode> = {
-  offer:         <Tag size={13} />,
-  review:        <Lightbulb size={13} />,
-  recording:     <Mic size={13} />,
-  guest_request: <Send size={13} />,
+  offer:     <Tag size={13} />,
+  review:    <Lightbulb size={13} />,
+  recording: <Mic size={13} />,
 }
 
 const ICON_COLOR: Record<string, string> = {
-  offer:         'var(--tdgflow-navy)',
-  review:        '#7DD3FC',
-  recording:     '#86EFAC',
-  guest_request: 'var(--tdgflow-gold-dim)',
+  offer:     'var(--tdgflow-navy)',
+  review:    '#7DD3FC',
+  recording: '#86EFAC',
 }
 
 export default function NotificationBell() {
@@ -89,19 +87,9 @@ export default function NotificationBell() {
         })
       }
 
-      // Pedidos de ativação GUEST pendentes (só existe pra admin — o backend
-      // já filtra por papel, aqui só reagimos ao número que veio)
-      if (ctx.pending_guest_requests > 0) {
-        const id = 'guest-requests-pending'
-        notifs.push({
-          id,
-          type: 'guest_request',
-          title: 'Pedidos de ativação GUEST',
-          body: `${ctx.pending_guest_requests} agência${ctx.pending_guest_requests > 1 ? 's' : ''} aguardando aprovação — veja em Billing → Rede TDG`,
-          time: new Date().toISOString(),
-          read: readIds.includes(id),
-        })
-      }
+      // Pedidos de ativação GUEST saíram do sino (29/07) — é fila de
+      // aprovação/trabalho, não aviso passageiro. Agora é badge no item
+      // "Billing" da nav (ver FlowShell.tsx), onde se resolve de fato.
 
       // Reviews this week
       if (ctx.reviews_this_week > 0) {

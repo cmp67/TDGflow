@@ -615,7 +615,7 @@ export default function AnalyticsView() {
                 <div style={{ textAlign: 'center', padding: '40px 20px' }}>
                   <IconTrend size={28} />
                   <p style={{ fontSize: '0.875rem', color: 'var(--tdgflow-text-muted)' }}>Você ainda não registrou nenhuma dica.</p>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)', marginTop: 4 }}>Vá em Dicas → Nova visita para começar.</p>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)', marginTop: 4 }}>Vá em Na prática → Registrar experiência para começar.</p>
                 </div>
               )}
             </motion.div>

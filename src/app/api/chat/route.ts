@@ -56,7 +56,7 @@ get_hotel_full_details retorna um campo "knowledge" com fatos, notas e materiais
 
 Se o consultor perguntar como registrar uma visita, gravar áudio, ou usar qualquer funcionalidade:
 - Explique de forma simples e direta em PT-BR
-- Visitas/avaliações: menu "Na prática" → botão "Nova visita" → responder o questionário guiado
+- Visitas/avaliações/reuniões comerciais: menu "Na prática" → botão "Registrar experiência" → responder o questionário guiado
 - Gravações: dentro de "Na prática" → botão "Gravar" → depois ir em "Fila" para transcrever (não é mais um menu próprio)
 - Fornecedores: menu "Fornecedores" → catálogo de hotéis, beach clubs, transfers, guias e restaurantes parceiros, com contatos e descrições
 
