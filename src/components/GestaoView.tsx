@@ -52,6 +52,10 @@ function IconPhone({ size = 12 }: { size?: number }) {
   )
 }
 
+const ROLE_LABELS: Record<string, string> = {
+  agent: 'Agente', agency_admin: 'Admin de Agência', admin: 'Admin da Rede',
+}
+
 interface TdgUser {
   id: string
   name: string
@@ -86,6 +90,20 @@ export default function GestaoView({ users: initial }: Props) {
       acc[u.agency_name].push(u)
       return acc
     }, {})
+
+  async function changeRole(user: TdgUser, role: string) {
+    if (role === user.role) return
+    const previousRole = user.role
+    setUsers(prev => prev.map(u => u.id === user.id ? { ...u, role } : u))
+    const res = await fetch('/api/users', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: user.id, role }),
+    })
+    if (!res.ok) {
+      setUsers(prev => prev.map(u => u.id === user.id ? { ...u, role: previousRole } : u))
+    }
+  }
 
   async function toggleActive(user: TdgUser) {
     setTogglingId(user.id)
@@ -293,6 +311,17 @@ export default function GestaoView({ users: initial }: Props) {
                     )}
                   </div>
                 </div>
+                <select
+                  value={u.role}
+                  onChange={e => changeRole(u, e.target.value)}
+                  className="input"
+                  style={{ width: 'auto', padding: '4px 8px', fontSize: '0.75rem', flexShrink: 0 }}
+                  title="Papel na plataforma"
+                >
+                  {Object.entries(ROLE_LABELS).map(([value, label]) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </select>
                 <button
                   onClick={() => toggleActive(u)}
                   disabled={togglingId === u.id}

@@ -154,7 +154,19 @@ export default function DestinosView() {
           </div>
         )}
 
-        {!loading && tips.length === 0 && (
+        {!loading && tips.length === 0 && total === 0 && !search && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px', textAlign: 'center', gap: 10 }}>
+            <div style={{ width: 48, height: 48, borderRadius: 14, background: 'var(--tdgflow-surface-high)', border: '1px solid var(--tdgflow-border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Lightbulb size={20} style={{ color: 'var(--tdgflow-text-muted)' }} />
+            </div>
+            <p style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--tdgflow-text-primary)' }}>Conhecimento da rede em reprocessamento</p>
+            <p style={{ fontSize: '0.8rem', color: 'var(--tdgflow-text-muted)', maxWidth: 340, lineHeight: 1.5 }}>
+              A base de dicas por destino está passando por uma nova depuração antes de voltar pra cá. Assim que sair, notas e avisos práticos por país aparecem nesta tela.
+            </p>
+          </div>
+        )}
+
+        {!loading && tips.length === 0 && (search || total > 0) && (
           <div style={{ textAlign: 'center', paddingTop: 60 }}>
             <Search size={24} style={{ color: 'var(--tdgflow-text-muted)', margin: '0 auto 12px' }} />
             <p style={{ fontSize: '0.875rem', color: 'var(--tdgflow-text-muted)' }}>Nenhuma dica encontrada.</p>

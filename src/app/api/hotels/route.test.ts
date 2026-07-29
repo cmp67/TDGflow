@@ -59,4 +59,13 @@ describe('GET /api/hotels (catálogo de fornecedores)', () => {
     expect(semReview.tested_count).toBe(0)
     expect(semReview.pending_lead_count).toBe(0)
   })
+
+  it('benefits vem [] quando o fornecedor não tem condição negociada, sem quebrar tested_count', async () => {
+    mockAuth.mockResolvedValueOnce(sessionFor('any@example.com'))
+    const res  = await GET()
+    const body = await res.json()
+
+    const semBeneficio = body.hotels.find((h: { name: string }) => h.name === 'Martinhal Sagres')
+    expect(semBeneficio.benefits).toEqual([])
+  })
 })

@@ -7,7 +7,7 @@ import {
   Search, X, Phone, Mail, ExternalLink,
   Building2, ChevronRight, Globe, ArrowRight,
   MessageCircle, Plus, Loader2, Trash2, UserCircle2,
-  Camera, ScanLine, PenLine, CheckCircle2, AlertCircle,
+  Camera, ScanLine, PenLine, CheckCircle2, AlertCircle, History,
 } from 'lucide-react'
 import { useRef } from 'react'
 import Link from 'next/link'
@@ -83,6 +83,27 @@ interface Hotel {
   gallery: { label: string; url: string }[]
   testedCount: number
   pendingLeadCount: number
+  benefits: HotelBenefit[]
+}
+
+interface HotelBenefit {
+  id: string
+  category: 'comissao' | 'amenidade' | 'pagamento' | 'outro'
+  description: string
+  commission_pct: number | null
+}
+
+const BENEFIT_CATEGORY_LABELS: Record<HotelBenefit['category'], string> = {
+  comissao: 'Comissão diferenciada', amenidade: 'Amenidade exclusiva', pagamento: 'Condição de pagamento', outro: 'Outro',
+}
+
+function benefitBadgeText(benefits: HotelBenefit[]): string | null {
+  if (benefits.length === 0) return null
+  if (benefits.length === 1) {
+    const b = benefits[0]
+    return b.category === 'comissao' && b.commission_pct != null ? `${b.commission_pct}% TDG` : 'Condição especial TDG'
+  }
+  return 'Condições especiais TDG'
 }
 
 /* Status do fornecedor — antes uma bolinha discreta sem legenda em lugar
@@ -173,6 +194,7 @@ interface HotelApiRow {
   gallery: { label: string; url: string }[] | null
   tested_count: number
   pending_lead_count: number
+  benefits: HotelBenefit[] | null
 }
 
 function mapHotelApiRow(row: HotelApiRow): Hotel {
@@ -195,12 +217,14 @@ function mapHotelApiRow(row: HotelApiRow): Hotel {
     gallery: row.gallery ?? [],
     testedCount: row.tested_count ?? 0,
     pendingLeadCount: row.pending_lead_count ?? 0,
+    benefits: row.benefits ?? [],
   }
 }
 
 /* ── Hotel card ─────────────────────────────────────────────────── */
 function HotelCard({ hotel, onClick }: { hotel: Hotel; onClick: () => void }) {
   const status = supplierStatus(hotel)
+  const benefitText = benefitBadgeText(hotel.benefits)
   return (
     <motion.button
       initial={{ opacity: 0, y: 10 }}
@@ -236,6 +260,21 @@ function HotelCard({ hotel, onClick }: { hotel: Hotel; onClick: () => void }) {
             {hotel.name}
           </h3>
         </div>
+        {benefitText && (
+          <span style={{
+            position: 'absolute', top: 8, left: 8,
+            display: 'inline-flex', alignItems: 'center', gap: 4,
+            padding: '3px 8px', borderRadius: 999,
+            background: 'var(--tdgflow-navy)', color: 'var(--tdgflow-surface)',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
+            fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.02em',
+          }}>
+            <svg style={{ width: 9, height: 9, stroke: 'currentColor', fill: 'none', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+              <use href="#i-percent" />
+            </svg>
+            {benefitText}
+          </span>
+        )}
         {status && (
           <span style={{
             position: 'absolute', top: 8, right: 8,
@@ -877,6 +916,158 @@ function HotelReviews({ hotelId, hotelName }: { hotelId: string; hotelName: stri
   )
 }
 
+/* ── Condições negociadas — comissão diferenciada, amenidade exclusiva,
+   condição de pagamento. Editável só por admin (informação comercial
+   sensível), mas visível e com histórico auditável pra qualquer um da
+   rede — combinado com a Carla ao propor o Contact Hub. ────────────── */
+interface AuditEntry {
+  id: string
+  summary: string
+  changed_by_name: string | null
+  changed_by: string
+  created_at: string
+}
+
+function formatAuditDate(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+function AddBenefitForm({ hotelId, onSaved, onClose }: { hotelId: string; onSaved: (b: HotelBenefit) => void; onClose: () => void }) {
+  const [category, setCategory] = useState<HotelBenefit['category']>('comissao')
+  const [description, setDescription] = useState('')
+  const [commissionPct, setCommissionPct] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  async function save() {
+    if (!description.trim()) { setError('Descreva a condição.'); return }
+    setSaving(true)
+    setError('')
+    const res = await fetch('/api/hotel-benefits', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        hotelId, category, description: description.trim(),
+        commissionPct: category === 'comissao' && commissionPct ? Number(commissionPct) : null,
+      }),
+    })
+    const data = await res.json()
+    if (data.benefit) {
+      onSaved(data.benefit)
+    } else {
+      setError(data.error ?? 'Erro ao salvar.')
+    }
+    setSaving(false)
+  }
+
+  return (
+    <div style={{ padding: 12, borderRadius: 10, border: '1px solid var(--tdgflow-border)', background: 'var(--tdgflow-surface)', display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+      <select className="input" value={category} onChange={e => setCategory(e.target.value as HotelBenefit['category'])} style={{ fontSize: '0.75rem' }}>
+        {Object.entries(BENEFIT_CATEGORY_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+      </select>
+      {category === 'comissao' && (
+        <input className="input" type="number" step="0.1" placeholder="% de comissão (opcional)" value={commissionPct} onChange={e => setCommissionPct(e.target.value)} style={{ fontSize: '0.75rem' }} />
+      )}
+      <textarea className="input" placeholder="Descrição (ex: reservas diretas, mínimo 3 noites)" value={description} onChange={e => setDescription(e.target.value)} rows={2} style={{ fontSize: '0.75rem', resize: 'vertical' }} />
+      {error && <p style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-error)' }}>{error}</p>}
+      <div style={{ display: 'flex', gap: 6 }}>
+        <button onClick={save} disabled={saving} className="btn-gold" style={{ fontSize: '0.75rem', padding: '6px 12px' }}>
+          {saving ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />} Salvar
+        </button>
+        <button onClick={onClose} className="btn-ghost" style={{ fontSize: '0.75rem', padding: '6px 12px' }}>Cancelar</button>
+      </div>
+    </div>
+  )
+}
+
+function BenefitsSection({ hotelId, initialBenefits }: { hotelId: string; initialBenefits: HotelBenefit[] }) {
+  const [benefits, setBenefits] = useState(initialBenefits)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [showHistory, setShowHistory] = useState(false)
+  const [history, setHistory] = useState<AuditEntry[]>([])
+  const [loadingHistory, setLoadingHistory] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/context').then(r => r.json()).then(d => setIsAdmin(!!d.is_admin)).catch(() => {})
+  }, [])
+
+  async function loadHistory() {
+    if (showHistory) { setShowHistory(false); return }
+    setShowHistory(true)
+    setLoadingHistory(true)
+    const res = await fetch(`/api/audit-log?entityType=hotel_benefit&entityId=${hotelId}`)
+    const data = await res.json()
+    setHistory(data.entries ?? [])
+    setLoadingHistory(false)
+  }
+
+  async function removeBenefit(id: string) {
+    setBenefits(prev => prev.filter(b => b.id !== id))
+    await fetch(`/api/hotel-benefits?id=${id}`, { method: 'DELETE' })
+  }
+
+  if (benefits.length === 0 && !isAdmin) return null
+
+  return (
+    <div style={{ marginBottom: 16, padding: '12px 14px', borderRadius: 12, background: 'var(--tdgflow-navy-subtle)', border: '1px solid var(--tdgflow-navy-ring)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: benefits.length > 0 ? 8 : 0 }}>
+        <p style={{ fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--tdgflow-navy)' }}>
+          Condições negociadas pela rede TDG
+        </p>
+        {benefits.length > 0 && (
+          <button onClick={loadHistory} title="Histórico" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tdgflow-navy)', display: 'flex' }}>
+            <History size={13} />
+          </button>
+        )}
+      </div>
+
+      {benefits.map(b => (
+        <div key={b.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 6 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--tdgflow-navy)' }}>
+              {BENEFIT_CATEGORY_LABELS[b.category]}{b.commission_pct != null ? ` — ${b.commission_pct}%` : ''}
+            </span>
+            <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-secondary)', lineHeight: 1.4 }}>{b.description}</p>
+          </div>
+          {isAdmin && (
+            <button onClick={() => removeBenefit(b.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tdgflow-text-faint)', flexShrink: 0 }}>
+              <Trash2 size={12} />
+            </button>
+          )}
+        </div>
+      ))}
+
+      {showHistory && (
+        <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--tdgflow-navy-ring)', display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {loadingHistory && <Loader2 size={12} className="animate-spin" style={{ color: 'var(--tdgflow-navy)' }} />}
+          {!loadingHistory && history.length === 0 && (
+            <p style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)' }}>Sem histórico ainda.</p>
+          )}
+          {!loadingHistory && history.map(h => (
+            <p key={h.id} style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)', lineHeight: 1.4 }}>
+              <strong style={{ color: 'var(--tdgflow-text-secondary)' }}>{h.changed_by_name ?? h.changed_by}</strong> {h.summary} · {formatAuditDate(h.created_at)}
+            </p>
+          ))}
+        </div>
+      )}
+
+      {isAdmin && !showAddForm && (
+        <button onClick={() => setShowAddForm(true)} style={{ marginTop: 6, fontSize: '0.75rem', color: 'var(--tdgflow-navy)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+          <Plus size={12} /> Adicionar condição
+        </button>
+      )}
+      {isAdmin && showAddForm && (
+        <AddBenefitForm
+          hotelId={hotelId}
+          onSaved={b => { setBenefits(prev => [b, ...prev]); setShowAddForm(false) }}
+          onClose={() => setShowAddForm(false)}
+        />
+      )}
+    </div>
+  )
+}
+
 /* ── Hotel detail sheet ─────────────────────────────────────────── */
 function HotelDetail({ hotel, onClose }: { hotel: Hotel; onClose: () => void }) {
   const [contacts, setContacts] = useState<HotelContact[]>([])
@@ -981,6 +1172,8 @@ function HotelDetail({ hotel, onClose }: { hotel: Hotel; onClose: () => void }) 
 
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto" style={{ padding: '20px', paddingBottom: 'calc(20px + env(safe-area-inset-bottom))' }}>
+
+          <BenefitsSection hotelId={hotel.id} initialBenefits={hotel.benefits} />
 
           {/* Descoberto pela rede, ainda sem teste real — a review não é
               pública (status a_testar), mas o interesse já existe e merece

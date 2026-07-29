@@ -2,8 +2,14 @@ import { sql } from '@vercel/postgres'
 import { hash } from 'bcryptjs'
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
+import { logAudit } from '@/lib/audit'
 
 export const dynamic = 'force-dynamic'
+
+const ROLES = ['agent', 'agency_admin', 'admin'] as const
+const ROLE_LABELS: Record<string, string> = {
+  agent: 'Agente', agency_admin: 'Admin de Agência', admin: 'Admin da Rede',
+}
 
 async function requireAdmin() {
   const session = await auth()
@@ -49,17 +55,43 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// PATCH — toggle active (admin only)
+// PATCH — toggle active e/ou mudar papel (admin only). Promoção/rebaixamento
+// de papel é registrada no mesmo log de auditoria genérico usado pra
+// benefício de fornecedor — visível pra qualquer usuário da rede.
 export async function PATCH(req: NextRequest) {
-  if (!await requireAdmin()) {
+  const session = await requireAdmin()
+  if (!session) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const { id, active } = await req.json()
-  if (!id || active === undefined) {
-    return NextResponse.json({ error: 'id and active required' }, { status: 400 })
+  const { id, active, role } = await req.json()
+  if (!id || (active === undefined && role === undefined)) {
+    return NextResponse.json({ error: 'id and (active or role) required' }, { status: 400 })
   }
 
-  await sql`UPDATE tdg_users SET active = ${active} WHERE id = ${id}`
+  if (role !== undefined) {
+    if (!ROLES.includes(role)) {
+      return NextResponse.json({ error: 'role inválida' }, { status: 400 })
+    }
+    const { rows: before } = await sql`SELECT role, name, email FROM tdg_users WHERE id = ${id}`
+    if (before.length === 0) return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 })
+
+    if (before[0].role !== role) {
+      await sql`UPDATE tdg_users SET role = ${role} WHERE id = ${id}`
+      await logAudit({
+        entityType: 'user_role',
+        entityId: id,
+        action: 'update',
+        summary: `alterou papel de ${before[0].name} (${before[0].email}) de ${ROLE_LABELS[before[0].role] ?? before[0].role} para ${ROLE_LABELS[role]}`,
+        changedBy: session.user?.email ?? 'desconhecido',
+        changedByName: session.user?.name,
+      })
+    }
+  }
+
+  if (active !== undefined) {
+    await sql`UPDATE tdg_users SET active = ${active} WHERE id = ${id}`
+  }
+
   return NextResponse.json({ ok: true })
 }

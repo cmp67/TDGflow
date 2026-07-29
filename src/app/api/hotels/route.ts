@@ -24,6 +24,7 @@ export interface HotelRow {
   gallery: { label: string; url: string }[]
   tested_count: number
   pending_lead_count: number
+  benefits: { id: string; category: string; description: string; commission_pct: number | null }[]
 }
 
 export async function GET() {
@@ -34,12 +35,22 @@ export async function GET() {
   // usado em "Na prática" (dourado=confirmado, coral=a testar) — em vez de
   // um badge novo, a própria bolinha do card (antes decorativa) passa a
   // significar algo real.
+  // benefits vem de subquery escalar (não LEFT JOIN direto) pra não
+  // multiplicar linhas junto com reviews e corromper tested_count/
+  // pending_lead_count no GROUP BY.
   const { rows } = await sql`
     SELECT h.id, h.name, h.entity_type, h.location, h.country, h.region, h.description,
            h.contact_email, h.contact_phone, h.website_url, h.currency, h.group_name,
            h.image_url, h.dot_color, h.tags, h.profiles, h.gallery,
            COUNT(*) FILTER (WHERE r.status = 'published')::int AS tested_count,
-           COUNT(*) FILTER (WHERE r.status = 'a_testar')::int AS pending_lead_count
+           COUNT(*) FILTER (WHERE r.status = 'a_testar')::int AS pending_lead_count,
+           COALESCE(
+             (SELECT json_agg(json_build_object(
+                'id', b.id, 'category', b.category, 'description', b.description, 'commission_pct', b.commission_pct
+              ) ORDER BY b.created_at)
+              FROM tdg_hotel_benefits b WHERE b.hotel_id = h.id),
+             '[]'
+           ) AS benefits
     FROM tdg_hotels h
     LEFT JOIN tdg_hotel_reviews r ON r.hotel_id = h.id
     GROUP BY h.id
