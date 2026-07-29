@@ -1,4 +1,5 @@
 import { sql } from '@vercel/postgres'
+import { getOffers } from '@/lib/offers'
 import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
@@ -6,8 +7,62 @@ export const dynamic = 'force-dynamic'
 const MCP_SECRET = (process.env.MCP_SECRET ?? '').trim()
 
 // ── Tool definitions ──────────────────────────────────────────────
+//
+// search_tdg_*/get_tdg_* — prefixo deliberado: outro MCP já conectado
+// (Bemgsy Central, apelidado sem querer de "bemgsy-flow" numa sessão
+// anterior — nada a ver com este projeto) também tem search_hotels/
+// get_hotel_details. Nomes diferentes evitam colisão se o GUEST um dia
+// conectar nos dois MCPs ao mesmo tempo.
 
 const TOOLS = [
+  {
+    name: 'search_tdg_suppliers',
+    description:
+      'Buscar fornecedores no catálogo da rede TDG (hotéis, beach clubs, transfers, guias, restaurantes) por nome, região, país ou perfil de cliente. Retorna também se o fornecedor tem condição negociada pela rede.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Nome do fornecedor (busca parcial, ex: "Martinhal", "Velaa")' },
+        region: { type: 'string', description: 'Região/destino (ex: Algarve, Lisboa, Maldivas)' },
+        country: { type: 'string', description: 'País (ex: Portugal, Itália)' },
+        entity_type: {
+          type: 'string',
+          enum: ['hotel', 'beach_club', 'transfer', 'guide', 'restaurant', 'other'],
+          description: 'Tipo de fornecedor',
+        },
+        profiles: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Perfil de cliente — valores válidos: Família, Casais, Praia, Urban, Resort, Boutique, Golf, Villas, Overwater, Ultra Luxury, Natureza, Negócios',
+        },
+        limit: { type: 'number', description: 'Máximo de resultados (default: 10)' },
+      },
+    },
+  },
+  {
+    name: 'get_tdg_supplier_details',
+    description:
+      'Obter ficha completa de um fornecedor da rede TDG: dados gerais, condições negociadas (comissão diferenciada, amenidade exclusiva, condição de pagamento), contatos e resumo das reviews da rede.',
+    inputSchema: {
+      type: 'object',
+      required: ['hotel_id'],
+      properties: {
+        hotel_id: { type: 'string', description: 'UUID do fornecedor (obtido via search_tdg_suppliers)' },
+      },
+    },
+  },
+  {
+    name: 'search_tdg_offers',
+    description:
+      'Buscar ofertas ativas da rede TDG (comissão negociada, prazo de validade). Ordenadas por comissão mais alta.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Nome do fornecedor ou da oferta (busca parcial)' },
+        limit: { type: 'number', description: 'Máximo de resultados (default: 10)' },
+      },
+    },
+  },
   {
     name: 'search_reviews',
     description:
@@ -81,6 +136,74 @@ const TOOLS = [
 ]
 
 // ── Tool implementations ──────────────────────────────────────────
+
+async function searchTdgSuppliers(args: Record<string, unknown>) {
+  const query = args.query as string | undefined
+  const region = args.region as string | undefined
+  const country = args.country as string | undefined
+  const entityType = args.entity_type as string | undefined
+  const profiles = args.profiles as string[] | undefined
+  const limit = (args.limit as number | undefined) ?? 10
+
+  let sqlQuery = `
+    SELECT h.id, h.name, h.entity_type, h.location, h.region, h.country, h.tags, h.profiles,
+           COUNT(*) FILTER (WHERE r.status = 'published')::int AS tested_count,
+           EXISTS (SELECT 1 FROM tdg_hotel_benefits b WHERE b.hotel_id = h.id) AS has_negotiated_benefits
+    FROM tdg_hotels h
+    LEFT JOIN tdg_hotel_reviews r ON r.hotel_id = h.id
+    WHERE 1=1
+  `
+  const params: unknown[] = []
+  let i = 1
+  if (query) { sqlQuery += ` AND h.name ILIKE $${i++}`; params.push(`%${query}%`) }
+  if (region) { sqlQuery += ` AND h.region ILIKE $${i++}`; params.push(`%${region}%`) }
+  if (country) { sqlQuery += ` AND h.country ILIKE $${i++}`; params.push(`%${country}%`) }
+  if (entityType) { sqlQuery += ` AND h.entity_type = $${i++}`; params.push(entityType) }
+  if (profiles?.length) { sqlQuery += ` AND h.profiles && $${i++}`; params.push(profiles) }
+  sqlQuery += ` GROUP BY h.id ORDER BY h.name LIMIT $${i++}`
+  params.push(limit)
+
+  const { rows } = await sql.query(sqlQuery, params)
+  return { suppliers: rows, total: rows.length }
+}
+
+async function getTdgSupplierDetails(args: Record<string, unknown>) {
+  const hotelId = args.hotel_id as string
+
+  const [hotel, benefits, contacts, reviews] = await Promise.all([
+    sql`SELECT * FROM tdg_hotels WHERE id = ${hotelId}`,
+    sql`SELECT category, description, commission_pct FROM tdg_hotel_benefits WHERE hotel_id = ${hotelId} ORDER BY created_at DESC`,
+    sql`SELECT name, surname, title, email, whatsapp FROM tdg_hotel_contacts WHERE hotel_id = ${hotelId}`,
+    sql`
+      SELECT agent_name, agency_name, visit_date, overall_rating, highlights, client_profile, must_experience, heads_up
+      FROM tdg_hotel_reviews
+      WHERE hotel_id = ${hotelId} AND status = 'published'
+      ORDER BY visit_date DESC NULLS LAST
+      LIMIT 5
+    `,
+  ])
+
+  if (!hotel.rows[0]) return { error: 'Fornecedor não encontrado' }
+
+  return {
+    supplier: hotel.rows[0],
+    negotiated_benefits: benefits.rows,
+    contacts: contacts.rows,
+    recent_reviews: reviews.rows,
+  }
+}
+
+async function searchTdgOffers(args: Record<string, unknown>) {
+  const query = (args.query as string | undefined)?.toLowerCase().trim()
+  const limit = (args.limit as number | undefined) ?? 10
+
+  const offers = await getOffers()
+  const filtered = query
+    ? offers.filter(o => o.hotel_name.toLowerCase().includes(query))
+    : offers
+
+  return { offers: filtered.slice(0, limit), total: filtered.length }
+}
 
 async function searchReviews(args: Record<string, unknown>) {
   const hotel_name = args.hotel_name as string | undefined
@@ -258,6 +381,9 @@ export async function POST(req: NextRequest) {
       try {
         let result: unknown
         switch (name) {
+          case 'search_tdg_suppliers':    result = await searchTdgSuppliers(args);    break
+          case 'get_tdg_supplier_details': result = await getTdgSupplierDetails(args); break
+          case 'search_tdg_offers':       result = await searchTdgOffers(args);       break
           case 'search_reviews':   result = await searchReviews(args);   break
           case 'get_review':       result = await getReview(args);        break
           case 'list_hotel_tips':  result = await listHotelTips(args);    break
