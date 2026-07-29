@@ -26,10 +26,13 @@ Você ajuda os consultores de viagem a:
 
 Quando o consultor descrever um perfil de cliente (ex: "casal, lua de mel, agosto, praia, esportivo"):
 1. Use SEMPRE as ferramentas para buscar hotéis e promoções reais
-2. Ordene por: promoções ativas → comissão mais alta → deadline mais urgente
-3. Destaque vantagens TDG (upgrades, créditos F&B, early check-in, etc.)
-4. Sempre mencione o deadline de reserva
-5. Ao final, sugira: "Quer que eu busque mais opções ou precisa de detalhes de algum hotel?"
+2. Use o parâmetro \`profiles\` do search_hotels pro TIPO de cliente (família, casais, praia etc.) — NUNCA \`tags\` pra isso, tags é só palavra-chave descritiva solta (ex: "Golf", "5 Estrelas")
+3. Algarve, Lisboa, Chiado, Sagres, Quinta do Lago etc. são REGIÕES dentro de Portugal — use o parâmetro \`region\`, nunca \`country\` (country="Portugal" nesses casos, se precisar)
+4. Ordene por: promoções ativas → comissão mais alta → deadline mais urgente
+5. Destaque vantagens TDG (upgrades, créditos F&B, early check-in, etc.)
+6. Sempre mencione o deadline de reserva
+7. Se a primeira busca (região + perfil) não retornar nada, tente de novo só com a região antes de dizer que não achou nada — perfil junto pode estar filtrando demais
+8. Ao final, sugira: "Quer que eu busque mais opções ou precisa de detalhes de algum hotel?"
 
 ## Formato de resposta para hotéis
 
@@ -85,17 +88,22 @@ Inclua esta seção ao recomendar hotéis num destino novo, ou quando o consulto
 const tools: Anthropic.Tool[] = [
   {
     name: 'search_hotels',
-    description: 'Busca hotéis no catálogo TDG por destino, perfil de cliente ou tipo de viagem.',
+    description: 'Busca hotéis no catálogo TDG por destino, perfil de cliente ou palavra-chave descritiva.',
     input_schema: {
       type: 'object' as const,
       properties: {
+        profiles: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Perfil do cliente — use exatamente um destes valores (em português, como estão no catálogo): Família, Casais, Praia, Urban, Resort, Boutique, Golf, Villas, Overwater, Ultra Luxury, Natureza, Negócios'
+        },
         tags: {
           type: 'array',
           items: { type: 'string' },
-          description: 'Tags: beach, surf, family, honeymoon, romance, spa, wine, nature, all-inclusive'
+          description: 'Palavras-chave descritivas livres (ex: "Golf", "5 Estrelas", "Ski") — busca parcial, não precisa ser exato. Não usar pra tipo de cliente, isso é o parâmetro profiles.'
         },
-        region: { type: 'string', description: 'Região: Europa, Ásia, Américas, África, Oceania' },
-        country: { type: 'string', description: 'País específico' }
+        region: { type: 'string', description: 'Região/destino específico dentro do país (ex: Algarve, Lisboa, Toscana, Maldivas)' },
+        country: { type: 'string', description: 'País (ex: Portugal, Itália, França)' }
       },
       required: []
     }
@@ -138,17 +146,26 @@ const tools: Anthropic.Tool[] = [
   }
 ]
 
-async function processToolCall(toolName: string, toolInput: Record<string, unknown>) {
+export async function processToolCall(toolName: string, toolInput: Record<string, unknown>) {
   if (toolName === 'search_hotels') {
-    const { tags, region, country } = toolInput as {
-      tags?: string[]; region?: string; country?: string
+    const { profiles, tags, region, country } = toolInput as {
+      profiles?: string[]; tags?: string[]; region?: string; country?: string
     }
     let query = 'SELECT * FROM tdg_hotels WHERE 1=1'
     const params: unknown[] = []
     let i = 1
     if (region) { query += ` AND region ILIKE $${i++}`; params.push(`%${region}%`) }
     if (country) { query += ` AND country ILIKE $${i++}`; params.push(`%${country}%`) }
-    if (tags?.length) { query += ` AND tags && $${i++}`; params.push(tags) }
+    // profiles é a mesma taxonomia fechada (12 valores em PT) usada no catálogo
+    // de Fornecedores — array overlap direto funciona porque é vocabulário
+    // controlado, sem risco de mismatch de idioma/capitalização.
+    if (profiles?.length) { query += ` AND profiles && $${i++}`; params.push(profiles) }
+    // tags é texto livre — busca parcial case-insensitive em vez de match
+    // exato de array, pra não depender do modelo acertar a grafia idêntica.
+    if (tags?.length) {
+      query += ` AND EXISTS (SELECT 1 FROM unnest(tags) AS tg WHERE tg ILIKE ANY($${i++}))`
+      params.push(tags.map(t => `%${t}%`))
+    }
     query += ' LIMIT 10'
     const { rows } = await sql.query(query, params)
     return rows
