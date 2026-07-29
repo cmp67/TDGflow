@@ -64,6 +64,7 @@ export const t: Record<Lang, Record<string, string>> = {
     'analytics.title':        'Analytics',
     'analytics.network':      'Rede TDG',
     'analytics.me':           'Minha atividade',
+    'analytics.period.week':  'Esta semana',
     'analytics.period.month': 'Este mês',
     'analytics.period.quarter': 'Trimestre',
     'analytics.period.year':  'Este ano',
@@ -76,6 +77,7 @@ export const t: Record<Lang, Record<string, string>> = {
     'analytics.trend':        'Tendência (12 meses)',
     'analytics.topHotels':    'Fornecedores mais avaliados',
     'analytics.topAgencies':  'Agências mais ativas',
+    'analytics.topAgenciesEmpty': 'Sem dicas neste período',
 
     // Visit types
     'type.fam_trip':            'Fam Trip',
@@ -135,6 +137,7 @@ export const t: Record<Lang, Record<string, string>> = {
     'analytics.title':          'Analytics',
     'analytics.network':        'TDG Network',
     'analytics.me':             'My activity',
+    'analytics.period.week':    'This week',
     'analytics.period.month':   'This month',
     'analytics.period.quarter': 'Quarter',
     'analytics.period.year':    'This year',
@@ -147,6 +150,7 @@ export const t: Record<Lang, Record<string, string>> = {
     'analytics.trend':          'Trend (12 months)',
     'analytics.topHotels':      'Most reviewed suppliers',
     'analytics.topAgencies':    'Most active agencies',
+    'analytics.topAgenciesEmpty': 'No tips in this period',
 
     'type.fam_trip':            'Fam Trip',
     'type.site_inspection':     'Site Inspection',
@@ -205,6 +209,7 @@ export const t: Record<Lang, Record<string, string>> = {
     'analytics.title':          'Analítica',
     'analytics.network':        'Red TDG',
     'analytics.me':             'Mi actividad',
+    'analytics.period.week':    'Esta semana',
     'analytics.period.month':   'Este mes',
     'analytics.period.quarter': 'Trimestre',
     'analytics.period.year':    'Este año',
@@ -217,6 +222,7 @@ export const t: Record<Lang, Record<string, string>> = {
     'analytics.trend':          'Tendencia (12 meses)',
     'analytics.topHotels':      'Proveedores más reseñados',
     'analytics.topAgencies':    'Agencias más activas',
+    'analytics.topAgenciesEmpty': 'Sin consejos en este período',
 
     'type.fam_trip':            'Fam Trip',
     'type.site_inspection':     'Inspección de sitio',
