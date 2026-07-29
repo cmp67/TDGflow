@@ -14,6 +14,7 @@ import { useToast } from '@/contexts/ToastContext'
 import { getQuestions, isLeadSubmission } from '@/lib/review-questions'
 import TdgIconSprite, { ENTITY_SCENE_ID } from '@/components/TdgIconSprite'
 import ResponsiveSheet from '@/components/ResponsiveSheet'
+import CopyLinkButton from '@/components/CopyLinkButton'
 import AudioRecord from '@/components/AudioRecord'
 import AudioQueue from '@/components/AudioQueue'
 
@@ -762,6 +763,7 @@ function HotelCard({ review, onToggleFavorite, onViewHistory, onConfirmLead, hig
                 <Eye size={11} /> {review.view_count}
               </span>
             )}
+            <CopyLinkButton path={`/flow/dicas?reviewId=${review.id}`} size={12} />
           </div>
           {visitCount > 1 && review.entity_type === 'hotel' && review.hotel_id ? (
             // Hotel tem ficha própria — a lista de visitas mora lá (Fase 2),

@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, Users, Loader2, Lightbulb, AlertTriangle } from 'lucide-react'
 import TdgIconSprite from '@/components/TdgIconSprite'
+import CopyLinkButton from '@/components/CopyLinkButton'
 
 /* ── Types ──────────────────────────────────────────────────────── */
 interface KnowledgeTip {
@@ -77,12 +78,15 @@ function TipCard({ tip, highlightId }: { tip: KnowledgeTip; highlightId?: string
           </p>
         </div>
       </div>
-      <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
-        <Users size={9} style={{ color: 'var(--tdgflow-text-muted)' }} />
-        <span style={{ fontSize: '0.5625rem', color: 'var(--tdgflow-text-muted)', letterSpacing: '0.04em' }}>
-          {tip.source_author ?? 'Galera do Turismo'}
-          {tip.source_date && <span style={{ opacity: 0.7 }}> · {formatDate(tip.source_date)}</span>}
-        </span>
+      <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <Users size={9} style={{ color: 'var(--tdgflow-text-muted)' }} />
+          <span style={{ fontSize: '0.5625rem', color: 'var(--tdgflow-text-muted)', letterSpacing: '0.04em' }}>
+            {tip.source_author ?? 'Galera do Turismo'}
+            {tip.source_date && <span style={{ opacity: 0.7 }}> · {formatDate(tip.source_date)}</span>}
+          </span>
+        </div>
+        <CopyLinkButton path={`/flow/destinos?tipId=${tip.id}`} size={12} />
       </div>
     </motion.div>
   )

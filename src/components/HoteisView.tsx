@@ -13,6 +13,7 @@ import { useRef } from 'react'
 import Link from 'next/link'
 import { readVideoDurationSeconds, MAX_VIDEO_DURATION_SECONDS } from '@/lib/video-upload'
 import TdgIconSprite from '@/components/TdgIconSprite'
+import CopyLinkButton from '@/components/CopyLinkButton'
 
 /* ── Ícones próprios pra vídeo — traço só, sem emoji/biblioteca genérica
    (regra de personalidade do design system Bemgsy, mesma família visual do
@@ -1141,17 +1142,19 @@ function HotelDetail({ hotel, onClose }: { hotel: Hotel; onClose: () => void }) 
             position: 'absolute', inset: 0,
             background: 'linear-gradient(to top, rgba(10,7,3,0.72) 0%, rgba(10,7,3,0.15) 60%, transparent 100%)',
           }} />
-          <button
-            onClick={onClose}
-            style={{
-              position: 'absolute', top: 14, right: 14,
-              width: 30, height: 30, borderRadius: '50%',
-              background: 'rgba(0,0,0,0.45)', border: 'none', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}
-          >
-            <X size={14} style={{ color: 'var(--tdgflow-surface)' }} />
-          </button>
+          <div style={{ position: 'absolute', top: 14, right: 14, display: 'flex', gap: 8 }}>
+            <CopyLinkButton path={`/flow/rede?tab=fornecedores&hotelId=${hotel.id}`} size={14} dark />
+            <button
+              onClick={onClose}
+              style={{
+                width: 30, height: 30, borderRadius: '50%',
+                background: 'rgba(0,0,0,0.45)', border: 'none', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >
+              <X size={14} style={{ color: 'var(--tdgflow-surface)' }} />
+            </button>
+          </div>
           <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '12px 20px 16px' }}>
             {hotel.group && (
               <p style={{ fontSize: '0.575rem', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.55)', marginBottom: 3 }}>

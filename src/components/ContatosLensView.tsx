@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { Search, Phone, Users, MessageCircle, CheckCircle2, Loader2, Plus, X, AlertCircle, Camera, PenLine, ScanLine } from 'lucide-react'
 import { useToast } from '@/contexts/ToastContext'
+import CopyLinkButton from '@/components/CopyLinkButton'
 
 /* ── Types ──────────────────────────────────────────────────────── */
 interface NetworkContact {
@@ -172,6 +173,7 @@ function ContactCard({ contact, copiedId, onCopy, highlightId }: {
             <p style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)', marginTop: 3 }}>{contact.organization}</p>
           )}
         </div>
+        <CopyLinkButton path={`/flow/rede?tab=contatos&contactId=${contact.id}`} size={13} />
         {contact.whatsapp && (
           <button
             onClick={e => { e.stopPropagation(); onCopy(contact.id, contact.whatsapp) }}
