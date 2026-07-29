@@ -186,17 +186,29 @@ function FlowShellInner({ children, user, brand }: Props) {
   void ALL_NAV
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: 'var(--tdgflow-bg)' }}>
+    <div
+      className="flex h-screen overflow-hidden"
+      style={{
+        background: 'var(--tdgflow-bg)',
+        // Pele da agência (achado 29/07: cor configurada nunca era aplicada
+        // em nada) — sobrescreve --tdgflow-agency-accent pra essa sessão
+        // inteira quando a agência configurou uma cor; sem cor, o token
+        // mantém o default (navy) definido em globals.css.
+        ...(brand?.primaryColor ? { ['--tdgflow-agency-accent' as string]: brand.primaryColor } : {}),
+      }}
+    >
 
       {/* ── Sidebar — desktop only ─────────────────────────────────── */}
       <aside
         className="desktop-only"
         style={{ flexDirection: 'column', flexShrink: 0, width: 208, background: 'var(--tdgflow-surface)', borderRight: '1px solid var(--tdgflow-border)' }}
       >
-        {/* Logotype — pele da agência (logo + acento de cor) sobre o
-            esqueleto Bemgsy, nunca o contrário. "powered by TDG Flow" fica
-            sempre visível: white-label de pele, não de estrutura — a
-            agência nunca deixa de ser reconhecível como família Bemgsy.
+        {/* Logotype — pele da agência é sempre o protagonista (achado da
+            Carla, 29/07: logo pequeno + "powered by" em texto puro não
+            comunicava marca nenhuma de verdade). Logo da agência grande e
+            sozinho; TDG (rede) vira selo pequeno abaixo, substituindo o
+            texto; Bemgsy (motor invisível) só aparece discreto no rodapé,
+            perto da versão — nunca disputando espaço aqui em cima.
             Sino sobe pra cá (29/07) — antes vivia no rodapé colado ao "Sair",
             posição que sinalizava baixa prioridade mesmo sem intenção. Único
             lugar de notificação no desktop agora (sidebar não tem topbar). */}
@@ -207,11 +219,11 @@ function FlowShellInner({ children, user, brand }: Props) {
               <img
                 src={brand.logoUrl}
                 alt={user.agency || 'Logo da agência'}
-                style={{ maxHeight: 28, maxWidth: '100%', objectFit: 'contain', display: 'block' }}
+                style={{ maxHeight: 44, maxWidth: '100%', objectFit: 'contain', display: 'block' }}
               />
             ) : (
               <p style={{
-                fontFamily: 'var(--tdgflow-font-sans)', fontSize: '0.8125rem', fontWeight: 700,
+                fontFamily: 'var(--tdgflow-font-sans)', fontSize: '1.0625rem', fontWeight: 700,
                 letterSpacing: '-0.01em', color: 'var(--tdgflow-text-primary)', lineHeight: 1.25,
                 whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', margin: 0,
               }}>
@@ -220,18 +232,14 @@ function FlowShellInner({ children, user, brand }: Props) {
             )}
           </div>
           <div style={{ flexShrink: 0, marginTop: -2 }}>
-            <NotificationBell />
+            <NotificationBell align="left" />
           </div>
         </div>
         <div className="px-6 pb-6 flex-shrink-0">
-          <p style={{
-            fontFamily: 'var(--tdgflow-font-sans)', fontSize: '0.5625rem', fontWeight: 400,
-            letterSpacing: '0.1em', color: 'var(--tdgflow-text-faint)', textTransform: 'uppercase', margin: '2px 0 0',
-          }}>
-            powered by TDG Flow
-          </p>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/brand/tdg-logo.jpg" alt="Rede TDG" style={{ height: 14, objectFit: 'contain', display: 'block' }} />
           <div style={{
-            marginTop: 6, height: '1px', width: 48,
+            marginTop: 8, height: '1px', width: 48,
             background: brand?.primaryColor
               ? `linear-gradient(90deg, ${brand.primaryColor} 0%, transparent 100%)`
               : 'linear-gradient(90deg, var(--tdgflow-navy-dim) 0%, transparent 100%)',
@@ -255,17 +263,17 @@ function FlowShellInner({ children, user, brand }: Props) {
                   padding: '8px 10px 8px 10px',
                   borderRadius: 8,
                   marginBottom: 2,
-                  color: active ? 'var(--tdgflow-navy-dim)' : 'var(--tdgflow-text-secondary)',
-                  background: active ? 'var(--tdgflow-navy-subtle)' : 'transparent',
-                  borderLeft: active ? '2px solid var(--tdgflow-navy)' : '2px solid transparent',
+                  color: active ? 'var(--tdgflow-agency-accent)' : 'var(--tdgflow-text-secondary)',
+                  background: active ? 'var(--tdgflow-agency-accent-subtle)' : 'transparent',
+                  borderLeft: active ? '2px solid var(--tdgflow-agency-accent)' : '2px solid transparent',
                   transition: 'all 150ms',
                 }}
                 onMouseEnter={e => { setHoveredNav(tkey); if (!active) { (e.currentTarget as HTMLElement).style.color = 'var(--tdgflow-text-primary)'; (e.currentTarget as HTMLElement).style.background = 'var(--tdgflow-surface-high)' } }}
                 onMouseLeave={e => { setHoveredNav(null); if (!active) { (e.currentTarget as HTMLElement).style.color = 'var(--tdgflow-text-secondary)'; (e.currentTarget as HTMLElement).style.background = 'transparent' } }}
               >
                 {hoveredNav === tkey && NAV_HINTS[tkey] && <NavTooltip text={NAV_HINTS[tkey]} />}
-                <Icon size={14} strokeWidth={active ? 2 : 1.5} style={{ color: active ? 'var(--tdgflow-navy)' : 'var(--tdgflow-text-secondary)', flexShrink: 0, transition: 'color 150ms' }} />
-                <span style={{ fontSize: '0.875rem', fontWeight: active ? 600 : 500, letterSpacing: '-0.005em', color: active ? 'var(--tdgflow-navy-dim)' : 'inherit' }}>
+                <Icon size={14} strokeWidth={active ? 2 : 1.5} style={{ color: active ? 'var(--tdgflow-agency-accent)' : 'var(--tdgflow-text-secondary)', flexShrink: 0, transition: 'color 150ms' }} />
+                <span style={{ fontSize: '0.875rem', fontWeight: active ? 600 : 500, letterSpacing: '-0.005em', color: active ? 'var(--tdgflow-agency-accent)' : 'inherit' }}>
                   {tr(`nav.${tkey}`)}
                 </span>
                 {tkey === 'dicas' && pendingLeads > 0 && (
@@ -300,9 +308,9 @@ function FlowShellInner({ children, user, brand }: Props) {
                       padding: '8px 10px 8px 10px',
                       borderRadius: 8,
                       marginBottom: 2,
-                      color: active ? 'var(--tdgflow-navy-dim)' : 'var(--tdgflow-text-secondary)',
-                      background: active ? 'var(--tdgflow-navy-subtle)' : 'transparent',
-                      borderLeft: active ? '2px solid var(--tdgflow-navy)' : '2px solid transparent',
+                      color: active ? 'var(--tdgflow-agency-accent)' : 'var(--tdgflow-text-secondary)',
+                      background: active ? 'var(--tdgflow-agency-accent-subtle)' : 'transparent',
+                      borderLeft: active ? '2px solid var(--tdgflow-agency-accent)' : '2px solid transparent',
                       transition: 'all 150ms',
                       opacity: soon ? 0.55 : 1,
                       cursor: soon ? 'default' : 'pointer',
@@ -311,8 +319,8 @@ function FlowShellInner({ children, user, brand }: Props) {
                     onMouseLeave={e => { setHoveredNav(null); if (!active && !soon) { (e.currentTarget as HTMLElement).style.color = 'var(--tdgflow-text-secondary)'; (e.currentTarget as HTMLElement).style.background = 'transparent' } }}
                   >
                     {hoveredNav === tkey && NAV_HINTS[tkey] && <NavTooltip text={NAV_HINTS[tkey]} />}
-                    <Icon size={14} strokeWidth={active ? 2 : 1.5} style={{ color: active ? 'var(--tdgflow-navy)' : 'var(--tdgflow-text-secondary)', flexShrink: 0, transition: 'color 150ms' }} />
-                    <span style={{ fontSize: '0.875rem', fontWeight: active ? 600 : 500, letterSpacing: '-0.005em', color: active ? 'var(--tdgflow-navy-dim)' : 'inherit' }}>
+                    <Icon size={14} strokeWidth={active ? 2 : 1.5} style={{ color: active ? 'var(--tdgflow-agency-accent)' : 'var(--tdgflow-text-secondary)', flexShrink: 0, transition: 'color 150ms' }} />
+                    <span style={{ fontSize: '0.875rem', fontWeight: active ? 600 : 500, letterSpacing: '-0.005em', color: active ? 'var(--tdgflow-agency-accent)' : 'inherit' }}>
                       {tr(`nav.${tkey}`)}
                     </span>
                     {soon && <span style={{ marginLeft: 'auto', fontSize: '0.6rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)' }}>{tr('nav.breve')}</span>}
@@ -367,14 +375,14 @@ function FlowShellInner({ children, user, brand }: Props) {
               padding: '6px 8px',
               margin: '0 -8px',
               borderRadius: 8,
-              background: isActive('/flow/sugestoes') ? 'var(--tdgflow-navy-subtle)' : 'transparent',
+              background: isActive('/flow/sugestoes') ? 'var(--tdgflow-agency-accent-subtle)' : 'transparent',
               transition: 'background 150ms',
             }}
             onMouseEnter={e => { if (!isActive('/flow/sugestoes')) (e.currentTarget as HTMLElement).style.background = 'var(--tdgflow-surface-high)' }}
             onMouseLeave={e => { if (!isActive('/flow/sugestoes')) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
           >
-            <MessageSquarePlus size={12} style={{ color: isActive('/flow/sugestoes') ? 'var(--tdgflow-navy)' : 'var(--tdgflow-text-muted)', flexShrink: 0 }} />
-            <span style={{ fontSize: '0.75rem', color: isActive('/flow/sugestoes') ? 'var(--tdgflow-navy-dim)' : 'var(--tdgflow-text-muted)', fontWeight: isActive('/flow/sugestoes') ? 600 : 400 }}>
+            <MessageSquarePlus size={12} style={{ color: isActive('/flow/sugestoes') ? 'var(--tdgflow-agency-accent)' : 'var(--tdgflow-text-muted)', flexShrink: 0 }} />
+            <span style={{ fontSize: '0.75rem', color: isActive('/flow/sugestoes') ? 'var(--tdgflow-agency-accent)' : 'var(--tdgflow-text-muted)', fontWeight: isActive('/flow/sugestoes') ? 600 : 400 }}>
               {tr('nav.sugestoes')}
             </span>
           </Link>
@@ -410,7 +418,15 @@ function FlowShellInner({ children, user, brand }: Props) {
           >
             <LogOut size={11} /> {tr('auth.signout')}
           </button>
-          <p style={{ marginTop: 10, fontSize: '0.5625rem', letterSpacing: '0.1em', color: 'var(--tdgflow-text-faint)', textAlign: 'center' }}>
+          {/* Bemgsy — motor invisível do produto (achado da Carla, 29/07: não
+              havia NENHUMA menção à Bemgsy em lugar nenhum da UI). Discreto
+              de propósito — não disputa com agência (protagonista) nem TDG
+              (selo de rede). Tagline só no hover, não ocupa espaço permanente. */}
+          <div className="flex justify-center" style={{ marginTop: 10 }} title="Bemgsy — Amplifying Human Hospitality">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/brand/bemgsy-logo.png" alt="Bemgsy — Amplifying Human Hospitality" style={{ height: 10, objectFit: 'contain', opacity: 0.55 }} />
+          </div>
+          <p style={{ marginTop: 4, fontSize: '0.5625rem', letterSpacing: '0.1em', color: 'var(--tdgflow-text-faint)', textAlign: 'center' }}>
             {APP_VERSION}
           </p>
         </div>
@@ -448,9 +464,9 @@ function FlowShellInner({ children, user, brand }: Props) {
           const active = isActive(href)
           return (
             <Link key={href} href={href} className="flex-1 flex flex-col items-center justify-center gap-1 no-underline relative" style={{ minWidth: 0, paddingTop: 2 }}>
-              {active && <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 20, height: 1, background: 'var(--tdgflow-navy)', borderRadius: '0 0 2px 2px' }} />}
+              {active && <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 20, height: 1, background: 'var(--tdgflow-agency-accent)', borderRadius: '0 0 2px 2px' }} />}
               <span style={{ position: 'relative' }}>
-                <Icon size={18} strokeWidth={active ? 2 : 1.5} style={{ color: active ? 'var(--tdgflow-navy)' : 'var(--tdgflow-text-muted)', transition: 'color 0.15s' }} />
+                <Icon size={18} strokeWidth={active ? 2 : 1.5} style={{ color: active ? 'var(--tdgflow-agency-accent)' : 'var(--tdgflow-text-muted)', transition: 'color 0.15s' }} />
                 {tkey === 'dicas' && pendingLeads > 0 && (
                   <span style={{
                     position: 'absolute', top: -3, right: -6, width: 8, height: 8, borderRadius: '50%',
@@ -458,7 +474,7 @@ function FlowShellInner({ children, user, brand }: Props) {
                   }} />
                 )}
               </span>
-              <span style={{ fontSize: '0.5rem', fontWeight: active ? 600 : 400, letterSpacing: '0.06em', textTransform: 'uppercase', color: active ? 'var(--tdgflow-navy)' : 'var(--tdgflow-text-muted)', transition: 'color 0.15s' }}>
+              <span style={{ fontSize: '0.5rem', fontWeight: active ? 600 : 400, letterSpacing: '0.06em', textTransform: 'uppercase', color: active ? 'var(--tdgflow-agency-accent)' : 'var(--tdgflow-text-muted)', transition: 'color 0.15s' }}>
                 {tr(`nav.${tkey}`)}
               </span>
             </Link>
@@ -466,9 +482,9 @@ function FlowShellInner({ children, user, brand }: Props) {
         })}
 
         <button onClick={() => setShowMore(true)} className="flex-1 flex flex-col items-center justify-center gap-1 relative" style={{ paddingTop: 2 }}>
-          {secondaryActive && <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 20, height: 1, background: 'var(--tdgflow-navy)', borderRadius: '0 0 2px 2px' }} />}
-          <MoreHorizontal size={18} strokeWidth={1.5} style={{ color: secondaryActive ? 'var(--tdgflow-navy)' : 'var(--tdgflow-text-muted)' }} />
-          <span style={{ fontSize: '0.5rem', fontWeight: 400, letterSpacing: '0.06em', textTransform: 'uppercase', color: secondaryActive ? 'var(--tdgflow-navy)' : 'var(--tdgflow-text-muted)' }}>
+          {secondaryActive && <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 20, height: 1, background: 'var(--tdgflow-agency-accent)', borderRadius: '0 0 2px 2px' }} />}
+          <MoreHorizontal size={18} strokeWidth={1.5} style={{ color: secondaryActive ? 'var(--tdgflow-agency-accent)' : 'var(--tdgflow-text-muted)' }} />
+          <span style={{ fontSize: '0.5rem', fontWeight: 400, letterSpacing: '0.06em', textTransform: 'uppercase', color: secondaryActive ? 'var(--tdgflow-agency-accent)' : 'var(--tdgflow-text-muted)' }}>
             {tr('nav.mais')}
           </span>
         </button>
@@ -528,7 +544,7 @@ function FlowShellInner({ children, user, brand }: Props) {
                       href={soon ? '#' : href}
                       onClick={e => { if (soon) e.preventDefault(); else setShowMore(false) }}
                       className="flex items-center gap-3.5 no-underline"
-                      style={{ padding: '12px 14px', color: active ? 'var(--tdgflow-navy)' : 'var(--tdgflow-text-secondary)', borderLeft: active ? '1px solid var(--tdgflow-navy)' : '1px solid transparent', borderRadius: 2, opacity: soon ? 0.45 : 1 }}
+                      style={{ padding: '12px 14px', color: active ? 'var(--tdgflow-agency-accent)' : 'var(--tdgflow-text-secondary)', borderLeft: active ? '1px solid var(--tdgflow-agency-accent)' : '1px solid transparent', borderRadius: 2, opacity: soon ? 0.45 : 1 }}
                     >
                       <Icon size={16} strokeWidth={active ? 2 : 1.5} style={{ color: 'inherit', flexShrink: 0 }} />
                       <span style={{ fontSize: '0.9375rem', fontWeight: active ? 500 : 400 }}>{tr(`nav.${tkey}`)}</span>
@@ -554,7 +570,7 @@ function FlowShellInner({ children, user, brand }: Props) {
                   href="/flow/sugestoes"
                   onClick={() => setShowMore(false)}
                   className="flex items-center gap-3.5 no-underline"
-                  style={{ padding: '12px 14px', color: isActive('/flow/sugestoes') ? 'var(--tdgflow-navy)' : 'var(--tdgflow-text-secondary)', borderLeft: isActive('/flow/sugestoes') ? '1px solid var(--tdgflow-navy)' : '1px solid transparent', borderRadius: 2 }}
+                  style={{ padding: '12px 14px', color: isActive('/flow/sugestoes') ? 'var(--tdgflow-agency-accent)' : 'var(--tdgflow-text-secondary)', borderLeft: isActive('/flow/sugestoes') ? '1px solid var(--tdgflow-agency-accent)' : '1px solid transparent', borderRadius: 2 }}
                 >
                   <MessageSquarePlus size={16} strokeWidth={isActive('/flow/sugestoes') ? 2 : 1.5} style={{ color: 'inherit', flexShrink: 0 }} />
                   <span style={{ fontSize: '0.9375rem', fontWeight: isActive('/flow/sugestoes') ? 500 : 400 }}>{tr('nav.sugestoes')}</span>
@@ -573,7 +589,11 @@ function FlowShellInner({ children, user, brand }: Props) {
                   <span style={{ fontSize: '0.9375rem' }}>{tr('auth.signout')}</span>
                 </button>
               </div>
-              <p style={{ textAlign: 'center', paddingBottom: 8, fontSize: '0.5625rem', letterSpacing: '0.1em', color: 'var(--tdgflow-text-faint)' }}>
+              <div className="flex justify-center" style={{ marginTop: 6 }} title="Bemgsy — Amplifying Human Hospitality">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/brand/bemgsy-logo.png" alt="Bemgsy — Amplifying Human Hospitality" style={{ height: 10, objectFit: 'contain', opacity: 0.55 }} />
+              </div>
+              <p style={{ textAlign: 'center', paddingBottom: 8, paddingTop: 4, fontSize: '0.5625rem', letterSpacing: '0.1em', color: 'var(--tdgflow-text-faint)' }}>
                 {APP_VERSION}
               </p>
             </motion.div>

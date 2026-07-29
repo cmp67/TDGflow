@@ -45,7 +45,16 @@ const CONTENT_CATEGORY_LABEL: Record<string, string> = {
   comunicado: 'Novo comunicado',
 }
 
-export default function NotificationBell() {
+interface Props {
+  // 'right' (default) ancora o dropdown pela direita e abre pra esquerda —
+  // seguro no header mobile (sino perto da borda direita da tela inteira).
+  // 'left' ancora pela esquerda e abre pra direita — necessário na sidebar
+  // desktop (208px de largura só; abrir pra esquerda sai da tela e é
+  // cortado pelo overflow-hidden do shell raiz — bug real reportado 29/07).
+  align?: 'left' | 'right'
+}
+
+export default function NotificationBell({ align = 'right' }: Props) {
   const [open, setOpen] = useState(false)
   const [notifications, setNotifications] = useState<Notification[]>([])
   const panelRef = useRef<HTMLDivElement>(null)
@@ -196,7 +205,7 @@ export default function NotificationBell() {
             style={{
               position: 'absolute',
               top: 'calc(100% + 8px)',
-              right: 0,
+              ...(align === 'left' ? { left: 0 } : { right: 0 }),
               width: 300,
               background: 'var(--tdgflow-surface)',
               border: '1px solid var(--tdgflow-border)',

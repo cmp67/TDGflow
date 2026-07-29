@@ -28,6 +28,19 @@
   --tdgflow-navy-subtle:  rgba(26, 43, 76, 0.10);
   --tdgflow-navy-ring:    rgba(26, 43, 76, 0.22);
 
+  /* Pele da agência (Camada 2, achado 29/07: cor configurada em BrandSettings
+     nunca era realmente aplicada em nada). Cor de destaque por agência,
+     restrita de propósito aos elementos "de todo dia" que já eram navy —
+     nav ativo, foco de campo. Default = navy, então sem cor configurada
+     nada muda visualmente pra quem ainda não personalizou. NUNCA aplicado
+     ao dourado (--tdgflow-gold) — esse é o acento-assinatura Bemgsy (CTA
+     principal/"Membro Fundador"), estrutural demais pra virar pele. */
+  --tdgflow-agency-accent: var(--tdgflow-navy);
+  /* Derivado sempre de --tdgflow-agency-accent via color-mix (não um valor
+     fixo) — assim segue automaticamente qualquer cor de agência aplicada,
+     sem precisar recalcular alpha manualmente por cliente. */
+  --tdgflow-agency-accent-subtle: color-mix(in srgb, var(--tdgflow-agency-accent) 10%, transparent);
+
   /* Gold — Bemgsy acento raro (dourado real #D4AF37, não mais o teal). Só para
      CTA principal, destaques "Membro Fundador" e frisos decorativos — nunca
      para UI recorrente. Dourado puro reprova WCAG como texto (~2:1): texto
@@ -159,7 +172,7 @@ input:-webkit-autofill:focus {
 /* ── Focus ring ──────────────────────────────────────────────────────────── */
 
 :focus-visible {
-  outline: 2px solid var(--tdgflow-navy);
+  outline: 2px solid var(--tdgflow-agency-accent);
   outline-offset: 2px;
   border-radius: var(--tdgflow-radius-sm);
 }
@@ -240,8 +253,8 @@ p, span, li { line-height: 1.6; }
   opacity: 1;
 }
 .input:focus {
-  border-color: var(--tdgflow-navy);
-  box-shadow: 0 0 0 3px var(--tdgflow-navy-ring);
+  border-color: var(--tdgflow-agency-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--tdgflow-agency-accent) 22%, transparent);
 }
 
 /* ── Card ────────────────────────────────────────────────────────────────── */
