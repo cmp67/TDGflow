@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { ChevronUp, Plus, X, CheckCircle2 } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
+import PartnershipContentTab from '@/components/PartnershipContentTab'
 
 /* ── Ícones próprios — traço só (regra de personalidade Bemgsy) pros
    marcadores de status/tipo de sugestão. Utilitários (fechar, adicionar,
@@ -105,11 +106,11 @@ function timeAgo(dateStr: string, lang: string): string {
   return `há ${mins}m`
 }
 
-export default function SuggestionsView({ userRole }: { userRole: string }) {
+export default function PartnershipHubView({ userRole }: { userRole: string }) {
   const { lang } = useLanguage()
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
   const [loading, setLoading]   = useState(true)
-  const [tab, setTab]           = useState<'board' | 'roadmap'>('board')
+  const [tab, setTab]           = useState<'documentos' | 'board' | 'roadmap'>('documentos')
   const [showForm, setShowForm] = useState(false)
   const [title, setTitle]       = useState('')
   const [description, setDescription] = useState('')
@@ -124,9 +125,10 @@ export default function SuggestionsView({ userRole }: { userRole: string }) {
 
   const L = {
     pt: {
-      title: 'Sugestões de Melhoria',
-      subtitle: 'Vote em ideias e veja o que está sendo priorizado',
-      board: 'Todas as ideias',
+      title: 'Central Bemgsy',
+      subtitle: 'Documentos, atas e roadmap da parceria — e onde você sugere melhorias',
+      documentos: 'Documentos & atas',
+      board: 'Sugestões',
       roadmap: 'Roadmap',
       suggest: 'Sugerir melhoria',
       formTitle: 'Nova sugestão de melhoria',
@@ -150,9 +152,10 @@ export default function SuggestionsView({ userRole }: { userRole: string }) {
       statusDone: 'Concluído',
     },
     en: {
-      title: 'Improvement Suggestions',
-      subtitle: 'Vote on ideas and see what is being prioritized',
-      board: 'All ideas',
+      title: 'Bemgsy Hub',
+      subtitle: 'Partnership docs, meeting notes and roadmap — plus where you suggest improvements',
+      documentos: 'Docs & meeting notes',
+      board: 'Suggestions',
       roadmap: 'Roadmap',
       suggest: 'Suggest',
       formTitle: 'New suggestion',
@@ -235,26 +238,30 @@ export default function SuggestionsView({ userRole }: { userRole: string }) {
             </h1>
             <p style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-muted)', marginTop: 4 }}>{lx.subtitle}</p>
           </div>
-          <button
-            onClick={() => { setShowForm(true); setError('') }}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--tdgflow-navy)', color: 'var(--tdgflow-surface)', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 600, flexShrink: 0 }}
-          >
-            <Plus size={14} />{lx.suggest}
-          </button>
+          {tab === 'board' && (
+            <button
+              onClick={() => { setShowForm(true); setError('') }}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--tdgflow-navy)', color: 'var(--tdgflow-surface)', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 600, flexShrink: 0 }}
+            >
+              <Plus size={14} />{lx.suggest}
+            </button>
+          )}
         </div>
 
         {/* Tabs */}
         <div className="flex">
-          {(['board', 'roadmap'] as const).map(t => (
+          {(['documentos', 'board', 'roadmap'] as const).map(t => (
             <button
               key={t}
               onClick={() => setTab(t)}
               style={{ padding: '10px 18px', background: 'none', border: 'none', borderBottom: tab === t ? '2px solid var(--tdgflow-navy)' : '2px solid transparent', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: tab === t ? 600 : 400, color: tab === t ? 'var(--tdgflow-navy)' : 'var(--tdgflow-text-muted)', transition: 'all 150ms', marginBottom: -1 }}
             >
-              {t === 'board' ? lx.board : lx.roadmap}
-              <span style={{ marginLeft: 6, fontSize: '0.65rem', background: tab === t ? 'var(--tdgflow-navy-subtle)' : 'var(--tdgflow-surface-high)', color: tab === t ? 'var(--tdgflow-navy)' : 'var(--tdgflow-text-muted)', borderRadius: 10, padding: '1px 6px', fontWeight: 600 }}>
-                {t === 'board' ? board.length : roadmap.length}
-              </span>
+              {t === 'documentos' ? lx.documentos : t === 'board' ? lx.board : lx.roadmap}
+              {t !== 'documentos' && (
+                <span style={{ marginLeft: 6, fontSize: '0.65rem', background: tab === t ? 'var(--tdgflow-navy-subtle)' : 'var(--tdgflow-surface-high)', color: tab === t ? 'var(--tdgflow-navy)' : 'var(--tdgflow-text-muted)', borderRadius: 10, padding: '1px 6px', fontWeight: 600 }}>
+                  {t === 'board' ? board.length : roadmap.length}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -344,9 +351,13 @@ export default function SuggestionsView({ userRole }: { userRole: string }) {
         </div>
       )}
 
-      {/* List */}
+      {/* Content */}
       <div className="flex-1 overflow-y-auto" style={{ padding: '20px 28px' }}>
-        {loading ? (
+        {tab === 'documentos' ? (
+          <div style={{ maxWidth: 680, margin: '0 auto' }}>
+            <PartnershipContentTab />
+          </div>
+        ) : loading ? (
           <div style={{ textAlign: 'center', paddingTop: 60, color: 'var(--tdgflow-text-muted)', fontSize: '0.875rem' }}>Carregando…</div>
         ) : displayed.length === 0 ? (
           <div style={{ textAlign: 'center', paddingTop: 60, color: 'var(--tdgflow-text-muted)', fontSize: '0.875rem' }}>{tab === 'board' ? lx.empty : lx.emptyRoadmap}</div>

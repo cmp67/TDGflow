@@ -52,7 +52,7 @@ const NAV_HINTS: Record<string, string> = {
   docs:       'Documentação e materiais de apoio',
   destinos:   'Conhecimento prático por país — vistos, costumes, avisos',
   inbox:      'Em breve',
-  sugestoes:  'Sugestões e melhorias pro Flow',
+  sugestoes:  'Documentos, atas e roadmap da parceria — e suas sugestões',
   billing:    'Assinatura e uso de Lumis',
 }
 

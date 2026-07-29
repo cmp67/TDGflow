@@ -1,7 +1,7 @@
 import { auth } from '@/auth'
 import { redirect } from 'next/navigation'
 import { sql } from '@vercel/postgres'
-import SuggestionsView from '@/components/SuggestionsView'
+import PartnershipHubView from '@/components/PartnershipHubView'
 
 export default async function SugestoesPage() {
   const session = await auth()
@@ -14,5 +14,5 @@ export default async function SugestoesPage() {
     role = rows[0]?.role ?? 'agent'
   } catch { /* non-blocking */ }
 
-  return <SuggestionsView userRole={role} />
+  return <PartnershipHubView userRole={role} />
 }
