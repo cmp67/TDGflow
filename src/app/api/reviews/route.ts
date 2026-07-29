@@ -5,6 +5,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { logUsage } from '@/lib/usage-log'
 import { checkAndDeductCredits } from '@/lib/credits'
 import { getAgencyId } from '@/lib/agency'
+import { buildReviewExtractionPrompt } from '@/lib/review-extraction'
 
 export const dynamic = 'force-dynamic'
 
@@ -161,18 +162,7 @@ export async function POST(req: NextRequest) {
       try {
         if (!creditCheck.ok) throw new Error(creditCheck.reason)
         const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-        const prompt = `Você é um assistente especializado em turismo de luxo. Com base nas respostas do travel advisor abaixo sobre uma visita, extraia as informações estruturadas.
-
-Respostas do advisor:
-${Object.entries(raw_answers as Record<string, string>).map(([k, v]) => `${k}: ${v}`).join('\n')}
-
-Retorne APENAS um JSON válido com esta estrutura:
-{
-  "highlights": ["array de 3 a 5 pontos mais relevantes — específicos, úteis para vender ao cliente"],
-  "client_profile": "perfil ideal em 1-2 frases — quem deve se beneficiar disso?",
-  "must_experience": "UMA experiência obrigatória, se aplicável (ou null)",
-  "heads_up": "ressalva ou informação importante (ou null se não houver)"
-}`
+        const prompt = buildReviewExtractionPrompt(raw_answers as Record<string, string>, overall_rating)
         const extraction = await anthropic.messages.create({
           model: 'claude-haiku-4-5-20251001',
           max_tokens: 800,
