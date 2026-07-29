@@ -203,23 +203,25 @@ function FlowShellInner({ children, user, brand }: Props) {
         className="desktop-only"
         style={{ flexDirection: 'column', flexShrink: 0, width: 208, background: 'var(--tdgflow-surface)', borderRight: '1px solid var(--tdgflow-border)' }}
       >
-        {/* Logotype — pele da agência é sempre o protagonista (achado da
-            Carla, 29/07: logo pequeno + "powered by" em texto puro não
-            comunicava marca nenhuma de verdade). Logo da agência grande e
-            sozinho; TDG (rede) vira selo pequeno abaixo, substituindo o
-            texto; Bemgsy (motor invisível) só aparece discreto no rodapé,
-            perto da versão — nunca disputando espaço aqui em cima.
-            Sino sobe pra cá (29/07) — antes vivia no rodapé colado ao "Sair",
-            posição que sinalizava baixa prioridade mesmo sem intenção. Único
-            lugar de notificação no desktop agora (sidebar não tem topbar). */}
-        <div className="px-6 pt-7 flex-shrink-0 flex items-start justify-between gap-2">
-          <div className="min-w-0 flex-1">
+        {/* Logotype — pele da agência é sempre o protagonista. Revisado
+            29/07 com o painel Tesla depois de 3 problemas reais reportados
+            (Bemgsy invisível, "Central Bemgsy" sem renomear, logos
+            desorganizados): container de altura FIXA (não maxHeight) pro
+            logo da agência — resolve o desalinhamento do sino quando o
+            logo é muito largo/baixo (achado do arquiteto). Selo do TDG e
+            crédito da Bemgsy ganham rótulo de texto ao lado — uma imagem
+            sozinha, pequena, sem legenda, é estatisticamente ignorada pelo
+            olho antes da atenção consciente (achado do UX expert) — nunca
+            só a logo pura. Linha decorativa órfã removida, virou um
+            divisor real (achado do designer: "hoje é ruído sem função"). */}
+        <div className="px-6 pt-6 flex-shrink-0 flex items-center justify-between gap-3" style={{ height: 60 }}>
+          <div className="min-w-0 flex-1" style={{ height: 44, display: 'flex', alignItems: 'center' }}>
             {brand?.logoUrl ? (
               /* eslint-disable-next-line @next/next/no-img-element */
               <img
                 src={brand.logoUrl}
                 alt={user.agency || 'Logo da agência'}
-                style={{ maxHeight: 44, maxWidth: '100%', objectFit: 'contain', display: 'block' }}
+                style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain', display: 'block' }}
               />
             ) : (
               <p style={{
@@ -231,19 +233,18 @@ function FlowShellInner({ children, user, brand }: Props) {
               </p>
             )}
           </div>
-          <div style={{ flexShrink: 0, marginTop: -2 }}>
+          <div style={{ flexShrink: 0 }}>
             <NotificationBell align="left" />
           </div>
         </div>
-        <div className="px-6 pb-6 flex-shrink-0">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/brand/tdg-logo.jpg" alt="Rede TDG" style={{ height: 14, objectFit: 'contain', display: 'block' }} />
-          <div style={{
-            marginTop: 8, height: '1px', width: 48,
-            background: brand?.primaryColor
-              ? `linear-gradient(90deg, ${brand.primaryColor} 0%, transparent 100%)`
-              : 'linear-gradient(90deg, var(--tdgflow-navy-dim) 0%, transparent 100%)',
-          }} />
+        <div className="px-6" style={{ paddingBottom: 14, paddingTop: 2, flexShrink: 0, borderBottom: '1px solid var(--tdgflow-border)' }}>
+          <div className="flex items-center" style={{ gap: 8, height: 20 }}>
+            <span style={{ fontSize: '0.625rem', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--tdgflow-text-faint)' }}>
+              Rede TDG
+            </span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/brand/tdg-mark.png" alt="TDG" style={{ height: 16, objectFit: 'contain', display: 'block' }} />
+          </div>
         </div>
 
         {/* Primary nav */}
@@ -419,14 +420,19 @@ function FlowShellInner({ children, user, brand }: Props) {
             <LogOut size={11} /> {tr('auth.signout')}
           </button>
           {/* Bemgsy — motor invisível do produto (achado da Carla, 29/07: não
-              havia NENHUMA menção à Bemgsy em lugar nenhum da UI). Discreto
-              de propósito — não disputa com agência (protagonista) nem TDG
-              (selo de rede). Tagline só no hover, não ocupa espaço permanente. */}
-          <div className="flex justify-center" style={{ marginTop: 10 }} title="Bemgsy — Amplifying Human Hospitality">
+              havia NENHUMA menção à Bemgsy em lugar nenhum da UI; 1ª tentativa
+              a 10px/opacity 0.55 era abaixo do piso de legibilidade tipográfica,
+              não só "discreta" — achado técnico do arquiteto, não gosto).
+              Rótulo "Powered by" garante o significado mesmo sem hover — a
+              tooltip nativa continua existindo como bônus, não como único canal. */}
+          <div className="flex items-center justify-center" style={{ marginTop: 10, gap: 6 }} title="Bemgsy — Amplifying Human Hospitality">
+            <span style={{ fontSize: '0.5rem', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--tdgflow-text-faint)' }}>
+              Powered by
+            </span>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/brand/bemgsy-logo.png" alt="Bemgsy — Amplifying Human Hospitality" style={{ height: 10, objectFit: 'contain', opacity: 0.55 }} />
+            <img src="/brand/bemgsy-mark.png" alt="Bemgsy" style={{ height: 16, objectFit: 'contain', opacity: 0.75 }} />
           </div>
-          <p style={{ marginTop: 4, fontSize: '0.5625rem', letterSpacing: '0.1em', color: 'var(--tdgflow-text-faint)', textAlign: 'center' }}>
+          <p style={{ marginTop: 6, fontSize: '0.5625rem', letterSpacing: '0.1em', color: 'var(--tdgflow-text-faint)', textAlign: 'center' }}>
             {APP_VERSION}
           </p>
         </div>
@@ -589,11 +595,14 @@ function FlowShellInner({ children, user, brand }: Props) {
                   <span style={{ fontSize: '0.9375rem' }}>{tr('auth.signout')}</span>
                 </button>
               </div>
-              <div className="flex justify-center" style={{ marginTop: 6 }} title="Bemgsy — Amplifying Human Hospitality">
+              <div className="flex items-center justify-center" style={{ marginTop: 8, gap: 6 }} title="Bemgsy — Amplifying Human Hospitality">
+                <span style={{ fontSize: '0.5rem', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--tdgflow-text-faint)' }}>
+                  Powered by
+                </span>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/brand/bemgsy-logo.png" alt="Bemgsy — Amplifying Human Hospitality" style={{ height: 10, objectFit: 'contain', opacity: 0.55 }} />
+                <img src="/brand/bemgsy-mark.png" alt="Bemgsy" style={{ height: 16, objectFit: 'contain', opacity: 0.75 }} />
               </div>
-              <p style={{ textAlign: 'center', paddingBottom: 8, paddingTop: 4, fontSize: '0.5625rem', letterSpacing: '0.1em', color: 'var(--tdgflow-text-faint)' }}>
+              <p style={{ textAlign: 'center', paddingBottom: 8, paddingTop: 6, fontSize: '0.5625rem', letterSpacing: '0.1em', color: 'var(--tdgflow-text-faint)' }}>
                 {APP_VERSION}
               </p>
             </motion.div>
