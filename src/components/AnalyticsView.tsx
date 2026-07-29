@@ -99,6 +99,7 @@ interface NetworkData {
   this_month: number; this_quarter: number; this_year: number
   by_visit_type: VisitTypeStat[]; monthly_trend: MonthStat[]
   top_hotels: HotelStat[]; top_agencies: AgencyStat[]
+  top_agencies_week: AgencyStat[]; top_agencies_month: AgencyStat[]
   recent_activity: ActivityItem[]; top_countries: CountryStat[]
 }
 interface MeData {
@@ -279,6 +280,7 @@ export default function AnalyticsView() {
   const [data, setData] = useState<AnalyticsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [period, setPeriod] = useState<Period>('all')
+  const [agencyPeriod, setAgencyPeriod] = useState<'week' | 'month' | 'all'>('all')
   const [tab, setTab] = useState<'network' | 'me'>('network')
   const { tr } = useLanguage()
 
@@ -287,6 +289,12 @@ export default function AnalyticsView() {
     quarter: tr('analytics.period.quarter'),
     year:    tr('analytics.period.year'),
     all:     tr('analytics.period.all'),
+  }
+
+  const AGENCY_PERIOD_LABELS: Record<'week' | 'month' | 'all', string> = {
+    week:  tr('analytics.period.week'),
+    month: tr('analytics.period.month'),
+    all:   tr('analytics.period.all'),
   }
 
   const VISIT_TYPE_LABELS: Record<string, string> = {
@@ -323,6 +331,9 @@ export default function AnalyticsView() {
   const maxType = Math.max(...byTypeSorted.map(s => periodCount(s, period)), 1)
   const topHotel = network.top_hotels[0]
   const maxCountry = Math.max(...(network.top_countries ?? []).map(c => c.visit_count), 1)
+  const topAgenciesForPeriod = agencyPeriod === 'week' ? network.top_agencies_week
+    : agencyPeriod === 'month' ? network.top_agencies_month
+    : network.top_agencies
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
@@ -539,13 +550,38 @@ export default function AnalyticsView() {
 
               {/* ── Top agências ── */}
               <div style={{ background: 'var(--tdgflow-surface)', borderRadius: 14, border: '1px solid var(--tdgflow-border)', overflow: 'hidden' }}>
-                <div style={{ padding: '16px 18px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <IconBars size={13} color="var(--tdgflow-navy)" />
-                  <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)' }}>
-                    {tr('analytics.topAgencies')}
-                  </p>
+                <div style={{ padding: '16px 18px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <IconBars size={13} color="var(--tdgflow-navy)" />
+                    <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)' }}>
+                      {tr('analytics.topAgencies')}
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', gap: 2, background: 'var(--tdgflow-bg)', borderRadius: 8, padding: 2, border: '1px solid var(--tdgflow-border)' }}>
+                    {(['week', 'month', 'all'] as const).map(p => (
+                      <button
+                        key={p}
+                        onClick={() => setAgencyPeriod(p)}
+                        style={{
+                          padding: '3px 7px', borderRadius: 6, fontSize: '0.625rem', cursor: 'pointer', border: 'none',
+                          background: agencyPeriod === p ? 'var(--tdgflow-surface)' : 'transparent',
+                          color: agencyPeriod === p ? 'var(--tdgflow-text-primary)' : 'var(--tdgflow-text-muted)',
+                          fontWeight: agencyPeriod === p ? 600 : 400,
+                          boxShadow: agencyPeriod === p ? '0 1px 3px rgba(28,20,16,0.10)' : 'none',
+                          transition: 'all 150ms',
+                        }}
+                      >
+                        {AGENCY_PERIOD_LABELS[p]}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                {network.top_agencies.map(a => (
+                {topAgenciesForPeriod.length === 0 && (
+                  <p style={{ padding: '11px 18px', fontSize: '0.8125rem', color: 'var(--tdgflow-text-muted)' }}>
+                    {tr('analytics.topAgenciesEmpty')}
+                  </p>
+                )}
+                {topAgenciesForPeriod.map(a => (
                   <div key={a.agency_name} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 18px', borderTop: '1px solid var(--tdgflow-border)' }}>
                     <div style={{ width: 30, height: 30, borderRadius: 8, flexShrink: 0, background: 'var(--tdgflow-surface-high)', border: '1px solid var(--tdgflow-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6875rem', fontWeight: 700, color: 'var(--tdgflow-text-secondary)' }}>
                       {a.agency_name.slice(0, 2).toUpperCase()}
