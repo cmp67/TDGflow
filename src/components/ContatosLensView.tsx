@@ -389,7 +389,7 @@ function AddPersonForm({ onSaved, onClose }: { onSaved: () => void; onClose: () 
               >
                 <ScanLine size={28} style={{ color: 'var(--tdgflow-navy)', margin: '0 auto 10px' }} />
                 <p style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--tdgflow-text-primary)', marginBottom: 4 }}>Tirar foto ou escolher imagem</p>
-                <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)' }}>A IA extrai nome, cargo, email e WhatsApp automaticamente</p>
+                <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)' }}>Nome, cargo, e-mail e WhatsApp preenchidos automaticamente</p>
               </div>
               <button type="button" onClick={() => setMode('manual')} style={{ width: '100%', marginTop: 10, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tdgflow-text-muted)', fontSize: '0.75rem', padding: '6px 0' }}>
                 Preferir inserir manualmente

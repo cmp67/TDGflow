@@ -488,7 +488,7 @@ function AddContactForm({ hotelId, onSaved }: { hotelId: string; onSaved: (c: Ho
                   Tirar foto ou escolher imagem
                 </p>
                 <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)' }}>
-                  A IA extrai nome, cargo, email e WhatsApp automaticamente
+                  Nome, cargo, e-mail e WhatsApp preenchidos automaticamente
                 </p>
               </div>
               <button onClick={() => setMode('manual')} style={{ width: '100%', marginTop: 10, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tdgflow-text-muted)', fontSize: '0.75rem', padding: '6px 0' }}>
