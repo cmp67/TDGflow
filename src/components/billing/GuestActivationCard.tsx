@@ -139,7 +139,7 @@ export default function GuestActivationCard({ userRole }: Props) {
       <div className="card" style={{ marginTop: 12 }}>
         <p className="text-sm font-semibold mb-1" style={{ color: 'var(--tdgflow-text-primary)' }}>Ative o GUEST para a sua agência</p>
         <p className="text-xs mb-3" style={{ color: 'var(--tdgflow-text-muted)', lineHeight: 1.55 }}>
-          O GUEST já está incluso no plano da sua agência. Hoje o GUEST e o TDG Flow são sistemas independentes — ao solicitar, nossa equipe entra em contato para ativar o acesso manualmente.
+          O GUEST está incluso sem custo por 12 meses para agências membro TDG. Hoje o GUEST e o TDG Flow são sistemas independentes — ao solicitar, nossa equipe entra em contato para ativar o acesso manualmente.
         </p>
         {requestError && <p className="text-xs mb-2" style={{ color: 'var(--tdgflow-error)' }}>{requestError}</p>}
         <button
