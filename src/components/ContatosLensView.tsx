@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import { Search, Phone, Users, MessageCircle, CheckCircle2, Loader2, Plus, X, AlertCircle } from 'lucide-react'
+import { Search, Phone, Users, MessageCircle, CheckCircle2, Loader2, Plus, X, AlertCircle, Camera, PenLine, ScanLine } from 'lucide-react'
 import { useToast } from '@/contexts/ToastContext'
 
 /* ── Types ──────────────────────────────────────────────────────── */
@@ -249,7 +249,10 @@ function ContactCard({ contact, copiedId, onCopy, highlightId }: {
 }
 
 /* ── Add person form ──────────────────────────────────────────────── */
+type AddMode = 'choose' | 'manual' | 'scan'
+
 function AddPersonForm({ onSaved, onClose }: { onSaved: () => void; onClose: () => void }) {
+  const [mode, setMode] = useState<AddMode>('choose')
   const [name, setName] = useState('')
   const [surname, setSurname] = useState('')
   const [category, setCategory] = useState(PERSON_CATEGORIES[0].key)
@@ -259,6 +262,43 @@ function AddPersonForm({ onSaved, onClose }: { onSaved: () => void; onClose: () 
   const [notes, setNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+
+  // Scan state — mesmo mecanismo (/api/scan-card) já usado no contato de
+  // fornecedor (HoteisView.tsx), reaproveitado aqui pra não duplicar.
+  const [scanning, setScanning] = useState(false)
+  const [scanPreview, setScanPreview] = useState<string | null>(null)
+  const [scanDone, setScanDone] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  async function handleImageCapture(file: File) {
+    setScanPreview(URL.createObjectURL(file))
+    setScanning(true)
+    setScanDone(false)
+    setError('')
+    try {
+      const fd = new FormData()
+      fd.append('image', file)
+      const res = await fetch('/api/scan-card', { method: 'POST', body: fd })
+      const data = await res.json()
+      if (data.card) {
+        setName(data.card.name ?? '')
+        setSurname(data.card.surname ?? '')
+        setOrganization(data.card.company ?? '')
+        setEmail(data.card.email ?? '')
+        setWhatsapp(data.card.whatsapp ?? '')
+        setNotes([data.card.title, data.card.notes].filter(Boolean).join(' · '))
+        setScanDone(true)
+        setMode('manual')
+      } else {
+        setError('Não foi possível ler o cartão. Preencha manualmente.')
+        setMode('manual')
+      }
+    } catch {
+      setError('Erro ao processar a imagem.')
+      setMode('manual')
+    }
+    setScanning(false)
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -286,36 +326,123 @@ function AddPersonForm({ onSaved, onClose }: { onSaved: () => void; onClose: () 
   }
 
   return (
-    <form onSubmit={handleSubmit} style={{ padding: 14, borderRadius: 12, border: '1px solid var(--tdgflow-border)', background: 'var(--tdgflow-surface)', marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)' }}>Nova pessoa</p>
-        <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tdgflow-text-muted)' }}>
-          <X size={14} />
-        </button>
-      </div>
-      <div style={{ display: 'flex', gap: 8 }}>
-        <input className="input" placeholder="Nome" value={name} onChange={e => setName(e.target.value)} style={{ fontSize: '0.8125rem', flex: 1 }} />
-        <input className="input" placeholder="Sobrenome" value={surname} onChange={e => setSurname(e.target.value)} style={{ fontSize: '0.8125rem', flex: 1 }} />
-      </div>
-      <select className="input" value={category} onChange={e => setCategory(e.target.value)} style={{ fontSize: '0.8125rem' }}>
-        {PERSON_CATEGORIES.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
-      </select>
-      <input className="input" placeholder="Organização (opcional — ex: escritório, empresa)" value={organization} onChange={e => setOrganization(e.target.value)} style={{ fontSize: '0.8125rem' }} />
-      <div style={{ display: 'flex', gap: 8 }}>
-        <input className="input" placeholder="WhatsApp" value={whatsapp} onChange={e => setWhatsapp(e.target.value)} style={{ fontSize: '0.8125rem', flex: 1 }} />
-        <input className="input" placeholder="E-mail" value={email} onChange={e => setEmail(e.target.value)} style={{ fontSize: '0.8125rem', flex: 1 }} />
-      </div>
-      <textarea className="input" placeholder="Notas (opcional)" value={notes} onChange={e => setNotes(e.target.value)} rows={2} style={{ fontSize: '0.8125rem', resize: 'vertical' }} />
-      {error && (
-        <p style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', color: 'var(--tdgflow-error)' }}>
-          <AlertCircle size={13} /> {error}
-        </p>
+    <div style={{ padding: 14, borderRadius: 12, border: '1px solid var(--tdgflow-border)', background: 'var(--tdgflow-surface)', marginBottom: 16 }}>
+
+      {/* Mode chooser */}
+      {mode === 'choose' && (
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)' }}>Nova pessoa</p>
+            <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tdgflow-text-muted)' }}><X size={14} /></button>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            <button
+              type="button"
+              onClick={() => setMode('scan')}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '18px 12px', borderRadius: 10, cursor: 'pointer', background: 'var(--tdgflow-bg)', border: '1px solid var(--tdgflow-border)' }}
+            >
+              <Camera size={22} style={{ color: 'var(--tdgflow-navy)' }} />
+              <span style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--tdgflow-text-primary)' }}>Fotografar cartão</span>
+              <span style={{ fontSize: '0.7rem', color: 'var(--tdgflow-text-muted)', textAlign: 'center', lineHeight: 1.3 }}>Preenche os dados automaticamente</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode('manual')}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '18px 12px', borderRadius: 10, cursor: 'pointer', background: 'var(--tdgflow-bg)', border: '1px solid var(--tdgflow-border)' }}
+            >
+              <PenLine size={22} style={{ color: 'var(--tdgflow-navy)' }} />
+              <span style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--tdgflow-text-primary)' }}>Inserir manualmente</span>
+              <span style={{ fontSize: '0.7rem', color: 'var(--tdgflow-text-muted)', textAlign: 'center', lineHeight: 1.3 }}>Preencher os campos</span>
+            </button>
+          </div>
+        </>
       )}
-      <button type="submit" disabled={submitting} className="btn-gold" style={{ fontSize: '0.8125rem', padding: '8px 12px' }}>
-        {submitting ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
-        {submitting ? 'Salvando...' : 'Salvar contato'}
-      </button>
-    </form>
+
+      {/* Scan mode */}
+      {mode === 'scan' && (
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <p style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--tdgflow-text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Fotografar cartão</p>
+            <button type="button" onClick={() => setMode('choose')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tdgflow-text-muted)', padding: 2 }}><X size={14} /></button>
+          </div>
+          {scanning ? (
+            <div style={{ textAlign: 'center', padding: '28px 0' }}>
+              {scanPreview && <img src={scanPreview} alt="cartão" style={{ width: '100%', maxHeight: 160, objectFit: 'contain', borderRadius: 8, marginBottom: 14, opacity: 0.7 }} />}
+              <Loader2 size={24} className="animate-spin" style={{ color: 'var(--tdgflow-navy)', margin: '0 auto 10px' }} />
+              <p style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-muted)' }}>Lendo o cartão…</p>
+            </div>
+          ) : (
+            <>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={e => { const f = e.target.files?.[0]; if (f) handleImageCapture(f) }}
+              />
+              <div
+                onClick={() => fileRef.current?.click()}
+                style={{ border: '2px dashed var(--tdgflow-border-light)', borderRadius: 12, padding: '32px 20px', textAlign: 'center', cursor: 'pointer', background: 'var(--tdgflow-bg)' }}
+              >
+                <ScanLine size={28} style={{ color: 'var(--tdgflow-navy)', margin: '0 auto 10px' }} />
+                <p style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--tdgflow-text-primary)', marginBottom: 4 }}>Tirar foto ou escolher imagem</p>
+                <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)' }}>A IA extrai nome, cargo, email e WhatsApp automaticamente</p>
+              </div>
+              <button type="button" onClick={() => setMode('manual')} style={{ width: '100%', marginTop: 10, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tdgflow-text-muted)', fontSize: '0.75rem', padding: '6px 0' }}>
+                Preferir inserir manualmente
+              </button>
+            </>
+          )}
+        </>
+      )}
+
+      {/* Manual form — também aparece depois do scan, pré-preenchido */}
+      {mode === 'manual' && (
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+              <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)' }}>
+                {scanDone ? 'Dados extraídos — revise e salve' : 'Nova pessoa'}
+              </p>
+              {scanDone && <CheckCircle2 size={13} style={{ color: 'var(--tdgflow-success)' }} />}
+            </div>
+            <button type="button" onClick={() => { setMode('choose'); setScanPreview(null); setScanDone(false); setError('') }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tdgflow-text-muted)' }}>
+              <X size={14} />
+            </button>
+          </div>
+
+          {scanPreview && (
+            <div style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid var(--tdgflow-border)', maxHeight: 100 }}>
+              <img src={scanPreview} alt="cartão escaneado" style={{ width: '100%', height: 100, objectFit: 'cover' }} />
+            </div>
+          )}
+
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input className="input" placeholder="Nome" value={name} onChange={e => setName(e.target.value)} style={{ fontSize: '0.8125rem', flex: 1 }} />
+            <input className="input" placeholder="Sobrenome" value={surname} onChange={e => setSurname(e.target.value)} style={{ fontSize: '0.8125rem', flex: 1 }} />
+          </div>
+          <select className="input" value={category} onChange={e => setCategory(e.target.value)} style={{ fontSize: '0.8125rem' }}>
+            {PERSON_CATEGORIES.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
+          </select>
+          <input className="input" placeholder="Organização (opcional — ex: escritório, empresa)" value={organization} onChange={e => setOrganization(e.target.value)} style={{ fontSize: '0.8125rem' }} />
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input className="input" placeholder="WhatsApp" value={whatsapp} onChange={e => setWhatsapp(e.target.value)} style={{ fontSize: '0.8125rem', flex: 1 }} />
+            <input className="input" placeholder="E-mail" value={email} onChange={e => setEmail(e.target.value)} style={{ fontSize: '0.8125rem', flex: 1 }} />
+          </div>
+          <textarea className="input" placeholder="Notas (opcional)" value={notes} onChange={e => setNotes(e.target.value)} rows={2} style={{ fontSize: '0.8125rem', resize: 'vertical' }} />
+          {error && (
+            <p style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', color: 'var(--tdgflow-error)' }}>
+              <AlertCircle size={13} /> {error}
+            </p>
+          )}
+          <button type="submit" disabled={submitting} className="btn-gold" style={{ fontSize: '0.8125rem', padding: '8px 12px' }}>
+            {submitting ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
+            {submitting ? 'Salvando...' : 'Salvar contato'}
+          </button>
+        </form>
+      )}
+    </div>
   )
 }
 

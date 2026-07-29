@@ -14,6 +14,7 @@ interface BemgsyOfferRow {
   offer_type: string | null
   image_url: string | null
   smart_tags: { emoji: string; label: string; category: string }[] | null
+  created_at: string | null
 }
 
 export interface OfferRow {
@@ -29,7 +30,15 @@ export interface OfferRow {
   image_url: string | null
   accent: string
   curated: boolean
+  curated_by: string | null
+  curated_at: string | null
 }
+
+// Curadoria de oferta hoje é sempre a mesma agência (não temos resolução de
+// identidade cross-sistema com o Bemgsy Central ainda — created_by de lá é
+// um UUID de auth.users, sem acesso de leitura via anon key). Combinado com
+// a Carla: usar esse nome fixo por enquanto, até existir identidade real.
+const CURATOR_NAME = 'Agência 20 Teste'
 
 const ACCENTS = ['#4a9bbe', '#7aaa5a', '#c8a060', '#8080c8', '#c07840', '#6b9080', '#a0616a']
 
@@ -78,7 +87,7 @@ async function fetchBemgsyCentralOffers(): Promise<BemgsyOfferRow[]> {
 
   const nowIso = new Date().toISOString()
   const params = new URLSearchParams({
-    select: 'id,hotel_id,title,description,commission_percentage,valid_until,offer_type,image_url,smart_tags',
+    select: 'id,hotel_id,title,description,commission_percentage,valid_until,offer_type,image_url,smart_tags,created_at',
     is_active: 'eq.true',
     is_public: 'eq.true',
     share_slug: 'not.is.null',
@@ -136,6 +145,8 @@ export async function GET() {
       // agente. Combinado com Adriano: fonte precisa ficar visível — quando
       // a ingestão por e-mail existir, essa flag para de ser sempre true.
       curated: true,
+      curated_by: CURATOR_NAME,
+      curated_at: o.created_at,
     }
   })
 

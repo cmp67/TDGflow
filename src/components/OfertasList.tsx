@@ -20,15 +20,25 @@ interface Offer {
   image_url: string | null
   accent: string
   curated: boolean
+  curated_by: string | null
+  curated_at: string | null
 }
 
-/* Selo de origem — combinado com Adriano: fonte precisa ficar visível.
-   Ponto sólido = curadoria (mesma linguagem já desenhada pro catálogo de
-   Fornecedores), texto sem ícone de "aprovação social" tipo joinha —
-   curadoria não é sobre alguém ter gostado, é sobre a origem do dado. */
-function CuratedBadge() {
+function formatCuratedDate(dateStr: string | null): string {
+  if (!dateStr) return ''
+  return new Date(dateStr).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+/* Selo de origem — combinado com Adriano: fonte precisa ficar visível, com
+   quem e quando (não um selo genérico solto). Ponto sólido = curadoria
+   (mesma linguagem já desenhada pro catálogo de Fornecedores), texto sem
+   ícone de "aprovação social" tipo joinha — curadoria não é sobre alguém
+   ter gostado, é sobre a origem do dado. No card só "Curada" (espaço
+   apertado, quem/quando fica no title e na folha de detalhe). */
+function CuratedBadge({ by, at }: { by: string | null; at: string | null }) {
+  const title = by ? `Curada por ${by}${at ? ` · ${formatCuratedDate(at)}` : ''}` : undefined
   return (
-    <span style={{
+    <span title={title} style={{
       display: 'inline-flex', alignItems: 'center', gap: 5,
       fontSize: '0.5625rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase',
       padding: '3px 9px 3px 7px', borderRadius: 999,
@@ -205,7 +215,7 @@ export default function OfertasList() {
                 {/* Selo de origem — top left */}
                 {offer.curated && (
                   <div style={{ position: 'absolute', top: 14, left: 14 }}>
-                    <CuratedBadge />
+                    <CuratedBadge by={offer.curated_by} at={offer.curated_at} />
                   </div>
                 )}
 
@@ -305,9 +315,10 @@ export default function OfertasList() {
                       </p>
                     )}
                     {selectedOffer.curated && (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: '0.625rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: '0.625rem', fontWeight: 600, letterSpacing: '0.04em', color: 'var(--tdgflow-text-muted)' }}>
                         <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--tdgflow-navy)', flexShrink: 0 }} />
-                        Curada
+                        <span style={{ textTransform: 'uppercase', letterSpacing: '0.1em' }}>Curada</span>
+                        {selectedOffer.curated_by && <span>por {selectedOffer.curated_by}{selectedOffer.curated_at ? ` · ${formatCuratedDate(selectedOffer.curated_at)}` : ''}</span>}
                       </span>
                     )}
                   </div>

@@ -52,6 +52,7 @@ describe('GET /api/offers (ofertas reais do Bemgsy Central, nunca mock)', () => 
             { emoji: '🎁', label: 'Noites Grátis', category: 'benefit' },
             { emoji: '💰', label: 'Comissão 15%', category: 'financial' },
           ],
+          created_at: '2026-07-20T10:00:00+00:00',
         },
       ]),
     } as Response)
@@ -71,6 +72,8 @@ describe('GET /api/offers (ofertas reais do Bemgsy Central, nunca mock)', () => 
     expect(offer.hotel_id).toBe(hotelId) // pra linkar a ficha do fornecedor na tela de detalhe
     expect(offer.full_description).toBe('Descrição da oferta')
     expect(offer.curated).toBe(true) // toda oferta de hoje vem do Bemgsy Central, fonte central aprovada
+    expect(offer.curated_by).toBe('Agência 20 Teste')
+    expect(offer.curated_at).toBe('2026-07-20T10:00:00+00:00')
 
     fetchSpy.mockRestore()
   })

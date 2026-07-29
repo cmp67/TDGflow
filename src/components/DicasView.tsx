@@ -583,21 +583,19 @@ function HotelCard({ review, onToggleFavorite, onViewHistory, onConfirmLead, hig
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
-            <button
-              onClick={() => onToggleFavorite(review.id, review.is_favorite)}
-              style={{ padding: 4, background: 'none', border: 'none', cursor: 'pointer' }}
-            >
-              <Heart size={16} style={{
-                color: review.is_favorite ? '#f87171' : 'var(--tdgflow-border-light)',
-                fill: review.is_favorite ? '#f87171' : 'transparent',
-                transition: 'all 0.15s',
-              }} />
-            </button>
+          <button
+            onClick={() => onToggleFavorite(review.id, review.is_favorite)}
+            style={{ display: 'flex', alignItems: 'center', gap: 4, padding: 4, background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0 }}
+          >
+            <Heart size={16} style={{
+              color: review.is_favorite ? '#f87171' : 'var(--tdgflow-border-light)',
+              fill: review.is_favorite ? '#f87171' : 'transparent',
+              transition: 'all 0.15s',
+            }} />
             {(review.favorite_count ?? 0) > 0 && (
-              <span style={{ fontSize: '0.5625rem', color: 'var(--tdgflow-text-faint)', marginTop: -2 }}>{review.favorite_count}</span>
+              <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: '#f87171' }}>{review.favorite_count}</span>
             )}
-          </div>
+          </button>
         </div>
 
         {/* Lead — o "porquê" é o conteúdo principal, sempre visível (não
