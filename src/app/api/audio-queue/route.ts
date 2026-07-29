@@ -2,9 +2,21 @@ import Anthropic from '@anthropic-ai/sdk'
 import Groq from 'groq-sdk'
 import { sql } from '@vercel/postgres'
 import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@/auth'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
+
+async function requireAgency(): Promise<{ agencyName: string } | { error: NextResponse }> {
+  const session = await auth()
+  if (!session) return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
+
+  const { rows } = await sql`SELECT agency_name FROM tdg_users WHERE email = ${session.user?.email ?? ''} LIMIT 1`
+  const agencyName = rows[0]?.agency_name as string | undefined
+  if (!agencyName) return { error: NextResponse.json({ error: 'Usuário sem agência' }, { status: 404 }) }
+
+  return { agencyName }
+}
 
 const EXTRACTION_PROMPT = `Analise esta transcrição de uma reunião de um agente de viagens e extraia as informações estruturadas.
 
@@ -21,22 +33,35 @@ Retorne APENAS um JSON válido com esta estrutura:
   "notes": "observações gerais"
 }`
 
-// GET — lista todos os audios (mais recentes primeiro)
+// GET — lista os audios da própria agência (mais recentes primeiro)
 export async function GET() {
+  const ctx = await requireAgency()
+  if ('error' in ctx) return ctx.error
+
   const { rows } = await sql`
     SELECT id, agent_name, agency, interlocutor_name, interlocutor_company,
            visit_type, status, audio_url, transcript, summary,
            audio_shared, confirmed_at, created_at
     FROM tdg_audio_inputs
+    WHERE agency = ${ctx.agencyName}
     ORDER BY created_at DESC
     LIMIT 50`
   return NextResponse.json({ items: rows })
 }
 
-// POST — transcreve um audio pendente pelo id
+// POST — transcreve um audio pendente pelo id (só da própria agência)
 export async function POST(req: NextRequest) {
+  const ctx = await requireAgency()
+  if ('error' in ctx) return ctx.error
+
   const { id } = await req.json()
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
+
+  const { rows: ownerRows } = await sql`SELECT agency FROM tdg_audio_inputs WHERE id = ${id}`
+  if (!ownerRows[0]) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  if (ownerRows[0].agency !== ctx.agencyName) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
 
   // Marca como processing
   await sql`UPDATE tdg_audio_inputs SET status = 'processing' WHERE id = ${id}`
@@ -92,10 +117,20 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// PATCH — edita interlocutor_name e interlocutor_company
+// PATCH — edita interlocutor_name e interlocutor_company (só da própria agência)
 export async function PATCH(req: NextRequest) {
+  const ctx = await requireAgency()
+  if ('error' in ctx) return ctx.error
+
   const { id, interlocutor_name, interlocutor_company } = await req.json()
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
+
+  const { rows: ownerRows } = await sql`SELECT agency FROM tdg_audio_inputs WHERE id = ${id}`
+  if (!ownerRows[0]) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  if (ownerRows[0].agency !== ctx.agencyName) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   await sql`
     UPDATE tdg_audio_inputs
     SET interlocutor_name = ${interlocutor_name ?? ''},

@@ -2,15 +2,27 @@
 import { sql } from '@vercel/postgres'
 import { put } from '@vercel/blob'
 import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@/auth'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30
 
 export async function POST(req: NextRequest) {
+  const session = await auth()
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { rows: userRows } = await sql`
+    SELECT name, agency_name FROM tdg_users WHERE email = ${session.user?.email ?? ''} LIMIT 1
+  `
+  const user = userRows[0]
+  if (!user) return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 })
+
   const fd = await req.formData()
   const audioFile = fd.get('audio') as File
-  const agentName = (fd.get('agent_name') as string) || 'Stella'
-  const agency = (fd.get('agency') as string) || ''
+  // agent_name/agency vêm sempre da sessão autenticada, nunca do form — evita
+  // que qualquer chamador grave uma gravação em nome de outra agência.
+  const agentName = (user.name as string) || 'Agente'
+  const agency = (user.agency_name as string) || ''
   const interlocutorName = (fd.get('interlocutor_name') as string) || ''
   const interlocutorCompany = (fd.get('interlocutor_company') as string) || ''
 

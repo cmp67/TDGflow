@@ -28,7 +28,12 @@ Retorne APENAS um JSON válido com esta estrutura:
 
 export async function POST(req: NextRequest) {
   const session = await auth()
-  const userEmail = session?.user?.email ?? 'unknown'
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const userEmail = session.user?.email ?? ''
+
+  const { rows: userRows } = await sql`SELECT name, agency_name FROM tdg_users WHERE email = ${userEmail} LIMIT 1`
+  const user = userRows[0]
+  if (!user) return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 })
 
   const agencyId = await getAgencyId(userEmail)
   const credit = await checkAndDeductCredits({ agencyId, action: 'transcription', userEmail })
@@ -42,8 +47,11 @@ export async function POST(req: NextRequest) {
 
   const formData = await req.formData()
   const audioFile = formData.get('audio') as File
-  const agentName = (formData.get('agent_name') as string) || 'Stella'
-  const agency = (formData.get('agency') as string) || ''
+  // agent_name/agency vêm sempre da sessão autenticada, nunca do form — mesma
+  // regra de audio-save/route.ts, evita gravar reunião em nome de outra agência
+  // e mantém consistência com o escopo de agência aplicado em audio-confirm.
+  const agentName = (user.name as string) || 'Agente'
+  const agency = (user.agency_name as string) || ''
 
   if (!audioFile) {
     return NextResponse.json({ error: 'Audio file required' }, { status: 400 })
