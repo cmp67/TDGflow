@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, Heart, ChevronDown, ChevronUp,
   Building2, X, Mic, Square, ArrowRight, ArrowLeft,
-  CheckCircle, Loader2, AlertCircle, Search, SlidersHorizontal, MapPin,
+  CheckCircle, Loader2, AlertCircle, Search, SlidersHorizontal, MapPin, Eye,
 } from 'lucide-react'
 import { sounds } from '@/lib/sounds'
 import { useToast } from '@/contexts/ToastContext'
@@ -56,6 +56,8 @@ interface Review {
   sentiment_map: SentimentMapValue | null
   created_at: string
   is_favorite: boolean
+  view_count?: number
+  favorite_count?: number
   visit_count?: number
   avg_rating?: number
 }
@@ -418,13 +420,27 @@ function SentimentMapStep({ value, onChange }: {
 }
 
 /* ── Hotel card ─────────────────────────────────────────────────── */
-function HotelCard({ review, onToggleFavorite, onViewHistory, onConfirmLead }: {
+function HotelCard({ review, onToggleFavorite, onViewHistory, onConfirmLead, highlightId }: {
   review: Review
   onToggleFavorite: (id: string, current: boolean) => void
   onViewHistory: (hotelName: string) => void
   onConfirmLead: (review: Review) => void
+  highlightId?: string | null
 }) {
-  const [expanded, setExpanded] = useState(false)
+  const isHighlighted = !!highlightId && review.id === highlightId
+  const [expanded, setExpanded] = useState(isHighlighted)
+  const cardRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (isHighlighted) {
+      cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      fetch('/api/reviews', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ review_id: review.id, action: 'view' }),
+      }).catch(() => {})
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const isLead = review.status === 'a_testar'
   const visitCount = Number(review.visit_count ?? 1)
   const avgRating = Number(review.avg_rating ?? review.overall_rating)
@@ -436,14 +452,26 @@ function HotelCard({ review, onToggleFavorite, onViewHistory, onConfirmLead }: {
     return new Date(iso).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })
   }
 
+  function toggleExpanded() {
+    setExpanded(e => {
+      if (!e) fetch('/api/reviews', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ review_id: review.id, action: 'view' }),
+      }).catch(() => {})
+      return !e
+    })
+  }
+
   return (
     <motion.div
+      ref={cardRef}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       style={{
         background: 'var(--tdgflow-surface)',
         borderRadius: 16,
-        border: isLead ? '1.5px dashed var(--tdgflow-border-light)' : '1px solid var(--tdgflow-border)',
+        border: isHighlighted ? '1.5px solid var(--tdgflow-navy)' : isLead ? '1.5px dashed var(--tdgflow-border-light)' : '1px solid var(--tdgflow-border)',
+        boxShadow: isHighlighted ? '0 0 0 3px var(--tdgflow-navy-subtle)' : 'none',
         overflow: 'hidden',
         position: 'relative',
       }}
@@ -554,16 +582,21 @@ function HotelCard({ review, onToggleFavorite, onViewHistory, onConfirmLead }: {
             </div>
           </div>
 
-          <button
-            onClick={() => onToggleFavorite(review.id, review.is_favorite)}
-            style={{ padding: 4, background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0 }}
-          >
-            <Heart size={16} style={{
-              color: review.is_favorite ? '#f87171' : 'var(--tdgflow-border-light)',
-              fill: review.is_favorite ? '#f87171' : 'transparent',
-              transition: 'all 0.15s',
-            }} />
-          </button>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
+            <button
+              onClick={() => onToggleFavorite(review.id, review.is_favorite)}
+              style={{ padding: 4, background: 'none', border: 'none', cursor: 'pointer' }}
+            >
+              <Heart size={16} style={{
+                color: review.is_favorite ? '#f87171' : 'var(--tdgflow-border-light)',
+                fill: review.is_favorite ? '#f87171' : 'transparent',
+                transition: 'all 0.15s',
+              }} />
+            </button>
+            {(review.favorite_count ?? 0) > 0 && (
+              <span style={{ fontSize: '0.5625rem', color: 'var(--tdgflow-text-faint)', marginTop: -2 }}>{review.favorite_count}</span>
+            )}
+          </div>
         </div>
 
         {/* Lead — o "porquê" é o conteúdo principal, sempre visível (não
@@ -715,15 +748,22 @@ function HotelCard({ review, onToggleFavorite, onViewHistory, onConfirmLead }: {
           borderTop: '1px solid var(--tdgflow-border)',
           background: 'var(--tdgflow-bg)',
         }}>
-          <button
-            onClick={() => setExpanded(e => !e)}
-            style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)', padding: 0, transition: 'color 150ms' }}
-            onMouseEnter={e => (e.currentTarget.style.color = 'var(--tdgflow-text-secondary)')}
-            onMouseLeave={e => (e.currentTarget.style.color = 'var(--tdgflow-text-muted)')}
-          >
-            {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-            {expanded ? 'Fechar' : 'Ver detalhes'}
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <button
+              onClick={toggleExpanded}
+              style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)', padding: 0, transition: 'color 150ms' }}
+              onMouseEnter={e => (e.currentTarget.style.color = 'var(--tdgflow-text-secondary)')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'var(--tdgflow-text-muted)')}
+            >
+              {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+              {expanded ? 'Fechar' : 'Ver detalhes'}
+            </button>
+            {(review.view_count ?? 0) > 0 && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: '0.625rem', color: 'var(--tdgflow-text-faint)' }}>
+                <Eye size={11} /> {review.view_count}
+              </span>
+            )}
+          </div>
           {visitCount > 1 && review.entity_type === 'hotel' && review.hotel_id ? (
             // Hotel tem ficha própria — a lista de visitas mora lá (Fase 2),
             // não num drawer separado que só sabia casar por nome.
@@ -1291,6 +1331,7 @@ export default function DicasView() {
   // já chega aqui com o nome preenchido — nunca pergunta de novo algo que o
   // sistema já sabe.
   const prefillHotelName = searchParams.get('hotel')
+  const highlightReviewId = searchParams.get('reviewId')
 
   const [publishedReviews, setPublishedReviews] = useState<Review[]>([])
   const [leadReviews, setLeadReviews] = useState<Review[]>([])
@@ -1733,6 +1774,7 @@ export default function DicasView() {
                         onToggleFavorite={toggleFavorite}
                         onViewHistory={setHistoryHotel}
                         onConfirmLead={setConfirmingLead}
+                        highlightId={highlightReviewId}
                       />
                     ))}
                   </AnimatePresence>
@@ -1763,6 +1805,7 @@ export default function DicasView() {
                         onToggleFavorite={toggleFavorite}
                         onViewHistory={setHistoryHotel}
                         onConfirmLead={setConfirmingLead}
+                        highlightId={highlightReviewId}
                       />
                     ))}
                   </AnimatePresence>

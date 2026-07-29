@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { Search, Phone, Users, MessageCircle, CheckCircle2, Loader2, Plus, X, AlertCircle } from 'lucide-react'
@@ -99,16 +100,25 @@ function initials(name: string, surname: string) {
 /* ── Contact Card — avatar circular + chip, nunca foto (é o que
    diferencia visualmente "pessoa" de "propriedade" na lente Fornecedores;
    ver revisão Tesla do Contact Hub) ──────────────────────────────── */
-function ContactCard({ contact, copiedId, onCopy }: {
+function ContactCard({ contact, copiedId, onCopy, highlightId }: {
   contact: NetworkContact
   copiedId: string | null
   onCopy: (id: string, phone: string) => void
+  highlightId?: string | null
 }) {
-  const [expanded, setExpanded] = useState(false)
+  const isHighlighted = !!highlightId && contact.id === highlightId
+  const [expanded, setExpanded] = useState(isHighlighted)
   const cat = getCat(contact.category)
+  const cardRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (isHighlighted) cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <motion.div
+      ref={cardRef}
       layout
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
@@ -117,14 +127,15 @@ function ContactCard({ contact, copiedId, onCopy }: {
       onClick={() => setExpanded(e => !e)}
       style={{
         background: 'var(--tdgflow-surface)',
-        border: '1px solid var(--tdgflow-border)',
+        border: isHighlighted ? '1.5px solid var(--tdgflow-navy)' : '1px solid var(--tdgflow-border)',
+        boxShadow: isHighlighted ? '0 0 0 3px var(--tdgflow-navy-subtle)' : 'none',
         borderRadius: 10,
         padding: '14px 16px',
         cursor: 'pointer',
         transition: 'box-shadow 150ms',
       }}
-      onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.07)')}
-      onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}
+      onMouseEnter={e => { if (!isHighlighted) e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.07)' }}
+      onMouseLeave={e => { if (!isHighlighted) e.currentTarget.style.boxShadow = 'none' }}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 8 }}>
         <div style={{
@@ -310,6 +321,8 @@ function AddPersonForm({ onSaved, onClose }: { onSaved: () => void; onClose: () 
 
 /* ── Main export ───────────────────────────────────────────────────── */
 export default function ContatosLensView() {
+  const searchParams = useSearchParams()
+  const highlightContactId = searchParams.get('contactId')
   const [contacts, setContacts] = useState<NetworkContact[]>([])
   const [counts, setCounts] = useState<Record<string, number>>({})
   const [totalContacts, setTotalContacts] = useState(0)
@@ -423,7 +436,7 @@ export default function ContatosLensView() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 10 }}>
             <AnimatePresence mode="popLayout">
               {contacts.map(contact => (
-                <ContactCard key={contact.id} contact={contact} copiedId={copiedId} onCopy={handleCopy} />
+                <ContactCard key={contact.id} contact={contact} copiedId={copiedId} onCopy={handleCopy} highlightId={highlightContactId} />
               ))}
             </AnimatePresence>
           </div>

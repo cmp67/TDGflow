@@ -65,7 +65,7 @@ describe('GET /api/hotels (catálogo de fornecedores)', () => {
     const res  = await GET()
     const body = await res.json()
 
-    const semBeneficio = body.hotels.find((h: { name: string }) => h.name === 'Martinhal Sagres')
+    const semBeneficio = body.hotels.find((h: { name: string }) => h.name === 'Velaa Private Island')
     expect(semBeneficio.benefits).toEqual([])
   })
 })

@@ -68,6 +68,8 @@ describe('GET /api/offers (ofertas reais do Bemgsy Central, nunca mock)', () => 
     expect(offer.commission).toBe(15)
     expect(offer.highlights).toContain('🎁 Noites Grátis')
     expect(offer.highlights.join(' ')).not.toContain('Comissão 15%') // já aparece em destaque na foto, não repete
+    expect(offer.hotel_id).toBe(hotelId) // pra linkar a ficha do fornecedor na tela de detalhe
+    expect(offer.full_description).toBe('Descrição da oferta')
 
     fetchSpy.mockRestore()
   })

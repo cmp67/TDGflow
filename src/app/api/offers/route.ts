@@ -18,12 +18,14 @@ interface BemgsyOfferRow {
 
 export interface OfferRow {
   id: string
+  hotel_id: string | null
   hotel_name: string
   location: string | null
   offer_type: string | null
   commission: number
   valid_until: string | null
   highlights: string[]
+  full_description: string | null
   image_url: string | null
   accent: string
 }
@@ -46,13 +48,18 @@ const DESCRIPTION_HIGHLIGHT_MAX = 140
    têm uma description longa em markdown (às vezes com imagem embutida).
    Sem isso, o card vira uma parede de texto cru enquanto os outros ficam
    curtos e escaneáveis. Aqui sempre normaliza pro mesmo peso visual. */
-function summarizeDescription(description: string | null): string | null {
+function cleanDescription(description: string | null): string | null {
   if (!description) return null
   const cleaned = description
     .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
     .replace(/\*\*(.*?)\*\*/g, '$1')
     .replace(/\s+/g, ' ')
     .trim()
+  return cleaned || null
+}
+
+function summarizeDescription(description: string | null): string | null {
+  const cleaned = cleanDescription(description)
   if (!cleaned) return null
   return cleaned.length > DESCRIPTION_HIGHLIGHT_MAX
     ? `${cleaned.slice(0, DESCRIPTION_HIGHLIGHT_MAX).trim()}…`
@@ -113,12 +120,14 @@ export async function GET() {
 
     return {
       id: o.id,
+      hotel_id: o.hotel_id,
       hotel_name: hotel?.name ?? o.title,
       location: hotel?.location ?? null,
       offer_type: offerTypeLabel(o.offer_type),
       commission: o.commission_percentage ?? 0,
       valid_until: o.valid_until,
       highlights: highlights.length > 0 ? highlights : [summarizeDescription(o.description)].filter((h): h is string => !!h),
+      full_description: cleanDescription(o.description),
       image_url: o.image_url ?? hotel?.image_url ?? null,
       accent: ACCENTS[i % ACCENTS.length],
     }

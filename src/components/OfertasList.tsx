@@ -1,17 +1,21 @@
 'use client'
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { Search, Loader2, AlertCircle } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import Link from 'next/link'
+import { Search, Loader2, AlertCircle, X, ExternalLink } from 'lucide-react'
 import TdgIconSprite from '@/components/TdgIconSprite'
 
 interface Offer {
   id: string
+  hotel_id: string | null
   hotel_name: string
   location: string | null
   offer_type: string | null
   commission: number
   valid_until: string | null
   highlights: string[]
+  full_description: string | null
   image_url: string | null
   accent: string
 }
@@ -50,6 +54,7 @@ export default function OfertasList() {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
   const [search, setSearch] = useState('')
+  const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null)
 
   const loadOffers = useCallback(async () => {
     setLoading(true)
@@ -153,10 +158,12 @@ export default function OfertasList() {
           {filtered.map(offer => (
             <div
               key={offer.id}
+              onClick={() => setSelectedOffer(offer)}
               style={{
                 background: 'var(--tdgflow-surface)',
                 borderRadius: 20,
                 overflow: 'hidden',
+                cursor: 'pointer',
               }}
             >
               {/* Photo + commission overlay */}
@@ -241,6 +248,113 @@ export default function OfertasList() {
       )}
 
       <div style={{ height: 24 }} />
+
+      {/* Detalhe da oferta — a oferta tem prazo e é conteúdo próprio, não
+          um atalho pra ficha do fornecedor; a ficha aparece como link
+          secundário aqui dentro, não como destino do clique no card. */}
+      <AnimatePresence>
+        {selectedOffer && (
+          <div
+            onClick={() => setSelectedOffer(null)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 60 }}
+          >
+            <motion.div
+              onClick={e => e.stopPropagation()}
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', stiffness: 300, damping: 35 }}
+              style={{
+                position: 'relative',
+                background: 'var(--tdgflow-surface)', borderRadius: '20px 20px 0 0',
+                border: '1px solid var(--tdgflow-border)', borderBottom: 'none',
+                width: '100%', maxWidth: 560, maxHeight: '88vh',
+                display: 'flex', flexDirection: 'column',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px', flexShrink: 0 }}>
+                <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--tdgflow-border)' }} />
+              </div>
+              <button
+                onClick={() => setSelectedOffer(null)}
+                style={{ position: 'absolute', top: 16, right: 16, background: 'rgba(0,0,0,0.4)', border: 'none', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 1 }}
+              >
+                <X size={14} color="#fff" />
+              </button>
+
+              <div style={{ flex: 1, overflowY: 'auto' }}>
+                {selectedOffer.image_url && (
+                  <div style={{ height: 200, overflow: 'hidden' }}>
+                    <img src={selectedOffer.image_url} alt={selectedOffer.hotel_name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                  </div>
+                )}
+
+                <div style={{ padding: '18px 22px 24px' }}>
+                  {selectedOffer.offer_type && (
+                    <p style={{ fontSize: '0.625rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: selectedOffer.accent, marginBottom: 6 }}>
+                      {selectedOffer.offer_type}
+                    </p>
+                  )}
+                  <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.02em', marginBottom: 4 }}>
+                    {selectedOffer.hotel_name}
+                  </h2>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16, margin: '10px 0 16px', flexWrap: 'wrap' }}>
+                    <div>
+                      <p style={{ fontSize: '0.5625rem', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)', margin: 0 }}>Comissão</p>
+                      <p style={{ fontSize: '1.75rem', fontWeight: 300, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.03em', lineHeight: 1.1, margin: 0 }}>{selectedOffer.commission}%</p>
+                    </div>
+                    {selectedOffer.location && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <svg style={{ width: 12, height: 12, stroke: 'var(--tdgflow-text-faint)', fill: 'none', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }}><use href="#i-pin" /></svg>
+                        <span style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-muted)' }}>{selectedOffer.location}</span>
+                      </div>
+                    )}
+                    {selectedOffer.valid_until && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <svg style={{ width: 12, height: 12, stroke: 'var(--tdgflow-text-faint)', fill: 'none', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }}><use href="#i-calendar" /></svg>
+                        <span style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-muted)' }}>{formatValidity(selectedOffer.valid_until)}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {selectedOffer.full_description && (
+                    <p style={{ fontSize: '0.875rem', color: 'var(--tdgflow-text-secondary)', lineHeight: 1.65, marginBottom: 16 }}>
+                      {selectedOffer.full_description}
+                    </p>
+                  )}
+
+                  {selectedOffer.highlights.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16 }}>
+                      {selectedOffer.highlights.map((h, i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                          <div style={{ width: 4, height: 4, borderRadius: '50%', background: selectedOffer.accent, marginTop: 6, flexShrink: 0 }} />
+                          <span style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-muted)', lineHeight: 1.5 }}>{h}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {selectedOffer.hotel_id && (
+                    <Link
+                      href={`/flow/rede?tab=fornecedores&hotelId=${selectedOffer.hotel_id}`}
+                      className="no-underline"
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '12px 14px', borderRadius: 10, marginTop: 4,
+                        background: 'var(--tdgflow-navy-subtle)', border: '1px solid var(--tdgflow-navy-ring)',
+                      }}
+                    >
+                      <span style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-navy)' }}>Ver ficha do fornecedor</span>
+                      <ExternalLink size={13} style={{ color: 'var(--tdgflow-navy)' }} />
+                    </Link>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

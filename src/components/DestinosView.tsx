@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, Users, Loader2, Lightbulb, AlertTriangle } from 'lucide-react'
 import TdgIconSprite from '@/components/TdgIconSprite'
@@ -21,14 +22,22 @@ function formatDate(dateStr: string) {
 }
 
 /* ── Tip card ───────────────────────────────────────────────────── */
-function TipCard({ tip }: { tip: KnowledgeTip }) {
-  const [expanded, setExpanded] = useState(false)
+function TipCard({ tip, highlightId }: { tip: KnowledgeTip; highlightId?: string | null }) {
+  const isHighlighted = !!highlightId && tip.id === highlightId
+  const [expanded, setExpanded] = useState(isHighlighted)
+  const cardRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (isHighlighted) cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Detect if tip is a warning/critical tip
   const isAlert = /⚠️|NÃO|exige|proibido|impede|risco|atenção|jurídico|greve/i.test(tip.content ?? '')
 
   return (
     <motion.div
+      ref={cardRef}
       layout
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
@@ -37,15 +46,16 @@ function TipCard({ tip }: { tip: KnowledgeTip }) {
       onClick={() => setExpanded(e => !e)}
       style={{
         background: 'var(--tdgflow-surface)',
-        border: `1px solid ${isAlert ? '#fca5a5' : 'var(--tdgflow-border)'}`,
+        border: isHighlighted ? '1.5px solid var(--tdgflow-navy)' : `1px solid ${isAlert ? '#fca5a5' : 'var(--tdgflow-border)'}`,
         borderLeft: `3px solid ${isAlert ? '#dc2626' : 'var(--tdgflow-navy-dim)'}`,
+        boxShadow: isHighlighted ? '0 0 0 3px var(--tdgflow-navy-subtle)' : 'none',
         borderRadius: 10,
         padding: '13px 15px',
         cursor: 'pointer',
         transition: 'box-shadow 150ms',
       }}
-      onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.07)')}
-      onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}
+      onMouseEnter={e => { if (!isHighlighted) e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.07)' }}
+      onMouseLeave={e => { if (!isHighlighted) e.currentTarget.style.boxShadow = 'none' }}
     >
       <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
         {isAlert
@@ -85,6 +95,8 @@ function TipCard({ tip }: { tip: KnowledgeTip }) {
    Fonte de dado agora é /api/knowledge-tips (separado do Contact Hub, que
    ficou só com contatos de pessoas/fornecedores em /api/hotel-contacts). */
 export default function DestinosView() {
+  const searchParams = useSearchParams()
+  const highlightTipId = searchParams.get('tipId')
   const [tips, setTips] = useState<KnowledgeTip[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -182,7 +194,7 @@ export default function DestinosView() {
         {!loading && tips.length > 0 && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 10 }}>
             <AnimatePresence mode="popLayout">
-              {tips.map(tip => <TipCard key={tip.id} tip={tip} />)}
+              {tips.map(tip => <TipCard key={tip.id} tip={tip} highlightId={highlightTipId} />)}
             </AnimatePresence>
           </div>
         )}

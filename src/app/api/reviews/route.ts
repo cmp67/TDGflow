@@ -34,7 +34,8 @@ export async function GET(req: NextRequest) {
     // real — exato, sem depender de casar hotel_name por texto.
     const { rows } = await sql`
       SELECT r.*,
-             CASE WHEN f.review_id IS NOT NULL THEN true ELSE false END AS is_favorite
+             CASE WHEN f.review_id IS NOT NULL THEN true ELSE false END AS is_favorite,
+             (SELECT COUNT(*)::int FROM tdg_review_favorites WHERE review_id = r.id) AS favorite_count
       FROM tdg_hotel_reviews r
       LEFT JOIN tdg_review_favorites f
         ON f.review_id = r.id AND f.agent_id = ${agentId}
@@ -46,7 +47,8 @@ export async function GET(req: NextRequest) {
   } else if (hotel) {
     const { rows } = await sql`
       SELECT r.*,
-             CASE WHEN f.review_id IS NOT NULL THEN true ELSE false END AS is_favorite
+             CASE WHEN f.review_id IS NOT NULL THEN true ELSE false END AS is_favorite,
+             (SELECT COUNT(*)::int FROM tdg_review_favorites WHERE review_id = r.id) AS favorite_count
       FROM tdg_hotel_reviews r
       LEFT JOIN tdg_review_favorites f
         ON f.review_id = r.id AND f.agent_id = ${agentId}
@@ -63,7 +65,8 @@ export async function GET(req: NextRequest) {
         r.*,
         COUNT(*) OVER (PARTITION BY r.hotel_name) AS visit_count,
         AVG(r.overall_rating) OVER (PARTITION BY r.hotel_name) AS avg_rating,
-        CASE WHEN f.review_id IS NOT NULL THEN true ELSE false END AS is_favorite
+        CASE WHEN f.review_id IS NOT NULL THEN true ELSE false END AS is_favorite,
+        (SELECT COUNT(*)::int FROM tdg_review_favorites WHERE review_id = r.id) AS favorite_count
       FROM tdg_hotel_reviews r
       LEFT JOIN tdg_review_favorites f
         ON f.review_id = r.id AND f.agent_id = ${agentId}
@@ -253,7 +256,13 @@ export async function PATCH(req: NextRequest) {
   const session = await auth()
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { review_id, action } = await req.json() // action: 'add' | 'remove'
+  const { review_id, action } = await req.json() // action: 'add' | 'remove' | 'view'
+
+  if (action === 'view') {
+    if (!review_id) return NextResponse.json({ error: 'review_id required' }, { status: 400 })
+    await sql`UPDATE tdg_hotel_reviews SET view_count = view_count + 1 WHERE id = ${review_id}`
+    return NextResponse.json({ ok: true })
+  }
 
   const { rows: userRows } = await sql`
     SELECT id FROM tdg_users WHERE email = ${session.user?.email ?? ''} LIMIT 1

@@ -4,7 +4,7 @@ import { sql } from '@vercel/postgres'
 vi.mock('@/auth', () => ({ auth: vi.fn() }))
 
 import { auth } from '@/auth'
-import { POST, GET } from './route'
+import { POST, GET, PATCH } from './route'
 
 const mockAuth = auth as unknown as ReturnType<typeof vi.fn>
 
@@ -160,5 +160,54 @@ describe('GET /api/reviews?hotelId= (Fase 2 — ficha do fornecedor puxa as pró
     expect(res.status).toBe(200)
     expect(body.reviews).toHaveLength(1)
     expect(body.reviews[0].id).toBe(reviewId)
+  })
+
+  it('starts with view_count 0 and favorite_count 0', async () => {
+    mockAuth.mockResolvedValueOnce(sessionFor(email))
+    const res = await GET(getReq(`hotelId=${hotelId}`))
+    const body = await res.json()
+
+    expect(body.reviews[0].view_count).toBe(0)
+    expect(body.reviews[0].favorite_count).toBe(0)
+  })
+
+  it('PATCH action=view soma 1 ao view_count, sem exigir agentId', async () => {
+    mockAuth.mockResolvedValueOnce(sessionFor(email))
+    const patchReq = new Request('http://localhost/api/reviews', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ review_id: reviewId, action: 'view' }),
+    }) as unknown as Parameters<typeof PATCH>[0]
+    const res = await PATCH(patchReq)
+    expect(res.status).toBe(200)
+
+    mockAuth.mockResolvedValueOnce(sessionFor(email))
+    const getRes = await GET(getReq(`hotelId=${hotelId}`))
+    const body = await getRes.json()
+    expect(body.reviews[0].view_count).toBe(1)
+  })
+
+  it('favorite_count reflete quantos agentes distintos favoritaram, não só o usuário atual', async () => {
+    const otherEmail = `tdd-reviews-fav2-${Date.now()}@example.com`
+    await sql`INSERT INTO tdg_users (name, email, agency_name, password_hash, role) VALUES ('TDD Fav 2', ${otherEmail}, '__TDD_AGENCY__', 'x', 'agent')`
+
+    mockAuth.mockResolvedValueOnce(sessionFor(email))
+    await PATCH(new Request('http://localhost/api/reviews', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ review_id: reviewId, action: 'add' }),
+    }) as unknown as Parameters<typeof PATCH>[0])
+
+    mockAuth.mockResolvedValueOnce(sessionFor(otherEmail))
+    await PATCH(new Request('http://localhost/api/reviews', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ review_id: reviewId, action: 'add' }),
+    }) as unknown as Parameters<typeof PATCH>[0])
+
+    mockAuth.mockResolvedValueOnce(sessionFor(email))
+    const res = await GET(getReq(`hotelId=${hotelId}`))
+    const body = await res.json()
+    expect(body.reviews[0].favorite_count).toBe(2)
+
+    await sql`DELETE FROM tdg_review_favorites WHERE review_id = ${reviewId}`
+    await sql`DELETE FROM tdg_users WHERE email = ${otherEmail}`
   })
 })
