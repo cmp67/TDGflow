@@ -763,7 +763,7 @@ function HotelCard({ review, onToggleFavorite, onViewHistory, onConfirmLead, hig
                 <Eye size={11} /> {review.view_count}
               </span>
             )}
-            <CopyLinkButton path={`/flow/dicas?reviewId=${review.id}`} size={12} />
+            <CopyLinkButton path={`/flow/dicas?reviewId=${review.id}`} label={`Review: ${review.hotel_name}`} size={12} />
           </div>
           {visitCount > 1 && review.entity_type === 'hotel' && review.hotel_id ? (
             // Hotel tem ficha própria — a lista de visitas mora lá (Fase 2),

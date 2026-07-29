@@ -173,7 +173,7 @@ function ContactCard({ contact, copiedId, onCopy, highlightId }: {
             <p style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)', marginTop: 3 }}>{contact.organization}</p>
           )}
         </div>
-        <CopyLinkButton path={`/flow/rede?tab=contatos&contactId=${contact.id}`} size={13} />
+        <CopyLinkButton path={`/flow/rede?tab=contatos&contactId=${contact.id}`} label={`Contato: ${contact.name} ${contact.surname}`} size={13} />
         {contact.whatsapp && (
           <button
             onClick={e => { e.stopPropagation(); onCopy(contact.id, contact.whatsapp) }}

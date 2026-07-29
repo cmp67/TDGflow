@@ -4,19 +4,40 @@ import { useState } from 'react'
 import { Share2, Check } from 'lucide-react'
 import { useToast } from '@/contexts/ToastContext'
 
-/* Copiar o deep link interno (?reviewId=/?contactId=/?tipId=/?hotelId=) pra
-   mandar pra alguém já logado na rede — não é o compartilhamento público
-   externo (aquele exigiria página sem login, deixado de lado por causa da
-   marca Lilamonde no Bemgsy Central). */
-export default function CopyLinkButton({ path, size = 13, dark = false }: { path: string; size?: number; dark?: boolean }) {
+/* Copiar o deep link interno (?reviewId=/?contactId=/?tipId=/?hotelId=/
+   ?offerId=) pra mandar pra alguém já logado na rede — não é o
+   compartilhamento público externo (aquele exigiria página sem login,
+   deixado de lado por causa da marca Lilamonde no Bemgsy Central).
+   Sempre encurta via /api/short-links (idempotente — mesmo item, mesmo
+   link) e prefixa com um rótulo legível, pra quem recebe saber do que se
+   trata sem precisar abrir. */
+export default function CopyLinkButton({ path, label, size = 13, dark = false }: {
+  path: string
+  label?: string
+  size?: number
+  dark?: boolean
+}) {
   const { toast } = useToast()
   const [copied, setCopied] = useState(false)
 
   async function handleCopy(e: React.MouseEvent) {
     e.stopPropagation()
-    const url = `${window.location.origin}${path}`
+    let shareUrl = `${window.location.origin}${path}`
     try {
-      await navigator.clipboard.writeText(url)
+      const res = await fetch('/api/short-links', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path, label }),
+      })
+      if (res.ok) {
+        const { code } = await res.json()
+        shareUrl = `${window.location.origin}/s/${code}`
+      }
+    } catch { /* link longo já é um fallback válido */ }
+
+    const text = label ? `${label} — ${shareUrl}` : shareUrl
+    try {
+      await navigator.clipboard.writeText(text)
       setCopied(true)
       toast('Link copiado!', 'success')
       setTimeout(() => setCopied(false), 2000)

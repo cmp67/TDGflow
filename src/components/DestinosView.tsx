@@ -86,7 +86,7 @@ function TipCard({ tip, highlightId }: { tip: KnowledgeTip; highlightId?: string
             {tip.source_date && <span style={{ opacity: 0.7 }}> · {formatDate(tip.source_date)}</span>}
           </span>
         </div>
-        <CopyLinkButton path={`/flow/destinos?tipId=${tip.id}`} size={12} />
+        <CopyLinkButton path={`/flow/destinos?tipId=${tip.id}`} label={`Dica: ${tip.title}`} size={12} />
       </div>
     </motion.div>
   )

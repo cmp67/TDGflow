@@ -1,11 +1,13 @@
 'use client'
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { Search, Loader2, AlertCircle, X, ExternalLink } from 'lucide-react'
 import TdgIconSprite from '@/components/TdgIconSprite'
 import ResponsiveSheet from '@/components/ResponsiveSheet'
+import CopyLinkButton from '@/components/CopyLinkButton'
 
 interface Offer {
   id: string
@@ -81,6 +83,8 @@ function formatValidity(validUntil: string | null): string {
 }
 
 export default function OfertasList() {
+  const searchParams = useSearchParams()
+  const highlightOfferId = searchParams.get('offerId')
   const [offers, setOffers] = useState<Offer[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
@@ -94,12 +98,18 @@ export default function OfertasList() {
       const res = await fetch('/api/offers')
       if (!res.ok) throw new Error()
       const data = await res.json()
-      setOffers(data.offers ?? [])
+      const loaded: Offer[] = data.offers ?? []
+      setOffers(loaded)
+      if (highlightOfferId) {
+        const match = loaded.find(o => o.id === highlightOfferId)
+        if (match) setSelectedOffer(match)
+      }
     } catch {
       setLoadError(true)
     } finally {
       setLoading(false)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => { loadOffers() }, [loadOffers])
@@ -293,12 +303,15 @@ export default function OfertasList() {
       <AnimatePresence>
         {selectedOffer && (
           <ResponsiveSheet onClose={() => setSelectedOffer(null)} maxWidth={560} zIndex={60}>
-              <button
-                onClick={() => setSelectedOffer(null)}
-                style={{ position: 'absolute', top: 16, right: 16, background: 'rgba(0,0,0,0.4)', border: 'none', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 1 }}
-              >
-                <X size={14} color="#fff" />
-              </button>
+              <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: 8, zIndex: 1 }}>
+                <CopyLinkButton path={`/flow/ofertas?offerId=${selectedOffer.id}`} label={`Oferta: ${selectedOffer.hotel_name}`} size={14} dark />
+                <button
+                  onClick={() => setSelectedOffer(null)}
+                  style={{ background: 'rgba(0,0,0,0.4)', border: 'none', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                >
+                  <X size={14} color="#fff" />
+                </button>
+              </div>
 
               <div style={{ flex: 1, overflowY: 'auto' }}>
                 {selectedOffer.image_url && (

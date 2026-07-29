@@ -1143,7 +1143,7 @@ function HotelDetail({ hotel, onClose }: { hotel: Hotel; onClose: () => void }) 
             background: 'linear-gradient(to top, rgba(10,7,3,0.72) 0%, rgba(10,7,3,0.15) 60%, transparent 100%)',
           }} />
           <div style={{ position: 'absolute', top: 14, right: 14, display: 'flex', gap: 8 }}>
-            <CopyLinkButton path={`/flow/rede?tab=fornecedores&hotelId=${hotel.id}`} size={14} dark />
+            <CopyLinkButton path={`/flow/rede?tab=fornecedores&hotelId=${hotel.id}`} label={`Fornecedor: ${hotel.name}`} size={14} dark />
             <button
               onClick={onClose}
               style={{
