@@ -29,6 +29,7 @@ async function ensureTables() {
   // Migrate existing table — add columns if missing
   await sql`ALTER TABLE tdg_suggestions ADD COLUMN IF NOT EXISTS type TEXT NOT NULL DEFAULT 'improvement'`
   await sql`ALTER TABLE tdg_suggestions ADD COLUMN IF NOT EXISTS impact INTEGER NOT NULL DEFAULT 3`
+  await sql`ALTER TABLE tdg_suggestions ADD COLUMN IF NOT EXISTS agency_id UUID REFERENCES tdg_agencies(id)`
 }
 
 // GET /api/suggestions — list all sorted by weighted score (votes × impact) desc
@@ -82,14 +83,16 @@ export async function POST(req: NextRequest) {
     const safeImpact = Math.min(5, Math.max(1, Number(impact) || 3))
 
     let agencyName = ''
+    let agencyId: string | null = null
     try {
-      const { rows } = await sql`SELECT agency FROM tdg_users WHERE email = ${email} LIMIT 1`
-      agencyName = rows[0]?.agency ?? ''
+      const { rows } = await sql`SELECT agency_name, agency_id FROM tdg_users WHERE email = ${email} LIMIT 1`
+      agencyName = rows[0]?.agency_name ?? ''
+      agencyId = rows[0]?.agency_id ?? null
     } catch { /* non-blocking */ }
 
     const { rows } = await sql`
-      INSERT INTO tdg_suggestions (title, description, submitted_by, agency_name, type, impact)
-      VALUES (${title.trim()}, ${description.trim()}, ${name}, ${agencyName}, ${safeType}, ${safeImpact})
+      INSERT INTO tdg_suggestions (title, description, submitted_by, agency_name, agency_id, type, impact)
+      VALUES (${title.trim()}, ${description.trim()}, ${name}, ${agencyName}, ${agencyId}, ${safeType}, ${safeImpact})
       RETURNING id, title, description, type, impact, status, votes, created_at
     `
     return NextResponse.json({ suggestion: { ...rows[0], voted: false } }, { status: 201 })

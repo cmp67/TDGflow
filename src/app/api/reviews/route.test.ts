@@ -211,3 +211,44 @@ describe('GET /api/reviews?hotelId= (Fase 2 — ficha do fornecedor puxa as pró
     await sql`DELETE FROM tdg_users WHERE email = ${otherEmail}`
   })
 })
+
+describe('POST /api/reviews — agency_id (migration 020) grava a FK real da agência do usuário', () => {
+  const email = `tdd-reviews-agencyid-${Date.now()}@example.com`
+  const agencyName = `__TDD Reviews Agency ${Date.now()}__`
+  let agencyId: string
+  const createdReviewIds: string[] = []
+
+  beforeAll(async () => {
+    const { rows: agencyRows } = await sql`
+      INSERT INTO tdg_agencies (name, cnpj) VALUES (${agencyName}, ${`__TDD_CNPJ_REV_${Date.now()}__`}) RETURNING id
+    `
+    agencyId = agencyRows[0].id as string
+    await sql`
+      INSERT INTO tdg_users (name, email, agency_name, agency_id, password_hash, role)
+      VALUES ('TDD Reviewer AgencyId', ${email}, ${agencyName}, ${agencyId}, 'x', 'agent')
+    `
+  })
+
+  afterAll(async () => {
+    if (createdReviewIds.length) await sql`DELETE FROM tdg_hotel_reviews WHERE id = ANY(${createdReviewIds})`
+    await sql`DELETE FROM tdg_users WHERE email = ${email}`
+    await sql`DELETE FROM tdg_agencies WHERE id = ${agencyId}`
+  })
+
+  it('grava agency_id junto com agency_name', async () => {
+    // visit_type=commercial_meeting entra no caminho de lead (isLead), que
+    // pula a extração por IA — evita chamada real ao Anthropic só porque
+    // esse teste (diferente dos outros do arquivo) usa um agencyId real.
+    mockAuth.mockResolvedValueOnce(sessionFor(email))
+    const res = await POST(postReq({
+      hotel_name: `__TDD Hotel AgencyId ${Date.now()}__`,
+      entity_type: 'hotel',
+      visit_type: 'commercial_meeting',
+      raw_answers: { why_it_matters: 'motivo de teste' },
+    }))
+    const body = await res.json()
+    expect(res.status).toBe(200)
+    createdReviewIds.push(body.review.id)
+    expect(body.review.agency_id).toBe(agencyId)
+  })
+})

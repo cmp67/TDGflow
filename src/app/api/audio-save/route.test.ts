@@ -29,14 +29,21 @@ function audioForm(overrides: Record<string, string> = {}) {
   return fd
 }
 
-describe('POST /api/audio-save — agência e nome do agente vêm da sessão, nunca do form', () => {
+describe('POST /api/audio-save — agência (texto e id) e nome do agente vêm da sessão, nunca do form', () => {
   const email = `tdd-audio-save-${Date.now()}@example.com`
+  const agencyName = `__TDD Audio Save Agency ${Date.now()}__`
+  let agencyId: string
   const createdIds: string[] = []
 
   beforeAll(async () => {
+    const { rows: agencyRows } = await sql`
+      INSERT INTO tdg_agencies (name, cnpj) VALUES (${agencyName}, ${`__TDD_CNPJ_SAVE_${Date.now()}__`}) RETURNING id
+    `
+    agencyId = agencyRows[0].id as string
+
     await sql`
-      INSERT INTO tdg_users (name, email, agency_name, password_hash, role)
-      VALUES ('TDD Audio Saver', ${email}, '__TDD_AGENCY_SAVE__', 'x', 'agent')
+      INSERT INTO tdg_users (name, email, agency_name, agency_id, password_hash, role)
+      VALUES ('TDD Audio Saver', ${email}, ${agencyName}, ${agencyId}, 'x', 'agent')
     `
     mockPut.mockResolvedValue({ url: 'https://example.com/fake.webm' })
   })
@@ -44,6 +51,7 @@ describe('POST /api/audio-save — agência e nome do agente vêm da sessão, nu
   afterAll(async () => {
     if (createdIds.length) await sql`DELETE FROM tdg_audio_inputs WHERE id = ANY(${createdIds})`
     await sql`DELETE FROM tdg_users WHERE email = ${email}`
+    await sql`DELETE FROM tdg_agencies WHERE id = ${agencyId}`
   })
 
   it('sem sessão retorna 401', async () => {
@@ -52,15 +60,16 @@ describe('POST /api/audio-save — agência e nome do agente vêm da sessão, nu
     expect(res.status).toBe(401)
   })
 
-  it('ignora agency/agent_name enviados no form e usa os da sessão autenticada', async () => {
+  it('ignora agency/agent_name enviados no form e grava agency_name + agency_id da sessão autenticada', async () => {
     mockAuth.mockResolvedValueOnce(sessionFor(email))
     const res = await POST(postReq(audioForm({ agency: '__AGENCIA_FALSA__', agent_name: 'Impostor' })))
     const body = await res.json()
     expect(res.status).toBe(200)
     createdIds.push(body.id)
 
-    const { rows } = await sql`SELECT agency, agent_name FROM tdg_audio_inputs WHERE id = ${body.id}`
-    expect(rows[0].agency).toBe('__TDD_AGENCY_SAVE__')
+    const { rows } = await sql`SELECT agency, agency_id, agent_name FROM tdg_audio_inputs WHERE id = ${body.id}`
+    expect(rows[0].agency).toBe(agencyName)
+    expect(rows[0].agency_id).toBe(agencyId)
     expect(rows[0].agent_name).toBe('TDD Audio Saver')
   })
 })

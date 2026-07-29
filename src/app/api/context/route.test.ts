@@ -26,26 +26,36 @@ describe('GET /api/context — pending_leads (prateleira de descobertas)', () =>
   })
 })
 
-describe('GET /api/context — sino escopado por agência (29/07)', () => {
+describe('GET /api/context — sino escopado por agência (29/07, agora por agency_id)', () => {
   const agencyA = `__TDD Agency A ${Date.now()}__`
   const agencyB = `__TDD Agency B ${Date.now()}__`
   const emailA = `__tdd_a_${Date.now()}__@example.com`
   const emailB = `__tdd_b_${Date.now()}__@example.com`
+  let agencyAId: string
+  let agencyBId: string
   let contentId: string
 
   beforeAll(async () => {
+    const { rows: agencies } = await sql`
+      INSERT INTO tdg_agencies (name, cnpj)
+      VALUES (${agencyA}, ${`__TDD_CNPJ_A_${Date.now()}__`}), (${agencyB}, ${`__TDD_CNPJ_B_${Date.now()}__`})
+      RETURNING id
+    `
+    agencyAId = agencies[0].id as string
+    agencyBId = agencies[1].id as string
+
     await sql`
-      INSERT INTO tdg_users (name, email, agency_name, password_hash, role)
-      VALUES ('TDD A', ${emailA}, ${agencyA}, 'x', 'agent'),
-             ('TDD B', ${emailB}, ${agencyB}, 'x', 'agent')
+      INSERT INTO tdg_users (name, email, agency_name, agency_id, password_hash, role)
+      VALUES ('TDD A', ${emailA}, ${agencyA}, ${agencyAId}, 'x', 'agent'),
+             ('TDD B', ${emailB}, ${agencyB}, ${agencyBId}, 'x', 'agent')
     `
     await sql`
-      INSERT INTO tdg_audio_inputs (agent_name, agency, status)
-      VALUES ('TDD A', ${agencyA}, 'pending')
+      INSERT INTO tdg_audio_inputs (agent_name, agency, agency_id, status)
+      VALUES ('TDD A', ${agencyA}, ${agencyAId}, 'pending')
     `
     await sql`
-      INSERT INTO tdg_hotel_reviews (hotel_name, agent_name, agency_name, status)
-      VALUES ('__TDD Hotel Context__', 'TDD A', ${agencyA}, 'published')
+      INSERT INTO tdg_hotel_reviews (hotel_name, agent_name, agency_name, agency_id, status)
+      VALUES ('__TDD Hotel Context__', 'TDD A', ${agencyA}, ${agencyAId}, 'published')
     `
     const { rows } = await sql`
       INSERT INTO tdg_partnership_content (category, title, kind, link_url, created_by)
@@ -60,6 +70,7 @@ describe('GET /api/context — sino escopado por agência (29/07)', () => {
     await sql`DELETE FROM tdg_hotel_reviews WHERE hotel_name = '__TDD Hotel Context__'`
     await sql`DELETE FROM tdg_audio_inputs WHERE agency IN (${agencyA}, ${agencyB})`
     await sql`DELETE FROM tdg_users WHERE email IN (${emailA}, ${emailB})`
+    await sql`DELETE FROM tdg_agencies WHERE id = ANY(${[agencyAId, agencyBId]})`
   })
 
   it('agência A vê a própria gravação pendente e a própria atividade de dicas', async () => {

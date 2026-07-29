@@ -12,10 +12,13 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { rows: userRows } = await sql`
-    SELECT name, agency_name FROM tdg_users WHERE email = ${session.user?.email ?? ''} LIMIT 1
+    SELECT name, agency_name, agency_id FROM tdg_users WHERE email = ${session.user?.email ?? ''} LIMIT 1
   `
   const user = userRows[0]
   if (!user) return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 })
+
+  // agency_id — migration 020, substitui agency texto solto por FK real
+  await sql`ALTER TABLE tdg_audio_inputs ADD COLUMN IF NOT EXISTS agency_id UUID REFERENCES tdg_agencies(id)`
 
   const fd = await req.formData()
   const audioFile = fd.get('audio') as File
@@ -23,6 +26,7 @@ export async function POST(req: NextRequest) {
   // que qualquer chamador grave uma gravação em nome de outra agência.
   const agentName = (user.name as string) || 'Agente'
   const agency = (user.agency_name as string) || ''
+  const agencyId = (user.agency_id as string | null) ?? null
   const interlocutorName = (fd.get('interlocutor_name') as string) || ''
   const interlocutorCompany = (fd.get('interlocutor_company') as string) || ''
 
@@ -38,9 +42,9 @@ export async function POST(req: NextRequest) {
 
   const { rows } = await sql`
     INSERT INTO tdg_audio_inputs
-      (agent_name, agency, interlocutor_name, interlocutor_company, visit_type, audio_url, status)
+      (agent_name, agency, agency_id, interlocutor_name, interlocutor_company, visit_type, audio_url, status)
     VALUES
-      (${agentName}, ${agency}, ${interlocutorName}, ${interlocutorCompany}, 'MEETING', ${audioUrl}, 'pending')
+      (${agentName}, ${agency}, ${agencyId}, ${interlocutorName}, ${interlocutorCompany}, 'MEETING', ${audioUrl}, 'pending')
     RETURNING id, created_at`
 
   return NextResponse.json({ id: rows[0].id, created_at: rows[0].created_at })

@@ -3,19 +3,19 @@ import Groq from 'groq-sdk'
 import { sql } from '@vercel/postgres'
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
+import { getAgencyId } from '@/lib/agency'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-async function requireAgency(): Promise<{ agencyName: string } | { error: NextResponse }> {
+async function requireAgency(): Promise<{ agencyId: string } | { error: NextResponse }> {
   const session = await auth()
   if (!session) return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
 
-  const { rows } = await sql`SELECT agency_name FROM tdg_users WHERE email = ${session.user?.email ?? ''} LIMIT 1`
-  const agencyName = rows[0]?.agency_name as string | undefined
-  if (!agencyName) return { error: NextResponse.json({ error: 'Usuário sem agência' }, { status: 404 }) }
+  const agencyId = await getAgencyId(session.user?.email ?? '')
+  if (!agencyId) return { error: NextResponse.json({ error: 'Usuário sem agência' }, { status: 404 }) }
 
-  return { agencyName }
+  return { agencyId }
 }
 
 const EXTRACTION_PROMPT = `Analise esta transcrição de uma reunião de um agente de viagens e extraia as informações estruturadas.
@@ -43,7 +43,7 @@ export async function GET() {
            visit_type, status, audio_url, transcript, summary,
            audio_shared, confirmed_at, created_at
     FROM tdg_audio_inputs
-    WHERE agency = ${ctx.agencyName}
+    WHERE agency_id = ${ctx.agencyId}
     ORDER BY created_at DESC
     LIMIT 50`
   return NextResponse.json({ items: rows })
@@ -57,9 +57,9 @@ export async function POST(req: NextRequest) {
   const { id } = await req.json()
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
 
-  const { rows: ownerRows } = await sql`SELECT agency FROM tdg_audio_inputs WHERE id = ${id}`
+  const { rows: ownerRows } = await sql`SELECT agency_id FROM tdg_audio_inputs WHERE id = ${id}`
   if (!ownerRows[0]) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  if (ownerRows[0].agency !== ctx.agencyName) {
+  if (ownerRows[0].agency_id !== ctx.agencyId) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
@@ -125,9 +125,9 @@ export async function PATCH(req: NextRequest) {
   const { id, interlocutor_name, interlocutor_company } = await req.json()
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
 
-  const { rows: ownerRows } = await sql`SELECT agency FROM tdg_audio_inputs WHERE id = ${id}`
+  const { rows: ownerRows } = await sql`SELECT agency_id FROM tdg_audio_inputs WHERE id = ${id}`
   if (!ownerRows[0]) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  if (ownerRows[0].agency !== ctx.agencyName) {
+  if (ownerRows[0].agency_id !== ctx.agencyId) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 

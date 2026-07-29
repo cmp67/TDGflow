@@ -20,30 +20,43 @@ function jsonReq(method: string, body: unknown) {
   }) as unknown as Parameters<typeof POST>[0]
 }
 
-describe('GET/POST/PATCH /api/audio-queue — escopo por agência', () => {
+describe('GET/POST/PATCH /api/audio-queue — escopo por agency_id', () => {
+  const agencyA = `__TDD Queue Agency A ${Date.now()}__`
+  const agencyB = `__TDD Queue Agency B ${Date.now()}__`
   const emailA = `tdd-audio-queue-a-${Date.now()}@example.com`
   const emailB = `tdd-audio-queue-b-${Date.now()}@example.com`
+  let agencyAId: string
+  let agencyBId: string
   let idAgencyA: string
   let idAgencyB: string
 
   beforeAll(async () => {
-    await sql`INSERT INTO tdg_users (name, email, agency_name, password_hash, role) VALUES ('TDD A', ${emailA}, '__TDD_QUEUE_A__', 'x', 'agent')`
-    await sql`INSERT INTO tdg_users (name, email, agency_name, password_hash, role) VALUES ('TDD B', ${emailB}, '__TDD_QUEUE_B__', 'x', 'agent')`
+    const { rows: agencies } = await sql`
+      INSERT INTO tdg_agencies (name, cnpj)
+      VALUES (${agencyA}, ${`__TDD_CNPJ_QA_${Date.now()}__`}), (${agencyB}, ${`__TDD_CNPJ_QB_${Date.now()}__`})
+      RETURNING id
+    `
+    agencyAId = agencies[0].id as string
+    agencyBId = agencies[1].id as string
+
+    await sql`INSERT INTO tdg_users (name, email, agency_name, agency_id, password_hash, role) VALUES ('TDD A', ${emailA}, ${agencyA}, ${agencyAId}, 'x', 'agent')`
+    await sql`INSERT INTO tdg_users (name, email, agency_name, agency_id, password_hash, role) VALUES ('TDD B', ${emailB}, ${agencyB}, ${agencyBId}, 'x', 'agent')`
 
     const { rows: rowsA } = await sql`
-      INSERT INTO tdg_audio_inputs (agent_name, agency, visit_type, status)
-      VALUES ('TDD A', '__TDD_QUEUE_A__', 'MEETING', 'pending') RETURNING id`
+      INSERT INTO tdg_audio_inputs (agent_name, agency, agency_id, visit_type, status)
+      VALUES ('TDD A', ${agencyA}, ${agencyAId}, 'MEETING', 'pending') RETURNING id`
     idAgencyA = rowsA[0].id
 
     const { rows: rowsB } = await sql`
-      INSERT INTO tdg_audio_inputs (agent_name, agency, visit_type, status)
-      VALUES ('TDD B', '__TDD_QUEUE_B__', 'MEETING', 'pending') RETURNING id`
+      INSERT INTO tdg_audio_inputs (agent_name, agency, agency_id, visit_type, status)
+      VALUES ('TDD B', ${agencyB}, ${agencyBId}, 'MEETING', 'pending') RETURNING id`
     idAgencyB = rowsB[0].id
   })
 
   afterAll(async () => {
     await sql`DELETE FROM tdg_audio_inputs WHERE id = ANY(${[idAgencyA, idAgencyB]})`
     await sql`DELETE FROM tdg_users WHERE email = ANY(${[emailA, emailB]})`
+    await sql`DELETE FROM tdg_agencies WHERE id = ANY(${[agencyAId, agencyBId]})`
   })
 
   it('GET sem sessão retorna 401', async () => {

@@ -93,10 +93,11 @@ export async function POST(req: NextRequest) {
   } catch { /* storage optional */ }
 
   // 4. Guardar no Postgres
+  await sql`ALTER TABLE tdg_audio_inputs ADD COLUMN IF NOT EXISTS agency_id UUID REFERENCES tdg_agencies(id)`
   const { rows } = await sql`
-    INSERT INTO tdg_audio_inputs (agent_name, agency, visit_type, transcript, summary, audio_url, audio_shared)
+    INSERT INTO tdg_audio_inputs (agent_name, agency, agency_id, visit_type, transcript, summary, audio_url, audio_shared)
     VALUES (
-      ${agentName}, ${agency},
+      ${agentName}, ${agency}, ${agencyId},
       ${(summary.visit_type as string) || 'DEBRIEF'},
       ${transcript},
       ${JSON.stringify(summary)},

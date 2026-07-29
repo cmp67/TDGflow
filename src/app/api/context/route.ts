@@ -12,16 +12,14 @@ export async function GET() {
 
   // Ensure avatar column exists and fetch it
   await sql`ALTER TABLE tdg_users ADD COLUMN IF NOT EXISTS avatar_url TEXT`
-  const profileRes = await sql`SELECT avatar_url, role, agency_name FROM tdg_users WHERE email = ${session.user?.email ?? ''} LIMIT 1`
+  const profileRes = await sql`SELECT avatar_url, role, agency_id FROM tdg_users WHERE email = ${session.user?.email ?? ''} LIMIT 1`
   const avatarUrl: string | null = profileRes.rows[0]?.avatar_url ?? null
   const isAdmin = profileRes.rows[0]?.role === 'admin'
   // Escopo por agência (achado da Carla, 29/07): gravações e atividade de
   // dicas viviam sem filtro nenhum — toda agência via o contador da rede
-  // inteira. Nenhuma tabela tem agency_id populado de forma confiável ainda
-  // (tdg_audio_inputs não tem FK; tdg_hotel_reviews tem agency_name direto
-  // no registro, sempre preenchido) — usa esse texto livre, é o vínculo mais
-  // confiável disponível hoje sem esperar a migração de multi-tenancy real.
-  const agencyName = (profileRes.rows[0]?.agency_name as string | undefined) ?? ''
+  // inteira. Migration 020 deu agency_id real a tdg_audio_inputs/
+  // tdg_hotel_reviews — usa a FK em vez do texto livre agora.
+  const agencyId = (profileRes.rows[0]?.agency_id as string | undefined) ?? null
 
   // Pedidos de ativação GUEST pendentes — só existe pro admin global (a mesma
   // pessoa que os aprova na aba "Rede TDG" do Billing). A tabela pode ainda
@@ -39,13 +37,13 @@ export async function GET() {
     sql`
       SELECT COUNT(*)::int AS count
       FROM tdg_audio_inputs
-      WHERE status = 'pending' AND agency = ${agencyName}
+      WHERE status = 'pending' AND agency_id = ${agencyId}
     `,
     // Reviews desta semana — só da própria agência
     sql`
       SELECT COUNT(*)::int AS count
       FROM tdg_hotel_reviews
-      WHERE created_at >= NOW() - INTERVAL '7 days' AND agency_name = ${agencyName}
+      WHERE created_at >= NOW() - INTERVAL '7 days' AND agency_id = ${agencyId}
     `,
     // Promoções expirando em 7 dias — network-wide de propósito (ofertas são
     // da rede toda, não da agência individual). Foto real do hotel junto.

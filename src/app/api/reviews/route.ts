@@ -123,6 +123,9 @@ export async function POST(req: NextRequest) {
     // livre, pra permitir a ficha do hotel puxar suas próprias reviews depois.
     await sql`ALTER TABLE tdg_hotel_reviews ADD COLUMN IF NOT EXISTS hotel_id UUID REFERENCES tdg_hotels(id) ON DELETE SET NULL`
 
+    // agency_id — migration 020, substitui agency_name texto solto por FK real
+    await sql`ALTER TABLE tdg_hotel_reviews ADD COLUMN IF NOT EXISTS agency_id UUID REFERENCES tdg_agencies(id)`
+
     // Migrate highlights from TEXT[] to JSONB (idempotent via column type check)
     await sql`
       ALTER TABLE tdg_hotel_reviews
@@ -139,7 +142,7 @@ export async function POST(req: NextRequest) {
 
     // Lookup user — fail clearly if not found
     const { rows: userRows } = await sql`
-      SELECT id, name, agency_name FROM tdg_users WHERE email = ${session.user?.email ?? ''} LIMIT 1
+      SELECT id, name, agency_name, agency_id FROM tdg_users WHERE email = ${session.user?.email ?? ''} LIMIT 1
     `
     const user = userRows[0]
     if (!user) return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 })
@@ -227,11 +230,11 @@ Retorne APENAS um JSON válido com esta estrutura:
 
     const { rows } = await sql`
       INSERT INTO tdg_hotel_reviews
-        (hotel_name, hotel_id, entity_type, country, agent_id, agent_name, agency_name, visit_date, visit_type,
+        (hotel_name, hotel_id, entity_type, country, agent_id, agent_name, agency_name, agency_id, visit_date, visit_type,
          overall_rating, rooms_rating, service_rating, food_rating, location_rating,
          highlights, client_profile, must_experience, heads_up, status, photo_url, related_lead_id, raw_answers, sentiment_map)
       VALUES (
-        ${hotel_name}, ${hotelId}, ${finalEntityType}, ${country || null}, ${user.id}, ${user.name}, ${user.agency_name},
+        ${hotel_name}, ${hotelId}, ${finalEntityType}, ${country || null}, ${user.id}, ${user.name}, ${user.agency_name}, ${user.agency_id ?? null},
         ${visit_date || null}, ${visit_type || null},
         ${overall_rating}, ${rooms_rating || null}, ${service_rating || null},
         ${food_rating || null}, ${location_rating || null},
