@@ -2,12 +2,12 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bell, Tag, Lightbulb, Mic, X } from 'lucide-react'
+import { Bell, Tag, Lightbulb, Mic, Megaphone, X } from 'lucide-react'
 import { sounds } from '@/lib/sounds'
 
 interface Notification {
   id: string
-  type: 'offer' | 'review' | 'recording'
+  type: 'offer' | 'review' | 'recording' | 'content'
   title: string
   body: string
   time: string
@@ -29,12 +29,20 @@ const ICON: Record<string, React.ReactNode> = {
   offer:     <Tag size={13} />,
   review:    <Lightbulb size={13} />,
   recording: <Mic size={13} />,
+  content:   <Megaphone size={13} />,
 }
 
 const ICON_COLOR: Record<string, string> = {
   offer:     'var(--tdgflow-navy)',
   review:    '#7DD3FC',
   recording: '#86EFAC',
+  content:   'var(--tdgflow-gold-dim)',
+}
+
+const CONTENT_CATEGORY_LABEL: Record<string, string> = {
+  documento: 'Novo documento',
+  video_ata: 'Novo vídeo/ata',
+  comunicado: 'Novo comunicado',
 }
 
 export default function NotificationBell() {
@@ -57,14 +65,14 @@ export default function NotificationBell() {
       const readIds: string[] = JSON.parse(localStorage.getItem(READ_KEY) ?? '[]')
       const notifs: Notification[] = []
 
-      // Pending recordings
+      // Pending recordings — só da própria agência (escopado no /api/context)
       if (ctx.pending_recordings > 0) {
         const id = 'pending-recordings'
         notifs.push({
           id,
           type: 'recording',
           title: 'Gravações pendentes',
-          body: `${ctx.pending_recordings} gravação${ctx.pending_recordings > 1 ? 'ões' : ''} aguarda${ctx.pending_recordings > 1 ? 'm' : ''} processamento`,
+          body: `${ctx.pending_recordings} gravação${ctx.pending_recordings > 1 ? 'ões' : ''} da sua agência aguarda${ctx.pending_recordings > 1 ? 'm' : ''} processamento`,
           time: new Date().toISOString(),
           read: readIds.includes(id),
         })
@@ -91,16 +99,32 @@ export default function NotificationBell() {
       // aprovação/trabalho, não aviso passageiro. Agora é badge no item
       // "Billing" da nav (ver FlowShell.tsx), onde se resolve de fato.
 
-      // Reviews this week
+      // Reviews this week — só da própria agência (escopado no /api/context)
       if (ctx.reviews_this_week > 0) {
         const id = 'reviews-week'
         notifs.push({
           id,
           type: 'review',
-          title: 'Atividade na rede',
+          title: 'Atividade da sua agência',
           body: `${ctx.reviews_this_week} nova${ctx.reviews_this_week > 1 ? 's' : ''} dica${ctx.reviews_this_week > 1 ? 's' : ''} registrada${ctx.reviews_this_week > 1 ? 's' : ''} esta semana`,
           time: new Date().toISOString(),
           read: readIds.includes(id),
+        })
+      }
+
+      // Conteúdo novo na Central Bemgsy — broadcast pra rede inteira, não
+      // escopado por agência (é a Bemgsy avisando todo mundo de propósito).
+      if (ctx.new_partnership_content?.length > 0) {
+        ctx.new_partnership_content.forEach((c: { id: string; category: string; title: string; created_at: string }) => {
+          const id = `content-${c.id}`
+          notifs.push({
+            id,
+            type: 'content',
+            title: CONTENT_CATEGORY_LABEL[c.category] ?? 'Novo conteúdo da Bemgsy',
+            body: `${c.title} — em Central Bemgsy`,
+            time: c.created_at,
+            read: readIds.includes(id),
+          })
         })
       }
 
