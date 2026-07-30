@@ -411,7 +411,7 @@ function FlowShellInner({ children, user, brand }: Props) {
               {/* Badge Membro Fundador (achado da Carla, 30/07: só existia como
                   texto solto no meio da copy do Billing, nunca como selo
                   visível de verdade). Reusa o sistema .badge já existente. */}
-              <span className="badge badge-gold" style={{ marginTop: 3, fontSize: '0.5625rem' }}>
+              <span className="badge badge-gold" style={{ marginTop: 3, fontSize: '0.5625rem', borderRadius: 6, lineHeight: 1.35 }}>
                 Membro Fundador TDG Flow
               </span>
             </div>
