@@ -238,8 +238,11 @@ function FlowShellInner({ children, user, brand }: Props) {
             <path d="M 3 5 C 26 -2, 38 12, 62 5 C 72 1, 82 1, 93 5"
               fill="none" stroke="var(--tdgflow-gold)" strokeWidth="1.1" strokeLinecap="round" opacity="0.6" />
           </svg>
-          <p style={{ marginTop: 8, fontSize: '0.5625rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(234,241,245,0.5)' }}>
-            Rede TDG · powered by Bemgsy
+          {/* Só "Rede TDG" aqui — "powered by Bemgsy" já tem crédito próprio
+              (com logo de verdade) no rodapé da sidebar; repetir os dois
+              nessa legenda pequena quebrava em 2 linhas e era redundante. */}
+          <p style={{ marginTop: 8, fontSize: '0.5625rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(234,241,245,0.5)', whiteSpace: 'nowrap' }}>
+            Rede TDG
           </p>
         </div>
 
