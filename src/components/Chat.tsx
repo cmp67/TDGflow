@@ -187,7 +187,14 @@ function buildActionCards(ctx: AgentContext): ActionCard[] {
   return cards.slice(0, 4)
 }
 
-export default function Chat() {
+interface Props {
+  // Nome vindo da sessão (server-side), usado só se /api/context falhar —
+  // achado da Carla, 30/07: sempre pelo nome, nunca genérico, mesmo no
+  // caminho de erro raro de rede.
+  fallbackName?: string | null
+}
+
+export default function Chat({ fallbackName }: Props = {}) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -216,7 +223,8 @@ export default function Chat() {
         setTimeout(() => setGreetingReady(true), 600)
       })
       .catch(() => {
-        setGreeting('Olá! Em que posso ajudar hoje?')
+        const firstName = fallbackName?.split(' ')[0]
+        setGreeting(firstName ? `Olá, **${firstName}**! Em que posso ajudar hoje?` : 'Olá! Em que posso ajudar hoje?')
         setTimeout(() => setGreetingReady(true), 300)
       })
   }, [])
