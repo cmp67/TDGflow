@@ -203,48 +203,44 @@ function FlowShellInner({ children, user, brand }: Props) {
         className="desktop-only"
         style={{ flexDirection: 'column', flexShrink: 0, width: 208, background: 'var(--tdgflow-surface)', borderRight: '1px solid var(--tdgflow-border)' }}
       >
-        {/* Logotype — pele da agência é sempre o protagonista. Revisado
-            29/07 com o painel Tesla depois de 3 problemas reais reportados
-            (Bemgsy invisível, "Central Bemgsy" sem renomear, logos
-            desorganizados): container de altura FIXA (não maxHeight) pro
-            logo da agência — resolve o desalinhamento do sino quando o
-            logo é muito largo/baixo (achado do arquiteto). Selo do TDG e
-            crédito da Bemgsy ganham rótulo de texto ao lado — uma imagem
-            sozinha, pequena, sem legenda, é estatisticamente ignorada pelo
-            olho antes da atenção consciente (achado do UX expert) — nunca
-            só a logo pura. Linha decorativa órfã removida, virou um
-            divisor real (achado do designer: "hoje é ruído sem função"). */}
-        <div className="px-6 pt-6 flex-shrink-0 flex items-center justify-between gap-3" style={{ height: 60 }}>
-          <div className="min-w-0 flex-1" style={{ height: 44, display: 'flex', alignItems: 'center' }}>
-            {brand?.logoUrl ? (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img
-                src={brand.logoUrl}
-                alt={user.agency || 'Logo da agência'}
-                style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain', display: 'block' }}
-              />
-            ) : (
-              <p style={{
-                fontFamily: 'var(--tdgflow-font-sans)', fontSize: '1.0625rem', fontWeight: 700,
-                letterSpacing: '-0.01em', color: 'var(--tdgflow-text-primary)', lineHeight: 1.25,
-                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', margin: 0,
-              }}>
-                {user.agency || 'TDG'}
-              </p>
-            )}
+        {/* Header do produto — decisão da Carla, 30/07: o canto superior
+            esquerdo passa a ser o lockup do PRÓPRIO PRODUTO ("TDG · Flow"),
+            não mais o logo da agência individual (esse desce pro card de
+            perfil/rankings). Conceito aprovado depois de 2 rodadas —
+            tipografia real limpa, onda como traço único e discreto (nunca
+            substituindo uma letra — 1ª tentativa ficou "gráfica demais",
+            reprovada). Zona navy dedicada porque dourado como texto direto
+            em fundo branco reprova contraste (mesmo princípio que já
+            baniu dourado puro como texto no resto do design system) — aqui
+            replica o mesmo palco escuro que o Guest já usa no login,
+            consistência de família. Onda anima uma vez só ao carregar
+            (nunca em loop — regra do design system: animação é pra
+            momento de feedback, nunca decorativa/ambiente). */}
+        <div style={{
+          position: 'relative', overflow: 'hidden', flexShrink: 0,
+          background: 'radial-gradient(ellipse at 50% 0%, #172431 0%, var(--tdgflow-navy-dim) 75%)',
+          padding: '20px 20px 16px',
+        }}>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center" style={{ gap: 10, minWidth: 0 }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/brand/tdg-mark.png" alt="TDG" style={{ height: 20, objectFit: 'contain', flexShrink: 0 }} />
+              <div style={{ width: 1, height: 20, background: 'rgba(234,241,245,0.22)', flexShrink: 0 }} />
+              <span style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontStyle: 'italic', fontSize: '1.5rem', color: 'var(--tdgflow-gold)', lineHeight: 1, whiteSpace: 'nowrap' }}>
+                Flow
+              </span>
+            </div>
+            <div style={{ flexShrink: 0 }}>
+              <NotificationBell align="left" theme="dark" />
+            </div>
           </div>
-          <div style={{ flexShrink: 0 }}>
-            <NotificationBell align="left" />
-          </div>
-        </div>
-        <div className="px-6" style={{ paddingBottom: 14, paddingTop: 2, flexShrink: 0, borderBottom: '1px solid var(--tdgflow-border)' }}>
-          <div className="flex items-center" style={{ gap: 8, height: 20 }}>
-            <span style={{ fontSize: '0.625rem', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--tdgflow-text-faint)' }}>
-              Rede TDG
-            </span>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/brand/tdg-mark.png" alt="TDG" style={{ height: 16, objectFit: 'contain', display: 'block' }} />
-          </div>
+          <svg className="flow-wave-once" width="96" height="10" viewBox="0 0 96 10" style={{ display: 'block', marginTop: 8 }}>
+            <path d="M 3 5 C 26 -2, 38 12, 62 5 C 72 1, 82 1, 93 5"
+              fill="none" stroke="var(--tdgflow-gold)" strokeWidth="1.1" strokeLinecap="round" opacity="0.6" />
+          </svg>
+          <p style={{ marginTop: 8, fontSize: '0.5625rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(234,241,245,0.5)' }}>
+            Rede TDG · powered by Bemgsy
+          </p>
         </div>
 
         {/* Primary nav */}
@@ -453,7 +449,7 @@ function FlowShellInner({ children, user, brand }: Props) {
               fontSize: '0.75rem', fontWeight: 700, color: 'var(--tdgflow-text-primary)',
               whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
             }}>
-              {user.agency || 'TDG Flow'}
+              TDG Flow
             </span>
           </div>
           <div className="flex items-center gap-2">

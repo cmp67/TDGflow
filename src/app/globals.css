@@ -461,3 +461,21 @@ p, span, li { line-height: 1.6; }
   backdrop-filter: blur(12px);
   border-bottom-color: var(--tdgflow-border) !important;
 }
+
+/* ── Onda do lockup "TDG Flow" — anima uma vez só ao carregar (achado da
+   Carla, 30/07: nunca em loop — animação é pra momento de feedback, nunca
+   decorativa/ambiente, regra já definida no design system). ────────────── */
+.flow-wave-once path {
+  stroke-dasharray: 130;
+  stroke-dashoffset: 130;
+  animation: flow-wave-draw 1.1s var(--tdgflow-ease-smooth) 0.15s forwards;
+}
+@keyframes flow-wave-draw {
+  to { stroke-dashoffset: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .flow-wave-once path {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}

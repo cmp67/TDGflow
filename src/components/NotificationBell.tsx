@@ -52,9 +52,14 @@ interface Props {
   // desktop (208px de largura só; abrir pra esquerda sai da tela e é
   // cortado pelo overflow-hidden do shell raiz — bug real reportado 29/07).
   align?: 'left' | 'right'
+  // 'light' (default) é o ícone escuro de sempre, pra fundo claro. 'dark' é
+  // pro header navy do produto (30/07) — ícone claro, senão fica invisível.
+  theme?: 'light' | 'dark'
 }
 
-export default function NotificationBell({ align = 'right' }: Props) {
+export default function NotificationBell({ align = 'right', theme = 'light' }: Props) {
+  const iconColor = theme === 'dark' ? 'rgba(234,241,245,0.7)' : 'var(--tdgflow-text-muted)'
+  const iconColorHover = theme === 'dark' ? '#EAF1F5' : 'var(--tdgflow-text-primary)'
   const [open, setOpen] = useState(false)
   const [notifications, setNotifications] = useState<Notification[]>([])
   const panelRef = useRef<HTMLDivElement>(null)
@@ -172,13 +177,13 @@ export default function NotificationBell({ align = 'right' }: Props) {
         style={{
           position: 'relative',
           background: 'none', border: 'none', cursor: 'pointer',
-          padding: 6, color: 'var(--tdgflow-text-muted)',
+          padding: 6, color: iconColor,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           borderRadius: 8,
           transition: 'color 150ms',
         }}
-        onMouseEnter={e => (e.currentTarget.style.color = 'var(--tdgflow-text-primary)')}
-        onMouseLeave={e => (e.currentTarget.style.color = 'var(--tdgflow-text-muted)')}
+        onMouseEnter={e => (e.currentTarget.style.color = iconColorHover)}
+        onMouseLeave={e => (e.currentTarget.style.color = iconColor)}
       >
         <Bell size={16} strokeWidth={1.5} />
         {unread > 0 && (
