@@ -451,6 +451,8 @@ export async function setDistributionMode(mode: DistributionMode): Promise<void>
 // contain unlinked/demo accounts with no real agency at all). Usage is
 // summed straight from the ledger's real agency_id column, so this now
 // covers every contracted agency, not a single hardcoded pool.
+// `is_test = false` excludes agências de teste (ex: "Agência 20 Teste",
+// criada pra ter visão de agente sem contar nos números da rede real).
 
 export async function getAgencyBreakdown(): Promise<{
   agency: string
@@ -465,7 +467,7 @@ export async function getAgencyBreakdown(): Promise<{
       ON  l.agency_id   = a.id
       AND l.amount      < 0
       AND l.created_at >= date_trunc('month', NOW())
-    WHERE a.active = true
+    WHERE a.active = true AND a.is_test = false
     GROUP BY a.name
     ORDER BY used_this_month DESC
   `
@@ -485,7 +487,7 @@ export async function distributeEqually(total: number): Promise<{
     ON CONFLICT (key) DO UPDATE SET value = ${String(total)}, updated_at = NOW()
   `
 
-  const { rows } = await sql`SELECT name FROM tdg_agencies WHERE active = true ORDER BY name`
+  const { rows } = await sql`SELECT name FROM tdg_agencies WHERE active = true AND is_test = false ORDER BY name`
   const agencies  = rows.map(r => r.name as string)
   const quotaEach = agencies.length > 0 ? Math.floor(total / agencies.length) : 0
 

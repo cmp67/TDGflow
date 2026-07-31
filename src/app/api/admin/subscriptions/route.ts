@@ -7,7 +7,9 @@ export const dynamic = 'force-dynamic'
 
 // Global-admin only: billing status across every one of the 19 contracted
 // agencies in one screen, instead of checking each agency's own Billing tab
-// or the payment gateway's dashboard by hand.
+// or the payment gateway's dashboard by hand. `is_test = false` exclui
+// agências de teste (ex: "Agência 20 Teste") — não são clientes reais, não
+// devem aparecer num relatório de cobrança.
 
 type SubscriptionStatus = 'none' | 'pending' | 'authorized' | 'paused' | 'cancelled' | 'rejected'
 
@@ -43,7 +45,7 @@ export async function GET() {
       ORDER BY created_at DESC
       LIMIT 1
     ) s ON true
-    WHERE a.active = true
+    WHERE a.active = true AND a.is_test = false
     ORDER BY a.name
   `
 

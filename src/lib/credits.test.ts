@@ -3,6 +3,8 @@ import { sql } from '@vercel/postgres'
 import {
   checkAndDeductCredits,
   getQuotaStatus,
+  getAgencyBreakdown,
+  distributeEqually,
   INSUFFICIENT_BALANCE,
   NO_AGENCY,
 } from './credits'
@@ -146,5 +148,36 @@ describe('checkAndDeductCredits (post agency_id-uuid migration)', () => {
         userEmail: 'tdd-test@example.com',
       })
     ).rejects.toThrow()
+  })
+})
+
+describe('is_test exclui agências de teste dos agregados de rede (31/07/2026)', () => {
+  let testFlagAgencyId: string
+  const testCnpj = `00.000.001/${Date.now().toString().slice(-4)}-00`
+
+  beforeAll(async () => {
+    const { rows } = await sql`
+      INSERT INTO tdg_agencies (name, cnpj, is_test)
+      VALUES ('__TDD_AGENCIA_TESTE__', ${testCnpj}, true)
+      RETURNING id
+    `
+    testFlagAgencyId = rows[0].id as string
+  })
+
+  afterAll(async () => {
+    await sql`DELETE FROM tdg_credits_ledger WHERE agency_id = ${testFlagAgencyId}`
+    await sql`DELETE FROM tdg_agency_cycles WHERE agency_id = ${testFlagAgencyId}`
+    await sql`DELETE FROM tdg_credits_balance WHERE agency_id = ${testFlagAgencyId}`
+    await sql`DELETE FROM tdg_agencies WHERE id = ${testFlagAgencyId}`
+  })
+
+  it('distributeEqually não lista agência marcada is_test', async () => {
+    const { agencies } = await distributeEqually(1000)
+    expect(agencies).not.toContain('__TDD_AGENCIA_TESTE__')
+  })
+
+  it('getAgencyBreakdown não lista agência marcada is_test', async () => {
+    const breakdown = await getAgencyBreakdown()
+    expect(breakdown.some(b => b.agency === '__TDD_AGENCIA_TESTE__')).toBe(false)
   })
 })
