@@ -1,3 +1,5 @@
+'use client'
+
 import SectionShell from '@/components/SectionShell'
 import { Mail } from 'lucide-react'
 

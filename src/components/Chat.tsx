@@ -258,6 +258,18 @@ export default function Chat({ fallbackName }: Props = {}) {
         return
       }
       const data = await res.json()
+      if (!res.ok) {
+        // Achado testando com conta sem agência vinculada (admin global):
+        // antes disso caía direto em data.content (undefined), virando uma
+        // bolha de resposta vazia sem explicação nenhuma pro usuário.
+        sounds.error()
+        const message = data.error === 'NO_AGENCY'
+          ? 'Sua conta não está vinculada a uma agência — fale com o suporte para habilitar o Modo Flow.'
+          : 'Não foi possível processar sua mensagem agora. Tente novamente.'
+        setMessages([...newMessages, { role: 'assistant', content: message }])
+        setLoading(false)
+        return
+      }
       sounds.reply()
       setMessages([...newMessages, { role: 'assistant', content: data.content }])
     } catch {

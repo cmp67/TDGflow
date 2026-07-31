@@ -39,11 +39,19 @@ export default function BrandSettings({ userRole }: Props) {
   const [uploading, setUploading] = useState(false)
   const [saved, setSaved]         = useState(false)
   const [error, setError]         = useState('')
+  // Conta sem agência vinculada (ex: admin global da Bemgsy) — não tem pra
+  // onde salvar marca nenhuma. Achado testando com a própria conta da Carla:
+  // o formulário editável aparecia normalmente e falharia ao salvar com o
+  // erro cru do backend. Mesmo tratamento já usado em Billing pro caso.
+  const [noAgency, setNoAgency]   = useState(false)
 
   useEffect(() => {
     fetch('/api/brand')
-      .then(r => r.json())
-      .then(json => { if (json.brand) setBrand(json.brand) })
+      .then(async r => ({ ok: r.ok, json: await r.json() }))
+      .then(({ ok, json }) => {
+        if (ok && json.brand) setBrand(json.brand)
+        else if (!ok) setNoAgency(true)
+      })
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
@@ -103,6 +111,19 @@ export default function BrandSettings({ userRole }: Props) {
 
   if (loading) return null
   if (!canEdit && !brand.logoUrl && !brand.primaryColor) return null
+  if (canEdit && noAgency) {
+    return (
+      <div className="card space-y-3">
+        <div className="flex items-center gap-2">
+          <span style={{ color: 'var(--tdgflow-navy)' }}><PaletteIcon /></span>
+          <h3 className="text-sm font-semibold" style={{ color: 'var(--tdgflow-text-primary)' }}>DNA de marca da agência</h3>
+        </div>
+        <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)', margin: 0 }}>
+          Sua conta ainda não está vinculada a uma agência — fale com o suporte para habilitar a personalização de marca.
+        </p>
+      </div>
+    )
+  }
 
   return (
     <div className="card space-y-3">
