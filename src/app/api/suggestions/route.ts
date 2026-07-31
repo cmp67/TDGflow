@@ -29,6 +29,9 @@ async function ensureTables() {
   // Migrate existing table — add columns if missing
   await sql`ALTER TABLE tdg_suggestions ADD COLUMN IF NOT EXISTS type TEXT NOT NULL DEFAULT 'improvement'`
   await sql`ALTER TABLE tdg_suggestions ADD COLUMN IF NOT EXISTS impact INTEGER NOT NULL DEFAULT 3`
+  // screenshot_url: só preenchido quando type = 'bug_report' e o usuário
+  // anexou print do erro (upload em /api/suggestions/screenshot).
+  await sql`ALTER TABLE tdg_suggestions ADD COLUMN IF NOT EXISTS screenshot_url TEXT`
 }
 
 // GET /api/suggestions — list all sorted by weighted score (votes × impact) desc
@@ -49,6 +52,7 @@ export async function GET() {
         s.status,
         s.votes,
         s.created_at,
+        s.screenshot_url,
         CASE WHEN v.user_email IS NOT NULL THEN TRUE ELSE FALSE END AS voted
       FROM tdg_suggestions s
       LEFT JOIN tdg_suggestion_votes v
@@ -71,15 +75,16 @@ export async function POST(req: NextRequest) {
 
   try {
     await ensureTables()
-    const { title, description, type, impact } = await req.json()
+    const { title, description, type, impact, screenshot_url } = await req.json()
     if (!title?.trim() || !description?.trim()) {
       return NextResponse.json({ error: 'Title and description required' }, { status: 400 })
     }
 
     const email = session.user?.email ?? ''
     const name  = session.user?.name ?? email
-    const safeType   = ['improvement', 'new_feature'].includes(type) ? type : 'improvement'
-    const safeImpact = Math.min(5, Math.max(1, Number(impact) || 3))
+    const safeType     = ['improvement', 'new_feature', 'bug_report'].includes(type) ? type : 'improvement'
+    const safeImpact    = Math.min(5, Math.max(1, Number(impact) || 3))
+    const safeScreenshot = safeType === 'bug_report' && typeof screenshot_url === 'string' ? screenshot_url : null
 
     let agencyName = ''
     try {
@@ -88,9 +93,9 @@ export async function POST(req: NextRequest) {
     } catch { /* non-blocking */ }
 
     const { rows } = await sql`
-      INSERT INTO tdg_suggestions (title, description, submitted_by, agency_name, type, impact)
-      VALUES (${title.trim()}, ${description.trim()}, ${name}, ${agencyName}, ${safeType}, ${safeImpact})
-      RETURNING id, title, description, type, impact, status, votes, created_at
+      INSERT INTO tdg_suggestions (title, description, submitted_by, agency_name, type, impact, screenshot_url)
+      VALUES (${title.trim()}, ${description.trim()}, ${name}, ${agencyName}, ${safeType}, ${safeImpact}, ${safeScreenshot})
+      RETURNING id, title, description, type, impact, status, votes, created_at, screenshot_url
     `
     return NextResponse.json({ suggestion: { ...rows[0], voted: false } }, { status: 201 })
   } catch (e) {
@@ -119,7 +124,7 @@ export async function PATCH(req: NextRequest) {
         await sql`INSERT INTO tdg_suggestion_votes (suggestion_id, user_email) VALUES (${id}, ${email})`
         await sql`UPDATE tdg_suggestions SET votes = votes + 1 WHERE id = ${id}`
       }
-      const { rows } = await sql`SELECT id, title, description, type, impact, status, votes, created_at FROM tdg_suggestions WHERE id = ${id}`
+      const { rows } = await sql`SELECT id, title, description, type, impact, status, votes, created_at, screenshot_url FROM tdg_suggestions WHERE id = ${id}`
       return NextResponse.json({ suggestion: rows[0], voted: existing.length === 0 })
     }
 
@@ -130,7 +135,7 @@ export async function PATCH(req: NextRequest) {
       }
       const { rows } = await sql`
         UPDATE tdg_suggestions SET status = ${status} WHERE id = ${id}
-        RETURNING id, title, description, type, impact, status, votes, created_at
+        RETURNING id, title, description, type, impact, status, votes, created_at, screenshot_url
       `
       return NextResponse.json({ suggestion: rows[0] })
     }

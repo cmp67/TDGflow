@@ -170,6 +170,10 @@ function FlowShellInner({ children, user, brand }: Props) {
   // (0 pra qualquer outro papel, o backend já filtra). Saiu do sino (29/07):
   // vira badge no item onde se resolve de fato, não aviso passageiro.
   const [pendingGuestRequests, setPendingGuestRequests] = useState(0)
+  // Reports de erro pendentes (Linha Direta Bemgsy) — mesmo padrão de
+  // pendingGuestRequests: fila de trabalho do admin, badge no item onde se
+  // resolve, não aviso passageiro no sino.
+  const [pendingBugReports, setPendingBugReports] = useState(0)
   useEffect(() => {
     fetch('/api/context')
       .then(res => res.ok ? res.json() : null)
@@ -177,6 +181,7 @@ function FlowShellInner({ children, user, brand }: Props) {
         if (!data) return
         setPendingLeads(data.pending_leads ?? 0)
         setPendingGuestRequests(data.pending_guest_requests ?? 0)
+        setPendingBugReports(data.pending_bug_reports ?? 0)
       })
       .catch(() => {})
   }, [])
@@ -392,6 +397,16 @@ function FlowShellInner({ children, user, brand }: Props) {
             <span style={{ fontSize: '0.75rem', color: isActive('/flow/sugestoes') ? 'var(--tdgflow-agency-accent)' : 'var(--tdgflow-text-muted)', fontWeight: isActive('/flow/sugestoes') ? 600 : 400 }}>
               {tr('nav.sugestoes')}
             </span>
+            {isAdmin && pendingBugReports > 0 && (
+              <span style={{
+                marginLeft: 'auto', minWidth: 16, height: 16, padding: '0 4px', borderRadius: 999,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: 'var(--tdgflow-error)', color: '#fff',
+                fontSize: '0.625rem', fontWeight: 700, lineHeight: 1,
+              }}>
+                {pendingBugReports}
+              </span>
+            )}
           </Link>
 
           <Link
@@ -592,6 +607,16 @@ function FlowShellInner({ children, user, brand }: Props) {
                 >
                   <MessageSquarePlus size={16} strokeWidth={isActive('/flow/sugestoes') ? 2 : 1.5} style={{ color: 'inherit', flexShrink: 0 }} />
                   <span style={{ fontSize: '0.9375rem', fontWeight: isActive('/flow/sugestoes') ? 500 : 400 }}>{tr('nav.sugestoes')}</span>
+                  {isAdmin && pendingBugReports > 0 && (
+                    <span style={{
+                      marginLeft: 'auto', minWidth: 18, height: 18, padding: '0 5px', borderRadius: 999,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      background: 'var(--tdgflow-error)', color: '#fff',
+                      fontSize: '0.6875rem', fontWeight: 700, lineHeight: 1,
+                    }}>
+                      {pendingBugReports}
+                    </span>
+                  )}
                 </Link>
 
                 <div style={{ height: 1, background: 'var(--tdgflow-border)', margin: '8px 14px' }} />

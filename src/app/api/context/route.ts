@@ -34,6 +34,17 @@ export async function GET() {
     } catch { /* tabela ainda não existe — sem pedidos */ }
   }
 
+  // Reports de erro pendentes de resolução — só pro admin global, é fila de
+  // trabalho dele (mesmo padrão de pending_guest_requests: badge no item da
+  // nav onde se resolve, não aviso passageiro no sino).
+  let pendingBugReports = 0
+  if (isAdmin) {
+    try {
+      const { rows } = await sql`SELECT COUNT(*)::int AS count FROM tdg_suggestions WHERE type = 'bug_report' AND status = 'pending'`
+      pendingBugReports = rows[0]?.count ?? 0
+    } catch { /* tabela ainda não existe — sem reports */ }
+  }
+
   const [pendingRes, reviewsRes, promotionsRes, lastReviewRes, pendingLeadsRes, newContentRes] = await Promise.all([
     // Gravações pendentes de transcrição — só da própria agência
     sql`
@@ -90,6 +101,7 @@ export async function GET() {
     expiring_promotions: promotionsRes.rows,
     last_review_date: lastReviewRes.rows[0]?.created_at ?? null,
     pending_guest_requests: pendingGuestRequests,
+    pending_bug_reports: pendingBugReports,
     pending_leads: pendingLeadsRes.rows[0]?.count ?? 0,
     new_partnership_content: newContentRes.rows,
     is_admin: isAdmin,

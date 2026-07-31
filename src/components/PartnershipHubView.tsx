@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { ChevronUp, Plus, X, CheckCircle2 } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { ChevronUp, Plus, X, CheckCircle2, Paperclip } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
 import PartnershipContentTab from '@/components/PartnershipContentTab'
 
@@ -43,17 +43,25 @@ function IconSuggest({ size = 18, style }: { size?: number; style?: React.CSSPro
     </svg>
   )
 }
+function IconBugReport({ size = 14, style }: { size?: number; style?: React.CSSProperties }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" style={style}>
+      <path d="M12 9v4M12 16.5v.01M10.3 3.9L2.7 17.5c-.6 1 .1 2.3 1.3 2.3h16c1.2 0 1.9-1.3 1.3-2.3L13.7 3.9c-.6-1.1-2.2-1.1-2.8 0z" />
+    </svg>
+  )
+}
 
 interface Suggestion {
   id: number
   title: string
   description: string
-  type: 'improvement' | 'new_feature'
+  type: 'improvement' | 'new_feature' | 'bug_report'
   impact: number
   status: 'pending' | 'in_progress' | 'done'
   votes: number
   voted: boolean
   created_at: string
+  screenshot_url?: string | null
 }
 
 const STATUS_CONFIG = {
@@ -65,6 +73,7 @@ const STATUS_CONFIG = {
 const TYPE_CONFIG = {
   improvement: { color: 'var(--tdgflow-accent-info)', bg: 'var(--tdgflow-accent-info-subtle)', icon: IconImprovement },
   new_feature: { color: 'var(--tdgflow-accent-warm)', bg: 'var(--tdgflow-accent-warm-subtle)', icon: IconNewFeature },
+  bug_report:  { color: 'var(--tdgflow-error)', bg: 'var(--tdgflow-error-subtle)', icon: IconBugReport },
 } as const
 
 function ImpactDots({ value, interactive, onChange }: { value: number; interactive?: boolean; onChange?: (v: number) => void }) {
@@ -114,35 +123,47 @@ export default function PartnershipHubView({ userRole }: { userRole: string }) {
   const [showForm, setShowForm] = useState(false)
   const [title, setTitle]       = useState('')
   const [description, setDescription] = useState('')
-  const [type, setType]         = useState<'improvement' | 'new_feature'>('improvement')
+  const [type, setType]         = useState<'improvement' | 'new_feature' | 'bug_report'>('improvement')
   const [impact, setImpact]     = useState(3)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError]       = useState('')
   const [votingId, setVotingId] = useState<number | null>(null)
   const [statusUpdating, setStatusUpdating] = useState<number | null>(null)
+  const [screenshotFile, setScreenshotFile] = useState<File | null>(null)
+  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null)
+  const screenshotInputRef = useRef<HTMLInputElement>(null)
 
   const isAdmin = userRole === 'admin'
 
   const L = {
     pt: {
-      title: 'Central Bemgsy',
+      title: 'Linha Direta Bemgsy',
       subtitle: 'Documentos, atas e roadmap da parceria — e onde você sugere melhorias',
       documentos: 'Documentos & atas',
       board: 'Sugestões',
       roadmap: 'Roadmap',
-      suggest: 'Sugerir melhoria',
+      suggest: 'Sugerir ou reportar',
       formTitle: 'Nova sugestão de melhoria',
+      formTitleBug: 'Reportar um problema',
       titleLabel: 'Título',
       titlePh: 'Resumo da sua ideia',
+      titlePhBug: 'O que aconteceu, resumido em poucas palavras',
       descLabel: 'Descrição',
       descPh: 'Que problema resolve? Que contexto tem?',
+      descPhBug: 'O que você esperava que acontecesse, e o que aconteceu no lugar? Onde estava quando viu isso?',
       typeLabel: 'Tipo',
       improvement: 'Melhoria de funcionalidade',
       new_feature: 'Nova funcionalidade',
+      bug_report: 'Problema/erro',
+      screenshotLabel: 'Print do erro (opcional)',
+      screenshotPick: 'Escolher imagem',
+      screenshotChange: 'Trocar imagem',
+      screenshotTooBig: 'Imagem excede 8MB — comprima e tente novamente',
       impactLabel: 'Impacto no seu dia a dia',
       impactHint: (v: number) => ['', 'Quase sem impacto', 'Pouco impacto', 'Impacto moderado', 'Alto impacto', 'Mudaria tudo'][v],
       cancel: 'Cancelar',
       submit: 'Enviar sugestão',
+      submitBug: 'Enviar problema',
       empty: 'Nenhuma sugestão ainda. Seja o primeiro!',
       emptyRoadmap: 'Nada em andamento ainda.',
       votes: 'votos',
@@ -150,26 +171,38 @@ export default function PartnershipHubView({ userRole }: { userRole: string }) {
       statusPending: 'Sugerido',
       statusProgress: 'Em curso',
       statusDone: 'Concluído',
+      statusPendingBug: 'Pendente',
+      statusProgressBug: 'Investigando',
+      statusDoneBug: 'Resolvido',
     },
     en: {
-      title: 'Bemgsy Hub',
+      title: 'Bemgsy Direct Line',
       subtitle: 'Partnership docs, meeting notes and roadmap — plus where you suggest improvements',
       documentos: 'Docs & meeting notes',
       board: 'Suggestions',
       roadmap: 'Roadmap',
-      suggest: 'Suggest',
+      suggest: 'Suggest or report',
       formTitle: 'New suggestion',
+      formTitleBug: 'Report a bug',
       titleLabel: 'Title',
       titlePh: 'Brief summary of your idea',
+      titlePhBug: 'What happened, in a few words',
       descLabel: 'Description',
       descPh: 'What problem does it solve?',
+      descPhBug: 'What did you expect to happen, and what happened instead? Where were you when you saw it?',
       typeLabel: 'Type',
       improvement: 'Feature improvement',
       new_feature: 'New feature',
+      bug_report: 'Bug/error',
+      screenshotLabel: 'Error screenshot (optional)',
+      screenshotPick: 'Choose image',
+      screenshotChange: 'Change image',
+      screenshotTooBig: 'Image exceeds 8MB — compress it and try again',
       impactLabel: 'Impact on your workflow',
       impactHint: (v: number) => ['', 'Minimal impact', 'Low impact', 'Moderate impact', 'High impact', 'Game changer'][v],
       cancel: 'Cancel',
       submit: 'Submit',
+      submitBug: 'Submit report',
       empty: 'No suggestions yet. Be the first!',
       emptyRoadmap: 'Nothing in progress yet.',
       votes: 'votes',
@@ -177,11 +210,19 @@ export default function PartnershipHubView({ userRole }: { userRole: string }) {
       statusPending: 'Suggested',
       statusProgress: 'In progress',
       statusDone: 'Done',
+      statusPendingBug: 'Pending',
+      statusProgressBug: 'Investigating',
+      statusDoneBug: 'Resolved',
     },
   }
   const lx = lang === 'en' ? L.en : L.pt
 
-  const statusLabel = (s: string) => s === 'in_progress' ? lx.statusProgress : s === 'done' ? lx.statusDone : lx.statusPending
+  const statusLabel = (s: string, t: Suggestion['type']) => {
+    if (t === 'bug_report') {
+      return s === 'in_progress' ? lx.statusProgressBug : s === 'done' ? lx.statusDoneBug : lx.statusPendingBug
+    }
+    return s === 'in_progress' ? lx.statusProgress : s === 'done' ? lx.statusDone : lx.statusPending
+  }
 
   useEffect(() => {
     fetch('/api/suggestions')
@@ -209,17 +250,40 @@ export default function PartnershipHubView({ userRole }: { userRole: string }) {
     } finally { setStatusUpdating(null) }
   }
 
+  function resetForm() {
+    setTitle(''); setDescription(''); setType('improvement'); setImpact(3); setShowForm(false)
+    setScreenshotFile(null); setScreenshotPreview(null)
+  }
+
   async function handleSubmit() {
     if (!title.trim() || !description.trim()) return
     setSubmitting(true); setError('')
     try {
-      const res  = await fetch('/api/suggestions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, description, type, impact }) })
+      let screenshot_url: string | null = null
+      if (type === 'bug_report' && screenshotFile) {
+        const fd = new FormData()
+        fd.append('image', screenshotFile)
+        const upRes  = await fetch('/api/suggestions/screenshot', { method: 'POST', body: fd })
+        const upData = await upRes.json()
+        if (!upRes.ok) { setError(upData.error ?? 'Erro ao enviar imagem'); setSubmitting(false); return }
+        screenshot_url = upData.screenshot_url
+      }
+
+      const res  = await fetch('/api/suggestions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, description, type, impact, screenshot_url }) })
       const data = await res.json()
       if (res.ok) {
         setSuggestions(prev => [data.suggestion, ...prev])
-        setTitle(''); setDescription(''); setType('improvement'); setImpact(3); setShowForm(false)
+        resetForm()
       } else { setError(data.error ?? 'Erro ao enviar') }
     } finally { setSubmitting(false) }
+  }
+
+  function handleScreenshotPick(file: File | null) {
+    if (!file) { setScreenshotFile(null); setScreenshotPreview(null); return }
+    if (file.size > 8 * 1024 * 1024) { setError(lx.screenshotTooBig); return }
+    setError('')
+    setScreenshotFile(file)
+    setScreenshotPreview(URL.createObjectURL(file))
   }
 
   const board   = suggestions.filter(s => s.status === 'pending')
@@ -274,7 +338,7 @@ export default function PartnershipHubView({ userRole }: { userRole: string }) {
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2">
                 <IconSuggest size={18} style={{ color: 'var(--tdgflow-navy)' }} />
-                <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.02em' }}>{lx.formTitle}</h2>
+                <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.02em' }}>{type === 'bug_report' ? lx.formTitleBug : lx.formTitle}</h2>
               </div>
               <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tdgflow-text-muted)', padding: 4 }}><X size={16} /></button>
             </div>
@@ -284,7 +348,7 @@ export default function PartnershipHubView({ userRole }: { userRole: string }) {
               <div>
                 <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 600, color: 'var(--tdgflow-text-muted)', marginBottom: 6, letterSpacing: '0.06em', textTransform: 'uppercase' }}>{lx.titleLabel}</label>
                 <input
-                  value={title} onChange={e => setTitle(e.target.value)} placeholder={lx.titlePh} maxLength={120}
+                  value={title} onChange={e => setTitle(e.target.value)} placeholder={type === 'bug_report' ? lx.titlePhBug : lx.titlePh} maxLength={120}
                   style={{ width: '100%', boxSizing: 'border-box', border: '1px solid var(--tdgflow-border)', borderRadius: 8, padding: '10px 12px', fontSize: '0.9375rem', color: 'var(--tdgflow-text-primary)', background: 'var(--tdgflow-bg)', outline: 'none' }}
                 />
               </div>
@@ -293,7 +357,7 @@ export default function PartnershipHubView({ userRole }: { userRole: string }) {
               <div>
                 <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 600, color: 'var(--tdgflow-text-muted)', marginBottom: 6, letterSpacing: '0.06em', textTransform: 'uppercase' }}>{lx.descLabel}</label>
                 <textarea
-                  value={description} onChange={e => setDescription(e.target.value)} placeholder={lx.descPh} rows={3}
+                  value={description} onChange={e => setDescription(e.target.value)} placeholder={type === 'bug_report' ? lx.descPhBug : lx.descPh} rows={3}
                   style={{ width: '100%', boxSizing: 'border-box', border: '1px solid var(--tdgflow-border)', borderRadius: 8, padding: '10px 12px', fontSize: '0.9375rem', color: 'var(--tdgflow-text-primary)', background: 'var(--tdgflow-bg)', outline: 'none', resize: 'vertical' }}
                 />
               </div>
@@ -302,24 +366,57 @@ export default function PartnershipHubView({ userRole }: { userRole: string }) {
               <div>
                 <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 600, color: 'var(--tdgflow-text-muted)', marginBottom: 8, letterSpacing: '0.06em', textTransform: 'uppercase' }}>{lx.typeLabel}</label>
                 <div className="flex gap-2">
-                  {(['improvement', 'new_feature'] as const).map(t => {
+                  {(['improvement', 'new_feature', 'bug_report'] as const).map(t => {
                     const cfg = TYPE_CONFIG[t]
                     const Icon = cfg.icon
                     const selected = type === t
+                    const label = t === 'improvement' ? lx.improvement : t === 'new_feature' ? lx.new_feature : lx.bug_report
                     return (
                       <button
                         key={t} type="button" onClick={() => setType(t)}
-                        style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 7, padding: '9px 12px', borderRadius: 8, border: selected ? `1.5px solid ${cfg.color}` : '1.5px solid var(--tdgflow-border)', background: selected ? cfg.bg : 'var(--tdgflow-bg)', cursor: 'pointer', transition: 'all 150ms' }}
+                        style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, padding: '9px 10px', borderRadius: 8, border: selected ? `1.5px solid ${cfg.color}` : '1.5px solid var(--tdgflow-border)', background: selected ? cfg.bg : 'var(--tdgflow-bg)', cursor: 'pointer', transition: 'all 150ms' }}
                       >
                         <Icon size={13} style={{ color: cfg.color, flexShrink: 0 }} />
-                        <span style={{ fontSize: '0.8125rem', fontWeight: selected ? 600 : 400, color: selected ? cfg.color : 'var(--tdgflow-text-muted)', lineHeight: 1.3 }}>
-                          {t === 'improvement' ? lx.improvement : lx.new_feature}
+                        <span style={{ fontSize: '0.75rem', fontWeight: selected ? 600 : 400, color: selected ? cfg.color : 'var(--tdgflow-text-muted)', lineHeight: 1.3 }}>
+                          {label}
                         </span>
                       </button>
                     )
                   })}
                 </div>
               </div>
+
+              {/* Screenshot — só pra "Problema/erro" */}
+              {type === 'bug_report' && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 600, color: 'var(--tdgflow-text-muted)', marginBottom: 8, letterSpacing: '0.06em', textTransform: 'uppercase' }}>{lx.screenshotLabel}</label>
+                  <input
+                    ref={screenshotInputRef} type="file" accept="image/*" style={{ display: 'none' }}
+                    onChange={e => handleScreenshotPick(e.target.files?.[0] ?? null)}
+                  />
+                  {screenshotPreview ? (
+                    <div className="flex items-center gap-3">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={screenshotPreview} alt="" style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--tdgflow-border)' }} />
+                      <div className="flex flex-col gap-1.5 items-start">
+                        <button type="button" onClick={() => screenshotInputRef.current?.click()} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: 'var(--tdgflow-navy)', padding: 0 }}>
+                          {lx.screenshotChange}
+                        </button>
+                        <button type="button" onClick={() => handleScreenshotPick(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)', padding: 0 }}>
+                          {lx.cancel}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button" onClick={() => screenshotInputRef.current?.click()}
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 12px', borderRadius: 8, border: '1px dashed var(--tdgflow-border)', background: 'var(--tdgflow-bg)', cursor: 'pointer', fontSize: '0.8125rem', color: 'var(--tdgflow-text-muted)' }}
+                    >
+                      <Paperclip size={13} />{lx.screenshotPick}
+                    </button>
+                  )}
+                </div>
+              )}
 
               {/* Impact */}
               <div>
@@ -343,7 +440,7 @@ export default function PartnershipHubView({ userRole }: { userRole: string }) {
                   onClick={handleSubmit} disabled={submitting || !title.trim() || !description.trim()}
                   style={{ padding: '9px 20px', borderRadius: 8, border: 'none', background: submitting || !title.trim() || !description.trim() ? 'var(--tdgflow-border-light)' : 'var(--tdgflow-navy)', color: 'var(--tdgflow-surface)', cursor: submitting ? 'not-allowed' : 'pointer', fontSize: '0.875rem', fontWeight: 600 }}
                 >
-                  {submitting ? '…' : lx.submit}
+                  {submitting ? '…' : type === 'bug_report' ? lx.submitBug : lx.submit}
                 </button>
               </div>
             </div>
@@ -408,17 +505,24 @@ export default function PartnershipHubView({ userRole }: { userRole: string }) {
                         {/* Type badge */}
                         <span style={{ display: 'flex', alignItems: 'center', gap: 3, background: tCfg.bg, color: tCfg.color, borderRadius: 20, padding: '3px 8px', fontSize: '0.625rem', fontWeight: 600, letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>
                           <TypeIcon size={9} />
-                          {s.type === 'new_feature' ? lx.new_feature : lx.improvement}
+                          {s.type === 'new_feature' ? lx.new_feature : s.type === 'bug_report' ? lx.bug_report : lx.improvement}
                         </span>
                         {/* Status badge */}
                         <span style={{ display: 'flex', alignItems: 'center', gap: 3, background: sCfg.bg, color: sCfg.color, borderRadius: 20, padding: '3px 8px', fontSize: '0.625rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
                           <StatusIcon size={9} />
-                          {statusLabel(s.status)}
+                          {statusLabel(s.status, s.type)}
                         </span>
                       </div>
                     </div>
 
                     <p style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-muted)', lineHeight: 1.5, margin: '0 0 10px' }}>{s.description}</p>
+
+                    {s.screenshot_url && (
+                      <a href={s.screenshot_url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginBottom: 10 }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={s.screenshot_url} alt="" style={{ maxHeight: 120, borderRadius: 8, border: '1px solid var(--tdgflow-border)', display: 'block' }} />
+                      </a>
+                    )}
 
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
@@ -435,9 +539,9 @@ export default function PartnershipHubView({ userRole }: { userRole: string }) {
                           onChange={e => handleStatusChange(s.id, e.target.value)}
                           style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)', background: 'var(--tdgflow-bg)', border: '1px solid var(--tdgflow-border)', borderRadius: 6, padding: '3px 6px', cursor: 'pointer' }}
                         >
-                          <option value="pending">{lx.statusPending}</option>
-                          <option value="in_progress">{lx.statusProgress}</option>
-                          <option value="done">{lx.statusDone}</option>
+                          <option value="pending">{statusLabel('pending', s.type)}</option>
+                          <option value="in_progress">{statusLabel('in_progress', s.type)}</option>
+                          <option value="done">{statusLabel('done', s.type)}</option>
                         </select>
                       )}
                     </div>

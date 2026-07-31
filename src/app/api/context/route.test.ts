@@ -26,6 +26,45 @@ describe('GET /api/context — pending_leads (prateleira de descobertas)', () =>
   })
 })
 
+describe('GET /api/context — pending_bug_reports (fila de reports pendentes, só admin)', () => {
+  const adminEmail = `__tdd_ctx_admin_${Date.now()}__@example.com`
+  const agentEmail = `__tdd_ctx_agent_${Date.now()}__@example.com`
+  let bugId: number
+
+  beforeAll(async () => {
+    await sql`
+      INSERT INTO tdg_users (name, email, agency_name, password_hash, role)
+      VALUES ('TDD Ctx Admin', ${adminEmail}, 'TDD Agency', 'x', 'admin'),
+             ('TDD Ctx Agent', ${agentEmail}, 'TDD Agency', 'x', 'agent')
+    `
+    const { rows } = await sql`
+      INSERT INTO tdg_suggestions (title, description, submitted_by, agency_name, type, status)
+      VALUES ('__TDD Context Bug__', 'x', 'TDD Ctx Agent', 'TDD Agency', 'bug_report', 'pending')
+      RETURNING id
+    `
+    bugId = rows[0].id as number
+  })
+
+  afterAll(async () => {
+    await sql`DELETE FROM tdg_suggestions WHERE id = ${bugId}`
+    await sql`DELETE FROM tdg_users WHERE email IN (${adminEmail}, ${agentEmail})`
+  })
+
+  it('admin vê a contagem de reports pendentes', async () => {
+    mockAuth.mockResolvedValueOnce({ user: { email: adminEmail } })
+    const res  = await GET()
+    const data = await res.json()
+    expect(data.pending_bug_reports).toBeGreaterThanOrEqual(1)
+  })
+
+  it('agente comum não recebe a contagem (fica 0, é fila do admin)', async () => {
+    mockAuth.mockResolvedValueOnce({ user: { email: agentEmail } })
+    const res  = await GET()
+    const data = await res.json()
+    expect(data.pending_bug_reports).toBe(0)
+  })
+})
+
 describe('GET /api/context — sino escopado por agência (29/07)', () => {
   const agencyA = `__TDD Agency A ${Date.now()}__`
   const agencyB = `__TDD Agency B ${Date.now()}__`
