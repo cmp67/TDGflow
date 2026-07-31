@@ -119,16 +119,23 @@ interface Props {
   brand?: Brand | null
 }
 
-function NavTooltip({ text }: { text: string }) {
+// Abre embaixo do item (ou em cima, pro último item da lista — `openUp` —
+// pra nunca cortar no fim da sidebar). Largura presa a 176px (208px da
+// sidebar menos o padding do nav) com quebra de linha: nunca vaza pro
+// conteúdo principal ao lado, que era o bug reportado pela Carla quando o
+// tooltip abria lateralmente.
+function NavTooltip({ text, openUp = false }: { text: string; openUp?: boolean }) {
   return (
     <span
       role="tooltip"
       style={{
-        position: 'absolute', left: 'calc(100% + 8px)', top: '50%', transform: 'translateY(-50%)',
+        position: 'absolute', left: 0,
+        ...(openUp ? { bottom: 'calc(100% + 4px)' } : { top: 'calc(100% + 4px)' }),
+        width: 'max-content', maxWidth: 176, whiteSpace: 'normal',
         background: 'var(--tdgflow-navy-dim)', color: 'var(--tdgflow-surface)',
-        fontSize: '0.6875rem', fontWeight: 500, lineHeight: 1.4,
-        padding: '6px 10px', borderRadius: 8, whiteSpace: 'nowrap',
-        boxShadow: '0 4px 14px rgba(0,0,0,0.18)', pointerEvents: 'none', zIndex: 50,
+        fontSize: '0.6875rem', fontWeight: 500, lineHeight: 1.35,
+        padding: '6px 10px', borderRadius: 8,
+        boxShadow: '0 4px 14px rgba(0,0,0,0.18)', pointerEvents: 'none', zIndex: 60,
       }}
     >
       {text}
@@ -318,7 +325,7 @@ function FlowShellInner({ children, user, brand }: Props) {
                     onMouseEnter={e => { setHoveredNav(tkey); if (!active && !soon) { (e.currentTarget as HTMLElement).style.color = 'var(--tdgflow-text-primary)'; (e.currentTarget as HTMLElement).style.background = 'var(--tdgflow-surface-high)' } }}
                     onMouseLeave={e => { setHoveredNav(null); if (!active && !soon) { (e.currentTarget as HTMLElement).style.color = 'var(--tdgflow-text-secondary)'; (e.currentTarget as HTMLElement).style.background = 'transparent' } }}
                   >
-                    {hoveredNav === tkey && NAV_HINTS[tkey] && <NavTooltip text={NAV_HINTS[tkey]} />}
+                    {hoveredNav === tkey && NAV_HINTS[tkey] && <NavTooltip text={NAV_HINTS[tkey]} openUp={tkey === 'inbox'} />}
                     <Icon size={14} strokeWidth={active ? 2 : 1.5} style={{ color: active ? 'var(--tdgflow-agency-accent)' : 'var(--tdgflow-text-secondary)', flexShrink: 0, transition: 'color 150ms' }} />
                     <span style={{ fontSize: '0.875rem', fontWeight: active ? 600 : 500, letterSpacing: '-0.005em', color: active ? 'var(--tdgflow-agency-accent)' : 'inherit' }}>
                       {tr(`nav.${tkey}`)}
