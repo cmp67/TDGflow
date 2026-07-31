@@ -1398,6 +1398,7 @@ export default function HoteisView() {
   const [search, setSearch] = useState('')
   const [region, setRegion] = useState('Todos')
   const [activeProfiles, setActiveProfiles] = useState<Set<string>>(new Set())
+  const [onlyPending, setOnlyPending] = useState(false)
   const [selected, setSelected] = useState<Hotel | null>(null)
   const [hotels, setHotels] = useState<Hotel[]>([])
   const [loading, setLoading] = useState(true)
@@ -1442,16 +1443,18 @@ export default function HoteisView() {
       const matchSearch = !search || h.name.toLowerCase().includes(q) || h.location.toLowerCase().includes(q)
       const matchRegion = region === 'Todos' || h.region === region
       const matchProfile = activeProfiles.size === 0 || [...activeProfiles].some(p => h.profiles.includes(p))
-      return matchSearch && matchRegion && matchProfile
+      const matchPending = !onlyPending || (h.testedCount === 0 && h.pendingLeadCount > 0)
+      return matchSearch && matchRegion && matchProfile && matchPending
     })
-  }, [hotels, search, region, activeProfiles])
+  }, [hotels, search, region, activeProfiles, onlyPending])
 
-  const activeCount = (region !== 'Todos' ? 1 : 0) + activeProfiles.size
+  const activeCount = (region !== 'Todos' ? 1 : 0) + activeProfiles.size + (onlyPending ? 1 : 0)
 
   function clearAll() {
     setRegion('Todos')
     setActiveProfiles(new Set())
     setSearch('')
+    setOnlyPending(false)
   }
 
   return (
@@ -1482,16 +1485,29 @@ export default function HoteisView() {
               {filtered.length} de {hotels.length} fornecedores
             </p>
             {/* Legenda do selo — achado da Carla: sem isso, ninguém decora o
-                que a cor do card significa. */}
+                que a cor do card significa. "Aguardando teste" também
+                filtra ao clicar (achado da Carla, 31/07: dava pra ver o
+                selo mas não pra isolar só quem está pendente de testar). */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: '0.625rem', color: 'var(--tdgflow-gold-dim)' }}>
                 <svg style={{ width: 8, height: 8, stroke: 'var(--tdgflow-gold-dim)', strokeWidth: 1.8, fill: 'none' }}><use href="#i-verified" /></svg>
                 Testado pela rede
               </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: '0.625rem', color: 'var(--tdgflow-accent-warm)' }}>
+              <button
+                onClick={() => setOnlyPending(v => !v)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 3, fontSize: '0.625rem',
+                  color: 'var(--tdgflow-accent-warm)', background: onlyPending ? 'var(--tdgflow-accent-warm-subtle)' : 'transparent',
+                  border: `1px solid ${onlyPending ? 'var(--tdgflow-accent-warm)' : 'transparent'}`,
+                  borderRadius: 999, padding: '2px 7px 2px 5px', margin: '-2px 0', cursor: 'pointer', transition: 'all 0.15s',
+                  fontWeight: onlyPending ? 600 : 400,
+                }}
+                aria-pressed={onlyPending}
+                title="Mostrar só fornecedores aguardando teste"
+              >
                 <svg style={{ width: 8, height: 8, fill: 'var(--tdgflow-accent-warm)' }}><use href="#i-spark" /></svg>
                 Aguardando teste
-              </span>
+              </button>
             </div>
           </div>
           {activeCount > 0 && (
