@@ -63,6 +63,29 @@ describe('checkAndDeductCredits (post agency_id-uuid migration)', () => {
     expect(result).toEqual({ ok: false, reason: NO_AGENCY })
   })
 
+  it('admin global da Bemgsy tem acesso ilimitado mesmo sem agência (decisão 31/07/2026)', async () => {
+    const result = await checkAndDeductCredits({
+      agencyId: null,
+      action: 'chat',
+      userEmail: 'admin@bemgsy.com',
+      isBemgsyAdmin: true,
+    })
+
+    expect(result).toEqual({ ok: true, source: 'bemgsy_admin_unlimited' })
+  })
+
+  it('isBemgsyAdmin não afasta o fluxo normal de quem TEM agência — segue debitando dela', async () => {
+    const result = await checkAndDeductCredits({
+      agencyId: testAgencyId,
+      action: 'chat',
+      userEmail: 'agente-normal@example.com',
+      isBemgsyAdmin: false,
+    })
+
+    expect(result.ok).toBe(true)
+    if (result.ok) expect(result.source).toBe('quota')
+  })
+
   it('falls through to INSUFFICIENT_BALANCE once quota, pool and top-up are all exhausted', async () => {
     const period = currentPeriod()
 

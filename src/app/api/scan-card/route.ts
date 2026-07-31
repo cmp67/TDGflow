@@ -80,6 +80,7 @@ Retorne APENAS um JSON válido com esta estrutura (use null se não encontrar):
       action:    'scan_card',
       userEmail: session.user?.email ?? '',
       meta:      { name: card.name, company: card.company },
+      isBemgsyAdmin: session.user?.role === 'admin',
     })
 
     return NextResponse.json({ card })

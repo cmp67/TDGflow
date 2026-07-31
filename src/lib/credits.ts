@@ -153,10 +153,18 @@ export async function checkAndDeductCredits(params: {
   action:    string
   userEmail: string
   meta?:     Record<string, unknown>
+  // Contas admin globais da Bemgsy (role 'admin', sem agency_id — não são
+  // uma das 19 agências) têm acesso ilimitado, decisão da Carla 31/07/2026:
+  // não fazem parte do modelo de cota por agência, então não há de onde
+  // debitar nem sentido em fazer isso.
+  isBemgsyAdmin?: boolean
 }): Promise<
   | { ok: true; source?: string }
   | { ok: false; reason: typeof INSUFFICIENT_BALANCE | typeof NO_AGENCY }
 > {
+  if (params.isBemgsyAdmin) {
+    return { ok: true, source: 'bemgsy_admin_unlimited' }
+  }
   if (!params.agencyId) {
     return { ok: false, reason: NO_AGENCY }
   }
@@ -254,7 +262,11 @@ export function deductCredits(params: {
   action:     string
   userEmail:  string
   meta?:      Record<string, unknown>
+  isBemgsyAdmin?: boolean
 }): void {
+  // Admin global da Bemgsy — acesso ilimitado, nada a debitar (ver mesma
+  // decisão em checkAndDeductCredits).
+  if (params.isBemgsyAdmin) return
   // No real agency assigned (see NO_AGENCY) — nothing to bill, skip silently.
   // This path is fire-and-forget and must never block the main flow.
   if (!params.agencyId) return

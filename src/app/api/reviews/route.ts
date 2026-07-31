@@ -140,7 +140,7 @@ export async function POST(req: NextRequest) {
 
     // Lookup user — fail clearly if not found
     const { rows: userRows } = await sql`
-      SELECT id, name, agency_name FROM tdg_users WHERE email = ${session.user?.email ?? ''} LIMIT 1
+      SELECT id, name, agency_name, role FROM tdg_users WHERE email = ${session.user?.email ?? ''} LIMIT 1
     `
     const user = userRows[0]
     if (!user) return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 })
@@ -155,7 +155,7 @@ export async function POST(req: NextRequest) {
     } else {
       // AI extraction — check balance first; if insufficient, skip extraction but still save the review
       const agencyId = await getAgencyId(session.user?.email ?? '')
-      const creditCheck = await checkAndDeductCredits({ agencyId, action: 'review_extraction', userEmail: session.user?.email ?? 'unknown' })
+      const creditCheck = await checkAndDeductCredits({ agencyId, action: 'review_extraction', userEmail: session.user?.email ?? 'unknown', isBemgsyAdmin: user.role === 'admin' })
       // Extraction is best-effort: if credits are unavailable for any reason
       // (insufficient balance or no agency assigned), skip it — the review is
       // still saved below. Do NOT fail-open on unexpected reasons.

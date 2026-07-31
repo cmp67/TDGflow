@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
   const userEmail = session?.user?.email ?? 'unknown'
 
   const agencyId = await getAgencyId(userEmail)
-  const credit = await checkAndDeductCredits({ agencyId, action: 'transcription', userEmail })
+  const credit = await checkAndDeductCredits({ agencyId, action: 'transcription', userEmail, isBemgsyAdmin: session?.user?.role === 'admin' })
   if (!credit.ok) {
     if (credit.reason === NO_AGENCY) return NextResponse.json({ error: NO_AGENCY }, { status: 403 })
     return NextResponse.json({ error: INSUFFICIENT_BALANCE }, { status: 402 })

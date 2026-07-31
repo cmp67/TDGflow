@@ -216,7 +216,7 @@ export async function POST(req: NextRequest) {
 
   // Check balance BEFORE calling AI
   const agencyId = await getAgencyId(userEmail)
-  const credit = await checkAndDeductCredits({ agencyId, action: 'chat', userEmail })
+  const credit = await checkAndDeductCredits({ agencyId, action: 'chat', userEmail, isBemgsyAdmin: session?.user?.role === 'admin' })
   if (!credit.ok) {
     if (credit.reason === NO_AGENCY) return NextResponse.json({ error: NO_AGENCY }, { status: 403 })
     return NextResponse.json({ error: INSUFFICIENT_BALANCE }, { status: 402 })
