@@ -41,7 +41,7 @@ const PRIMARY_NAV: NavItem[] = [
 // que tem lá até você entrar). Só PT por ora — é um reforço supplementary,
 // não texto crítico de UI.
 const NAV_HINTS: Record<string, string> = {
-  assistente: 'Converse com a IA — busca de hotéis, promoções e dúvidas do sistema',
+  assistente: 'Pergunte sobre hotéis, promoções ou dúvidas do sistema — resposta na hora',
   ofertas:    'Promoções ativas da rede, ordenadas por comissão e prazo',
   dicas:      'Avaliações reais de fornecedores, por quem visitou de verdade',
   rede:       'Fornecedores parceiros e contatos da rede — reps, DMCs, pessoas',
