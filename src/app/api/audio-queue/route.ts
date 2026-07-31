@@ -58,9 +58,11 @@ export async function POST(req: NextRequest) {
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
 
   const { rows: ownerRows } = await sql`SELECT agency_id FROM tdg_audio_inputs WHERE id = ${id}`
-  if (!ownerRows[0]) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  if (ownerRows[0].agency_id !== ctx.agencyId) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  // 404 pra ambos os casos (não existe / é de outra agência) — convenção de
+  // ownership do repo: nunca confirmar a um chamador que um recurso de outra
+  // agência existe.
+  if (!ownerRows[0] || ownerRows[0].agency_id !== ctx.agencyId) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
   // Marca como processing
@@ -126,9 +128,8 @@ export async function PATCH(req: NextRequest) {
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
 
   const { rows: ownerRows } = await sql`SELECT agency_id FROM tdg_audio_inputs WHERE id = ${id}`
-  if (!ownerRows[0]) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  if (ownerRows[0].agency_id !== ctx.agencyId) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!ownerRows[0] || ownerRows[0].agency_id !== ctx.agencyId) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
   await sql`

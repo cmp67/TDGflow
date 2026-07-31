@@ -65,10 +65,10 @@ describe('POST /api/audio-confirm — escopo por agency_id', () => {
     expect(res.status).toBe(401)
   })
 
-  it('em item de outra agência retorna 403', async () => {
+  it('em item de outra agência retorna 404 (nunca confirma que existe)', async () => {
     mockAuth.mockResolvedValueOnce(sessionFor(emailA))
     const res = await POST(postReq({ id: idAgencyB, audio_shared: true, summary: {} }))
-    expect(res.status).toBe(403)
+    expect(res.status).toBe(404)
   })
 
   it('na própria agência confirma com sucesso', async () => {

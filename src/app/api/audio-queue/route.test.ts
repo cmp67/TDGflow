@@ -81,10 +81,10 @@ describe('GET/POST/PATCH /api/audio-queue — escopo por agency_id', () => {
     expect(res.status).toBe(401)
   })
 
-  it('POST (transcrever) em item de outra agência retorna 403', async () => {
+  it('POST (transcrever) em item de outra agência retorna 404 (nunca confirma que existe)', async () => {
     mockAuth.mockResolvedValueOnce(sessionFor(emailA))
     const res = await POST(jsonReq('POST', { id: idAgencyB }))
-    expect(res.status).toBe(403)
+    expect(res.status).toBe(404)
   })
 
   it('PATCH sem sessão retorna 401', async () => {
@@ -93,10 +93,10 @@ describe('GET/POST/PATCH /api/audio-queue — escopo por agency_id', () => {
     expect(res.status).toBe(401)
   })
 
-  it('PATCH em item de outra agência retorna 403', async () => {
+  it('PATCH em item de outra agência retorna 404 (nunca confirma que existe)', async () => {
     mockAuth.mockResolvedValueOnce(sessionFor(emailA))
     const res = await PATCH(jsonReq('PATCH', { id: idAgencyB, interlocutor_name: 'X' }))
-    expect(res.status).toBe(403)
+    expect(res.status).toBe(404)
   })
 
   it('PATCH na própria agência funciona', async () => {
