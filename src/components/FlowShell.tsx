@@ -224,7 +224,7 @@ function FlowShellInner({ children, user, brand }: Props) {
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center" style={{ gap: 10, minWidth: 0 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/brand/tdg-mark.png" alt="TDG" style={{ height: 20, objectFit: 'contain', flexShrink: 0 }} />
+              <img src="/brand/tdg-mark-white.png" alt="TDG" style={{ height: 20, objectFit: 'contain', flexShrink: 0 }} />
               <div style={{ width: 1, height: 20, background: 'rgba(234,241,245,0.22)', flexShrink: 0 }} />
               <span style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontStyle: 'italic', fontSize: '1.5rem', color: 'var(--tdgflow-gold)', lineHeight: 1, whiteSpace: 'nowrap' }}>
                 Flow
