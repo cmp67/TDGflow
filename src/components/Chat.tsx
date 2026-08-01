@@ -7,21 +7,6 @@ import ReactMarkdown from 'react-markdown'
 /* ── Ícones próprios — traço só, sem lucide genérico pros marcadores de
    conteúdo/categoria (regra de personalidade Bemgsy). Utilitários puros
    (enviar, spinner) continuam lucide. ──────────────────────────────── */
-function IconMic({ size = 14 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <rect x="9" y="3" width="6" height="11" rx="3" />
-      <path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6" />
-    </svg>
-  )
-}
-function IconQueue({ size = 14 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M4 6h16M4 12h16M4 18h10" />
-    </svg>
-  )
-}
 function IconPending({ size = 14 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
@@ -52,7 +37,6 @@ function IconTip({ size = 14 }: { size?: number }) {
 }
 import { motion, AnimatePresence } from 'framer-motion'
 // ReactMarkdown kept for assistant conversation messages
-import AudioRecord from './AudioRecord'
 import UserAvatar from './UserAvatar'
 import InsufficientBalanceModal from './InsufficientBalanceModal'
 
@@ -74,7 +58,6 @@ function GoldBoldText({ text }: { text: string }) {
     </>
   )
 }
-import AudioQueue from './AudioQueue'
 import { sounds } from '@/lib/sounds'
 
 interface Message {
@@ -199,9 +182,6 @@ export default function Chat({ fallbackName }: Props = {}) {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [showBalanceModal, setShowBalanceModal] = useState(false)
-  const [showAudio, setShowAudio] = useState(false)
-  const [showQueue, setShowQueue] = useState(false)
-  const [queueCount, setQueueCount] = useState(0)
   const [ctx, setCtx] = useState<AgentContext | null>(null)
   const [greeting, setGreeting] = useState('')
   const [greetingReady, setGreetingReady] = useState(false)
@@ -218,7 +198,6 @@ export default function Chat({ fallbackName }: Props = {}) {
       .then((data: AgentContext) => {
         setCtx(data)
         setGreeting(buildGreeting(data))
-        setQueueCount(data.pending_recordings)
         // Small delay so it feels like the assistant is "thinking"
         setTimeout(() => setGreetingReady(true), 600)
       })
@@ -286,37 +265,16 @@ export default function Chat({ fallbackName }: Props = {}) {
       {showBalanceModal && <InsufficientBalanceModal onClose={() => setShowBalanceModal(false)} />}
 
       {/* ── Header ─────────────────────────────────────────────────── */}
+      {/* Gravar/Fila removidos daqui (01/08) — duplicava "Na prática", que já
+          é o lugar oficial pra registrar reunião/visita desde a Fase 6
+          (mesmos componentes AudioRecord/AudioQueue, ver DicasView.tsx). */}
       <div
-        className="flex-shrink-0 flex items-center justify-between px-5 py-3"
+        className="flex-shrink-0 flex items-center px-5 py-3"
         style={{ background: 'var(--tdgflow-surface)', borderBottom: '1px solid var(--tdgflow-border)' }}
       >
         <div>
           <h1 style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.01em' }}>Modo Flow</h1>
           <p style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)', marginTop: 1 }}>Recomendações · Promoções · Orientação</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowAudio(true)}
-            className="btn-gold"
-            style={{ padding: '7px 12px', fontSize: '0.8125rem' }}
-          >
-            <IconMic size={13} /> Gravar
-          </button>
-          <button
-            onClick={() => setShowQueue(true)}
-            className="btn-ghost relative"
-            style={{ padding: '7px 12px', fontSize: '0.8125rem' }}
-          >
-            <IconQueue size={13} /> Fila
-            {queueCount > 0 && (
-              <span
-                className="absolute -top-1.5 -right-1.5 flex items-center justify-center font-bold rounded-full"
-                style={{ width: 16, height: 16, background: 'var(--tdgflow-navy)', color: 'var(--tdgflow-surface)', fontSize: '0.5625rem' }}
-              >
-                {queueCount}
-              </span>
-            )}
-          </button>
         </div>
       </div>
 
@@ -539,15 +497,6 @@ export default function Chat({ fallbackName }: Props = {}) {
           </button>
         </div>
       </div>
-
-      {showAudio && (
-        <AudioRecord
-          defaultAgentName={ctx?.agent_name ?? ''}
-          onSaved={() => setQueueCount(c => c + 1)}
-          onClose={() => setShowAudio(false)}
-        />
-      )}
-      {showQueue && <AudioQueue onClose={() => { setShowQueue(false); setQueueCount(0) }} />}
     </div>
   )
 }
