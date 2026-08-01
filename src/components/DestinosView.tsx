@@ -131,10 +131,10 @@ export default function DestinosView() {
               <svg style={{ width: 10, height: 10, stroke: 'currentColor', fill: 'none', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
                 <use href="#i-compass" />
               </svg>
-              Galera do Turismo
+              Direto do WhatsApp
             </p>
             <h2 style={{ fontSize: '1.125rem', fontWeight: 500, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.025em', lineHeight: 1, marginBottom: 4 }}>
-              Destinos
+              TDG Knowledge Base
             </h2>
             <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)' }}>
               Conhecimento prático por país e destino: vistos, costumes, avisos
@@ -205,7 +205,7 @@ export default function DestinosView() {
 
         {!loading && tips.length > 0 && (
           <p style={{ textAlign: 'center', fontSize: '0.625rem', color: 'var(--tdgflow-text-muted)', opacity: 0.6, letterSpacing: '0.08em', marginTop: 24, marginBottom: 8 }}>
-            FONTE · GRUPO GALERA DO TURISMO · SET 2024 – MAR 2026
+            FONTE · DIRETO DO WHATSAPP · SET 2024 – MAR 2026
           </p>
         )}
       </div>
