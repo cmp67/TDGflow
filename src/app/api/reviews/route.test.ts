@@ -217,6 +217,7 @@ describe('POST /api/reviews — agency_id (migration 020) grava a FK real da ag�
   const agencyName = `__TDD Reviews Agency ${Date.now()}__`
   let agencyId: string
   const createdReviewIds: string[] = []
+  const createdHotelIds: string[] = []
 
   beforeAll(async () => {
     const { rows: agencyRows } = await sql`
@@ -231,6 +232,10 @@ describe('POST /api/reviews — agency_id (migration 020) grava a FK real da ag�
 
   afterAll(async () => {
     if (createdReviewIds.length) await sql`DELETE FROM tdg_hotel_reviews WHERE id = ANY(${createdReviewIds})`
+    // find-or-create em POST /api/reviews cria a linha em tdg_hotels — sem
+    // isso ela fica órfã em produção (achado 01/08, 8 linhas de lixo geradas
+    // antes de a gente notar).
+    if (createdHotelIds.length) await sql`DELETE FROM tdg_hotels WHERE id = ANY(${createdHotelIds})`
     await sql`DELETE FROM tdg_users WHERE email = ${email}`
     await sql`DELETE FROM tdg_agencies WHERE id = ${agencyId}`
   })
@@ -249,6 +254,7 @@ describe('POST /api/reviews — agency_id (migration 020) grava a FK real da ag�
     const body = await res.json()
     expect(res.status).toBe(200)
     createdReviewIds.push(body.review.id)
+    createdHotelIds.push(body.review.hotel_id)
     expect(body.review.agency_id).toBe(agencyId)
   })
 })
