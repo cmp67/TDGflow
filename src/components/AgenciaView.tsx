@@ -5,6 +5,8 @@ import { Save, Loader, Eye, EyeOff, CheckCircle } from 'lucide-react'
 import UserAvatar from '@/components/UserAvatar'
 import GuestActivationCard from '@/components/billing/GuestActivationCard'
 import BrandSettings from '@/components/BrandSettings'
+import { useLanguage } from '@/contexts/LanguageContext'
+import { type Lang, LANG_LABELS } from '@/lib/i18n'
 
 /* ── Ícones próprios — traço só (regra de personalidade Bemgsy). ──── */
 function IconAgency({ size = 16, style }: { size?: number; style?: React.CSSProperties }) {
@@ -48,6 +50,7 @@ function formatDate(iso: string) {
 }
 
 export default function AgenciaView({ user, members }: Props) {
+  const { lang, setLang } = useLanguage()
   const [name,        setName]        = useState(user.name)
   const [currentPw,  setCurrentPw]   = useState('')
   const [newPw,      setNewPw]       = useState('')
@@ -205,6 +208,35 @@ export default function AgenciaView({ user, members }: Props) {
               : <Save size={13} />}
           {pwOk ? 'Senha alterada!' : 'Alterar senha'}
         </button>
+      </div>
+
+      {/* Idioma — mudou pra cá (01/08, painel arquiteto/designer/UX): preferência
+          escolhida uma vez na vida do usuário não merece imóvel fixo na
+          sidebar; era 1 dos 6 blocos que sobrecarregavam o rodapé lá. */}
+      <div className="card space-y-3">
+        <h3 className="text-sm font-semibold" style={{ color: 'var(--tdgflow-text-primary)' }}>Idioma</h3>
+        <div className="flex items-center gap-2">
+          {(['pt-BR', 'en', 'es'] as Lang[]).map(l => (
+            <button
+              key={l}
+              onClick={() => setLang(l)}
+              style={{
+                background: lang === l ? 'var(--tdgflow-navy-subtle)' : 'none',
+                border: lang === l ? '1px solid var(--tdgflow-navy-ring)' : '1px solid var(--tdgflow-border)',
+                borderRadius: 8,
+                padding: '6px 14px',
+                cursor: 'pointer',
+                fontSize: '0.8125rem',
+                fontWeight: lang === l ? 700 : 400,
+                letterSpacing: '0.04em',
+                color: lang === l ? 'var(--tdgflow-navy)' : 'var(--tdgflow-text-secondary)',
+                transition: 'all 150ms',
+              }}
+            >
+              {LANG_LABELS[l]}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Agency */}

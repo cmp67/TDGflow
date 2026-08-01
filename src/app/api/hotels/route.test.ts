@@ -1,4 +1,5 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest'
+import { sql } from '@vercel/postgres'
 
 vi.mock('@/auth', () => ({ auth: vi.fn() }))
 
@@ -11,7 +12,53 @@ function sessionFor(email: string) {
   return { user: { email } }
 }
 
+// Fixtures próprios, descartáveis — evita depender de dado real da produção
+// (achado 01/08: este arquivo dependia de um hotel "La Sivoliere" que
+// existia só por acaso; a Carla pediu limpeza dos dados de teste/fake
+// reviews na base real, o que quebrou o teste sem ter nada a ver com o
+// código do endpoint em si).
 describe('GET /api/hotels (catálogo de fornecedores)', () => {
+  const suffix = Date.now()
+  const testedHotelName = `__TDD Hotel Testado ${suffix}__`
+  const pendingHotelName = `__TDD Hotel Aguardando ${suffix}__`
+  let testedHotelId: string
+  let pendingHotelId: string
+  const reviewIds: string[] = []
+
+  beforeAll(async () => {
+    const { rows: tested } = await sql`
+      INSERT INTO tdg_hotels (name, entity_type) VALUES (${testedHotelName}, 'hotel') RETURNING id
+    `
+    testedHotelId = tested[0].id as string
+
+    const { rows: pending } = await sql`
+      INSERT INTO tdg_hotels (name, entity_type) VALUES (${pendingHotelName}, 'hotel') RETURNING id
+    `
+    pendingHotelId = pending[0].id as string
+
+    const { rows: publishedReview } = await sql`
+      INSERT INTO tdg_hotel_reviews (hotel_name, hotel_id, agent_name, agency_name, status)
+      VALUES (${testedHotelName}, ${testedHotelId}, 'TDD Agent', 'TDD Agency', 'published')
+      RETURNING id
+    `
+    reviewIds.push(publishedReview[0].id as string)
+
+    const { rows: leadReview } = await sql`
+      INSERT INTO tdg_hotel_reviews (hotel_name, hotel_id, agent_name, agency_name, status, visit_type)
+      VALUES (${pendingHotelName}, ${pendingHotelId}, 'TDD Agent', 'TDD Agency', 'a_testar', 'commercial_meeting')
+      RETURNING id
+    `
+    reviewIds.push(leadReview[0].id as string)
+  })
+
+  afterAll(async () => {
+    if (reviewIds.length > 0) {
+      await sql.query('DELETE FROM tdg_hotel_reviews WHERE id = ANY($1)', [reviewIds])
+    }
+    await sql`DELETE FROM tdg_hotels WHERE id = ${testedHotelId}`
+    await sql`DELETE FROM tdg_hotels WHERE id = ${pendingHotelId}`
+  })
+
   it('returns 401 with no session', async () => {
     mockAuth.mockResolvedValueOnce(null)
     const res = await GET()
@@ -25,7 +72,7 @@ describe('GET /api/hotels (catálogo de fornecedores)', () => {
 
     expect(res.status).toBe(200)
     expect(Array.isArray(body.hotels)).toBe(true)
-    expect(body.hotels.length).toBeGreaterThanOrEqual(6)
+    expect(body.hotels.length).toBeGreaterThan(0)
 
     const sagres = body.hotels.find((h: { name: string }) => h.name === 'Martinhal Sagres')
     expect(sagres).toBeTruthy()
@@ -38,13 +85,13 @@ describe('GET /api/hotels (catálogo de fornecedores)', () => {
     expect(sagres.gallery[0]).toHaveProperty('label')
   })
 
-  it('includes a hotel auto-created from a pre-existing free-text review', async () => {
+  it('includes um hotel criado a partir de review com hotel_id — catálogo cresce organicamente', async () => {
     mockAuth.mockResolvedValueOnce(sessionFor('any@example.com'))
     const res  = await GET()
     const body = await res.json()
 
-    const backfilled = body.hotels.find((h: { name: string }) => h.name === 'La Sivoliere')
-    expect(backfilled).toBeTruthy()
+    const created = body.hotels.find((h: { name: string }) => h.name === testedHotelName)
+    expect(created).toBeTruthy()
   })
 
   it('reports tested_count from published reviews linked by hotel_id', async () => {
@@ -52,8 +99,13 @@ describe('GET /api/hotels (catálogo de fornecedores)', () => {
     const res  = await GET()
     const body = await res.json()
 
-    const testado = body.hotels.find((h: { name: string }) => h.name === 'La Sivoliere')
+    const testado = body.hotels.find((h: { name: string }) => h.name === testedHotelName)
     expect(testado.tested_count).toBeGreaterThanOrEqual(1)
+    expect(testado.pending_lead_count).toBe(0)
+
+    const aguardando = body.hotels.find((h: { name: string }) => h.name === pendingHotelName)
+    expect(aguardando.tested_count).toBe(0)
+    expect(aguardando.pending_lead_count).toBeGreaterThanOrEqual(1)
 
     const semReview = body.hotels.find((h: { name: string }) => h.name === 'Martinhal Sagres')
     expect(semReview.tested_count).toBe(0)
@@ -65,7 +117,7 @@ describe('GET /api/hotels (catálogo de fornecedores)', () => {
     const res  = await GET()
     const body = await res.json()
 
-    const semBeneficio = body.hotels.find((h: { name: string }) => h.name === 'Velaa Private Island')
+    const semBeneficio = body.hotels.find((h: { name: string }) => h.name === testedHotelName)
     expect(semBeneficio.benefits).toEqual([])
   })
 })

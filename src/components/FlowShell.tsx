@@ -79,32 +79,37 @@ const REFERENCE_ITEMS: NavItem[] = [
 
 const BILLING_ITEM: NavItem = { href: '/flow/billing', icon: CreditCard, tkey: 'billing' }
 
+// Ordem dos grupos — Referência antes de Gestão (decisão da Carla + painel
+// arquiteto/designer/UX, 01/08): Referência (Docs, TDG Knowledge Base) é
+// consulta do dia a dia durante uma venda; Gestão (Analytics, Equipe,
+// Billing) é ritual semanal/mensal — a sidebar ordena por frequência de
+// uso real, não por hierarquia administrativa.
 const NAV_GROUPS_AGENT: NavGroup[] = [
+  { labelKey: 'nav.groupReferencia', items: REFERENCE_ITEMS },
   { labelKey: 'nav.groupGestao', items: [
     { href: '/flow/analytics', icon: BarChart2, tkey: 'analytics' },
     BILLING_ITEM,
   ] },
-  { labelKey: 'nav.groupReferencia', items: REFERENCE_ITEMS },
 ]
 
 const NAV_GROUPS_ADMIN: NavGroup[] = [
+  { labelKey: 'nav.groupReferencia', items: REFERENCE_ITEMS },
   { labelKey: 'nav.groupGestao', items: [
     { href: '/flow/analytics', icon: BarChart2, tkey: 'analytics' },
     { href: '/flow/gestao', icon: Users, tkey: 'gestao' },
     BILLING_ITEM,
   ] },
-  { labelKey: 'nav.groupReferencia', items: REFERENCE_ITEMS },
 ]
 
 // agency_admin: administra só a equipe da própria agência (nunca entre
 // agências — isso fica exclusivo do admin global via NAV_GROUPS_ADMIN acima).
 const NAV_GROUPS_AGENCY_ADMIN: NavGroup[] = [
+  { labelKey: 'nav.groupReferencia', items: REFERENCE_ITEMS },
   { labelKey: 'nav.groupGestao', items: [
     { href: '/flow/analytics', icon: BarChart2, tkey: 'analytics' },
     { href: '/flow/equipe', icon: UserPlus, tkey: 'equipe' },
     BILLING_ITEM,
   ] },
-  { labelKey: 'nav.groupReferencia', items: REFERENCE_ITEMS },
 ]
 
 interface Brand {
@@ -191,6 +196,10 @@ function FlowShellInner({ children, user, brand }: Props) {
   const NAV_GROUPS = isAdmin ? NAV_GROUPS_ADMIN : isAgencyAdmin ? NAV_GROUPS_AGENCY_ADMIN : NAV_GROUPS_AGENT
   const SECONDARY_NAV = NAV_GROUPS.flatMap(g => g.items)
   const ALL_NAV = [...PRIMARY_NAV, ...SECONDARY_NAV]
+  // Posicional, não hardcoded num tkey — a reordenação dos grupos (01/08) já
+  // mudou quem é o último item real (era 'inbox', virou 'billing'); calcular
+  // aqui evita que uma reordenação futura quebre o tooltip silenciosamente.
+  const lastSecondaryHref = SECONDARY_NAV[SECONDARY_NAV.length - 1]?.href
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
   const secondaryActive = SECONDARY_NAV.some(n => isActive(n.href))
@@ -330,7 +339,7 @@ function FlowShellInner({ children, user, brand }: Props) {
                     onMouseEnter={e => { setHoveredNav(tkey); if (!active && !soon) { (e.currentTarget as HTMLElement).style.color = 'var(--tdgflow-text-primary)'; (e.currentTarget as HTMLElement).style.background = 'var(--tdgflow-surface-high)' } }}
                     onMouseLeave={e => { setHoveredNav(null); if (!active && !soon) { (e.currentTarget as HTMLElement).style.color = 'var(--tdgflow-text-secondary)'; (e.currentTarget as HTMLElement).style.background = 'transparent' } }}
                   >
-                    {hoveredNav === tkey && NAV_HINTS[tkey] && <NavTooltip text={NAV_HINTS[tkey]} openUp={tkey === 'inbox'} />}
+                    {hoveredNav === tkey && NAV_HINTS[tkey] && <NavTooltip text={NAV_HINTS[tkey]} openUp={href === lastSecondaryHref} />}
                     <Icon size={14} strokeWidth={active ? 2 : 1.5} style={{ color: active ? 'var(--tdgflow-agency-accent)' : 'var(--tdgflow-text-secondary)', flexShrink: 0, transition: 'color 150ms' }} />
                     <span style={{ fontSize: '0.875rem', fontWeight: active ? 600 : 500, letterSpacing: '-0.005em', color: active ? 'var(--tdgflow-agency-accent)' : 'inherit' }}>
                       {tr(`nav.${tkey}`)}
@@ -353,32 +362,12 @@ function FlowShellInner({ children, user, brand }: Props) {
           ))}
         </nav>
 
-        {/* User + Language footer */}
+        {/* User footer — idioma saiu daqui (01/08, painel arquiteto/designer/UX):
+            rodapé de 6 blocos empilhados não cabia sem scroll em viewport
+            curto/espanhol. Idioma é preferência que se escolhe uma vez, não
+            merece imóvel permanente — mudou pra Meu Perfil (`/flow/agencia`),
+            já a um clique daqui. Mobile mantém o seletor (sobra espaço lá). */}
         <div className="flex-shrink-0 px-4 pb-5 pt-4" style={{ borderTop: '1px solid var(--tdgflow-border)' }}>
-          {/* Language switcher */}
-          <div className="flex items-center gap-1 mb-3" style={{ paddingLeft: 4 }}>
-            {(['pt-BR', 'en', 'es'] as Lang[]).map(l => (
-              <button
-                key={l}
-                onClick={() => setLang(l)}
-                style={{
-                  background: lang === l ? 'var(--tdgflow-navy-subtle)' : 'none',
-                  border: lang === l ? '1px solid var(--tdgflow-navy-ring)' : '1px solid transparent',
-                  borderRadius: 4,
-                  padding: '2px 6px',
-                  cursor: 'pointer',
-                  fontSize: '0.5625rem',
-                  fontWeight: lang === l ? 700 : 400,
-                  letterSpacing: '0.08em',
-                  color: lang === l ? 'var(--tdgflow-navy)' : 'var(--tdgflow-text-muted)',
-                  transition: 'all 150ms',
-                }}
-              >
-                {LANG_LABELS[l]}
-              </button>
-            ))}
-          </div>
-
           {/* Sugestões de Melhoria — junto ao perfil (Billing agora mora no grupo Gestão, na nav principal) */}
           <Link
             href="/flow/sugestoes"
@@ -409,59 +398,69 @@ function FlowShellInner({ children, user, brand }: Props) {
             )}
           </Link>
 
-          <Link
-            href="/flow/agencia"
-            className="flex items-center gap-2.5 mb-3 no-underline rounded-xl"
-            style={{
-              padding: '7px 8px',
-              margin: '0 -8px',
-              transition: 'background 150ms',
-              background: isActive('/flow/agencia') ? 'var(--tdgflow-navy-subtle)' : 'transparent',
-            }}
-            onMouseEnter={e => { if (!isActive('/flow/agencia')) (e.currentTarget as HTMLElement).style.background = 'var(--tdgflow-surface-high)' }}
-            onMouseLeave={e => { if (!isActive('/flow/agencia')) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
-          >
-            <UserAvatar name={user.name} avatarUrl={user.avatar_url} size={28} />
-            <div className="min-w-0 flex-1">
-              <p style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--tdgflow-text-primary)', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {user.name || 'Agente'}
-              </p>
-              <p style={{ fontSize: '0.625rem', letterSpacing: '0.04em', color: 'var(--tdgflow-text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {user.agency}
-              </p>
-              {/* Badge Membro Fundador (achado da Carla, 30/07: só existia como
-                  texto solto no meio da copy do Billing, nunca como selo
-                  visível de verdade). Reusa o sistema .badge já existente. */}
-              <span className="badge badge-gold" style={{ marginTop: 3, fontSize: '0.5625rem', borderRadius: 6, lineHeight: 1.35 }}>
-                Membro Fundador TDG Flow
-              </span>
-            </div>
-          </Link>
-          <button
-            onClick={() => signOut({ callbackUrl: '/flow/login' })}
-            className="flex items-center gap-1.5"
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)', letterSpacing: '0.02em', transition: 'color 150ms' }}
-            onMouseEnter={e => (e.currentTarget.style.color = 'var(--tdgflow-error)')}
-            onMouseLeave={e => (e.currentTarget.style.color = 'var(--tdgflow-text-muted)')}
-          >
-            <LogOut size={11} /> {tr('auth.signout')}
-          </button>
+          {/* Identidade + Sair na mesma linha (01/08) — eram 2 blocos
+              empilhados; Link e button ficam irmãos, nunca aninhados
+              (interativo dentro de interativo quebra semântica/a11y). */}
+          <div className="flex items-center gap-1 mb-2" style={{ margin: '0 -8px 8px' }}>
+            <Link
+              href="/flow/agencia"
+              className="flex items-center gap-2.5 no-underline rounded-xl flex-1 min-w-0"
+              style={{
+                padding: '7px 8px',
+                transition: 'background 150ms',
+                background: isActive('/flow/agencia') ? 'var(--tdgflow-navy-subtle)' : 'transparent',
+              }}
+              onMouseEnter={e => { if (!isActive('/flow/agencia')) (e.currentTarget as HTMLElement).style.background = 'var(--tdgflow-surface-high)' }}
+              onMouseLeave={e => { if (!isActive('/flow/agencia')) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+            >
+              <UserAvatar name={user.name} avatarUrl={user.avatar_url} size={28} />
+              <div className="min-w-0 flex-1">
+                <p style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--tdgflow-text-primary)', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {user.name || 'Agente'}
+                </p>
+                <p style={{ fontSize: '0.625rem', letterSpacing: '0.04em', color: 'var(--tdgflow-text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {user.agency}
+                </p>
+                {/* Badge Membro Fundador — encurtado 01/08 ("TDG Flow" era
+                    redundante dentro do próprio TDG Flow, e quebrava em 2
+                    linhas mesmo em espanhol). Reusa o sistema .badge já existente. */}
+                <span className="badge badge-gold" style={{ marginTop: 3, fontSize: '0.5625rem', borderRadius: 6, lineHeight: 1.35 }}>
+                  Membro Fundador
+                </span>
+              </div>
+            </Link>
+            <button
+              onClick={() => signOut({ callbackUrl: '/flow/login' })}
+              title={tr('auth.signout')}
+              aria-label={tr('auth.signout')}
+              style={{
+                flexShrink: 0, width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: 'none', border: 'none', borderRadius: 8, cursor: 'pointer',
+                color: 'var(--tdgflow-text-muted)', transition: 'color 150ms, background 150ms',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.color = 'var(--tdgflow-error)'; e.currentTarget.style.background = 'var(--tdgflow-surface-high)' }}
+              onMouseLeave={e => { e.currentTarget.style.color = 'var(--tdgflow-text-muted)'; e.currentTarget.style.background = 'none' }}
+            >
+              <LogOut size={14} />
+            </button>
+          </div>
           {/* Bemgsy — motor invisível do produto (achado da Carla, 29/07: não
               havia NENHUMA menção à Bemgsy em lugar nenhum da UI; 1ª tentativa
               a 10px/opacity 0.55 era abaixo do piso de legibilidade tipográfica,
               não só "discreta" — achado técnico do arquiteto, não gosto).
               Rótulo "Powered by" garante o significado mesmo sem hover — a
-              tooltip nativa continua existindo como bônus, não como único canal. */}
-          <div className="flex items-center justify-center" style={{ marginTop: 10, gap: 6 }} title="Bemgsy — Amplifying Human Hospitality">
+              tooltip nativa continua existindo como bônus, não como único canal.
+              Junto com a versão numa linha só (01/08, eram 2 linhas). */}
+          <div className="flex items-center justify-center" style={{ marginTop: 6, gap: 6 }} title="Bemgsy — Amplifying Human Hospitality">
             <span style={{ fontSize: '0.5rem', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--tdgflow-text-faint)' }}>
               Powered by
             </span>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/brand/bemgsy-mark.png" alt="Bemgsy" style={{ height: 16, objectFit: 'contain', opacity: 0.75 }} />
+            <span style={{ fontSize: '0.5625rem', letterSpacing: '0.1em', color: 'var(--tdgflow-text-faint)' }}>
+              · {APP_VERSION}
+            </span>
           </div>
-          <p style={{ marginTop: 6, fontSize: '0.5625rem', letterSpacing: '0.1em', color: 'var(--tdgflow-text-faint)', textAlign: 'center' }}>
-            {APP_VERSION}
-          </p>
         </div>
       </aside>
 
