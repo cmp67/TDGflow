@@ -239,13 +239,22 @@ function HotelCard({ hotel, onClick }: { hotel: Hotel; onClick: () => void }) {
     >
       {/* Cover photo — compact height */}
       <div style={{ width: '100%', height: 118, overflow: 'hidden', position: 'relative', flexShrink: 0 }}>
-        <img
-          src={hotel.image_url}
-          alt={hotel.name}
-          style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s cubic-bezier(0.4,0,0.2,1)' }}
-          className="group-hover:scale-105"
-          loading="lazy"
-        />
+        {hotel.image_url ? (
+          <img
+            src={hotel.image_url}
+            alt={hotel.name}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s cubic-bezier(0.4,0,0.2,1)' }}
+            className="group-hover:scale-105"
+            loading="lazy"
+          />
+        ) : (
+          <div style={{
+            width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'linear-gradient(135deg, var(--tdgflow-navy-subtle), var(--tdgflow-surface-high))',
+          }}>
+            <Building2 size={26} style={{ color: 'var(--tdgflow-navy-dim)', opacity: 0.5 }} />
+          </div>
+        )}
         <div style={{
           position: 'absolute', inset: 0,
           background: 'linear-gradient(to top, rgba(10,7,3,0.70) 0%, rgba(10,7,3,0.08) 55%, transparent 100%)',
@@ -1133,11 +1142,20 @@ function HotelDetail({ hotel, onClose }: { hotel: Hotel; onClose: () => void }) 
 
         {/* Hero photo */}
         <div className="relative flex-shrink-0" style={{ height: 180, overflow: 'hidden' }}>
-          <img
-            src={hotel.image_url}
-            alt={hotel.name}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          />
+          {hotel.image_url ? (
+            <img
+              src={hotel.image_url}
+              alt={hotel.name}
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+          ) : (
+            <div style={{
+              width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'linear-gradient(135deg, var(--tdgflow-navy-subtle), var(--tdgflow-surface-high))',
+            }}>
+              <Building2 size={36} style={{ color: 'var(--tdgflow-navy-dim)', opacity: 0.5 }} />
+            </div>
+          )}
           <div style={{
             position: 'absolute', inset: 0,
             background: 'linear-gradient(to top, rgba(10,7,3,0.72) 0%, rgba(10,7,3,0.15) 60%, transparent 100%)',
