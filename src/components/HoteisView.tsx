@@ -85,6 +85,7 @@ interface Hotel {
   testedCount: number
   pendingLeadCount: number
   benefits: HotelBenefit[]
+  isPrivate: boolean
 }
 
 interface HotelBenefit {
@@ -196,6 +197,12 @@ interface HotelApiRow {
   tested_count: number
   pending_lead_count: number
   benefits: HotelBenefit[] | null
+  is_private: boolean
+}
+
+const ENTITY_TYPE_LABELS: Record<string, string> = {
+  hotel: 'Hotel', beach_club: 'Beach Club', transfer: 'Transfer',
+  guide: 'Guia', restaurant: 'Restaurante', other: 'Outro',
 }
 
 function mapHotelApiRow(row: HotelApiRow): Hotel {
@@ -219,6 +226,7 @@ function mapHotelApiRow(row: HotelApiRow): Hotel {
     testedCount: row.tested_count ?? 0,
     pendingLeadCount: row.pending_lead_count ?? 0,
     benefits: row.benefits ?? [],
+    isPrivate: row.is_private ?? false,
   }
 }
 
@@ -300,6 +308,9 @@ function HotelCard({ hotel, onClick }: { hotel: Hotel; onClick: () => void }) {
             <use href="#i-pin" />
           </svg>
           <span style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{hotel.location}</span>
+          {hotel.isPrivate && (
+            <span style={{ fontSize: '0.625rem', color: 'var(--tdgflow-text-muted)', flexShrink: 0 }}>· Só a sua agência vê</span>
+          )}
         </div>
         {/* Profile pills */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
@@ -1390,6 +1401,79 @@ function HotelDetail({ hotel, onClose }: { hotel: Hotel; onClose: () => void }) 
   )
 }
 
+/* ── Adicionar fornecedor ao acervo privado ──────────────────────────
+   Diferente do find-or-create em POST /api/reviews (que sempre nasce
+   compartilhado com a rede, é o espírito de "Na prática"), este formulário
+   é o ponto de entrada deliberado da agência pro próprio acervo privado —
+   sempre nasce só-sua-agência (achado 2026-08-02, migration 021). */
+function AddSupplierForm({ onSaved, onCancel }: { onSaved: () => void; onCancel: () => void }) {
+  const [entityType, setEntityType] = useState('hotel')
+  const [name, setName] = useState('')
+  const [location, setLocation] = useState('')
+  const [country, setCountry] = useState('')
+  const [description, setDescription] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  async function save() {
+    if (!name.trim()) { setError('Nome é obrigatório.'); return }
+    setSaving(true)
+    setError('')
+    try {
+      const res = await fetch('/api/hotels', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name.trim(),
+          entity_type: entityType,
+          location: location.trim() || undefined,
+          country: country.trim() || undefined,
+          description: description.trim() || undefined,
+        }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) { setError(data.error ?? 'Erro ao salvar fornecedor.'); setSaving(false); return }
+      onSaved()
+    } catch {
+      setError('Serviço indisponível.')
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div style={{ padding: 14, borderRadius: 12, border: '1px solid var(--tdgflow-border)', background: 'var(--tdgflow-surface)', marginBottom: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div>
+          <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)' }}>Adicionar ao meu acervo privado</p>
+          <p style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)', marginTop: 2 }}>Só a sua agência vai ver este fornecedor.</p>
+        </div>
+        <button type="button" onClick={onCancel} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tdgflow-text-muted)' }}>
+          <X size={14} />
+        </button>
+      </div>
+
+      <select className="input" value={entityType} onChange={e => setEntityType(e.target.value)} style={{ fontSize: '0.8125rem' }}>
+        {Object.entries(ENTITY_TYPE_LABELS).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+      </select>
+      <input className="input" placeholder="Nome" value={name} onChange={e => setName(e.target.value)} style={{ fontSize: '0.8125rem' }} />
+      <input className="input" placeholder="Localização (opcional)" value={location} onChange={e => setLocation(e.target.value)} style={{ fontSize: '0.8125rem' }} />
+      <input className="input" placeholder="País (opcional)" value={country} onChange={e => setCountry(e.target.value)} style={{ fontSize: '0.8125rem' }} />
+      <textarea className="input" placeholder="Descrição (opcional)" value={description} onChange={e => setDescription(e.target.value)} rows={2} style={{ fontSize: '0.8125rem', resize: 'vertical' }} />
+
+      {error && (
+        <p style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', color: 'var(--tdgflow-error)' }}>
+          <AlertCircle size={13} /> {error}
+        </p>
+      )}
+
+      <button type="button" onClick={save} disabled={saving} className="btn-gold" style={{ fontSize: '0.8125rem', padding: '8px 12px' }}>
+        {saving ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
+        {saving ? 'Salvando...' : 'Salvar fornecedor'}
+      </button>
+    </div>
+  )
+}
+
 /* ── Main view ──────────────────────────────────────────────────── */
 export default function HoteisView() {
   const searchParams = useSearchParams()
@@ -1402,6 +1486,7 @@ export default function HoteisView() {
   const [hotels, setHotels] = useState<Hotel[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
+  const [showAddForm, setShowAddForm] = useState(false)
 
   const loadHotels = useCallback(async () => {
     setLoading(true)
@@ -1494,12 +1579,28 @@ export default function HoteisView() {
               </span>
             </div>
           </div>
-          {activeCount > 0 && (
-            <button onClick={clearAll} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.6875rem', color: 'var(--tdgflow-navy)', padding: '4px 0' }}>
-              <X size={11} /> Limpar ({activeCount})
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+            <button
+              onClick={() => setShowAddForm(v => !v)}
+              className="btn-gold"
+              style={{ padding: '6px 12px', fontSize: '0.75rem' }}
+            >
+              <Plus size={13} /> Meu acervo privado
             </button>
-          )}
+            {activeCount > 0 && (
+              <button onClick={clearAll} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.6875rem', color: 'var(--tdgflow-navy)', padding: '4px 0' }}>
+                <X size={11} /> Limpar ({activeCount})
+              </button>
+            )}
+          </div>
         </div>
+
+        {showAddForm && (
+          <AddSupplierForm
+            onCancel={() => setShowAddForm(false)}
+            onSaved={() => { setShowAddForm(false); loadHotels() }}
+          />
+        )}
 
         {/* Search */}
         <div style={{ position: 'relative', marginBottom: 10 }}>

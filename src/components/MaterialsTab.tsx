@@ -16,6 +16,7 @@ interface Material {
   source_note: string | null
   created_by: string
   created_at: string
+  is_private: boolean
 }
 
 const CATEGORY_LABELS: Record<Material['category'], string> = {
@@ -60,6 +61,7 @@ export default function MaterialsTab() {
   const [kind, setKind] = useState<'file' | 'link'>('link')
   const [linkUrl, setLinkUrl] = useState('')
   const [file, setFile] = useState<File | null>(null)
+  const [visibility, setVisibility] = useState<'rede' | 'privado'>('rede')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -82,6 +84,7 @@ export default function MaterialsTab() {
   function resetForm() {
     setCategory('formulario'); setTitle(''); setDescription(''); setSourceNote('')
     setKind('link'); setLinkUrl(''); setFile(null); setFormError('')
+    setVisibility('rede')
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -99,6 +102,7 @@ export default function MaterialsTab() {
     if (sourceNote.trim()) fd.append('source_note', sourceNote.trim())
     if (kind === 'link') fd.append('link_url', linkUrl.trim())
     if (kind === 'file' && file) fd.append('file', file)
+    fd.append('visibility', visibility)
 
     const res = await fetch('/api/materials', { method: 'POST', body: fd })
     if (!res.ok) {
@@ -192,6 +196,27 @@ export default function MaterialsTab() {
             <input type="file" onChange={e => setFile(e.target.files?.[0] ?? null)} style={{ fontSize: '0.8125rem' }} />
           )}
 
+          <div style={{ display: 'flex', gap: 6 }}>
+            {([
+              { id: 'rede' as const, label: 'Compartilhar com a rede TDG' },
+              { id: 'privado' as const, label: 'Só a minha agência vê' },
+            ]).map(v => (
+              <button
+                key={v.id}
+                type="button"
+                onClick={() => setVisibility(v.id)}
+                style={{
+                  flex: 1, padding: '6px 10px', borderRadius: 8, fontSize: '0.75rem', cursor: 'pointer',
+                  background: visibility === v.id ? 'var(--tdgflow-navy-subtle)' : 'var(--tdgflow-bg)',
+                  border: visibility === v.id ? '1.5px solid var(--tdgflow-navy)' : '1px solid var(--tdgflow-border)',
+                  color: visibility === v.id ? 'var(--tdgflow-navy)' : 'var(--tdgflow-text-muted)',
+                }}
+              >
+                {v.label}
+              </button>
+            ))}
+          </div>
+
           {formError && (
             <p style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', color: 'var(--tdgflow-error)' }}>
               <AlertCircle size={13} /> {formError}
@@ -230,7 +255,14 @@ export default function MaterialsTab() {
                 <MaterialIcon m={m} />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--tdgflow-text-primary)' }}>{m.title}</p>
+                <p style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--tdgflow-text-primary)' }}>
+                  {m.title}
+                  {m.is_private && (
+                    <span style={{ marginLeft: 6, fontSize: '0.625rem', fontWeight: 400, color: 'var(--tdgflow-text-muted)' }}>
+                      · Só a sua agência vê
+                    </span>
+                  )}
+                </p>
                 {m.description && (
                   <p style={{ fontSize: '0.7rem', color: 'var(--tdgflow-text-muted)', marginTop: 2, lineHeight: 1.4 }}>{m.description}</p>
                 )}
