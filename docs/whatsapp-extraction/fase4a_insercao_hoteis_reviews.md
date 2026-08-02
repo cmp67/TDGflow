@@ -37,11 +37,6 @@
 - Zero `photo_url` preenchido
 - Suíte de testes do app rodada de novo — achou 1 teste que dependia de "Martinhal Sagres" nunca ter review (mesma lição do achado de 01/08 com "La Sivoliere") — corrigido pra usar fixture própria, 243/243 passando
 
-## ⚠️ Ponto em aberto pra decidir antes da Fase 6
+## ✅ Decisão (Carla, 02/08): selo "Testado" conta desde já
 
-O selo "Testado pela rede" (verde) em `tdg_hotels`/`tdg_hotel_contacts` é calculado hoje só por `status='published'` — **não olha `import_approval`**. Isso significa: os 685 hotéis novos já aparecem como "Testado" agora, mesmo com as reviews ainda em `pending` (aguardando o autor confirmar). Duas opções:
-
-1. **Manter assim** — visível e "testado" desde já, o badge cinza de "aguardando confirmação" (Fase 6) é só um aviso adicional na review, não muda o status geral do hotel.
-2. **Só contar como "Testado" depois de aprovado** — o selo do hotel ficaria correto/conservador, mas os 685 hotéis ficam "aguardando teste" (sem selo verde) até a fila de aprovação (Fase 6) rodar — o que pode levar tempo.
-
-Não decidi isso sozinha — é uma escolha de produto sobre o que "Testado pela rede" deve significar antes da aprovação existir de verdade.
+O selo "Testado pela rede" (verde) continua calculado só por `status='published'`, sem olhar `import_approval` — decisão confirmada, nenhuma mudança de código necessária (já é o comportamento atual). O badge cinza "aguardando confirmação do autor" (Fase 6) é um aviso adicional na própria review, não muda o status geral do hotel/fornecedor.
