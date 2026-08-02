@@ -21,8 +21,10 @@ describe('GET /api/hotels (catálogo de fornecedores)', () => {
   const suffix = Date.now()
   const testedHotelName = `__TDD Hotel Testado ${suffix}__`
   const pendingHotelName = `__TDD Hotel Aguardando ${suffix}__`
+  const noReviewHotelName = `__TDD Hotel Sem Review ${suffix}__`
   let testedHotelId: string
   let pendingHotelId: string
+  let noReviewHotelId: string
   const reviewIds: string[] = []
 
   beforeAll(async () => {
@@ -35,6 +37,16 @@ describe('GET /api/hotels (catálogo de fornecedores)', () => {
       INSERT INTO tdg_hotels (name, entity_type) VALUES (${pendingHotelName}, 'hotel') RETURNING id
     `
     pendingHotelId = pending[0].id as string
+
+    // Fixture próprio pro caso "sem review nenhuma" — antes usava
+    // 'Martinhal Sagres' (hotel curado real), quebrou de novo (02/08) assim
+    // que o import do WhatsApp deu review de verdade pra ele. Mesma lição
+    // do achado de 01/08: nunca depender de um hotel real ficar vazio pra
+    // sempre.
+    const { rows: noReview } = await sql`
+      INSERT INTO tdg_hotels (name, entity_type) VALUES (${noReviewHotelName}, 'hotel') RETURNING id
+    `
+    noReviewHotelId = noReview[0].id as string
 
     const { rows: publishedReview } = await sql`
       INSERT INTO tdg_hotel_reviews (hotel_name, hotel_id, agent_name, agency_name, status)
@@ -57,6 +69,7 @@ describe('GET /api/hotels (catálogo de fornecedores)', () => {
     }
     await sql`DELETE FROM tdg_hotels WHERE id = ${testedHotelId}`
     await sql`DELETE FROM tdg_hotels WHERE id = ${pendingHotelId}`
+    await sql`DELETE FROM tdg_hotels WHERE id = ${noReviewHotelId}`
   })
 
   it('returns 401 with no session', async () => {
@@ -107,7 +120,7 @@ describe('GET /api/hotels (catálogo de fornecedores)', () => {
     expect(aguardando.tested_count).toBe(0)
     expect(aguardando.pending_lead_count).toBeGreaterThanOrEqual(1)
 
-    const semReview = body.hotels.find((h: { name: string }) => h.name === 'Martinhal Sagres')
+    const semReview = body.hotels.find((h: { name: string }) => h.name === noReviewHotelName)
     expect(semReview.tested_count).toBe(0)
     expect(semReview.pending_lead_count).toBe(0)
   })
