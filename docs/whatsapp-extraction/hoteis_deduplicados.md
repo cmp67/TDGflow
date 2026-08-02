@@ -1,0 +1,1326 @@
+# Deduplicação de Hotéis — Extração WhatsApp TDG (2020-2026)
+**Data:** 30/07/2026 · **Origem:** `TDG_Flow_Extracao_WhatsApp_2020-2026.md` (seção Hotéis)
+Pente-fino sobre os 1.292 nomes únicos extraídos do histórico do WhatsApp, pra consolidar o mesmo fornecedor citado com grafias diferentes ao longo de 6 anos — **antes de qualquer inserção no banco** (essa ainda não foi feita, por decisão da Carla).
+## Método
+1. **Normalização exata** (remove acento, pontuação, palavras genéricas como "hotel"/"resort"/"spa") — grupos com normalização idêntica viraram fusão de **alta confiança** automática (só formatação/acento/sufixo mudando).
+2. **Fuzzy matching** (rapidfuzz, token_sort_ratio ≥ 82) sobre o que sobrou — cada candidato foi **julgado manualmente**, um por um, porque o teste já revelou vários falsos positivos reais (ex: hotéis da mesma marca em cidades diferentes).
+3. **5 casos ficaram ambíguos pro julgamento automático e foram decididos pela Carla** (30/07) — 3 viraram fusão, 2 confirmados como hotéis diferentes.
+4. Nenhuma fusão foi automática além da normalização exata — toda fusão fuzzy teve julgamento humano explícito, registrado abaixo.
+
+## Resultado
+- **Antes:** 1.292 nomes únicos (por string)
+- **Depois:** 1199 hotéis únicos reais
+- **65 fusões de alta confiança** (normalização exata — acento/pontuação/sufixo)
+- **16 fusões por julgamento manual** (fuzzy matching revisado um a um)
+- **3 fusões confirmadas pela Carla** (casos que ficaram ambíguos pro julgamento automático)
+- **19 casos confirmados como hotéis DIFERENTES** (mesma marca, cidade/produto diferente, ou confirmado pela Carla) — documentado pra ninguém reabrir essa checagem depois
+
+## Fusões aplicadas
+| Nome canônico | Variantes fundidas | Menções totais | Confiança |
+|---|---|---:|---|
+| **A Rosa e o Rei** | "Rosa e o Rei" | 2 | alta (formatação/acento idêntico) |
+| **Alvear Palace Hotel** | "Alvear Palace" | 4 | alta (formatação/acento idêntico) |
+| **Arpoador Hotel** | "Arpoador Inn", "Hotel Arpoador" | 3 | alta (formatação/acento idêntico) |
+| **Awasi Iguazu** | "Awasi Iguazú" | 2 | alta (formatação/acento idêntico) |
+| **Barracuda Hotel** | "Barracuda" | 4 | alta (formatação/acento idêntico) |
+| **Bel Ami Hotel** | "Bel Ami", "Hôtel Bel Ami" | 3 | alta (formatação/acento idêntico) |
+| **Bela Vista Hotel & Spa** | "Bela Vista", "Hotel Bela Vista" | 4 | alta (formatação/acento idêntico) |
+| **Bless Hotel Madrid** | "BLESS Madrid" | 2 | alta (formatação/acento idêntico) |
+| **Borgo Bianco Resort and Spa** | "Borgo Bianco" | 2 | alta (formatação/acento idêntico) |
+| **Botanique Hotel & Spa** | "Botanique Hotel" | 2 | alta (formatação/acento idêntico) |
+| **Burgenstock Resort** | "Bürgenstock Resort" | 2 | alta (formatação/acento idêntico) |
+| **COMO Castello del Nero** | "COMO Castello Del Nero" | 2 | alta (formatação/acento idêntico) |
+| **Campo Bahia Hotel Villas Spa** | "Campo Bahia", "Campo Bahia Hotel" | 3 | alta (formatação/acento idêntico) |
+| **Carmel Charme Resort** | "Carmel Charme", "Hotel Carmel Charme" | 4 | alta (formatação/acento idêntico) |
+| **Carmel Taiba** | "Carmel Taíba" | 3 | alta (formatação/acento idêntico) |
+| **Carmelo Resort** | "Carmelo" | 2 | alta (formatação/acento idêntico) |
+| **Casa Di Sirena** | "Casa di Sirena" | 2 | alta (formatação/acento idêntico) |
+| **Casa Grande Hotel Resort & Spa** | "Casa Grande" | 2 | alta (formatação/acento idêntico) |
+| **Castel Monastero** | "Castel Monastero (LHW)" | 2 | média-alta (julgamento manual) |
+| **Chable Maroma** | "Chablé Maroma" | 2 | alta (formatação/acento idêntico) |
+| **Chable Yucatan** | "Chablé Yucatán" | 2 | alta (formatação/acento idêntico) |
+| **Disney's Grand Floridian Resort & Spa** | "Disney's Grand Floridian Resort" | 3 | alta (formatação/acento idêntico) |
+| **East, Miami** | "EAST Miami" | 2 | alta (formatação/acento idêntico) |
+| **Emiliano Sao Paulo** | "Emiliano São Paulo" | 2 | alta (formatação/acento idêntico) |
+| **Estrela D'Agua** | "Estrela d'Água" | 2 | alta (formatação/acento idêntico) |
+| **Forte Village Resort** | "Fort Village" | 2 | média-alta (julgamento manual) |
+| **Four Seasons Hotel at The Surf Club** | "Four Seasons Surf Club", "Four Seasons Surfside" | 2 | confirmada pela Carla (30/07) |
+| **Four Seasons Resort Orlando** | "Four Seasons Orlando" | 2 | alta (formatação/acento idêntico) |
+| **Frasiers The Claridge** | "Frasiers Claridge" | 2 | alta (formatação/acento idêntico) |
+| **Grand Powers Hotel** | "Grand Powers" | 3 | alta (formatação/acento idêntico) |
+| **Hotel Janeiro** | "Janeiro Hotel", "JANEIRO Hotel" | 3 | alta (formatação/acento idêntico) |
+| **Hotel Lancaster** | "Lancaster Hotel" | 2 | alta (formatação/acento idêntico) |
+| **Hotel Pitrizza** | "Pitrizza" | 2 | alta (formatação/acento idêntico) |
+| **Hotel Toriba** | "Toriba" | 2 | alta (formatação/acento idêntico) |
+| **Hotel Vilon** | "Hotel Vilòn", "Vilon" | 4 | alta (formatação/acento idêntico) |
+| **Hotel Único Madrid** | "Unico Hotel Madrid" | 2 | alta (formatação/acento idêntico) |
+| **Hôtel Lutetia** | "Hotel Lutetia", "Le Lutetia" | 2 | confirmada pela Carla (30/07) |
+| **Ibiza Gran Hotel** | "Grand Hotel Ibiza" | 2 | média-alta (julgamento manual) |
+| **Jaci's Lodges** | "Jaci's Lodge" | 3 | alta (formatação/acento idêntico) |
+| **Kempinski St. Moritz** | "Kempinski St Moritz" | 2 | alta (formatação/acento idêntico) |
+| **Kenoa Resort** | "Kenoa" | 3 | alta (formatação/acento idêntico) |
+| **Kuara** | "Kûara" | 3 | alta (formatação/acento idêntico) |
+| **Kulm Hotel St. Moritz** | "Kulm Hotel St Moritz" | 2 | alta (formatação/acento idêntico) |
+| **La Fiermontina** | "Fiermontina" | 3 | média-alta (julgamento manual) |
+| **Le Barthélemy Hotel & Spa** | "Le Barthelemy" | 2 | alta (formatação/acento idêntico) |
+| **Le Burgundy** | "Burgundy Hotel" | 2 | confirmada pela Carla (30/07) |
+| **Majestic Hotel & Spa Barcelona** | "Majestic Hotel Barcelona" | 2 | alta (formatação/acento idêntico) |
+| **Mandarin Oriental Miami** | "Mandarin Oriental Miami (Brickell)" | 3 | média-alta (julgamento manual) |
+| **Marques de Riscal** | "Marqués de Riscal" | 3 | alta (formatação/acento idêntico) |
+| **Melia Iguazu** | "Meliá Iguazú" | 2 | alta (formatação/acento idêntico) |
+| **Mr. C Miami Coconut Grove** | "Mr. C Coconut Grove" | 2 | média-alta (julgamento manual) |
+| **Nannai Resort & Spa** | "Nannai" | 3 | alta (formatação/acento idêntico) |
+| **Niyama Private Islands Maldives** | "Niyama Private Island", "Niyama Private Islands" | 4 | média-alta (julgamento manual) |
+| **Nobu Hotel Ibiza** | "Nobu Ibiza" | 2 | alta (formatação/acento idêntico) |
+| **Nobu Hotel Marbella** | "Nobu Marbella" | 2 | alta (formatação/acento idêntico) |
+| **Nomade Tulum** | "Nômade Tulum" | 2 | alta (formatação/acento idêntico) |
+| **Nour El Nile** | "Nour El Nil" | 2 | média-alta (julgamento manual) |
+| **OKU Ibiza** | "Oku Ibiza" | 2 | alta (formatação/acento idêntico) |
+| **Oberoi (Nile cruise)** | "Oberoi Nile cruise" | 2 | alta (formatação/acento idêntico) |
+| **Palazzo Bozzi Corsi by La Fiermontina** | "Palazzo Bozzi Corso (Fiermontina)" | 2 | média-alta (julgamento manual) |
+| **Parador Cambara do Sul** | "Parador Cambará do Sul" | 2 | alta (formatação/acento idêntico) |
+| **Park Lane Hotel** | "Park Lane" | 5 | alta (formatação/acento idêntico) |
+| **Patria Palace Hotel** | "Patria Palace" | 2 | alta (formatação/acento idêntico) |
+| **Peisey Vallandry (Club Med)** | "Med Peisey Vallandry (Club Med)" | 2 | média-alta (julgamento manual) |
+| **Pine Cliffs Resort** | "Pine Cliffs" | 3 | alta (formatação/acento idêntico) |
+| **Pousada da Colina** | "Pousada Colina" | 2 | média-alta (julgamento manual) |
+| **Raffles Hotel Singapore** | "Raffles Singapore" | 3 | alta (formatação/acento idêntico) |
+| **Rose Garden Hotel** | "Rose Garden" | 2 | alta (formatação/acento idêntico) |
+| **Six Senses Douro Valley** | "Six Senses Douro" | 2 | média-alta (julgamento manual) |
+| **Sofitel Legend The Grand Amsterdam** | "Sofitel Amsterdam The Grand" | 2 | média-alta (julgamento manual) |
+| **St Regis Longboat Key Resort** | "St. Regis Longboat Key" | 2 | alta (formatação/acento idêntico) |
+| **St. Regis Bal Harbour Miami** | "St. Regis Bal Harbour" | 3 | média-alta (julgamento manual) |
+| **TW Guaiambê** | "TW Guaimbê" | 2 | média-alta (julgamento manual) |
+| **Taiba** | "Taíba" | 2 | alta (formatação/acento idêntico) |
+| **Tangara Trancoso** | "Tangará Trancoso" | 2 | alta (formatação/acento idêntico) |
+| **The Athenaeum Hotel** | "The Athenaeum" | 3 | alta (formatação/acento idêntico) |
+| **The Boca Raton Resort** | "The Boca Raton" | 2 | alta (formatação/acento idêntico) |
+| **The Dolder Grand** | "Dolder Grand" | 2 | alta (formatação/acento idêntico) |
+| **The Oitavos** | "Oitavos" | 2 | alta (formatação/acento idêntico) |
+| **The Ritz-Carlton Millenia Singapore** | "Ritz-Carlton Singapore" | 2 | média-alta (julgamento manual) |
+| **The Surf Lodge** | "Surf Lodge" | 2 | alta (formatação/acento idêntico) |
+| **Txai Resorts** | "Txai", "Txai Resort" | 5 | alta (formatação/acento idêntico) |
+| **Uxua Casa Hotel & Spa** | "Uxua Casa Hotel" | 3 | alta (formatação/acento idêntico) |
+| **Wymara Resort and Villas** | "Wymara Resort" | 3 | alta (formatação/acento idêntico) |
+
+## Confirmados como hotéis diferentes (não mesclar, já checado)
+- "Hyatt Zilara Riviera Maya" vs. "Hyatt Ziva Riviera Maya" — produtos diferentes (adults-only vs. family) no mesmo complexo
+- "Hyatt Zilara Cap Cana" vs. "Hyatt Ziva Cap Cana" — produtos diferentes no mesmo complexo
+- "Hyatt Ziva Cancun" vs. "Hyatt Ziva Cap Cana" — cidades diferentes
+- "Mandarin Oriental Mayfair" vs. "Mandarin Oriental Miami" — cidades diferentes
+- "Mandarin Oriental Madrid" vs. "Mandarin Oriental Mallorca" — cidades diferentes
+- "Mandarin Oriental Doha" vs. "Mandarin Oriental Mallorca" — cidades diferentes
+- "Mandarin Oriental Doha" vs. "Mandarin Oriental Madrid" — cidades diferentes
+- "Mandarin Oriental Doha" vs. "Mandarin Oriental Geneva" — cidades diferentes
+- "Mandarin Oriental Bodrum" vs. "Mandarin Oriental Madrid" — cidades diferentes
+- "Mandarin Oriental Bodrum" vs. "Mandarin Oriental Doha" — cidades diferentes
+- "Four Seasons Madrid" vs. "Four Seasons Maldives" — cidades diferentes
+- "Four Seasons" vs. "Four Seasons Surf Club" — marca genérica vs. propriedade específica
+- "1 Hotel Central Park" vs. "AKA Central Park" — marcas diferentes
+- "AC Hotel Fort Lauderdale" vs. "W Fort Lauderdale" — marcas diferentes
+- "1 Hotel South Beach" vs. "W South Beach" — marcas diferentes
+- "Singer Palace Hotel" vs. "Sinner Hotel" — falso positivo — nomes realmente diferentes
+- "Be Tulum" vs. "The Beach Tulum Hotel" — evidência insuficiente, provavelmente diferentes
+- "Four Seasons Hotel New York Downtown" vs. "Four Seasons New York" — confirmado pela Carla: NYC tem 2 Four Seasons reais, um Midtown e um Downtown
+- "1 Hotel Mayfair" vs. "Mayfair Hotel" — confirmado pela Carla: hotéis diferentes
+
+## Lista final deduplicada (todos os hotéis únicos, com contagem de menções)
+- &Beyond lodges
+- 1 Hotel Central Park (2x)
+- 1 Hotel Mayfair (3x)
+- 1 Hotel South Beach (3x)
+- 1 Hotels (marca, incl. Tokyo e Nashville)
+- 1100 Boutique Hotel Cassange
+- 15 Basil Street, Knightsbridge
+- A Rosa e o Rei (2x)
+- AC Hotel by Marriott Cape Town
+- AC Hotel Fort Lauderdale
+- AC Palacio de Santa Paula
+- Accademia Hotel Roma
+- Acqualina Resort (2x)
+- Affinia Hotels
+- AKA Beverly Hills
+- AKA Brickell (2x)
+- AKA Central Park (2x)
+- AKA Times Square (2x)
+- AKI by Adler
+- Al Maha, A Luxury Collection Desert Resort & Spa
+- Albatroz Hotel
+- Aldeia Beijupira
+- Alex Lake Zurich
+- Alhambra Palace
+- Alila Napa Valley / Bardessono
+- Alila Uluwatu
+- Alila Ventana Big Sur
+- Almanac Barcelona
+- Alpe d'Huez (Club Med)
+- Altis Belém
+- Alvear Icon Hotel
+- Alvear Palace Hotel (4x)
+- Aman New York (3x)
+- Aman Tokyo
+- Amandari Resort
+- Amanera (Aman)
+- Amanruya
+- Amanyara
+- Amfora Hvar Grand Beach Resort
+- Anacardier
+- Anantara Maia Seychelles Villas (antigo Maia)
+- Anantara Palazzo Naiadi
+- Anantara Qasr Al Sarab Desert Resort
+- Anantara Roma
+- Anantara Vilamoura (3x)
+- Anastasio Hotel & Beach Club
+- Andaz Costa Rica
+- Andaz Mayakoba
+- andBeyond Ngala Safari Lodge
+- Angama Mara
+- Anttunina (2x)
+- Aqua Lares
+- Aquatio Cave Luxury Hotel & Spa
+- Arakur Ushuaia (2x)
+- Araras Eco Lodge
+- Araya Totoan
+- Argos in Cappadocia
+- Ariana Sustainable Luxury Lodge
+- Armani Hotel Dubai
+- Arpoador Hotel (3x)
+- Arusha Coffee Lodge
+- Athenaeum Hotel & Residences
+- Atins Charme Chales
+- Atlante Plaza
+- Atlantis Bay
+- Atlantis Paradise Island
+- Atlantis The Palm
+- Atmosphere Core (Ozen | Oblu | Varu)
+- Auberge du Jeu de Paume Chantilly
+- Avani Lisboa
+- Avant Garden DMC
+- Awasi Atacama
+- Awasi Iguazu (2x)
+- Ayana
+- Azura Marlin Beach Mozambique
+- B&B Hotel Santos Dumont
+- BA'RA Hotel
+- Baboon 181 (Babuíno 181)
+- Babuino 181
+- Badrutt's Palace St Moritz
+- Baglioni Hotel Luna
+- Baglioni Maldives
+- Baglioni Masseria Muza
+- Baglioni Sardegna
+- Bagua Bangalôs
+- Baha Mar
+- Bahia Vik (3x)
+- Baqueira-Beret
+- Baraza Resort & Spa
+- Barracuda Hotel (4x)
+- Bawah Reserve
+- Bayt El Talleh (restaurante)
+- Be Tulum
+- Beach Boutique Hotel Campinhos
+- Beach Enclaves
+- Beach Haus Bal Harbour
+- Beau Rivage Palace
+- Beau-Rivage Palace Lausanne (grupo Sandoz Hotels)
+- Bel Ami Hotel (3x)
+- Bela Vista Hotel & Spa (4x)
+- Bellagio Las Vegas
+- Belmond Castello di Casole
+- Belmond Grand Hotel Timeo
+- Belmond Hotel das Cataratas (2x)
+- Belmond Maroma
+- Belmond Villa Sant'Andrea
+- Belvedere Mykonos
+- Bernardi Hotels (villas)
+- Bessa Hotel
+- Best Western Hotel Tritone
+- Bianca Neve
+- Bisate Lodge
+- Bless Hotel Madrid (2x)
+- Borghese Contemporary Hotel
+- Borgo Bianco Resort and Spa (2x)
+- Borgo Egnazia
+- Borgo San Felice (2x)
+- Borgo Santandrea
+- Boschendal
+- Botanique Hotel & Spa (2x)
+- Brightline (trem Miami-Orlando / West Palm Beach)
+- Brisas do Espelho
+- Bristol Panamá
+- Brown's Central
+- Brown's Hotel
+- Bulgari Hotel London
+- Bulgari Resort
+- Bulgari Resort Bali
+- Burgenstock Resort (2x)
+- Bush Lodge (Sabi Sabi)
+- Butterfly House
+- Byblos St Tropez
+- Ca di Dio (2x)
+- Cabanas Chapeu de Palha
+- Cadillac Hotel & Beach Club Miami Beach
+- Caesar Augustus Hotel
+- Café Royal
+- Cala e Divino
+- Cala Galdana
+- Calilo
+- Camelback Resort
+- Campo Bahia Hotel Villas Spa (3x)
+- Camurim Grande (2x)
+- Canaves Oia
+- Canaves Oia Epitome
+- Canne Bianche Lifestyle Hotel
+- Canopy by Hilton Sao Paulo Jardins
+- Canto das Águas
+- Cap Juluca, A Belmond Hotel / Four Seasons Resort Anguilla
+- Capanna Suites
+- Cape Vue
+- Capella Singapore (3x)
+- Capim Santo
+- Capri Tiberio Palace
+- Captain Cook Hotel
+- Carlton Cannes
+- Carmel Charme (Taiba/Cumbuco)
+- Carmel Charme Resort (4x)
+- Carmel Cumbuco
+- Carmel Hotéis (rede)
+- Carmel Taiba (3x)
+- Carmelo Resort (2x)
+- Carneiros Beach Resort
+- Carneros Resort and Spa / Auberge (Napa)
+- Casa Capela
+- Casa de Campo
+- Casa de Santo Antônio
+- Casa de Uco (2x)
+- Casa del Mar
+- Casa Di Sirena (2x)
+- Casa do Benchimol
+- Casa dos Arandis (2x)
+- Casa Grande Hotel Resort & Spa (2x)
+- Casa Literária
+- Casa Lucia
+- Casa Lúcia (Buenos Aires)
+- Casa Malca (2x)
+- Casa Morgano
+- Casa Nanã
+- Casa Real Hotel (vinícola Santa Rita)
+- Casa Suaya
+- Casa Sur Palermo
+- Casa Turquesa
+- Casa Valduga
+- Casagrande
+- Casana
+- Casanova di Neri
+- Cascais Miragem
+- Castel Monastero (2x)
+- Castelfalfi (TL)
+- Castello di Guarene (Relais & Chateaux)
+- Castello di Postignano
+- Castello di Reschio
+- Castelo di Casole
+- Castelo Di Meleto
+- Castiglion del Bosco
+- Cavaleiros dos Pirineus
+- Cavallino Bianco / Biancaneve
+- Cavallino Bianco Family Spa Grand Hotel
+- Cayo Levantado
+- Chable Maroma (2x)
+- Chable Yucatan (2x)
+- Chapada Diamantina (hoteis: Lencois/Canto das Aguas, refugio na serra)
+- Charme
+- Charmes Atins
+- Chateau Hotel Grand Barrail
+- Cheval Blanc (Maldivas)
+- Cheval Blanc Randheli (2x)
+- Cheval Blanc St-Barth
+- Cheval Blanc St-Barth Isle de France
+- Chilli Beach (2x)
+- Château de Fonscolombe
+- Château de la Chèvre d'Or
+- Château de la Messardière (Airelles)
+- Cipriani Resort Punta del Este
+- Citadines
+- Citadines Les Halles
+- Citadines Saint-Germain-des-Pres
+- Clara Arte
+- Clarion Jerônimo da Veiga
+- Claris
+- Clinique La Prairie
+- Clos Apalta Residence
+- Club Med Cefalù
+- Club Med Grand Massif
+- Club Med Lake Paradise
+- Club Med Les Arcs (2x)
+- Club Med Pragelato Sestriere
+- Club Med Punta Cana
+- Club Med Seychelles
+- Club Med Trancoso
+- Club Med Val d'Isère
+- Club Med Valmorel
+- Comandatuba (2x)
+- COMO Castello del Nero (2x)
+- COMO Maalifushi
+- Como Miami Beach
+- COMO Parrot Cay
+- Concept Hotel Buzios
+- Concorde Hotel
+- Condes de Barcelona
+- Conrad Miami (ex-Residences)
+- Conrad New York Midtown
+- Conrad Orlando
+- Conrad Osaka
+- Conrad Tulum Riviera Maya
+- Conservatorium Amsterdam
+- Conservatorium Hotel
+- Constance Lemuria
+- Copacabana Palace
+- Coquillade Provence
+- Corralco
+- Corso 281
+- Cosme Hotel (2x)
+- Country Club Lima Hotel
+- Cour de Loges
+- Coworth Park
+- CPH Pevero
+- Crillon le Brave
+- Cristalino Lodge
+- Crosby Street Hotel
+- Crowne Plaza HY36 Midtown
+- Curaçao Marriott Beach Resort
+- Delano South Beach
+- Deos Mykonos
+- Descobrindo Serra Gaucha (DMC de enoturismo)
+- Disney's Animal Kingdom Lodge
+- Disney's Grand Floridian Resort & Spa (3x)
+- Disney's Riviera Resort
+- Disney's Yacht Club Resort
+- Domaine Les Crayeres
+- Douro Valley - Infante Sagres, Porto Bay Flores, Quinta do Vallado, Vintage House
+- Douro41
+- Dpny
+- DPNY Beach Hotel
+- Earth Lodge (Sabi Sabi)
+- East Miami (Brickell)
+- East, Miami (2x)
+- Eau Palm Beach Resort & Spa
+- Eden Hotel Nairobi
+- Eden Roc Cap Cana
+- Eden Rock
+- Edition Barcelona
+- Edition Madrid
+- Edition Miami Beach
+- El Fenn
+- El Fuerte (Preferred Hotels)
+- El Mangroove Costa Rica
+- El Otro Lado
+- El Palace Barcelona
+- El Palace Barcelona (Leading Hotels)
+- Electra Metropolis Athens
+- Emiliano
+- Emiliano Rio de Janeiro
+- Emiliano Sao Paulo (2x)
+- Enjoy Punta del Este Resort y Casino (ex-Conrad)
+- Entre Cielos
+- Erinvale Estate Hotel & Spa
+- Essenza Jericoacoara
+- Essenza Tulum
+- Estrela D'Agua (2x)
+- Ethiopian Airlines (classe executiva)
+- Etnia
+- Experimental Menorca
+- Explora Atacama
+- Explora III
+- Explora Journeys (navio)
+- Explora Patagonia (2x)
+- explora Torres del Paine (Patagônia)
+- explora Valle Sagrado
+- Faena Miami Beach
+- Fairmont Mayakoba (2x)
+- Fairmont Nile City Cairo
+- Fairmont Rio de Janeiro
+- Fairmont Rio de Janeiro Copacabana
+- Farol Hotel (2x)
+- Fasano (2x)
+- Fasano Angra
+- Fasano Belo Horizonte
+- Fasano Rio de Janeiro (2x)
+- Fasano Sardenha
+- Fasano Surf Lodge
+- Fasano Trancoso
+- Fazenda Capoava (2x)
+- Fazenda Corumbau
+- Fazenda Lila
+- Fazenda Shanti
+- Fazenda São Francisco do Corumbau
+- Fendi Private Suites
+- Fera Palace Hotel
+- Fiesta Americana Coral Beach
+- Filha da Lua
+- Finolhu Maldives (3x)
+- Flemings Mayfair (4x)
+- Fonscolombe
+- Font Mourier
+- Fontainebleau Las Vegas
+- Fontainebleau Miami Beach
+- Forest Private Villa Itacaré
+- Forte Village Resort (2x)
+- Fouquet's Mykonos
+- Four Seasons
+- Four Seasons Astir Palace (Athens)
+- Four Seasons Bali at Jimbaran Bay
+- Four Seasons Bora Bora
+- Four Seasons Buenos Aires (2x)
+- Four Seasons Cairo (FS Nile - com vista para o Nilo)
+- Four Seasons Cidade do México (restaurante OMA)
+- Four Seasons Geneva (Hotel des Bergues)
+- Four Seasons Grand-Hotel du Cap-Ferrat
+- Four Seasons Hotel at The Surf Club (2x)
+- Four Seasons Hotel Cairo at Nile Plaza
+- Four Seasons Hotel Firenze
+- Four Seasons Hotel Istanbul at Sultanahmet
+- Four Seasons Hotel Istanbul at the Bosphorus
+- Four Seasons Hotel New York Downtown
+- Four Seasons Hotel Singapore
+- Four Seasons Landaa Giraavaru (2x)
+- Four Seasons Las Vegas (2x)
+- Four Seasons Madrid
+- Four Seasons Maldives
+- Four Seasons New York
+- Four Seasons Ocean Club Bahamas
+- Four Seasons Resort Chiang Mai
+- Four Seasons Resort Dubai at Jumeirah Beach
+- Four Seasons Resort Orlando (2x)
+- Four Seasons Resort Orlando at Walt Disney World
+- Four Seasons Resort Palm Beach
+- Four Seasons Resort Seychelles at Desroches Island
+- Four Seasons Sharm El Sheikh
+- Four Seasons Silicon Valley
+- Four Seasons Taormina (San Domenico Palace)
+- Fraser Suites Champs Elysees
+- Frasiers The Claridge (2x)
+- FS Landaa Giravaaru
+- Fullerton Hotel Singapore (2x)
+- FUSO Hotel
+- Gallery Art Hotel
+- Gansevoort Meatpacking NYC
+- Gecko Hotel & Beach Club
+- Giardino Mountain
+- Gili Lankanfushi (2x)
+- Gleneagles
+- Gran Hotel Domine Bilbao
+- Gran Hotel Inglés
+- Gran Hotel Miramar
+- Grand Beach Hotel Surfside (3x)
+- Grand Hotel et de Milan
+- Grand Hotel Excelsior Amalfi
+- Grand Hotel National Lucerne
+- Grand Hotel Quisisana
+- Grand Hotel San Pietro (Preferred)
+- Grand Hotel Villa Serbelloni
+- Grand House - Relais & Chateaux
+- Grand Hyatt Athens
+- Grand Hyatt Baha Mar
+- Grand Hôtel
+- Grand La Margna / Grace St Moritz
+- Grand Powers Hotel (3x)
+- Grand Velas Riviera Maya
+- Grand-Hôtel du Cap-Ferrat
+- Grande Hotel (Campos do Jordão)
+- Grande Hotel Sao Pedro
+- Grootbos Private Nature Reserve
+- Grupo Ekos (Morena e Hamares)
+- Guarda Golf
+- Guarda Golf Hotel & Residences
+- H10 Duque de Loule
+- H10 Palazzo Galla
+- Habitas Tulum
+- Hard Rock Hotel Cancún
+- Hard Rock Hotel Riviera Maya
+- Havila Voyages (navio, Noruega)
+- Hayo Pé na Areia
+- Hemingways Nairobi
+- Herdade da Malhadinha Nova
+- Hibisco
+- Hideaway Beach Resort & Spa Maldives
+- Hilton Cancún
+- Hilton Moorea Lagoon Resort
+- Holiday Inn Santiago Aeroporto
+- Hospes Casas Rey de Baeza
+- Hospes Infante Sagres
+- Hotel Adlon Kempinski Berlin
+- Hotel Adriana
+- Hotel Alfonso XIII
+- Hotel Alfonso XIII Sevilha
+- Hotel American Dinesen
+- Hotel Arts
+- Hotel B Lima
+- Hotel Barrière Fouquet's New York
+- Hotel Baur Au Lac
+- Hotel Belami Paris
+- Hotel Belles Rives
+- Hotel Bidasoa
+- Hotel Brach Madrid
+- Hotel Bristol
+- Hotel Bristol Paris
+- Hotel Brunelleschi
+- Hotel Byblos
+- Hotel Capo d'Africa
+- Hotel Casa Fuster / Sixtytwo Hotel Barcelona
+- Hotel Colline de France
+- Hotel Continentale Florença
+- Hotel de Londres y de Inglaterra
+- Hotel de Rome
+- Hotel des Saints Peres / Esprit Saint-Germain
+- Hotel Fauchon
+- Hotel Hassler
+- Hotel Helmhaus Zürich
+- Hotel Histórico Central
+- Hotel Infante Sagres (agora marca Hospes)
+- Hotel Janeiro (3x)
+- Hotel L'Europe Amsterdam
+- Hotel L'Orologio Venezia
+- Hotel La Ponche
+- Hotel Lancaster (2x)
+- Hotel Le Lana
+- Hotel Le Palme (Forte Village)
+- Hotel Madoka no Mori Hakone
+- Hotel Marignan Champs-Elysees
+- Hotel Mercer Sevilla
+- Hotel Molina Lario
+- Hotel Monument
+- Hotel MVD
+- Hotel Palace Madrid
+- Hotel Pitrizza (2x)
+- Hotel Pulitzer Amsterdam
+- Hotel Roma (V Retreats), Ortigia
+- Hotel Rosagrand
+- Hotel Royal-Riviera
+- Hotel Sassongher
+- Hotel Splendid Venezia
+- Hotel Toriba (2x)
+- Hotel Tremezzo
+- Hotel Unique
+- Hotel Urso Madrid (2x)
+- Hotel Vernet
+- Hotel Vilon (4x)
+- Hotel West End Paris
+- Hotel Woodward Geneva
+- Hotel Zagaia Bonito
+- Hotel Único Madrid (2x)
+- Houston Airport Marriott at George Bush Intercontinental
+- Hurawalhi Island Resort
+- HY36 (IHG)
+- Hyatt Centric Las Olas Fort Lauderdale
+- Hyatt Centric Midtown
+- Hyatt Regency Grand Cypress Resort
+- Hyatt Regency Orlando
+- Hyatt Zilara Cap Cana
+- Hyatt Zilara Riviera Maya
+- Hyatt Ziva Cancun
+- Hyatt Ziva Cap Cana (2x)
+- Hyatt Ziva Riviera Maya
+- Hôtel Barrière Le Fouquet's
+- Hôtel de Berri
+- Hôtel Lutetia (2x)
+- Hôtel Pont Royal
+- Iberostar Selection Praia do Forte
+- Ibis Recife Aeroporto
+- Ibis Styles México Zona Rosa
+- Ibiza Gran Hotel (2x)
+- Iceland Parliament Hotel
+- Ikos Porto Petro
+- Il Borro (3x)
+- Il Falconieri
+- Il Melograno
+- Il Pellicano
+- Immerso Hotel
+- INK Hotel Amsterdam
+- Innside Meliá Jesuíno Arruda
+- Insolito Boutique Hotel
+- InterContinental Cascais (2x)
+- InterContinental London Park Lane
+- InterContinental Londres
+- InterContinental Lyon - Hotel Dieu
+- InterContinental Madrid
+- InterContinental Palácio das Cardosas
+- Inturotel Cala Esmeralda
+- Inverlochy Castle Hotel
+- Ipanema Inn
+- Isla Palenque
+- Jaci's Lodge Madikwe
+- Jaci's Lodges (3x)
+- Jaguaribe Lodge
+- Japaratinga Resort
+- JK Place Roma
+- Joali
+- Joali Maldives (2x)
+- Juliana Hotel Brussels (Small Luxury Hotels)
+- Juma Lodge
+- Jumeirah (Dubai)
+- JW Marriott (2x)
+- JW Marriott Cancún
+- JW Marriott Madrid
+- Ka Bru
+- Kapama Buffalo Camp
+- Kapama Southern Camp
+- Kasa Karapato
+- Kempinski Cayo Guillermo
+- Kempinski Havana
+- Kempinski Hotel Soma Bay/Hurghada
+- Kempinski Laje de Pedras / Serrazul
+- Kempinski Mar Morto
+- Kempinski Munique
+- Kempinski Seychelles Resort (Mahé)
+- Kempinski St. Moritz (2x)
+- Kempinski Tel Aviv
+- Kenoa Resort (3x)
+- Kette Hotel Venice
+- Kia Ora Resort
+- Kilombo Villas
+- Kimpton Grand Roatan Resort & Spa
+- King George Hotel
+- Kinsuikan Ryokan
+- Krallerhof
+- Kuara (3x)
+- Kube Hotel Saint-Tropez
+- Kulm Hotel St. Moritz (2x)
+- Kurotel (2x)
+- L'Abbaye Saint-Germain
+- L'And Vineyards
+- L'Esprit Saint-Germain
+- La Bastide de Moustiers
+- La Belle Juliette
+- La Clef Tour Eiffel
+- La Concordia
+- La Coralina Island House
+- La Fiermontina (3x)
+- La Maison Champs Elysees
+- La Monastica Resort & Spa
+- La Palma Capri
+- La Providence
+- La Reserve Eden au Lac
+- La Residenza
+- La Rosière (Club Med)
+- La Réserve Chalet Val d'Isère
+- La Villa Florentine
+- La Villa Jeri
+- La Zebra
+- Laghetto
+- Lake Villas
+- Lancaster Paris
+- Las Ventanas al Paraiso
+- Le Barthélemy Hotel & Spa (2x)
+- Le Bergerie/Cala Rossa
+- Le Burgundy (2x)
+- Le Burgundy Paris
+- Le Calette
+- Le Castille Paris
+- Le Clef Champs Elysees
+- Le Colombier Colmar - Design Hotel Centre Ville
+- Le Franschhoek
+- Le Franschhoek (restaurante Linfa)
+- Le Guanahani
+- Le Keppler Paris
+- Le Littre
+- Le Marianne
+- Le Palazzo Nainer / Duca d'Alba / Mediterraneo
+- Le Pigonnet
+- Le Sereno St Barth
+- Le Strato Courchevel
+- Le Taha'a Island
+- Le Toiny
+- Lefay Resort & Spa Lago di Garda
+- Les Airelles Château de Versailles
+- Les Arcs Panorama (Club Med)
+- Les Bergeries de Porto-Vecchio
+- Les Sources de Caudalie
+- Les Sources de Cheverny
+- Les Trois Rois
+- Lido Palace (2x)
+- Lily of the Valley Saint-Tropez
+- Linx Hotel
+- Little Bush Camp (Sabi Sabi)
+- LK Hotel
+- Llao Llao
+- Loews Miami Beach
+- Loirien Mara
+- Londra Palace
+- Lotte Hotel
+- Lotte New York Palace (3x)
+- Lotte New York Palace - Towers
+- Lou Pinet
+- Lungarno Collection
+- Lutetia Paris
+- Lux* South Ari Atoll
+- Luz Houses
+- Maalot (2x)
+- Madeiro
+- Magashi Camp
+- Magic Village
+- Magic Village Views
+- Magnolia Hotel Santiago
+- Majestic Hotel & Spa Barcelona (2x)
+- Makena
+- Mala Mala
+- Malhadinha Nova
+- Mama Shelter Lisboa
+- Mandarin Oriental Bodrum
+- Mandarin Oriental Costa Navarino
+- Mandarin Oriental Dhara Dhevi (ex-MO)
+- Mandarin Oriental Doha
+- Mandarin Oriental Emirates Palace Abu Dhabi
+- Mandarin Oriental Geneva
+- Mandarin Oriental Madrid
+- Mandarin Oriental Mallorca
+- Mandarin Oriental Marrakech
+- Mandarin Oriental Mayfair
+- Mandarin Oriental Miami (3x)
+- Mandarin Oriental New York
+- Mandarin Oriental Singapore (2x)
+- Manela Capri
+- Mar de Ar Aqueduto
+- Mara Nyika Camp
+- Mara Plains Camp
+- Marbella Club Hotel
+- Marbella Club Hotel Golf Resort & Spa
+- Margutta 19
+- Maria Cristina
+- Maria do Mar
+- Marina (Leblon)
+- Marina Bay Sands (2x)
+- Marques de Riscal (3x)
+- Marriott Geneva Airport Hotel
+- Marsa Malaz Kempinski
+- Martinhal
+- Martinhal Chiado (2x)
+- Martinhal Quinta do Lago
+- Martinhal Residences (Parque das Nações)
+- Martinhal Sagres (3x)
+- Masseria Cimino
+- Masseria Muzza
+- Masseria Torre Coccaro (2x)
+- Mayfair Hotel
+- Mazzarò Sea Palace
+- Mdluli Safari Lodge
+- Melia Colón
+- Melia Iguazu (2x)
+- Melia Jardim Europa
+- Melia Orlando Suite Hotel at Celebration
+- Meliá Cala Galdana
+- Meliá Paradisus Punta Cana
+- Meliá The Level
+- Memmo Baleeira
+- Memmo Príncipe Real
+- Mercer Hotel
+- Mercer Hotel Barcelona
+- Mercure Salvador
+- Meridien
+- METT Hotel Bodrum
+- MGallery The Bodrum Hotel Yalikavak
+- Mikaziki (Bodrum)
+- Miradouro (pousada)
+- Miramalfi
+- Mirante do Gavião (2x)
+- Mitsui Hakone
+- Mitsui Kyoto (2x)
+- Mnemba Island Lodge
+- ModernHaus SoHo
+- Moditlo River Lodge & Villas
+- Mohonk Mountain House
+- Molitor Hotel & Spa
+- Monastero di Cortona
+- Mondrian South Beach (2x)
+- Mont Cervin Palace
+- Mont D'Or Franschhoek
+- Monument Hotel Barcelona
+- Morada dos Canyons
+- Morena
+- Mr. C Miami Coconut Grove (2x)
+- Muita Paz
+- Museum Hotel Capadócia (2x)
+- MUWA
+- Myconian Ambassador
+- Myriad by Sana Hotels
+- Na Praia
+- Nannai Beach Resort
+- Nannai Noronha
+- Nannai Resort & Spa (3x)
+- Naoura Barrière Marrakech
+- Narbona (vinícola + hotel)
+- Nau Hotel Camburi
+- Nau Royal (2x)
+- Nau Royal Camburi
+- Nay Palad Hideaway
+- Nayara Alto Atacama
+- NEW Hotel
+- New Hotel Athens
+- New Otani Garden Tower
+- NH Barbizon Palace Amsterdam
+- NH City Center Amsterdam
+- NH Collection Roma Vittorio Veneto
+- NH Collection Taormina
+- NIHI Sumba
+- Nira Alpina (2x)
+- Niyama Maldives
+- Niyama Private Islands Maldives (4x)
+- Nizuc (Cancún)
+- Nizuc Resort & Spa (2x)
+- Nobu Hotel Ibiza (2x)
+- Nobu Hotel London Portman Square
+- Nobu Hotel Los Cabos
+- Nobu Hotel Marbella (2x)
+- Nobu Hotel Sevilla
+- Nobu Marrakech
+- NOI Vitacura
+- Nolinski Venezia
+- Nomade Hotel
+- Nomade Tulum (2x)
+- Nour El Nile (2x)
+- Novotel Bosphorus
+- Novotel Itu
+- Nuss Hotel Palermo Soho
+- Oberoi (dahabeyas no Nilo)
+- Oberoi (Nile cruise) (2x)
+- Oberoi Chiang Mai
+- Oberoi Hurghada
+- Octant
+- Octant Douro (4x)
+- Octant Lousã
+- OKU Ibiza (2x)
+- Ol Donyo Lodge
+- One&Only (Maldivas)
+- One&Only (África do Sul)
+- One&Only Reethi Rah
+- One&Only Royal Mirage/The Palm Dubai
+- Onefinestay
+- Only You Hotel
+- Ort Hotel
+- Ortea Palace Syracuse
+- Oryx Airport Hotel
+- Palace Hotel
+- Palacio de los Patos (2x)
+- Palacio Gran Vía
+- Palacio Villapanés
+- Palafitos Overwater Bungalows, El Dorado Maroma
+- Palazzo Bozzi Corsi by La Fiermontina (2x)
+- Palazzo Bozzo Corsi
+- Palazzo Dama
+- Palazzo Montemartini
+- Palazzo Sant'Anna
+- Palmaia - The Royal Beach
+- Palácio de los Duques
+- Palácio dos Freixos
+- Palácio Estoril
+- Palácio Tangará
+- Pan Pacific Vancouver
+- Papiro Hotel Boutique
+- Parador
+- Parador Cambara do Sul (2x)
+- Paraíso dos Carneiros
+- Park Hyatt Buenos Aires
+- Park Hyatt Buenos Aires (Palacio Duhau)
+- Park Hyatt Istambul
+- Park Hyatt Zurich
+- Park Lane (comparação com Lotte)
+- Park Lane Hotel (5x)
+- Parklane Hotel New York
+- Passalacqua
+- Passiom
+- Pata Lodge (Patagônia)
+- Patina Maldives (4x)
+- Patria Palace Hotel (2x)
+- Patria Palace Lecce
+- Pavillon de la Reine
+- Pavillon de la Reine / Pavillon Saint-Germain
+- Pedras do Patacho
+- Peisey Vallandry (Club Med) (2x)
+- Pelham Hotel
+- Pendry San Diego
+- Peninsula Paris
+- Pera Palace
+- Pera Palace Istanbul
+- Pestana Salvador
+- Pevero Hotel
+- Piazzano
+- Pine Cliffs Hotel (Algarve)
+- Pine Cliffs Resort (3x)
+- Pine Cliffs, A Luxury Collection Resort
+- Pire Hue
+- Pitrizza, Romazzino e Cala di Volpi
+- Playa Vik
+- Ponta de Juacema
+- Ponta dos Ganchos
+- Portillo (hotel/ski resort)
+- Porto Imperial
+- Portobello Resort
+- Posada Tamarindo
+- Pousada 4 Luas
+- Pousada Abracadabra
+- Pousada Amendoeira (2x)
+- Pousada Bagua Bangalos
+- Pousada Bahia Bonita
+- Pousada Boyrá
+- Pousada Caiman
+- Pousada Casarao Villa do Imperio
+- Pousada da Colina (2x)
+- Pousada do Cedro
+- Pousada Filha da Lua
+- Pousada Hamaris
+- Pousada Hibisco
+- Pousada Maravilha (2x)
+- Pousada Maya
+- Pousada Mi Secreto
+- Pousada Mondego
+- Pousada Mundo Verde
+- Pousada Paraíso
+- Pousada Praia dos Carneiros
+- Pousada Talento
+- Pousada Tuju Boutique Hotel
+- Pousada Tutabel
+- Pousada Xue
+- Pousada Zé Maria
+- Pouso das Castanheiras
+- Prema Casa da Montanha
+- Prestige Eiffel Tower
+- Primitivo
+- Puente Romano (2x)
+- Pulso Hotel Faria Lima
+- Quarzo Boutique Hotel
+- Quebra Noz
+- Quinta da Comporta (2x)
+- Quinta da Pacheca (2x)
+- Quinta do Vallado (2x)
+- Quinta dos Pinhais (3x)
+- Quinta Nova
+- Quisisana Hotel
+- Radisson Blu Bosphorus
+- Radisson Blu Zurich Airport
+- Raffles Hotel Singapore (3x)
+- Raffles Jakarta
+- Rancho do Peixe
+- Rancho Valencia
+- Raya
+- Refugia Chiloé
+- Refúgio na Serra
+- Regent Santa Monica
+- Relais Christine (2x)
+- Relais La Borie
+- Relais San Maurizio (2x)
+- Renaissance Wind Creek Curaçao Resort
+- Reserva do Ibitipoca
+- Residences at The Fives
+- Residenza Piranesi Boutique Hotel
+- Reykjavik Konsulat Hotel
+- Rhinoceros Roma
+- Rio Quente Resorts
+- Rituaali
+- Ritz Copacabana Boutique Hotel
+- Ritz Madrid (atual Mandarin Oriental Ritz Madrid)
+- Ritz Paris
+- Ritz-Carlton Bal Harbour
+- Ritz-Carlton New York (Central Park)
+- Ritz-Carlton Orlando, Grande Lakes
+- Ritz-Carlton Santiago
+- RIU Palace Riviera Maya
+- River Private Villa Itacaré
+- Riviera Maya - Mayakoba (Banyan Tree, Rosewood, Fairmont, Andaz)
+- Rocco Forte Hotel
+- Rocco Forte The Charles
+- Rochechouart
+- Ronco do Bugio
+- Roots Resort (2x)
+- Rose Garden Hotel (2x)
+- Rose Garden Hotel Roma
+- Rosewood Baha Mar (3x)
+- Rosewood Castiglion del Bosco
+- Rosewood Courchevel Le Jardin Alpin
+- Rosewood Hotel Georgia
+- Rosewood Le Guanahani
+- Rosewood London
+- Rosewood Mayakoba (2x)
+- Rosewood São Paulo
+- Rosewood Vienna
+- Rosewood Villa Magna
+- Round Hill Hotel & Villas (2x)
+- Roxy Hotel
+- Royal Lancaster London
+- Royal Palm Plaza
+- Sabi Sabi Bush Lodge
+- Sail Rock Resort
+- Saint James Paris
+- Salinas Maragogi
+- Saline Taíba
+- San Antonio Santorini / Santo Pure
+- San Maurizio Alba
+- Sanctuary Nile cruise
+- Sandals Royal Curaçao (Overwater Suites)
+- Sandi Hotel
+- Sant'Angelo Luxury Resort
+- Santa Clara Dourado
+- Santa Clara Ibiuna
+- Scorpios Bodrum (2x)
+- SeaDream Yacht Club
+- Secreto Boutique Hotel
+- Selati Camp (Sabi Sabi)
+- Senac Campos do Jordao
+- Senac Hotéis São Pedro e Campos de Jordão
+- Serena Hotel
+- Seven Pines
+- Sextantio
+- SEZZ St Tropez
+- Shamwari Game Reserve - Explorer Camp Tent
+- Shangri-La Vancouver
+- Sheraton Vistana Resort Villas
+- Shinta Mani Angkor
+- Shutters on the Beach (2x)
+- Sicilia - Belmond Villa Sant'Andrea / Atlantis Bay / Rocco Forte Verdura / Four Seasons Taormina / Le Calette / Donna Carmela
+- Silica Hotel
+- Sina Bernini Bristol
+- Sina Hotels
+- Singer Palace Hotel
+- Singita Kwitonda Lodge
+- Singita lodges
+- Sinner Hotel
+- Sir Victor
+- Sir Victor Barcelona
+- Six Senses Botanique (2x)
+- Six Senses Douro Valley (2x)
+- Six Senses Ibiza
+- Six Senses Kanuhura
+- Six Senses Kyoto
+- Six Senses Laamu
+- Six Senses Residences Courchevel
+- Six Senses Roma (2x)
+- Six Senses Zil Pasyon (3x)
+- Sixty SoHo
+- SLS South Beach (2x)
+- Sofitel Cairo (El Gezirah)
+- Sofitel Le Faubourg
+- Sofitel Legend The Grand Amsterdam (2x)
+- Sofitel Lyon Bellecour
+- Sofitel Marrakech
+- Sofitel Panama City (Casco Viejo)
+- Sofitel Rio de Janeiro Ipanema
+- Sofitel Roma Villa Borghese
+- Sofitel Santa Clara Cartagena
+- Soho House High Road
+- Sol Ipanema
+- Solage Auberge
+- Solar do Rosário
+- Solé Miami
+- Sonesta St. George
+- Soneva Fushi (2x)
+- Sorell Hotel St. Peter
+- Sorrisniva Wilderness Lodge
+- Spa do Vinho (2x)
+- St Andrews
+- St Martins Lane
+- St Regis Bora Bora
+- St Regis Longboat Key Resort (2x)
+- St Regis Venezia
+- St Regis Vommuli Resort
+- St. Regis Bal Harbour Miami (3x)
+- St. Regis Cairo
+- St. Regis Maldives Vommuli Resort
+- Starhotels Majestic
+- Starhotels Splendid Venice
+- Sublime Comporta (2x)
+- Sublime Comporta / Quinta da Comporta
+- Summerville Porto de Galinhas
+- Sun Siyam Olhuveli
+- Suvretta House
+- Suvretta House St Moritz
+- São Lourenço do Barrocal
+- Tago Tulum
+- Taiba (2x)
+- Tambo del Inka
+- Tangara Trancoso (2x)
+- Tangará Rio
+- TB Place Roma
+- Tenuta Centoporte
+- Termas de Chillán
+- Termas de Chillán / Nevados de Chillán
+- Terre Blanche
+- Teto do Cafundó
+- The Athenaeum Hotel (3x)
+- The Balmoral
+- The Bank
+- The Bank (Design Hotels)
+- The Bank Hotel Istanbul (Design Hotels)
+- The Beach Tulum Hotel
+- The Beaumont
+- The Boca Raton Resort (2x)
+- The Brando
+- The Breakers Palm Beach (2x)
+- The Cadogan Hotel
+- The Capital Hotel Apartments & Townhouse (Warwick)
+- The Chedi Chiang Mai
+- The Cullinan (Southern Sun)
+- The Dolder Grand (2x)
+- The Dominick
+- The Drisco Tel Aviv
+- The Dylan Amsterdam
+- The Edition Bodrum
+- The Edition London
+- The First Roma (Leading Hotels)
+- The Florentin by Althoff Collection
+- The Franklin
+- The Franklin (Hip Hotels)
+- The Grand (Punta del Este)
+- The Huntley Santa Monica Beach Hotel
+- The Ivens
+- The Ivens Lisboa
+- The Knickerbocker Hotel
+- The Landmark London
+- The Langham Jakarta
+- The Leela Palace New Delhi
+- The Lennox Hotel Miami Beach
+- The London EDITION
+- The Londoner
+- The Londoner (Sofitel St James)
+- The Lumiares
+- The Mandala Hotel Berlin
+- The Mandeville Hotel
+- The Manor House
+- The Marylebone Hotel (Doyle Collection)
+- The May Fair, A Radisson Collection Hotel
+- The Maybourne
+- The Norman Tel Aviv
+- The Oberoi Marrakech
+- The Oitavos (2x)
+- The Palace Madrid, a Luxury Collection Hotel
+- The Palace of the Lost City
+- The Palms Hotel & Spa Miami Beach
+- The Peninsula New York
+- The Plaza
+- The Prince Akatoki London
+- The Refinery Hotel
+- The Reserve at Paradisus
+- The Residence Zanzibar
+- The Retreat at Blue Lagoon (2x)
+- The Reykjavik Edition
+- The Ritz-Carlton Millenia Singapore (2x)
+- The Ritz-Carlton South Beach
+- The Ritz-Carlton, Aruba
+- The Setai Miami Beach
+- The Surf Lodge (2x)
+- The Time by Hyatt
+- The Westin Paris - Vendôme
+- The Westin Verasa Napa
+- The Wood
+- The Woodward
+- Tiberio Palace
+- Tierra Atacama
+- Tignes (Club Med)
+- Tijupá
+- Tivoli (2x)
+- Tivoli Carvoeiro (2x)
+- Tivoli Ecoresort
+- Tivoli Ecoresort Praia do Forte
+- Tivoli Sao Paulo
+- Toca da Coruja
+- Torel Avantgarde
+- Toriba Chalés
+- Tortuga Bay
+- Transamerica Comandatuba (2x)
+- TRS Yucatán Hotel
+- Trump National Doral Miami
+- Tulia Zanzibar Unique Beach Resort
+- Turin Palace Hotel
+- Tutabél (Tatubel)
+- TW Guaiambê (2x)
+- Txai Resorts (5x)
+- Umiltà 36
+- UNA Roma Termini
+- Unique Garden (3x)
+- Uxua Casa Hotel & Spa (3x)
+- Vakkaru Maldives (3x)
+- Val d'Isère (Club Med)
+- Valle Nevado
+- Vallon de Valrugues
+- Valmorel (Club Med)
+- Valverde Hotel
+- Valverde Santar (Palácio Ludovice)
+- Valverde Sintra Palácio de Seteais
+- Vdara
+- Veela
+- Velaa Private Island (3x)
+- Verdura Resort (2x)
+- Vermelho (hotel de Christian Louboutin)
+- Viceroy New York
+- Viceroy Snowmass
+- Victoria & Alfred Hotel
+- Victoria Jungfrau
+- Victoria Palace Paris
+- Vik Araçoiaba da Serra
+- Vik Chile
+- Vila Aty (2x)
+- Vila da Santa
+- Vila Entre Chaves
+- Vila Inglesa (hoje Mazzaropi)
+- Vila Joya (2x)
+- Vila Kalango (2x)
+- Vila Lara Resort
+- Vila Monte
+- Vila Monte Farm House
+- Vila Naia
+- Vila Selvagem (2x)
+- Vila Vita Parc
+- Villa Amazonia
+- Villa Arcadio
+- Villa Calvi
+- Villa Cora
+- Villa Cosy
+- Villa Franca Positano
+- Villa Gallici
+- Villa Igiea (Rocco Forte)
+- Villa Kandui
+- Villa Le Blanc (2x)
+- Villa Le Blanc Gran Meliá
+- Villa Les Cedres
+- Villa Magna
+- Villa Mandi
+- Villa Marie Saint-Tropez
+- Villa Roma Imperiale / Pensione America
+- Villa Rossa
+- Villa Saint Ange
+- Villa Tanah (2x)
+- Villa/Hotel Donna Carmela
+- Villas de Trancoso (2x)
+- Villas of Grand Cypress
+- Vintage House
+- Violino d'Oro
+- Virgin Hotels Edinburgh
+- Vogal Beach Resort
+- VP Plaza España Design
+- W Fort Lauderdale
+- W Londres
+- W Santiago
+- W Sardinia – Poltu Quatu
+- W South Beach
+- Waldorf (Edimburgo)
+- Waldorf (Maldivas)
+- Waldorf Astoria Las Vegas
+- Waldorf Astoria Maldives (3x)
+- Waldorf Astoria Maldives Ithaafushi
+- Waldorf Astoria Rome Cavalieri
+- Wallace
+- Wellington Madrid Hotel
+- Westin Panama
+- Westin Punta Cana Resort & Club
+- White Coast
+- White Sand Luxury Villas & Spa
+- Widder Hotel
+- Wilderness Safari lodges
+- Wish Natal
+- Wymara Resort and Villas (3x)
+- Wynn Las Vegas
+- XCaret Hotel
+- Yeatman
+- Yotel Istanbul Airport
+- Zai Patacho
+- Zank Hotel
+- Zorah Beach
+- Zuri Zanzibar
+- Çırağan Palace Kempinski Istanbul
