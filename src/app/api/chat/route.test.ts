@@ -4,26 +4,26 @@ vi.mock('@/auth', () => ({ auth: vi.fn() }))
 
 import { processToolCall } from './route'
 
-describe('search_hotels — bug real: "casal com filhos pra Algarve" não achava nada', () => {
+describe('search_tdg_suppliers — bug real: "casal com filhos pra Algarve" não achava nada', () => {
   it('profiles=Família + region=Algarve encontra os fornecedores reais (Martinhal Sagres/Quinta do Lago)', async () => {
-    const rows = await processToolCall('search_hotels', { region: 'Algarve', profiles: ['Família'] }) as { name: string }[]
-    const names = rows.map(r => r.name)
+    const result = await processToolCall('search_tdg_suppliers', { region: 'Algarve', profiles: ['Família'] }) as { suppliers: { name: string }[] }
+    const names = result.suppliers.map(r => r.name)
     expect(names).toContain('Martinhal Sagres')
     expect(names).toContain('Martinhal Quinta do Lago')
   })
 
   it('country=Portugal também funciona (region e country são parâmetros independentes)', async () => {
-    const rows = await processToolCall('search_hotels', { country: 'Portugal', profiles: ['Família'] }) as { name: string }[]
-    expect(rows.length).toBeGreaterThan(0)
+    const result = await processToolCall('search_tdg_suppliers', { country: 'Portugal', profiles: ['Família'] }) as { suppliers: unknown[] }
+    expect(result.suppliers.length).toBeGreaterThan(0)
   })
 
   it('tags aceita busca parcial/case-insensitive, não exige grafia idêntica', async () => {
-    const rows = await processToolCall('search_hotels', { tags: ['golf'] }) as { name: string; tags: string[] }[]
-    expect(rows.some(r => r.name === 'Martinhal Quinta do Lago')).toBe(true)
+    const result = await processToolCall('search_tdg_suppliers', { tags: ['golf'] }) as { suppliers: { name: string; tags: string[] }[] }
+    expect(result.suppliers.some(r => r.name === 'Martinhal Quinta do Lago')).toBe(true)
   })
 
   it('profiles com valor que não existe em nenhum fornecedor retorna vazio, não erro', async () => {
-    const rows = await processToolCall('search_hotels', { profiles: ['__perfil_inexistente__'] }) as unknown[]
-    expect(rows).toEqual([])
+    const result = await processToolCall('search_tdg_suppliers', { profiles: ['__perfil_inexistente__'] }) as { suppliers: unknown[] }
+    expect(result.suppliers).toEqual([])
   })
 })

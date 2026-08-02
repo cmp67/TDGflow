@@ -1,11 +1,11 @@
 import Anthropic from '@anthropic-ai/sdk'
-import { sql } from '@vercel/postgres'
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { checkTravelRequirements } from '@/lib/travel-docs'
 import { logUsage } from '@/lib/usage-log'
-import { deductCredits, checkAndDeductCredits, INSUFFICIENT_BALANCE, NO_AGENCY } from '@/lib/credits'
+import { checkAndDeductCredits, INSUFFICIENT_BALANCE, NO_AGENCY } from '@/lib/credits'
 import { getAgencyId } from '@/lib/agency'
+import { TOOL_DEFINITIONS, callMcpTool } from '@/lib/mcp-tools'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -22,15 +22,23 @@ Você ajuda os consultores de viagem a:
 3. Navegar e usar o sistema (registrar visitas, transcrever gravações, entender funcionalidades)
 4. Antecipar o próximo passo — sugira ações concretas após cada resposta
 
+## Ferramentas disponíveis
+
+- search_tdg_suppliers — buscar fornecedor (hotel, beach club, transfer, guia, restaurante) por nome, região, país, perfil de cliente ou palavra-chave
+- get_tdg_supplier_details — ficha completa de um fornecedor: dados gerais, condições negociadas pela rede (comissão diferenciada, amenidade exclusiva, condição de pagamento), contatos e reviews recentes
+- search_tdg_offers — ofertas ativas com comissão negociada, ordenadas por comissão mais alta
+- search_reviews / get_review / list_hotel_tips — o que a rede já disse sobre um hotel (avaliações, highlights, perfil de cliente ideal, ressalvas)
+- check_travel_requirements — visto, CIVP, ETA e segurança pra um destino
+
 ## Como responder consultas de hotéis
 
 Quando o consultor descrever um perfil de cliente (ex: "casal, lua de mel, agosto, praia, esportivo"):
-1. Use SEMPRE as ferramentas para buscar hotéis e promoções reais
-2. Use o parâmetro \`profiles\` do search_hotels pro TIPO de cliente (família, casais, praia etc.) — NUNCA \`tags\` pra isso, tags é só palavra-chave descritiva solta (ex: "Golf", "5 Estrelas")
+1. Use SEMPRE as ferramentas para buscar fornecedores, ofertas e reviews reais — nunca responda de memória
+2. Use o parâmetro \`profiles\` do search_tdg_suppliers pro TIPO de cliente (família, casais & lua de mel, praia etc.) — NUNCA \`tags\` pra isso, tags é só palavra-chave descritiva solta (ex: "Golf", "5 Estrelas")
 3. Algarve, Lisboa, Chiado, Sagres, Quinta do Lago etc. são REGIÕES dentro de Portugal — use o parâmetro \`region\`, nunca \`country\` (country="Portugal" nesses casos, se precisar)
-4. Ordene por: promoções ativas → comissão mais alta → deadline mais urgente
-5. Destaque vantagens TDG (upgrades, créditos F&B, early check-in, etc.)
-6. Sempre mencione o deadline de reserva
+4. Depois de achar o fornecedor, busque list_hotel_tips ou search_tdg_offers pra enriquecer a resposta — ordene por: oferta ativa → comissão mais alta → deadline mais urgente
+5. Destaque condições negociadas pela rede (comissão diferenciada, amenidade exclusiva, condição de pagamento) quando get_tdg_supplier_details retornar alguma
+6. Se houver oferta ativa, sempre mencione o deadline de reserva
 7. Se a primeira busca (região + perfil) não retornar nada, tente de novo só com a região antes de dizer que não achou nada — perfil junto pode estar filtrando demais
 8. Ao final, sugira: "Quer que eu busque mais opções ou precisa de detalhes de algum hotel?"
 
@@ -39,18 +47,12 @@ Quando o consultor descrever um perfil de cliente (ex: "casal, lua de mel, agost
 ### 🏨 [Nome do Hotel]
 📍 [Localização]
 
-**Promoção ativa:** [título] — [X]% de comissão | Reservar até [data]
-**Vantagens TDG:** [lista]
+**Oferta ativa:** [título/tipo] — [X]% de comissão | Reservar até [data] (se houver, via search_tdg_offers)
+**Condições negociadas pela rede:** [lista, se get_tdg_supplier_details retornar]
+**O que a rede diz:** [highlights de list_hotel_tips/search_reviews, se houver]
 **Por que combina:** [razão específica para o perfil]
 
 ---
-
-## Base de conhecimento
-
-get_hotel_full_details retorna um campo "knowledge" com fatos, notas e materiais verificados pela equipe TDG:
-- fact: inclua na descrição
-- note: use como dica operacional
-- link/pdf/video: mencione como recurso ("Ficha técnica disponível: [título]")
 
 ## Orientação sobre o sistema
 
@@ -81,55 +83,18 @@ Inclua esta seção ao recomendar hotéis num destino novo, ou quando o consulto
 
 - NUNCA invente dados — use somente informações das ferramentas
 - Não mencione características que não estão nos dados
-- 🔥 para promoções com menos de 7 dias para o deadline
+- 🔥 para ofertas com menos de 7 dias para o deadline
 - Se não encontrar hotéis adequados, diga claramente e ofereça alternativas
 - Sempre termine com uma sugestão de próximo passo`
 
+// Fase 8e (02/08): reaproveita as mesmas ferramentas do servidor MCP do MAX
+// (src/lib/mcp-tools.ts) — antes o chat só tinha search_hotels básico +
+// get_hotel_full_details lendo de tdg_contracts/tdg_promotions/tdg_knowledge,
+// as 3 tabelas legadas vazias (schema antigo), nunca retornando nada de
+// verdade. Agora busca fornecedor/oferta/review/dica igual ao MAX no
+// WhatsApp — uma implementação só, dois consumidores.
 const tools: Anthropic.Tool[] = [
-  {
-    name: 'search_hotels',
-    description: 'Busca hotéis no catálogo TDG por destino, perfil de cliente ou palavra-chave descritiva.',
-    input_schema: {
-      type: 'object' as const,
-      properties: {
-        profiles: {
-          type: 'array',
-          items: { type: 'string' },
-          description: 'Perfil do cliente — use exatamente um destes valores (em português, como estão no catálogo): Família, Casais, Praia, Urban, Resort, Boutique, Golf, Villas, Overwater, Ultra Luxury, Natureza, Negócios'
-        },
-        tags: {
-          type: 'array',
-          items: { type: 'string' },
-          description: 'Palavras-chave descritivas livres (ex: "Golf", "5 Estrelas", "Ski") — busca parcial, não precisa ser exato. Não usar pra tipo de cliente, isso é o parâmetro profiles.'
-        },
-        region: { type: 'string', description: 'Região/destino específico dentro do país (ex: Algarve, Lisboa, Toscana, Maldivas)' },
-        country: { type: 'string', description: 'País (ex: Portugal, Itália, França)' }
-      },
-      required: []
-    }
-  },
-  {
-    name: 'get_active_promotions',
-    description: 'Busca promoções ativas com comissão, ordenadas por comissão mais alta.',
-    input_schema: {
-      type: 'object' as const,
-      properties: {
-        hotel_id: { type: 'string', description: 'UUID do hotel (opcional)' }
-      },
-      required: []
-    }
-  },
-  {
-    name: 'get_hotel_full_details',
-    description: 'Busca todos os detalhes de um hotel: contratos TDG, vantagens e promoções.',
-    input_schema: {
-      type: 'object' as const,
-      properties: {
-        hotel_id: { type: 'string', description: 'UUID do hotel' }
-      },
-      required: ['hotel_id']
-    }
-  },
+  ...TOOL_DEFINITIONS.filter(t => t.name !== 'register_tip'),
   {
     name: 'check_travel_requirements',
     description: 'Verifica requisitos de viagem para passaporte brasileiro: visto, CIVP (febre amarela), ETA e alertas de segurança. Usar sempre que um destino internacional for mencionado.',
@@ -147,67 +112,12 @@ const tools: Anthropic.Tool[] = [
 ]
 
 export async function processToolCall(toolName: string, toolInput: Record<string, unknown>) {
-  if (toolName === 'search_hotels') {
-    const { profiles, tags, region, country } = toolInput as {
-      profiles?: string[]; tags?: string[]; region?: string; country?: string
-    }
-    let query = 'SELECT * FROM tdg_hotels WHERE 1=1'
-    const params: unknown[] = []
-    let i = 1
-    if (region) { query += ` AND region ILIKE $${i++}`; params.push(`%${region}%`) }
-    if (country) { query += ` AND country ILIKE $${i++}`; params.push(`%${country}%`) }
-    // profiles é a mesma taxonomia fechada (12 valores em PT) usada no catálogo
-    // de Fornecedores — array overlap direto funciona porque é vocabulário
-    // controlado, sem risco de mismatch de idioma/capitalização.
-    if (profiles?.length) { query += ` AND profiles && $${i++}`; params.push(profiles) }
-    // tags é texto livre — busca parcial case-insensitive em vez de match
-    // exato de array, pra não depender do modelo acertar a grafia idêntica.
-    if (tags?.length) {
-      query += ` AND EXISTS (SELECT 1 FROM unnest(tags) AS tg WHERE tg ILIKE ANY($${i++}))`
-      params.push(tags.map(t => `%${t}%`))
-    }
-    query += ' LIMIT 10'
-    const { rows } = await sql.query(query, params)
-    return rows
-  }
-
-  if (toolName === 'get_active_promotions') {
-    const { hotel_id } = toolInput as { hotel_id?: string }
-    if (hotel_id) {
-      const { rows } = await sql`
-        SELECT p.*, h.name as hotel_name, h.location, h.country
-        FROM tdg_promotions p JOIN tdg_hotels h ON h.id = p.hotel_id
-        WHERE p.is_active = true
-          AND p.booking_deadline >= CURRENT_DATE
-          AND p.hotel_id = ${hotel_id}
-        ORDER BY p.commission_rate DESC LIMIT 20`
-      return rows
-    }
-    const { rows } = await sql`
-      SELECT p.*, h.name as hotel_name, h.location, h.country
-      FROM tdg_promotions p JOIN tdg_hotels h ON h.id = p.hotel_id
-      WHERE p.is_active = true AND p.booking_deadline >= CURRENT_DATE
-      ORDER BY p.commission_rate DESC LIMIT 20`
-    return rows
-  }
-
-  if (toolName === 'get_hotel_full_details') {
-    const { hotel_id } = toolInput as { hotel_id: string }
-    const [hotel, contracts, promotions, knowledge] = await Promise.all([
-      sql`SELECT * FROM tdg_hotels WHERE id = ${hotel_id}`,
-      sql`SELECT * FROM tdg_contracts WHERE hotel_id = ${hotel_id}`,
-      sql`SELECT * FROM tdg_promotions WHERE hotel_id = ${hotel_id} AND is_active = true`,
-      sql`SELECT type, title, content, url FROM tdg_knowledge WHERE hotel_id = ${hotel_id} ORDER BY created_at DESC`
-    ])
-    return { hotel: hotel.rows[0], contracts: contracts.rows, promotions: promotions.rows, knowledge: knowledge.rows }
-  }
-
   if (toolName === 'check_travel_requirements') {
     const { destination } = toolInput as { destination: string }
     return await checkTravelRequirements(destination)
   }
 
-  return { error: 'Tool not found' }
+  return await callMcpTool(toolName, toolInput)
 }
 
 export async function POST(req: NextRequest) {
