@@ -200,7 +200,7 @@ export async function POST(req: NextRequest) {
       } else {
         const { rows: createdHotel } = await sql`
           INSERT INTO tdg_hotels (name, entity_type) VALUES (${trimmedName}, ${finalEntityType})
-          ON CONFLICT (lower(trim(name)), entity_type) DO NOTHING
+          ON CONFLICT (lower(trim(name)), entity_type) WHERE agency_id IS NULL DO NOTHING
           RETURNING id
         `
         if (createdHotel[0]) {

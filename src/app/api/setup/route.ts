@@ -293,7 +293,7 @@ export async function GET(req: Request) {
     SELECT DISTINCT trim(r.hotel_name), r.entity_type
     FROM tdg_hotel_reviews r
     WHERE r.hotel_id IS NULL
-    ON CONFLICT (lower(trim(name)), entity_type) DO NOTHING
+    ON CONFLICT (lower(trim(name)), entity_type) WHERE agency_id IS NULL DO NOTHING
   `
   await sql`
     UPDATE tdg_hotel_reviews r

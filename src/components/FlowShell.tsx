@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Mail, Sparkles, Tag, Lightbulb, FileText,
+  Mail, Sparkles, Tag, Lightbulb, FileText, Search,
   LogOut, MoreHorizontal, X, Users, BarChart2, MessageSquarePlus, CreditCard, Network, UserPlus, Globe
 } from 'lucide-react'
 import { LanguageProvider, useLanguage } from '@/contexts/LanguageContext'
@@ -16,6 +16,7 @@ import { sounds } from '@/lib/sounds'
 import { ToastProvider } from '@/contexts/ToastContext'
 import NotificationBell from '@/components/NotificationBell'
 import UserAvatar from '@/components/UserAvatar'
+import GlobalSearch from '@/components/GlobalSearch'
 
 interface NavItem {
   href: string
@@ -163,6 +164,9 @@ function FlowShellInner({ children, user, brand }: Props) {
   const [showMore, setShowMore] = useState(false)
   const { lang, setLang, tr } = useLanguage()
 
+  // Super Busca global (Fase 8d) — atalho de qualquer tela, não só Destinos.
+  const [showGlobalSearch, setShowGlobalSearch] = useState(false)
+
   // Tooltip próprio, não o `title` nativo do navegador — nativo só aparece
   // depois de hover sustentado e não é capturável em print de tela (achado
   // da Carla testando). Renderizado no DOM, some rápido, some previsível.
@@ -264,7 +268,14 @@ function FlowShellInner({ children, user, brand }: Props) {
                 Flow
               </span>
             </div>
-            <div style={{ flexShrink: 0 }}>
+            <div className="flex items-center" style={{ gap: 4, flexShrink: 0 }}>
+              <button
+                onClick={() => setShowGlobalSearch(true)}
+                title="Buscar em tudo"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, display: 'flex' }}
+              >
+                <Search size={16} style={{ color: 'rgba(234,241,245,0.75)' }} />
+              </button>
               <NotificationBell align="left" theme="dark" />
             </div>
           </div>
@@ -500,6 +511,13 @@ function FlowShellInner({ children, user, brand }: Props) {
             </span>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowGlobalSearch(true)}
+              title="Buscar em tudo"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex' }}
+            >
+              <Search size={17} style={{ color: 'var(--tdgflow-text-muted)' }} />
+            </button>
             <NotificationBell />
             <UserAvatar name={user.name} avatarUrl={user.avatar_url} size={28} />
           </div>
@@ -508,6 +526,8 @@ function FlowShellInner({ children, user, brand }: Props) {
         <div className="flex-1 overflow-hidden flex flex-col" style={{ paddingBottom: 56 }}>
           {children}
         </div>
+
+        {showGlobalSearch && <GlobalSearch onClose={() => setShowGlobalSearch(false)} />}
       </main>
 
       {/* ── Bottom nav — mobile only ──────────────────────────────────── */}
