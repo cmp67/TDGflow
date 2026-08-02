@@ -40,18 +40,25 @@ function IconHandshake({ size = 14, style }: { size?: number; style?: React.CSSP
    próprio (regra de personalidade do design system Bemgsy: nunca emoji em
    componente funcional). Um único wrapper, um path-set por perfil. ────── */
 const PROFILE_ICON_PATHS: Record<string, React.ReactNode> = {
-  'Família':      <><circle cx="8" cy="7.5" r="2.2" /><path d="M4.2 18c0-3 1.7-4.8 3.8-4.8s3.8 1.8 3.8 4.8" /><circle cx="16.2" cy="8.3" r="1.7" /><path d="M13.3 18c0-2.4 1.3-3.9 2.9-3.9s2.9 1.5 2.9 3.9" /></>,
-  'Casais':       <><circle cx="9" cy="12" r="5.2" /><circle cx="15" cy="12" r="5.2" /></>,
-  'Praia':        <><path d="M3 17.5c1.4-1.4 2.8-1.4 4.2 0s2.8 1.4 4.2 0 2.8-1.4 4.2 0 2.8 1.4 4.2 0" /><circle cx="12" cy="7.5" r="3" /></>,
-  'Urban':        <path d="M4 20V10h4v10M10 20V6h4v14M16 20v-8h4v8" />,
-  'Resort':       <><path d="M12 21V12" /><path d="M12 12c-3-.5-5.5-3-5-6 3 .2 5 2.3 5 6z" /><path d="M12 12c3-.5 5.5-3 5-6-3 .2-5 2.3-5 6z" /></>,
-  'Boutique':     <><path d="M5 21V10M19 21V10M5 10l7-6 7 6M4.5 10h15" /><path d="M9 21v-6h6v6" /></>,
-  'Golf':         <><path d="M6 21V4" /><path d="M6 4.5l8 3-8 3z" /></>,
-  'Villas':       <><path d="M4 20V11L12 5l8 6v9" /><path d="M9 20v-6h6v6" /></>,
-  'Overwater':    <><path d="M3 20h18" /><path d="M7.5 20v-6l4.5-2.6 4.5 2.6v6" /></>,
-  'Ultra Luxury': <><path d="M6 9l6-5 6 5-6 11z" /><path d="M6 9h12M9.5 9L12 4M14.5 9L12 4" /></>,
-  'Natureza':     <><path d="M6 19c8 0 12-6 12-14-8 0-12 6-12 14z" /><path d="M6.5 18.5c2-4 5-7 9-9" /></>,
-  'Negócios':     <><rect x="4" y="8" width="16" height="11" rx="1.6" /><path d="M9 8V6.2a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2V8" /></>,
+  'Família':                <><circle cx="8" cy="7.5" r="2.2" /><path d="M4.2 18c0-3 1.7-4.8 3.8-4.8s3.8 1.8 3.8 4.8" /><circle cx="16.2" cy="8.3" r="1.7" /><path d="M13.3 18c0-2.4 1.3-3.9 2.9-3.9s2.9 1.5 2.9 3.9" /></>,
+  'Casais & Lua de Mel':    <><circle cx="9" cy="12" r="5.2" /><circle cx="15" cy="12" r="5.2" /></>,
+  'Praia':                  <><path d="M3 17.5c1.4-1.4 2.8-1.4 4.2 0s2.8 1.4 4.2 0 2.8-1.4 4.2 0 2.8 1.4 4.2 0" /><circle cx="12" cy="7.5" r="3" /></>,
+  'Urbano/Cidade':          <path d="M4 20V10h4v10M10 20V6h4v14M16 20v-8h4v8" />,
+  'Boutique':               <><path d="M5 21V10M19 21V10M5 10l7-6 7 6M4.5 10h15" /><path d="M9 21v-6h6v6" /></>,
+  'Golf':                   <><path d="M6 21V4" /><path d="M6 4.5l8 3-8 3z" /></>,
+  'Villas & Privacidade':   <><path d="M4 20V11L12 5l8 6v9" /><path d="M9 20v-6h6v6" /></>,
+  'Overwater':              <><path d="M3 20h18" /><path d="M7.5 20v-6l4.5-2.6 4.5 2.6v6" /></>,
+  'Ultra Luxury':           <><path d="M6 9l6-5 6 5-6 11z" /><path d="M6 9h12M9.5 9L12 4M14.5 9L12 4" /></>,
+  'Natureza & Ecoturismo':  <><path d="M6 19c8 0 12-6 12-14-8 0-12 6-12 14z" /><path d="M6.5 18.5c2-4 5-7 9-9" /></>,
+  'Negócios':               <><rect x="4" y="8" width="16" height="11" rx="1.6" /><path d="M9 8V6.2a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2V8" /></>,
+  'Safári':                 <><circle cx="7.5" cy="10" r="3" /><circle cx="16.5" cy="10" r="3" /><path d="M10 10h4M7.5 13v3M16.5 13v3" /></>,
+  'Ski & Montanha':         <><path d="M3 19l6-11 4 6 2-3 6 8z" /><path d="M9 19l3-5" /></>,
+  'Cultural & Histórico':   <><path d="M4 21h16M5 21V9M19 21V9M3 9l9-5 9 5M8 9v8M12 9v8M16 9v8" /></>,
+  'Gastronomia':            <><path d="M7 3v7a2 2 0 0 0 4 0V3M9 10v11M17 3c-1.5 0-2.5 2-2.5 5s1 5 2.5 5 2.5-2 2.5-5-1-5-2.5-5zM17 13v8" /></>,
+  'Wellness & Spa':         <><path d="M12 3c3 4 5 7 5 10a5 5 0 0 1-10 0c0-3 2-6 5-10z" /></>,
+  'All-Inclusive':          <><circle cx="12" cy="12" r="9" /><path d="M8 12a4 4 0 1 1 8 0 4 4 0 0 1-8 0z" /></>,
+  'Cruzeiro':               <><path d="M5 14h14l-2 6H7z" /><path d="M7 14V6h6l3 8" /><path d="M10 6V3" /></>,
+  'Enoturismo/Vinícola':    <><path d="M7 3h10M8 3c0 4 1 6 4 6s4-2 4-6M12 9v9M8 20h8" /></>,
 }
 
 function ProfileIcon({ profileKey, size = 12 }: { profileKey: string; size?: number }) {
@@ -137,21 +144,44 @@ function supplierStatus(hotel: Pick<Hotel, 'testedCount' | 'pendingLeadCount'>):
 }
 
 /* ── Filter definitions ─────────────────────────────────────────── */
-const REGIONS = ['Todos', 'Algarve', 'Lisboa', 'Maldivas']
+/* Fase 8b (02/08): catálogo cresceu de 5 hotéis próprios (Portugal/Maldivas)
+   pra 650+ fornecedores em dezenas de países — lista fixa de região não
+   fazia mais sentido (achado da Carla: filtro só funcionava pros hotéis
+   antigos). Pills de país agora vêm dos dados reais, calculadas em
+   deriveTopCountries() a partir do catálogo carregado. */
+function deriveTopCountries(hotels: Hotel[], max = 8): string[] {
+  const counts = new Map<string, number>()
+  for (const h of hotels) {
+    if (!h.country) continue
+    counts.set(h.country, (counts.get(h.country) ?? 0) + 1)
+  }
+  const top = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, max).map(([c]) => c)
+  return ['Todos', ...top]
+}
 
+/* Vocabulário revisado (Fase 8b, IA sobre o conteúdo real da base — decisão
+   de deixar a IA "digerir" as reviews e propor as tags, não inventar do
+   zero). Susbtitui o vocabulário antigo, pensado só pros 5 hotéis próprios. */
 const PROFILES: { key: string; label: string }[] = [
-  { key: 'Família',      label: 'Família' },
-  { key: 'Casais',       label: 'Casais' },
-  { key: 'Praia',        label: 'Praia' },
-  { key: 'Urban',        label: 'Urban' },
-  { key: 'Resort',       label: 'Resort' },
-  { key: 'Boutique',     label: 'Boutique' },
-  { key: 'Golf',         label: 'Golf' },
-  { key: 'Villas',       label: 'Villas' },
-  { key: 'Overwater',    label: 'Overwater' },
-  { key: 'Ultra Luxury', label: 'Ultra Luxury' },
-  { key: 'Natureza',     label: 'Natureza' },
-  { key: 'Negócios',     label: 'Negócios' },
+  { key: 'Família',               label: 'Família' },
+  { key: 'Casais & Lua de Mel',   label: 'Casais & Lua de Mel' },
+  { key: 'Praia',                 label: 'Praia' },
+  { key: 'Urbano/Cidade',         label: 'Urbano/Cidade' },
+  { key: 'Boutique',              label: 'Boutique' },
+  { key: 'Ultra Luxury',          label: 'Ultra Luxury' },
+  { key: 'Villas & Privacidade',  label: 'Villas & Privacidade' },
+  { key: 'Overwater',             label: 'Overwater' },
+  { key: 'Safári',                label: 'Safári' },
+  { key: 'Ski & Montanha',        label: 'Ski & Montanha' },
+  { key: 'Natureza & Ecoturismo', label: 'Natureza & Ecoturismo' },
+  { key: 'Cultural & Histórico',  label: 'Cultural & Histórico' },
+  { key: 'Gastronomia',           label: 'Gastronomia' },
+  { key: 'Wellness & Spa',        label: 'Wellness & Spa' },
+  { key: 'All-Inclusive',         label: 'All-Inclusive' },
+  { key: 'Cruzeiro',              label: 'Cruzeiro' },
+  { key: 'Enoturismo/Vinícola',   label: 'Enoturismo/Vinícola' },
+  { key: 'Golf',                  label: 'Golf' },
+  { key: 'Negócios',              label: 'Negócios' },
 ]
 
 interface HotelContact {
@@ -1455,11 +1485,13 @@ export default function HoteisView() {
     })
   }
 
+  const countryOptions = useMemo(() => deriveTopCountries(hotels), [hotels])
+
   const filtered = useMemo(() => {
     return hotels.filter(h => {
       const q = search.toLowerCase()
       const matchSearch = !search || h.name.toLowerCase().includes(q) || h.location.toLowerCase().includes(q)
-      const matchRegion = region === 'Todos' || h.region === region
+      const matchRegion = region === 'Todos' || h.country === region
       const matchProfile = activeProfiles.size === 0 || [...activeProfiles].some(p => h.profiles.includes(p))
       const matchPending = !onlyPending || (h.testedCount === 0 && h.pendingLeadCount > 0)
       return matchSearch && matchRegion && matchProfile && matchPending
@@ -1552,9 +1584,9 @@ export default function HoteisView() {
           )}
         </div>
 
-        {/* Destino chips */}
+        {/* Destino chips — países reais do catálogo carregado (deriveTopCountries) */}
         <div style={{ display: 'flex', gap: 5, overflowX: 'auto', paddingBottom: 8, scrollbarWidth: 'none' }}>
-          {REGIONS.map(r => (
+          {countryOptions.map(r => (
             <button key={r} onClick={() => setRegion(r)} style={{
               padding: '4px 11px', borderRadius: 999, whiteSpace: 'nowrap', flexShrink: 0,
               fontSize: '0.6875rem', fontWeight: region === r ? 600 : 400, cursor: 'pointer', transition: 'all 0.15s',
