@@ -199,8 +199,8 @@ Hoje `DestinosView.tsx` busca só em `/api/knowledge-tips`, que só olha `tdg_de
 ## 7. Ordem de execução recomendada
 
 1. ~~**Limpeza pré-import** (produção): apagar os 3 hotéis fake de teste manual (Je ne c quoi, La Sivoliere, Saint Tropez Nikki) + as sobras de teste automatizado (`__TDD Hotel AgencyId ...`), mantendo só Martinhal (×4) e Velaa.~~ **✅ Já feito** — confirmado no banco em 01/08: restam só os 5 curados (`Martinhal Sagres`/`Lisboa Chiado`/`Lisboa Oriente`/`Quinta do Lago`, `Velaa Private Island`), zero sobra de teste (`__TDD%`), zero FK órfã.
-2. Schema: `is_partner`/`origin`/`mention_count`/`countries` em `tdg_hotels`, `entity_type` +`dmc`, `tdg_destination_knowledge` nova, colunas de aprovação (`import_approval`/`_at`/`_by`) em `tdg_hotel_reviews` e `tdg_destination_knowledge`
-3. Canonicalizar hotéis (união das 3 categorias + match contra os 5 curados restantes) → inserir só os que têm evidência real (review) como leads
+2. ~~Schema: `is_partner`/`origin`/`mention_count`/`countries` em `tdg_hotels`, `entity_type` +`dmc`, `tdg_destination_knowledge` nova, colunas de aprovação (`import_approval`/`_at`/`_by`) em `tdg_hotel_reviews` e `tdg_destination_knowledge`~~ **✅ Já feito** — migration `021_knowledge_base_schema.sql`, aplicada em produção, commit `98ef2fa`.
+3. ~~Canonicalizar hotéis (união das 3 categorias + match contra os 5 curados restantes) → inserir só os que têm evidência real (review) como leads~~ **✅ Já feito** — `docs/whatsapp-extraction/fase3_canonicalizacao_hoteis.md`: 685 hotéis únicos resolvidos (975 de 1.012 reviews cobertas, 96%), 4 resolvidos pra fornecedor já curado, 27 excluídos com motivo documentado (ambíguo/composto/não-hotel). Ainda nenhum INSERT rodou — é só o artefato de canonicalização que a Fase 4 vai consumir.
 4. Inserir reviews (extração de IA em **todas**, sem filtrar por tamanho — decisão #13) e contatos, resolvendo `hotel_id` — reviews nascem `import_approval='pending'`
 5. Inserir conhecimento de destino em `tdg_destination_knowledge` — mesmo `pending` inicial
 6. Fila de aprovação do autor + fila de fallback do admin (decisões #14-16)

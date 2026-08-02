@@ -1,0 +1,779 @@
+# Fase 3 — Canonicalização de Hotéis pra Inserção no TDG Knowledge Base
+## Status
+Documentação/análise + preparação pra Fase 4 — **nenhum INSERT foi executado ainda nesta fase**. Este arquivo é o artefato de canonicalização que a Fase 4 (inserção de reviews/contatos) vai consumir.
+## Método
+Escopo da Fase 3 (`docs/plano-tdg-knowledge-base.md`, seção 7): "Canonicalizar hotéis (união das 3 categorias + match contra os 5 curados restantes) → inserir só os que têm evidência real (review) como leads."
+
+Isso significa: dos 1.199 hotéis únicos já deduplicados em `hoteis_deduplicados.md`, só entram no catálogo agora os que têm pelo menos 1 review real associada (achado no arquivo `reviews_deduplicadas.md`, 722 cabeçalhos de hotel). Os ~477 hotéis mencionados sem nenhuma review real ficam de fora deste catálogo por ora — evita "cards fantasma" sem selo (achado do painel Tesla: o selo "Testado"/"Aguardando teste" é calculado via join com reviews, não pela linha do hotel existir sozinha).
+
+Passos:
+1. Match exato (nome normalizado) dos 722 cabeçalhos de review contra a lista canônica de 1.199 hotéis — 491 bateram direto.
+2. Match exato dos 1.199 hotéis contra os 5 fornecedores já curados na produção — achou 4 colisões reais (mesmo hotel, grafia diferente): Velaa Private Island, Martinhal Sagres, Martinhal Quinta do Lago, e "Martinhal Chiado" = "Martinhal Lisboa Chiado". Também achou "Martinhal" sozinho (menção genérica à marca, sem indicar qual propriedade) — excluído por ambiguidade.
+3. Fuzzy match (`token_sort_ratio`) dos 231 cabeçalhos de review sem match exato contra o canon — 30 candidatos com score ≥80, todos julgados manualmente um a um (nunca merge automático).
+4. Classificação dos 231 por sinais textuais: compostos (múltiplas propriedades numa entrada, tem "/"), não-hotel (restaurante/cruzeiro/passeio/fornecedor de experiências), caso especial ("hotel não identificado").
+5. Os que sobraram sem match forte (177) ou foram confirmados como hotel diferente do candidato fuzzy (8) viram entradas novas no catálogo — são hotéis reais que a extração de "hotéis mencionados" não capturou, mas a extração de reviews sim.
+## Resultado
+- **685 hotéis únicos** vão ser inseridos no catálogo na Fase 4, cobrindo **975 das 1.012 reviews** (96%)
+- **4 hotéis já resolvidos pra fornecedor curado existente** (9 reviews) — não criam linha nova, ligam ao `hotel_id` real
+- **27 registros excluídos** desta fase (37 reviews) — com motivo documentado, nada foi silenciosamente descartado
+- 7 casos de merge dentro do próprio conjunto de reviews (2 cabeçalhos diferentes = mesmo hotel de verdade)
+## Hotéis resolvidos pra fornecedor já curado (não criam linha nova)
+| Nome na extração do WhatsApp | Fornecedor curado real | Reviews |
+|---|---|---|
+| Martinhal Chiado | Martinhal Lisboa Chiado | 1 |
+| Martinhal Lisbon Chiado | Martinhal Lisboa Chiado | 2 |
+| Martinhal Sagres | Martinhal Sagres | 2 |
+| Velaa Private Island | Velaa Private Island | 4 |
+
+## Fusões aplicadas (mesmo hotel, cabeçalhos diferentes na extração de reviews)
+| Cabeçalho A | Cabeçalho B | Motivo |
+|---|---|---|
+| 1 Hotel South Beach | 1 Hotel South Beach (Miami) | qualificador de cidade redundante |
+| Alpe d'Huez (Club Med) | Club Med Alpe d'Huez | ordem de palavras |
+| Les Arcs Panorama (Club Med) | Club Med Les Arcs Panorama | ordem de palavras |
+| Peisey Vallandry (Club Med) | Club Med Peisey Vallandry | ordem de palavras |
+| Fairmont Rio de Janeiro Copacabana | Fairmont Copacabana Rio de Janeiro | ordem de palavras |
+| Parklane Hotel New York | Park Lane Hotel New York | grafia (espaço) |
+| Tivoli Ecoresort Praia do Forte | Tivoli Praia do Forte | nome completo vs. abreviado |
+
+Outras 11 fusões aplicadas (cada review individual manteve seu texto, só o hotel de destino foi unificado):
+Kempinski Çirağan Palace Istanbul = Çırağan Palace Kempinski Istanbul · Fazenda São Francisco (Corumbau) = Fazenda São Francisco do Corumbau · Antunina = Anttunina · Hotel De L'Europe Amsterdam = Hotel L'Europe Amsterdam · Inverlochy Castle = Inverlochy Castle Hotel · Castiglion del Bosco (Toscana) = Castiglion del Bosco · Hôtel Lancaster Paris = Hotel Lancaster · explora Torres del Paine = explora Torres del Paine (Patagônia) · Hôtel de Berri (Paris) = Hôtel de Berri · Infante Sagres = Hospes Infante Sagres · The Edition Reykjavik = The Reykjavik Edition
+## ⚠️ Confirmados como hotéis diferentes (candidatos fuzzy fortes, mas NÃO mesclados)
+| Nome | Candidato descartado | Motivo |
+|---|---|---|
+| Hyatt Zilara Cancun | Hyatt Ziva Cancun | produtos diferentes (adults-only vs família), mesmo endereço |
+| The Fullerton Bay Hotel Singapore | Fullerton Hotel Singapore | são 2 hotéis irmãos distintos, não o mesmo |
+| Mandarin Oriental Barcelona | Mandarin Oriental Mallorca | cidades diferentes |
+| Crans Ambassador | Myconian Ambassador | Suíça vs Grécia, só a palavra 'Ambassador' bateu |
+| Four Seasons Seoul | 'Four Seasons' sozinho no canon é genérico demais pra saber qual propriedade |  |
+| Grand Hotel Terme | Grand Powers Hotel | sem relação real, coincidência de 'Grand Hotel' |
+| Reserva do Patacho | Pedras do Patacho | são 2 propriedades reais diferentes na mesma praia |
+| TOTEM Hotel Madrid | Hotel Urso Madrid | sem relação real |
+
+## ⚠️ Excluídos desta fase — ambíguos, não dá pra decidir só pelo nome
+| Nome | Motivo |
+|---|---|
+| One South Beach | Pode ser '1 Hotel South Beach' escrito por extenso, ou propriedade diferente — não dá pra confirmar só pelo nome |
+| Aman Resorts (Bali) | Genérico — Bali tem múltiplas propriedades Aman (Amandari, Amanusa, etc.), não dá pra saber qual sem reler a review |
+| Martinhal | Menção genérica à marca, sem indicar qual das propriedades (Sagres/Chiado/Oriente/Quinta do Lago) |
+| (hotel não identificado) | A própria extração já marcou como não identificado — é um alerta geral sobre Mykonos, não review de hotel; vai pra Conhecimento de Destino (Fase 5), não pro catálogo de hotéis |
+| Martinhal | Menção genérica à marca, sem indicar qual das 4 propriedades |
+
+## Excluídos — múltiplas propriedades numa entrada só (composto)
+Não atribuível a 1 `hotel_id` sem reler cada review e decidir manualmente qual propriedade é a principal — fica pra revisão futura, se fizer sentido.
+
+- **Alila Napa Valley / Bardessono / The Westin Verasa Napa / Carneros Resort**
+- **Awasi Atacama / Llao Llao Bariloche**
+- **Belmond Villa Sant'Andrea / Belmond Grand Hotel Timeo**
+- **Carmel Cumbuco / Carmel Charme**
+- **Carmel Taíba / Kenoa Resort**
+- **COMO Castello del Nero / Castel Monastero**
+- **Four Seasons Las Vegas / Wynn Las Vegas / Bellagio Las Vegas**
+- **Grande Hotel (Campos do Jordão) / Vila Inglesa (Mazzaropi)**
+- **Hotel de Rome / Adlon Kempinski Berlin**
+- **Hotel Zagaia Bonito / Pousada Boyrá**
+- **Hyatt Centric Carmelo / Hyatt Carmelo (Uruguai)**
+- **Nayara Springs / Nayara Tented Camp**
+- **Park Hyatt Buenos Aires / Sofitel Recoleta**
+- **Sani Resort (Asturias/Sani Beach)**
+- **The Fullerton Hotel Singapore / Mandarin Oriental Singapore**
+- **Tivoli Carvoeiro / Anantara Vilamoura**
+- **Riviera Maya - Mayakoba (Banyan Tree, Rosewood, Fairmont)** — Lista de propriedades da região Mayakoba, não uma review de 1 hotel específico
+
+## Excluídos — não é hotel (outro tipo de fornecedor)
+Conteúdo real, mas não cabe em `tdg_hotels` como está — candidatos a `entity_type` diferente (restaurante/outro) numa fase futura, ou a virar Conhecimento de Destino.
+
+- **Bastide de Moustiers (restaurante Alain Ducasse)** — não-hotel (restaurante/cruzeiro/passeio/tour/fornecedor)
+- **Highstay (apart-hotéis com serviço)** — não-hotel (restaurante/cruzeiro/passeio/tour/fornecedor)
+- **IDI (fornecedor de experiências Itália)** — não-hotel (restaurante/cruzeiro/passeio/tour/fornecedor)
+- **Robben Island (passeio)** — não-hotel (restaurante/cruzeiro/passeio/tour/fornecedor)
+- **Scenic (cruzeiro fluvial)** — não-hotel (restaurante/cruzeiro/passeio/tour/fornecedor)
+- **Trilussa (restaurante)** — não-hotel (restaurante/cruzeiro/passeio/tour/fornecedor)
+
+## Lista completa dos 685 hotéis a inserir na Fase 4
+
+- **1 Hotel Central Park** — 1 review
+- **1 Hotel South Beach** — 3 reviews _(mesclado de: 1 Hotel South Beach, 1 Hotel South Beach (Miami))_
+- **AC Hotel Fort Lauderdale** — 1 review
+- **Acqualina Resort** — 1 review
+- **Adriana Hvar** — 1 review
+- **AKA Brickell** — 2 reviews
+- **AKA Central Park** — 3 reviews
+- **AKA Times Square** — 1 review
+- **Alila Uluwatu** — 1 review
+- **Alila Ventana Big Sur** — 1 review
+- **Almanac** — 1 review
+- **Alpe d'Huez (Club Med)** — 2 reviews _(mesclado de: Alpe d'Huez (Club Med), Club Med Alpe d'Huez)_
+- **Alvear Palace Hotel** — 5 reviews
+- **Aman New York** — 4 reviews
+- **Aman Tokyo** — 1 review
+- **Aman Venice** — 1 review
+- **Amandari Resort** — 1 review
+- **Amangiri** — 1 review
+- **Amanyara** — 1 review
+- **AmaWaterways** — 3 reviews
+- **AmaWaterways (rio Danúbio)** — 1 review
+- **Anantara Maia Seychelles Villas (antigo Maia)** — 1 review
+- **Anantara New York Palace Budapest** — 2 reviews
+- **Anantara Vilamoura** — 2 reviews
+- **andBeyond Ngala Safari Lodge** — 1 review
+- **Andronis Arcadia** — 1 review
+- **Anttunina** — 3 reviews
+- **Arakur Ushuaia Resort & Spa** — 4 reviews
+- **Araras Eco Lodge** — 1 review
+- **Arev St Tropez** — 1 review
+- **Argos in Cappadocia** — 1 review
+- **Armani Hotel Dubai** — 2 reviews
+- **Arpoador Hotel** — 1 review
+- **Arusha Coffee Lodge** — 2 reviews
+- **Athenaeum Hotel & Residences** — 2 reviews
+- **Atlante Plaza** — 1 review
+- **Atlantis Bay** — 1 review
+- **Auberge du Jeu de Paume Chantilly** — 1 review
+- **Aurora Anguilla** — 1 review
+- **B2 Hotel** — 2 reviews
+- **Bab Al Shams Desert Resort** — 1 review
+- **Baboon 181 (Babuíno 181)** — 1 review
+- **Badrutt's Palace St Moritz** — 1 review
+- **Baglioni Hotel Luna** — 2 reviews
+- **Baglioni Maldives** — 1 review
+- **Bagua Bangalôs** — 1 review
+- **Baha Mar** — 1 review
+- **Bahia Vik** — 2 reviews
+- **Bairro Alto Hotel (Lisboa)** — 3 reviews
+- **Banyan Tree Mayakoba** — 1 review
+- **Baraza Resort & Spa** — 1 review
+- **Barracuda Hotel** — 3 reviews
+- **Barracuda Villas** — 1 review
+- **Baumanière** — 2 reviews
+- **Be Tulum** — 2 reviews
+- **Bel Ami Hotel** — 3 reviews
+- **Bela Vista Hotel & Spa** — 1 review
+- **Bellevue** — 1 review
+- **Belmond Hotel Cipriani (Veneza)** — 1 review
+- **Belmond Hotel das Cataratas** — 4 reviews
+- **Belmond Maroma** — 1 review
+- **Bless Hotel Madrid** — 2 reviews
+- **Bless Ibiza** — 1 review
+- **Borgo Bianco Resort and Spa** — 2 reviews
+- **Borgo Egnazia** — 2 reviews
+- **Boschendal** — 1 review
+- **Botanique** — 1 review
+- **Botswana (Wilderness lodges, janeiro)** — 1 review
+- **Brisas do Espelho** — 1 review
+- **Brown's Central** — 1 review
+- **Brown's Hotel** — 2 reviews
+- **Brown's Hotel (Londres)** — 2 reviews
+- **Bulgari Hotel London** — 1 review
+- **Bulgari Resort** — 1 review
+- **Bulgari Resort Bali** — 2 reviews
+- **Byblos St Tropez** — 1 review
+- **Ca di Dio** — 3 reviews
+- **Cabanas Chapeu de Palha** — 1 review
+- **Cadillac Hotel & Beach Club Miami Beach** — 1 review
+- **Caesar Augustus Hotel** — 1 review
+- **Campo Bahia Hotel Villas Spa** — 1 review
+- **Campo Baía** — 1 review
+- **Can Cera Hotel** — 1 review
+- **Canaves Oia** — 1 review
+- **Canto do Irere** — 1 review
+- **Cap Estel** — 1 review
+- **Cap Juluca, A Belmond Hotel / Four Seasons Resort Anguilla** — 1 review
+- **Capella Singapore** — 1 review
+- **Caresse Hotel Luxury Collection Bodrum** — 1 review
+- **Carmel Charme Resort** — 1 review
+- **Carmel Cumbuco** — 1 review
+- **Carmel Taiba** — 1 review
+- **Casa Alma (Garopaba)** — 1 review
+- **Casa Barra Brava** — 1 review
+- **Casa Brasileira** — 1 review
+- **Casa de Santo Antônio** — 1 review
+- **Casa Di Sirena** — 2 reviews
+- **Casa di Sirena (Ilhabela)** — 1 review
+- **Casa do Benchimol** — 1 review
+- **Casa dos Arandis** — 1 review
+- **Casa Grande Hotel (Guarujá)** — 2 reviews
+- **Casa Grande Hotel Resort & Spa** — 2 reviews
+- **Casa Lucia** — 1 review
+- **Casa Lúcia (Buenos Aires)** — 3 reviews
+- **Casa Maitei (Trancoso)** — 1 review
+- **Casa Malca** — 9 reviews
+- **Casa Sur Palermo** — 1 review
+- **Casa Turquesa** — 1 review
+- **Casana** — 2 reviews
+- **Casasur Bellini Hotel** — 2 reviews
+- **Castello del Nero (Toscana)** — 1 review
+- **Castello di Casole (Toscana)** — 1 review
+- **Castello di Reschio** — 3 reviews
+- **Castiglion del Bosco** — 1 review
+- **Cavallino Bianco / Biancaneve** — 1 review
+- **Chable Maroma** — 2 reviews
+- **Chable Yucatan** — 4 reviews
+- **Charme** — 1 review
+- **Chateau de la Gaude (Aix-en-Provence)** — 1 review
+- **Chetzeron** — 1 review
+- **Cheval Blanc (Maldivas)** — 1 review
+- **Cheval Blanc Randheli** — 2 reviews
+- **Cheval Blanc St-Barth Isle de France** — 1 review
+- **Château d'Artigny & Spa** — 1 review
+- **Château de Fonscolombe** — 1 review
+- **Château de la Chèvre d'Or** — 1 review
+- **Château Frontenac** — 1 review
+- **Club Med (Suíça, St. Moritz)** — 1 review
+- **Club Med Grand Massif** — 1 review
+- **Club Med La Plagne 2100** — 2 reviews
+- **Club Med Lake Paradise** — 1 review
+- **Club Med Les Arcs** — 2 reviews
+- **Club Med Pragelato Sestriere** — 1 review
+- **Club Med Seychelles** — 1 review
+- **Club Med Trancoso** — 1 review
+- **Club Med Val d'Isère** — 1 review
+- **Club Med Valmorel** — 2 reviews
+- **Comandatuba** — 2 reviews
+- **COMO Castello del Nero** — 1 review
+- **Condes de Barcelona** — 1 review
+- **Conrad New York Midtown** — 2 reviews
+- **Conrad Osaka** — 1 review
+- **Conrad Tulum Riviera Maya** — 1 review
+- **Conservatorium Amsterdam** — 1 review
+- **Conservatorium Hotel** — 2 reviews
+- **Constance Lemuria** — 2 reviews
+- **Convento do Espinheiro** — 1 review
+- **Copacabana Palace** — 1 review
+- **Corpo Santo (Lisboa)** — 1 review
+- **Corpo Santo Hotel** — 1 review
+- **Correntoso Lake & River Hotel** — 1 review
+- **Correntoso Lake & River Hotel (Villa La Angostura)** — 1 review
+- **Cosme Hotel** — 1 review
+- **Country Club Lima Hotel** — 1 review
+- **Cour de Loges** — 1 review
+- **Crans Ambassador** — 1 review
+- **Crowne Plaza HY36 Midtown** — 1 review
+- **Crystal Cruises** — 1 review
+- **Curaçao Marriott Beach Resort** — 2 reviews
+- **Delano South Beach** — 1 review
+- **Desert Luxury Camp** — 1 review
+- **Disney's Grand Floridian Resort & Spa** — 2 reviews
+- **Disney's Yacht Club Resort** — 1 review
+- **Domaine de Manville** — 1 review
+- **Domaine des Hauts de Loire** — 2 reviews
+- **Don Pedro Laguna** — 1 review
+- **Douro41** — 1 review
+- **Dpny** — 1 review
+- **DPNY Beach Hotel** — 1 review
+- **Dreamcastle Hotel** — 2 reviews
+- **Dusit Thani** — 1 review
+- **Earth Lodge (Sabi Sabi)** — 1 review
+- **Edition Barcelona** — 1 review
+- **Edition Madrid** — 1 review
+- **El Fenn** — 1 review
+- **El Fuerte (Preferred Hotels)** — 1 review
+- **El Mangroove Costa Rica** — 1 review
+- **El Palace Barcelona** — 1 review
+- **El Palace Barcelona (Leading Hotels)** — 1 review
+- **El Palace Madrid (Marriott)** — 1 review
+- **Emiliano** — 1 review
+- **Entre Cielos** — 1 review
+- **Ercilla Hotel** — 1 review
+- **Essenza Jericoacoara** — 1 review
+- **Estrela (Trancoso)** — 1 review
+- **Estrela D'Agua** — 2 reviews
+- **Et de Palmes** — 1 review
+- **Etnia** — 1 review
+- **Evora Farm House** — 3 reviews
+- **Explora (não especificado)** — 1 review
+- **Explora Atacama** — 3 reviews
+- **Explora Patagonia** — 1 review
+- **explora Torres del Paine (Patagônia)** — 1 review
+- **explora Valle Sagrado** — 1 review
+- **Faena Miami Beach** — 2 reviews
+- **Fairmont Mayakoba** — 4 reviews
+- **Fairmont Nile City Cairo** — 1 review
+- **Fairmont Rio de Janeiro Copacabana** — 4 reviews _(mesclado de: Fairmont Copacabana Rio de Janeiro, Fairmont Rio de Janeiro Copacabana)_
+- **Fasano** — 2 reviews
+- **Fasano Angra** — 1 review
+- **Fasano Rio de Janeiro** — 1 review
+- **Fasano Trancoso** — 2 reviews
+- **Fazenda Capoava** — 2 reviews
+- **Fazenda Corumbau** — 1 review
+- **Fazenda São Francisco do Corumbau** — 3 reviews
+- **Fendi Private Suites** — 2 reviews
+- **Finolhu Maldives** — 1 review
+- **Flemings** — 1 review
+- **Fontainebleau Miami Beach** — 1 review
+- **Four Seasons Anguilla** — 1 review
+- **Four Seasons Astir Palace (Athens)** — 2 reviews
+- **Four Seasons Bora Bora** — 1 review
+- **Four Seasons Cairo (FS Nile - com vista para o Nilo)** — 1 review
+- **Four Seasons Hotel at The Surf Club** — 1 review
+- **Four Seasons Hotel Firenze** — 1 review
+- **Four Seasons Hotel Singapore** — 1 review
+- **Four Seasons Landaa Giraavaru** — 1 review
+- **Four Seasons Los Angeles** — 1 review
+- **Four Seasons Madrid** — 1 review
+- **Four Seasons Marrakech** — 2 reviews
+- **Four Seasons New York** — 1 review
+- **Four Seasons Resort Chiang Mai** — 1 review
+- **Four Seasons Resort Orlando at Walt Disney World** — 1 review
+- **Four Seasons Resort Seychelles at Desroches Island** — 1 review
+- **Four Seasons Safari Lodge Serengeti** — 1 review
+- **Four Seasons Seoul** — 1 review
+- **Frasiers The Claridge** — 2 reviews
+- **Furore (hotel próximo a Amalfi)** — 1 review
+- **Gabrielli (Starhotels)** — 3 reviews
+- **Gallery Art Hotel** — 1 review
+- **Gili Lankanfushi** — 1 review
+- **Gleneagles** — 1 review
+- **Gran Hotel Inglés** — 1 review
+- **Grand Beach Hotel Surfside** — 4 reviews
+- **Grand Floridian (Walt Disney World)** — 1 review
+- **Grand Hotel (La Barra, Punta del Este)** — 1 review
+- **Grand Hotel et de Milan** — 1 review
+- **Grand Hotel Excelsior Amalfi** — 1 review
+- **Grand Hotel National Lucerne** — 1 review
+- **Grand Hotel Quisisana** — 2 reviews
+- **Grand Hotel Terme** — 1 review
+- **Grand Hotel Vesuvio** — 1 review
+- **Grand House - Relais & Chateaux** — 1 review
+- **Grand Hyatt Athens** — 1 review
+- **Grand Hôtel** — 1 review
+- **Grand La Margna / Grace St Moritz** — 1 review
+- **Grand Velas Riviera Maya** — 2 reviews
+- **Grande Hotel Campos do Jordão** — 1 review
+- **Grootbos Private Nature Reserve** — 1 review
+- **Habitas Tulum** — 1 review
+- **Hamares (Noronha)** — 3 reviews
+- **Hard Rock Hotel Cancún** — 1 review
+- **Hard Rock Hotel Riviera Maya** — 1 review
+- **Havila Voyages (navio, Noruega)** — 1 review
+- **Haya Milagres** — 2 reviews
+- **Hayo Pé na Areia** — 1 review
+- **Hermitage Monaco** — 1 review
+- **Hibisco** — 1 review
+- **Hideaway (Maldivas)** — 2 reviews
+- **Hilton Moorea Lagoon Resort** — 1 review
+- **HIU Hotel (litoral norte SP)** — 1 review
+- **Holiday Inn Santiago Aeroporto** — 1 review
+- **Hospes Casas Rey de Baeza** — 1 review
+- **Hospes Infante Sagres** — 1 review
+- **Hotel Baur Au Lac** — 1 review
+- **Hotel Belles Rives** — 1 review
+- **Hotel Bristol** — 1 review
+- **Hotel Brunelleschi** — 1 review
+- **Hotel Colline de France** — 2 reviews
+- **Hotel Galileo (base do Cerro Catedral, Bariloche)** — 1 review
+- **Hotel Guarda Golf** — 2 reviews
+- **Hotel Helmhaus Zürich** — 2 reviews
+- **Hotel Histórico Central** — 1 review
+- **Hotel Janeiro** — 2 reviews
+- **Hotel L'Europe Amsterdam** — 2 reviews
+- **Hotel La Ponche** — 1 review
+- **Hotel Lancaster** — 1 review
+- **Hotel Le Lana** — 1 review
+- **Hotel Le Palme (Forte Village)** — 1 review
+- **Hotel Madoka no Mori Hakone** — 1 review
+- **Hotel Mercer Sevilla** — 1 review
+- **Hotel Metropole Monaco** — 1 review
+- **Hotel Pire Hue (Bariloche)** — 1 review
+- **Hotel Roma (V Retreats), Ortigia** — 1 review
+- **Hotel Royal-Riviera** — 1 review
+- **Hotel Splendid Venezia** — 1 review
+- **Hotel Toriba** — 1 review
+- **Hotel Tremezzo** — 1 review
+- **Hotel Unique** — 1 review
+- **Hotel Urso Madrid** — 3 reviews
+- **Hotel Vila Amazônia (Manaus)** — 1 review
+- **Hotel Vilon** — 4 reviews
+- **Hyatt Regency Grand Cypress Resort** — 1 review
+- **Hyatt Regency Mexico City (Polanco)** — 1 review
+- **Hyatt Regency Orlando** — 1 review
+- **Hyatt Zilara Cancun** — 1 review
+- **Hyatt Zilara Riviera Maya** — 1 review
+- **Hyatt Ziva Cap Cana** — 1 review
+- **Hyde Bodrum** — 1 review
+- **Hôtel de Berri** — 1 review
+- **Iberostar Selection Praia do Forte** — 1 review
+- **Ibis Recife Aeroporto** — 1 review
+- **Ibis Styles México Zona Rosa** — 1 review
+- **Ibiza Gran Hotel** — 1 review
+- **Iceland Parliament Hotel** — 1 review
+- **Ikos Porto Petro** — 1 review
+- **Il Borro** — 1 review
+- **Il Boscareto Resort & Spa** — 1 review
+- **Il Melograno** — 1 review
+- **Il Sereno (Lago di Como)** — 1 review
+- **INK Hotel Amsterdam** — 1 review
+- **Inturotel Cala Esmeralda** — 1 review
+- **Inverlochy Castle Hotel** — 1 review
+- **Jaci's Lodge Madikwe** — 1 review
+- **Jaci's Lodges** — 4 reviews
+- **Jaguaribe Lodge** — 1 review
+- **Japaratinga Resort** — 1 review
+- **Jequitimar** — 1 review
+- **Joali Maldives** — 1 review
+- **Juma Lodge (Amazônia)** — 1 review
+- **K2 Djola** — 1 review
+- **Kempinski Boulevard Dubai** — 1 review
+- **Kempinski Cairo** — 1 review
+- **Kempinski Hotel Soma Bay/Hurghada** — 1 review
+- **Kempinski Laje de Pedras / Serrazul** — 1 review
+- **Kempinski Mar Morto** — 1 review
+- **Kempinski Munique** — 1 review
+- **Kempinski Seychelles Resort (Mahé)** — 2 reviews
+- **Kempinski St. Moritz** — 2 reviews
+- **Kempinski Vienna** — 1 review
+- **Kenoa Resort** — 2 reviews
+- **Kinsuikan Ryokan** — 1 review
+- **Kuara** — 4 reviews
+- **Kurotel** — 1 review
+- **L'AND Vineyards** — 2 reviews
+- **L'Esprit Saint-Germain** — 1 review
+- **L'Hotel Porto Bay** — 1 review
+- **La Bastide de Moustiers** — 1 review
+- **La Belle Juliette** — 1 review
+- **La Ferme Saint-Siméon (Relais & Châteaux)** — 1 review
+- **La Fiermontina** — 1 review
+- **La Maison des Têtes** — 1 review
+- **La Reserve Eden au Lac** — 1 review
+- **La Samanna (St Martin)** — 1 review
+- **La Villa Florentine** — 1 review
+- **Lake Villas** — 1 review
+- **Le Barthélemy Hotel & Spa** — 1 review
+- **Le Burgundy** — 7 reviews
+- **Le Burgundy Paris** — 1 review
+- **Le Colombier Colmar - Design Hotel Centre Ville** — 1 review
+- **Le Coquillade** — 1 review
+- **Le Guanahani** — 1 review
+- **Le Keppler Paris** — 1 review
+- **Le Sereno St Barth** — 2 reviews
+- **Le Strato Courchevel** — 1 review
+- **Les Arcs Panorama (Club Med)** — 2 reviews _(mesclado de: Club Med Les Arcs Panorama, Les Arcs Panorama (Club Med))_
+- **Lido Palace** — 1 review
+- **Llao Llao** — 1 review
+- **Loews Miami Beach** — 3 reviews
+- **Londra Palace** — 1 review
+- **Los Cauquenes** — 2 reviews
+- **Lotte Hotel** — 2 reviews
+- **Lotte New York Palace** — 3 reviews
+- **Lungarno Collection** — 1 review
+- **Lutetia Paris** — 1 review
+- **Maalot** — 1 review
+- **Majestic Hotel & Spa Barcelona** — 1 review
+- **Mala Mala** — 1 review
+- **Mandapa, a Ritz-Carlton Reserve** — 1 review
+- **Mandarin Oriental Barcelona** — 1 review
+- **Mandarin Oriental Bodrum** — 1 review
+- **Mandarin Oriental Doha** — 1 review
+- **Mandarin Oriental Emirates Palace Abu Dhabi** — 1 review
+- **Mandarin Oriental Lago di Como** — 1 review
+- **Mandarin Oriental Madrid** — 2 reviews
+- **Mandarin Oriental Marrakech** — 2 reviews
+- **Mandarin Oriental Miami** — 2 reviews
+- **Mandarin Oriental New York** — 1 review
+- **Mandarin Oriental Singapore** — 1 review
+- **Marbella Club Hotel Golf Resort & Spa** — 2 reviews
+- **Margutta 19** — 1 review
+- **Maria Bonita (Noronha)** — 2 reviews
+- **Maria Cristina** — 1 review
+- **Marina Bay Sands** — 3 reviews
+- **Marques de Riscal** — 3 reviews
+- **Marriott Geneva Airport Hotel** — 1 review
+- **Marriott Niagara Falls Fallsview** — 1 review
+- **Mas de Torrent** — 2 reviews
+- **Masseria San Domenico** — 1 review
+- **Masseria Torre Coccaro** — 1 review
+- **Maui Maresias** — 1 review
+- **Mayfair Paris** — 1 review
+- **Maçakizi (Bodrum)** — 2 reviews
+- **Melia Iguazu** — 1 review
+- **Melia The Level** — 1 review
+- **Meliá Cala Galdana** — 1 review
+- **Meliá Paradisus Punta Cana** — 1 review
+- **Meridien** — 1 review
+- **METT Bodrum** — 1 review
+- **MGallery (Islândia)** — 1 review
+- **Mirante do Gavião** — 3 reviews
+- **Mitsui Kyoto** — 1 review
+- **Mnemba Island Lodge** — 1 review
+- **Monastero di Cortona** — 2 reviews
+- **Mondrian South Beach** — 1 review
+- **Morada dos Canyons** — 1 review
+- **Morena** — 1 review
+- **Mr. C Miami Coconut Grove** — 1 review
+- **Museum Hotel Capadócia** — 1 review
+- **Myconian Ambassador** — 1 review
+- **Myconian Villa** — 1 review
+- **Nannai Beach Resort** — 2 reviews
+- **Nannai Resort & Spa** — 3 reviews
+- **Nau Hotel Camburi** — 1 review
+- **NH Barbizon Palace Amsterdam** — 1 review
+- **NH Collection Plaza Santiago** — 1 review
+- **NH Taormina** — 1 review
+- **Niyama Maldives** — 1 review
+- **Niyama Private Islands Maldives** — 4 reviews
+- **Nizuc Resort & Spa** — 4 reviews
+- **Nobis Hotel Copenhagen** — 1 review
+- **Nobu Hotel Ibiza** — 1 review
+- **Nobu Marrakech** — 1 review
+- **Nolinski Venezia** — 1 review
+- **Nomade Hotel** — 2 reviews
+- **Nomade Tulum** — 2 reviews
+- **Nos Hotel** — 1 review
+- **Novotel Bosphorus** — 1 review
+- **Novotel Itu** — 1 review
+- **Oberoi (Nile cruise)** — 1 review
+- **Octant Douro** — 1 review
+- **OKU Ibiza** — 2 reviews
+- **One&Only (África do Sul)** — 1 review
+- **One&Only Reethi Rah** — 1 review
+- **One&Only Royal Mirage/The Palm Dubai** — 1 review
+- **Ort Hotel** — 1 review
+- **Ortea Palace Syracuse** — 1 review
+- **Palacio Gran Vía** — 1 review
+- **Palafitos Overwater Bungalows, El Dorado Maroma** — 1 review
+- **Palazzo Bozzi Corsi by La Fiermontina** — 2 reviews
+- **Palmaia - The Royal Beach** — 2 reviews
+- **Palácio de Estoi (Small Luxury Hotels)** — 3 reviews
+- **Palácio Tangará** — 2 reviews
+- **Parador Cambara do Sul** — 4 reviews
+- **Paragon 700** — 1 review
+- **Park Hyatt Buenos Aires (Palacio Duhau)** — 1 review
+- **Park Hyatt Kyoto** — 1 review
+- **Park Hyatt Vienna** — 1 review
+- **Park Hyatt Zurich** — 1 review
+- **Park Lane (NYC)** — 1 review
+- **Park Lane Hotel** — 3 reviews
+- **Parklane Hotel New York** — 4 reviews _(mesclado de: Park Lane Hotel New York, Parklane Hotel New York)_
+- **Passiom** — 1 review
+- **Pata Lodge (Patagônia)** — 1 review
+- **Patina Maldives** — 1 review
+- **Patria Palace Lecce** — 1 review
+- **Pavillon de la Reine / Pavillon Saint-Germain** — 1 review
+- **Pedras do Patacho** — 2 reviews
+- **Peisey Vallandry (Club Med)** — 3 reviews _(mesclado de: Club Med Peisey Vallandry, Peisey Vallandry (Club Med))_
+- **Pendry San Diego** — 1 review
+- **Pera Palace** — 1 review
+- **Pera Palace Istanbul** — 1 review
+- **Pestana Palácio do Freixo (Porto)** — 1 review
+- **Pevero Hotel** — 1 review
+- **Pine Cliffs Hotel (Algarve)** — 1 review
+- **Pine Cliffs Resort** — 4 reviews
+- **Pire Hue** — 1 review
+- **Ponta dos Ganchos** — 1 review
+- **Portillo** — 4 reviews
+- **Posada Terra Santa** — 1 review
+- **Post Ranch Inn (Big Sur)** — 1 review
+- **Pousada Amendoeira** — 2 reviews
+- **Pousada Bahia Bonita** — 1 review
+- **Pousada Boyra (Bonito)** — 1 review
+- **Pousada da Colina** — 2 reviews
+- **Pousada do Cedro** — 1 review
+- **Pousada do Toque** — 1 review
+- **Pousada Literária Paraty** — 1 review
+- **Pousada Maravilha** — 3 reviews
+- **Pousada Mi Secreto** — 1 review
+- **Pousada Refugio da Vila** — 1 review
+- **Pousada Triboju (Fernando de Noronha)** — 1 review
+- **Pousada Xue** — 2 reviews
+- **Pousada Zé Maria** — 1 review
+- **Principe di Savoia** — 1 review
+- **Principe Forte dei Marmi** — 1 review
+- **Pulso Hotel Faria Lima** — 1 review
+- **Quinta da Comporta** — 1 review
+- **Quinta do Vallado** — 1 review
+- **Quinta dos Pinhais** — 1 review
+- **Quisisana Hotel** — 1 review
+- **Radisson Blu Zurich Airport** — 1 review
+- **Raffles Hotel Singapore** — 2 reviews
+- **Refúgio na Serra** — 1 review
+- **Reserva do Patacho** — 1 review
+- **Residences at The Fives** — 1 review
+- **Reykjavik Konsulat Hotel** — 1 review
+- **Rio Quente Resorts** — 1 review
+- **Rituaali** — 1 review
+- **Ritz Paris** — 1 review
+- **Ritz-Carlton Bal Harbour** — 3 reviews
+- **Ritz-Carlton Cancun** — 1 review
+- **Ritz-Carlton New York (Central Park)** — 1 review
+- **Ritz-Carlton Orlando, Grande Lakes** — 1 review
+- **Ritz-Carlton Vienna** — 2 reviews
+- **Rocco Forte The Charles** — 1 review
+- **Rocco Forte Verdura** — 1 review
+- **Rocco Forte Verdura Resort (Sicília)** — 1 review
+- **Ronco do Bugio** — 3 reviews
+- **Roots Resort** — 1 review
+- **Rose Garden Hotel Roma** — 1 review
+- **Rosewood Baha Mar** — 1 review
+- **Rosewood Castiglion del Bosco** — 1 review
+- **Rosewood London** — 1 review
+- **Rosewood Mayakoba** — 1 review
+- **Rosewood Santa Bárbara** — 1 review
+- **Roxy Hotel** — 1 review
+- **Royal Palm** — 2 reviews
+- **Royal Palm Plaza** — 1 review
+- **Sabi Sabi Bush Lodge** — 1 review
+- **Sail Rock Resort** — 1 review
+- **Saint James Paris** — 1 review
+- **Salinas (Bahia)** — 1 review
+- **Salinas Maragogi** — 4 reviews
+- **Saline** — 1 review
+- **Saline (Taiba)** — 1 review
+- **San Antonio Santorini / Santo Pure** — 1 review
+- **Santa Clara Ibiuna** — 1 review
+- **Santo Maris Oia Suites (Santorini)** — 1 review
+- **Scorpios Bodrum** — 1 review
+- **Senac Campos do Jordao** — 1 review
+- **Serena Hotel** — 1 review
+- **Seven Pines** — 1 review
+- **SEZZ St Tropez** — 1 review
+- **Shamwari Game Reserve - Explorer Camp Tent** — 1 review
+- **Shangri-La Vancouver** — 1 review
+- **Shinta Mani Angkor** — 1 review
+- **Sina Bernini Bristol** — 1 review
+- **Sir Victor** — 4 reviews
+- **Six Senses Botanique** — 4 reviews
+- **Six Senses Courchevel** — 1 review
+- **Six Senses Zil Pasyon** — 3 reviews
+- **Sixty SoHo** — 2 reviews
+- **SLS South Beach** — 6 reviews
+- **Sofitel Barú** — 3 reviews
+- **Sofitel Cairo (El Gezirah)** — 1 review
+- **Sofitel Frankfurt Opera** — 2 reviews
+- **Sofitel Le Scribe Paris** — 1 review
+- **Sofitel Legend The Grand Amsterdam** — 1 review
+- **Sofitel Lyon Bellecour** — 1 review
+- **Sofitel Marrakech** — 2 reviews
+- **Sofitel Panama City (Casco Viejo)** — 1 review
+- **Sofitel Santa Clara Cartagena** — 2 reviews
+- **Solage Auberge** — 1 review
+- **Solé Miami** — 1 review
+- **Sonesta ES Suites Lake Buena Vista (Orlando)** — 1 review
+- **Sonesta St. George** — 1 review
+- **Soneva Fushi** — 1 review
+- **Sorell Hotel St. Peter** — 1 review
+- **Spa do Vinho** — 1 review
+- **Sri Lanka (2 Amans)** — 1 review
+- **St Regis Bora Bora** — 1 review
+- **St Regis Venezia** — 1 review
+- **St. Regis Bal Harbour Miami** — 3 reviews
+- **St. Regis Cairo** — 1 review
+- **Starhotels Rosa Grand Milano** — 1 review
+- **Starhotels Splendid Venice** — 1 review
+- **Sublime Comporta** — 3 reviews
+- **Sublime Lisboa** — 1 review
+- **Suvretta House** — 1 review
+- **São Lourenço do Barrocal** — 2 reviews
+- **Taiba** — 4 reviews
+- **Taj Dubai** — 2 reviews
+- **Tambo del Inka** — 1 review
+- **Tangara Trancoso** — 1 review
+- **The Athenaeum Hotel** — 1 review
+- **The Balmoral** — 1 review
+- **The Bank (Design Hotels)** — 1 review
+- **The Bank Hotel Istanbul (Design Hotels)** — 1 review
+- **The Biltmore Mayfair** — 1 review
+- **The Brando** — 1 review
+- **The Breakers Palm Beach** — 1 review
+- **The Chesterfield Mayfair** — 1 review
+- **The David Kempinski Tel Aviv** — 2 reviews
+- **The Drisco Tel Aviv** — 1 review
+- **The Dylan Amsterdam** — 1 review
+- **The Elser Miami** — 1 review
+- **The Emblem Hotel (Praga)** — 1 review
+- **The Florentin by Althoff Collection** — 1 review
+- **The Fullerton Bay Hotel Singapore** — 1 review
+- **The Ivens** — 1 review
+- **The Ivens Lisboa** — 1 review
+- **The Landmark London** — 1 review
+- **The Langham Jakarta** — 1 review
+- **The Lumiares Hotel & Spa** — 2 reviews
+- **The Mandala Hotel Berlin** — 1 review
+- **The Norman Tel Aviv** — 1 review
+- **The Oberoi Marrakech** — 1 review
+- **The One Palácio da Anunciada** — 1 review
+- **The Palace Madrid** — 3 reviews
+- **The Palace of the Lost City** — 1 review
+- **The Pierre (NYC)** — 1 review
+- **The Plaza** — 1 review
+- **The Residence Zanzibar** — 2 reviews
+- **The Retreat at Blue Lagoon** — 3 reviews
+- **The Reykjavik Edition** — 1 review
+- **The Ritz-Carlton Millenia Singapore** — 1 review
+- **The Ritz-Carlton South Beach** — 1 review
+- **The Setai Miami Beach** — 1 review
+- **The St. Regis Venice** — 1 review
+- **The Surf Lodge** — 1 review
+- **Thompson Madrid** — 1 review
+- **Tiberio Palace** — 1 review
+- **Tignes (Club Med)** — 2 reviews
+- **Tivoli** — 2 reviews
+- **Tivoli Avenida Liberdade (Lisboa)** — 2 reviews
+- **Tivoli Ecoresort** — 1 review
+- **Tivoli Ecoresort Praia do Forte** — 2 reviews _(mesclado de: Tivoli Ecoresort Praia do Forte, Tivoli Praia do Forte)_
+- **TomTom Suites (Bodrum)** — 1 review
+- **Torel Quinta da Vacaria** — 1 review
+- **Toriba Chalés** — 1 review
+- **Toriba Hotel (Campos do Jordão)** — 2 reviews
+- **TOTEM Hotel Madrid** — 1 review
+- **Trails of Indochina** — 1 review
+- **Transamerica Comandatuba** — 8 reviews
+- **TRS Yucatán Hotel** — 1 review
+- **Tutabél (Tatubel)** — 2 reviews
+- **TW Guaiambê** — 1 review
+- **Txai Itacaré** — 2 reviews
+- **Txai Resorts** — 12 reviews
+- **Umiltà 36** — 1 review
+- **Unico 20°87° Hotel Riviera Maya** — 1 review
+- **Unique Garden** — 1 review
+- **Uxua Casa Hotel & Spa** — 1 review
+- **Vakkaru Maldives** — 2 reviews
+- **Val d'Isère (Club Med)** — 1 review
+- **Valle Nevado** — 1 review
+- **Vallon de Valrugues** — 1 review
+- **Valverde Lisboa** — 2 reviews
+- **Veela** — 1 review
+- **Verdura Resort** — 3 reviews
+- **Viceroy Snowmass** — 1 review
+- **Victoria & Alfred Hotel** — 1 review
+- **Victoria Jungfrau** — 1 review
+- **Vida Downtown Dubai** — 1 review
+- **Vila da Santa** — 1 review
+- **Vila Joya** — 1 review
+- **Vila Kalango** — 1 review
+- **Vila Lara Resort** — 1 review
+- **Vila Monte** — 1 review
+- **Vila Selvagem** — 1 review
+- **Vila Vita Parc** — 5 reviews
+- **Villa Beluno** — 1 review
+- **Villa d'Este (Lago di Como)** — 1 review
+- **Villa Dubrovnik** — 1 review
+- **Villa Franca Positano** — 1 review
+- **Villa Gallici** — 2 reviews
+- **Villa Igiea (Rocco Forte)** — 2 reviews
+- **Villa Le Blanc Gran Meliá** — 1 review
+- **Villa Magna** — 2 reviews
+- **Villa Rossa** — 3 reviews
+- **Villa Sapê (Ubatuba)** — 1 review
+- **Villa Tanah** — 1 review
+- **Villa/Hotel Donna Carmela** — 1 review
+- **Villas de Trancoso** — 3 reviews
+- **Vintage House** — 1 review
+- **Virgin Hotels Edinburgh** — 1 review
+- **W (Miami Beach)** — 1 review
+- **W Fort Lauderdale** — 1 review
+- **W Miami** — 1 review
+- **Waldorf (Edimburgo)** — 1 review
+- **Waldorf (Maldivas)** — 2 reviews
+- **Waldorf Astoria Maldives** — 2 reviews
+- **Warwick Champs-Élysées Paris** — 2 reviews
+- **White Coast** — 1 review
+- **Widder Hotel** — 1 review
+- **Wymara Resort and Villas** — 1 review
+- **XCaret Hotel** — 2 reviews
+- **Yotel Istanbul Airport** — 1 review
+- **Yountville Hotel** — 1 review
+- **Zemi Beach House (Anguilla)** — 1 review
+- **Zorah Beach (Trairi)** — 2 reviews
+- **Zuri Zanzibar** — 2 reviews
+- **Zurich Marriott** — 1 review
+- **Çırağan Palace Kempinski Istanbul** — 1 review
