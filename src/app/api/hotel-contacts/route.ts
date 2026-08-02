@@ -132,18 +132,28 @@ export async function PATCH(req: NextRequest) {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json()
-  const { id, name, surname, title, email, whatsapp, notes, category, organization } = body
+  const { id, hotelId, name, surname, title, email, whatsapp, notes, category, organization } = body
 
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
   if (!name || !surname) {
     return NextResponse.json({ error: 'name and surname required' }, { status: 400 })
   }
 
+  // Reatribuição de fornecedor (Fase 8c) — mesma regra do cadastro: com
+  // hotelId, organização vira snapshot do nome do fornecedor; sem, é o que
+  // o TD digitou (permite corrigir um vínculo errado, ex. contato de "Vila
+  // Oyá" preso em "Vila Joya" por nome parecido na importação do WhatsApp).
+  let finalOrganization = organization ?? null
+  if (hotelId) {
+    const { rows: hotelRows } = await sql`SELECT name FROM tdg_hotels WHERE id = ${hotelId}`
+    finalOrganization = hotelRows[0]?.name ?? finalOrganization
+  }
+
   const { rows } = await sql`
     UPDATE tdg_hotel_contacts
-    SET name = ${name}, surname = ${surname}, title = ${title ?? null},
+    SET hotel_id = ${hotelId ?? null}, name = ${name}, surname = ${surname}, title = ${title ?? null},
         email = ${email ?? null}, whatsapp = ${whatsapp ?? null}, notes = ${notes ?? null},
-        category = ${category ?? null}, organization = ${organization ?? null}
+        category = ${category ?? null}, organization = ${finalOrganization}
     WHERE id = ${id}
     RETURNING *
   `

@@ -14,6 +14,7 @@ import Link from 'next/link'
 import { readVideoDurationSeconds, MAX_VIDEO_DURATION_SECONDS } from '@/lib/video-upload'
 import TdgIconSprite from '@/components/TdgIconSprite'
 import CopyLinkButton from '@/components/CopyLinkButton'
+import ContactEditForm from '@/components/ContactEditForm'
 
 /* ── Ícones próprios pra vídeo — traço só, sem emoji/biblioteca genérica
    (regra de personalidade do design system Bemgsy, mesma família visual do
@@ -1114,6 +1115,7 @@ function HotelDetail({ hotel, onClose }: { hotel: Hotel; onClose: () => void }) 
   const [loadingContacts, setLoadingContacts] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
 
   const fetchContacts = useCallback(async () => {
     setLoadingContacts(true)
@@ -1333,6 +1335,22 @@ function HotelDetail({ hotel, onClose }: { hotel: Hotel; onClose: () => void }) 
 
             <AnimatePresence>
               {contacts.map(c => (
+                editingId === c.id ? (
+                  <motion.div
+                    key={c.id}
+                    layout
+                    style={{
+                      background: 'var(--tdgflow-surface)', border: '1.5px solid var(--tdgflow-navy)',
+                      borderRadius: 12, padding: '14px 16px', marginBottom: 8,
+                    }}
+                  >
+                    <ContactEditForm
+                      contact={{ ...c, hotel_id: hotel.id, category: 'hotel', organization: hotel.name }}
+                      onSaved={() => { setEditingId(null); fetchContacts() }}
+                      onCancel={() => setEditingId(null)}
+                    />
+                  </motion.div>
+                ) : (
                 <motion.div
                   key={c.id}
                   initial={{ opacity: 0, y: 6 }}
@@ -1386,18 +1404,27 @@ function HotelDetail({ hotel, onClose }: { hotel: Hotel; onClose: () => void }) 
                     </p>
                   </div>
 
-                  {/* Delete */}
-                  <button
-                    onClick={() => deleteContact(c.id)}
-                    disabled={deletingId === c.id}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, flexShrink: 0 }}
-                  >
-                    {deletingId === c.id
-                      ? <Loader2 size={13} className="animate-spin" style={{ color: 'var(--tdgflow-text-muted)' }} />
-                      : <Trash2 size={13} style={{ color: 'var(--tdgflow-border-light)' }} />
-                    }
-                  </button>
+                  {/* Editar / Excluir */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
+                    <button
+                      onClick={() => setEditingId(c.id)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}
+                    >
+                      <PenLine size={13} style={{ color: 'var(--tdgflow-border-light)' }} />
+                    </button>
+                    <button
+                      onClick={() => deleteContact(c.id)}
+                      disabled={deletingId === c.id}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}
+                    >
+                      {deletingId === c.id
+                        ? <Loader2 size={13} className="animate-spin" style={{ color: 'var(--tdgflow-text-muted)' }} />
+                        : <Trash2 size={13} style={{ color: 'var(--tdgflow-border-light)' }} />
+                      }
+                    </button>
+                  </div>
                 </motion.div>
+                )
               ))}
             </AnimatePresence>
 

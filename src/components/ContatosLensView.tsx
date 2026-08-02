@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { Search, Phone, Users, MessageCircle, CheckCircle2, Loader2, Plus, X, AlertCircle, Camera, PenLine, ScanLine, Pencil, Trash2 } from 'lucide-react'
 import { useToast } from '@/contexts/ToastContext'
 import CopyLinkButton from '@/components/CopyLinkButton'
+import ContactEditForm from '@/components/ContactEditForm'
 
 /* ── Types ──────────────────────────────────────────────────────── */
 interface NetworkContact {
@@ -98,89 +99,6 @@ function initials(name: string, surname: string) {
   return `${name?.[0] ?? ''}${surname?.[0] ?? ''}`.toUpperCase()
 }
 
-/* ── Edit form — reaproveita os mesmos campos do cadastro manual, sem o
-   fluxo de scan. Aberto a qualquer TD (não só quem cadastrou) — ver
-   comentário no PATCH de /api/hotel-contacts sobre o porquê. ──────── */
-function EditContactForm({ contact, onSaved, onCancel }: {
-  contact: NetworkContact
-  onSaved: () => void
-  onCancel: () => void
-}) {
-  const [name, setName] = useState(contact.name)
-  const [surname, setSurname] = useState(contact.surname)
-  const [category, setCategory] = useState(contact.category || PERSON_CATEGORIES[0].key)
-  const [organization, setOrganization] = useState(contact.organization ?? '')
-  const [whatsapp, setWhatsapp] = useState(contact.whatsapp ?? '')
-  const [email, setEmail] = useState(contact.email ?? '')
-  const [notes, setNotes] = useState(contact.notes ?? '')
-  const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState('')
-
-  // Contato vinculado a fornecedor: categoria continua automática (hotel),
-  // não editável aqui — mesma regra do cadastro (achado do arquiteto).
-  const categoryIsAutomatic = !!contact.hotel_id
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    e.stopPropagation()
-    if (!name.trim() || !surname.trim()) { setError('Nome e sobrenome são obrigatórios.'); return }
-    setSubmitting(true)
-    setError('')
-    const res = await fetch('/api/hotel-contacts', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        id: contact.id, name: name.trim(), surname: surname.trim(),
-        category: categoryIsAutomatic ? contact.category : category,
-        organization: organization.trim() || null,
-        whatsapp: whatsapp.trim() || null, email: email.trim() || null, notes: notes.trim() || null,
-      }),
-    })
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}))
-      setError(data.error ?? 'Erro ao salvar.')
-      setSubmitting(false)
-      return
-    }
-    setSubmitting(false)
-    onSaved()
-  }
-
-  return (
-    <form onClick={e => e.stopPropagation()} onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ display: 'flex', gap: 8 }}>
-        <input className="input" placeholder="Nome" value={name} onChange={e => setName(e.target.value)} style={{ fontSize: '0.8125rem', flex: 1 }} />
-        <input className="input" placeholder="Sobrenome" value={surname} onChange={e => setSurname(e.target.value)} style={{ fontSize: '0.8125rem', flex: 1 }} />
-      </div>
-      {!categoryIsAutomatic && (
-        <select className="input" value={category} onChange={e => setCategory(e.target.value)} style={{ fontSize: '0.8125rem' }}>
-          {PERSON_CATEGORIES.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
-        </select>
-      )}
-      <input className="input" placeholder="Organização" value={organization} onChange={e => setOrganization(e.target.value)} disabled={categoryIsAutomatic} style={{ fontSize: '0.8125rem' }} />
-      <div style={{ display: 'flex', gap: 8 }}>
-        <input className="input" placeholder="WhatsApp" value={whatsapp} onChange={e => setWhatsapp(e.target.value)} style={{ fontSize: '0.8125rem', flex: 1 }} />
-        <input className="input" placeholder="E-mail" value={email} onChange={e => setEmail(e.target.value)} style={{ fontSize: '0.8125rem', flex: 1 }} />
-      </div>
-      <textarea className="input" placeholder="Notas" value={notes} onChange={e => setNotes(e.target.value)} rows={2} style={{ fontSize: '0.8125rem', resize: 'vertical' }} />
-      {error && (
-        <p style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', color: 'var(--tdgflow-error)' }}>
-          <AlertCircle size={13} /> {error}
-        </p>
-      )}
-      <div style={{ display: 'flex', gap: 8 }}>
-        <button type="submit" disabled={submitting} className="btn-gold" style={{ fontSize: '0.8125rem', padding: '7px 12px', flex: 1 }}>
-          {submitting ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
-          {submitting ? 'Salvando...' : 'Salvar'}
-        </button>
-        <button type="button" onClick={onCancel} style={{ fontSize: '0.8125rem', padding: '7px 12px', background: 'var(--tdgflow-bg)', border: '1px solid var(--tdgflow-border)', borderRadius: 8, color: 'var(--tdgflow-text-muted)', cursor: 'pointer' }}>
-          Cancelar
-        </button>
-      </div>
-    </form>
-  )
-}
-
 /* ── Contact Card — avatar circular + chip, nunca foto (é o que
    diferencia visualmente "pessoa" de "propriedade" na lente Fornecedores;
    ver revisão Tesla do Contact Hub) ──────────────────────────────── */
@@ -229,7 +147,7 @@ function ContactCard({ contact, copiedId, onCopy, highlightId, onChanged }: {
           borderRadius: 10, padding: '14px 16px',
         }}
       >
-        <EditContactForm contact={contact} onSaved={() => { setIsEditing(false); onChanged() }} onCancel={() => setIsEditing(false)} />
+        <ContactEditForm contact={contact} onSaved={() => { setIsEditing(false); onChanged() }} onCancel={() => setIsEditing(false)} />
       </motion.div>
     )
   }
