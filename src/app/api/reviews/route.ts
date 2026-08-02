@@ -126,6 +126,10 @@ export async function POST(req: NextRequest) {
     // agency_id — migration 020, substitui agency_name texto solto por FK real
     await sql`ALTER TABLE tdg_hotel_reviews ADD COLUMN IF NOT EXISTS agency_id UUID REFERENCES tdg_agencies(id)`
 
+    // agency_id em tdg_hotels — acervo privado por agência (migration 021),
+    // necessário pro ON CONFLICT parcial do find-or-create logo abaixo.
+    await sql`ALTER TABLE tdg_hotels ADD COLUMN IF NOT EXISTS agency_id UUID REFERENCES tdg_agencies(id)`
+
     // Migrate highlights from TEXT[] to JSONB (idempotent via column type check)
     await sql`
       ALTER TABLE tdg_hotel_reviews
@@ -211,9 +215,13 @@ Retorne APENAS um JSON válido com esta estrutura:
       if (existingHotel[0]) {
         hotelId = existingHotel[0].id as string
       } else {
+        // find-or-create aqui sempre nasce compartilhado com a rede (agency_id
+        // NULL) — é o espírito de "Na prática". Índice único agora é parcial
+        // por escopo (migration 021): ON CONFLICT precisa do WHERE pra bater
+        // com ele.
         const { rows: createdHotel } = await sql`
           INSERT INTO tdg_hotels (name, entity_type) VALUES (${trimmedName}, ${finalEntityType})
-          ON CONFLICT (lower(trim(name)), entity_type) DO NOTHING
+          ON CONFLICT (lower(trim(name)), entity_type) WHERE agency_id IS NULL DO NOTHING
           RETURNING id
         `
         if (createdHotel[0]) {

@@ -147,3 +147,90 @@ describe('materiais da rede (contratos, formulários, treinamento)', () => {
     expect(delRes.status).toBe(200)
   })
 })
+
+describe('acervo privado por agência em materiais (migration 021)', () => {
+  const suffix = Date.now()
+  const agencyName = `__TDD Materials Agency ${suffix}__`
+  const emailA = `tdd-materials-agencya-${suffix}@example.com`
+  const emailOther = `tdd-materials-other-${suffix}@example.com`
+  let agencyId: string
+  const createdIds: string[] = []
+
+  beforeAll(async () => {
+    const { rows } = await sql`
+      INSERT INTO tdg_agencies (name, cnpj) VALUES (${agencyName}, ${`__TDD_CNPJ_MATERIALS_${suffix}__`}) RETURNING id
+    `
+    agencyId = rows[0].id as string
+    await sql`
+      INSERT INTO tdg_users (name, email, agency_name, agency_id, password_hash, role)
+      VALUES ('TDD Materials A', ${emailA}, ${agencyName}, ${agencyId}, 'x', 'agent')
+    `
+    await sql`
+      INSERT INTO tdg_users (name, email, agency_name, password_hash, role)
+      VALUES ('TDD Materials Other', ${emailOther}, 'Outra Agência', 'x', 'agent')
+    `
+  })
+
+  afterAll(async () => {
+    if (createdIds.length) await sql.query('DELETE FROM tdg_materials WHERE id = ANY($1)', [createdIds])
+    await sql`DELETE FROM tdg_users WHERE email IN (${emailA}, ${emailOther})`
+    await sql`DELETE FROM tdg_agencies WHERE id = ${agencyId}`
+  })
+
+  it('POST visibility=privado sem agência atribuída retorna 400', async () => {
+    mockAuth.mockResolvedValueOnce(sessionFor(emailOther))
+    const res = await POST(formDataReq({
+      category: 'outro', title: `__TDD Privado Sem Agencia ${suffix}__`,
+      link_url: 'https://example.com/x', visibility: 'privado',
+    }))
+    expect(res.status).toBe(400)
+  })
+
+  it('POST visibility=privado grava agency_id e não aparece pra outra agência', async () => {
+    mockAuth.mockResolvedValueOnce(sessionFor(emailA))
+    const createRes = await POST(formDataReq({
+      category: 'outro', title: `__TDD Material Privado ${suffix}__`,
+      link_url: 'https://example.com/privado', visibility: 'privado',
+    }))
+    const created = (await createRes.json()).material
+    expect(createRes.status).toBe(201)
+    createdIds.push(created.id)
+    expect(created.agency_id).toBe(agencyId)
+    expect(created.is_private).toBe(true)
+
+    mockAuth.mockResolvedValueOnce(sessionFor(emailOther))
+    const resOther = await GET()
+    const bodyOther = await resOther.json()
+    expect(bodyOther.materials.find((m: { id: string }) => m.id === created.id)).toBeUndefined()
+
+    mockAuth.mockResolvedValueOnce(sessionFor(emailA))
+    const resA = await GET()
+    const bodyA = await resA.json()
+    expect(bodyA.materials.find((m: { id: string }) => m.id === created.id)).toBeTruthy()
+  })
+
+  it('POST sem visibility (default) continua compartilhado com a rede, como sempre', async () => {
+    mockAuth.mockResolvedValueOnce(sessionFor(emailA))
+    const createRes = await POST(formDataReq({
+      category: 'outro', title: `__TDD Material Default ${suffix}__`,
+      link_url: 'https://example.com/default',
+    }))
+    const created = (await createRes.json()).material
+    createdIds.push(created.id)
+    expect(created.agency_id).toBeNull()
+    expect(created.is_private).toBe(false)
+
+    mockAuth.mockResolvedValueOnce(sessionFor(emailOther))
+    const resOther = await GET()
+    const bodyOther = await resOther.json()
+    expect(bodyOther.materials.find((m: { id: string }) => m.id === created.id)).toBeTruthy()
+  })
+
+  it('POST rejeita visibility inválida', async () => {
+    mockAuth.mockResolvedValueOnce(sessionFor(emailA))
+    const res = await POST(formDataReq({
+      category: 'outro', title: 'x', link_url: 'https://example.com/y', visibility: 'secreto',
+    }))
+    expect(res.status).toBe(400)
+  })
+})
