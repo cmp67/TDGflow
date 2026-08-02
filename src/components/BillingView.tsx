@@ -156,8 +156,8 @@ const SERVICE_GROUPS: ServiceGroup[] = [
         what: 'Assistente inteligente — respostas, sugestões e extração de insights',
         tier: 'Por consumo', tierColor: 'var(--tdgflow-accent-warm)', tierBg: 'var(--tdgflow-accent-warm-subtle)' },
       { id: 'transcription', name: 'Transcrição de Voz', icon: IconMic, color: 'var(--tdgflow-navy)', bg: 'var(--tdgflow-navy-subtle)',
-        what: 'Converte gravações em texto com alta precisão',
-        tier: 'Plano gratuito', tierColor: 'var(--tdgflow-success)', tierBg: 'var(--tdgflow-success-subtle)' },
+        what: 'Converte gravações em texto com alta precisão — 2 lm por transcrição',
+        tier: 'Por consumo', tierColor: 'var(--tdgflow-accent-warm)', tierBg: 'var(--tdgflow-accent-warm-subtle)' },
       { id: 'travel-ai', name: 'Requisitos de Viagem', icon: IconGlobe, color: '#004A7C', bg: '#E8F1F8',
         what: 'Vistos, ETAs e condições de entrada em tempo real',
         tier: 'Por consumo', tierColor: 'var(--tdgflow-accent-warm)', tierBg: 'var(--tdgflow-accent-warm-subtle)' },
@@ -334,7 +334,7 @@ function LumisExplainer() {
               abaixo neste mesmo painel) */}
           <div style={{ padding: '10px 12px', background: '#FEF9EE', borderRadius: 8, border: '1px solid #F5E4BA' }}>
             <p style={{ fontSize: '0.75rem', color: '#7A4F10', lineHeight: 1.6, margin: 0, fontWeight: 300 }}>
-              Um advisor ativo gasta <strong style={{ fontWeight: 600 }}>~500 lm/mês</strong>, igual à cota mensal de cada agência. Precisou de mais? É só comprar top-up abaixo.
+              O plano contratado pela TDG Flow é o <strong style={{ fontWeight: 600 }}>Growth</strong>, que contempla <strong style={{ fontWeight: 600 }}>500 lm/mês</strong> pra cada agência associada. O ciclo de cobrança renova todo dia 5. Precisou de mais? É só contratar top-up abaixo — essa cobrança (e os lumis comprados) fica exclusivamente com a sua agência. Acompanhe seu consumo logo abaixo.
             </p>
           </div>
         </div>
