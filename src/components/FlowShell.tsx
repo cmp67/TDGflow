@@ -179,6 +179,16 @@ function FlowShellInner({ children, user, brand }: Props) {
   // pendingGuestRequests: fila de trabalho do admin, badge no item onde se
   // resolve, não aviso passageiro no sino.
   const [pendingBugReports, setPendingBugReports] = useState(0)
+  // Fila de confirmação (Fase 6) — dois contadores, cada um no seu lugar:
+  // pendingImportConfirmations é a fila do admin (Rede TDG/Billing, mesmo
+  // badge de pendingGuestRequests); pendingMyConfirmations é a fila do
+  // próprio usuário ("você disse isso, confirma?"), em Na prática/TDG
+  // Knowledge Base — hoje sempre 0 pra qualquer conta real (ver
+  // pending-content/route.ts), acende sozinha quando a rede tiver contas
+  // com nome batendo nos autores importados.
+  const [pendingImportConfirmations, setPendingImportConfirmations] = useState(0)
+  const [pendingMyReviewConfirmations, setPendingMyReviewConfirmations] = useState(0)
+  const [pendingMyKnowledgeConfirmations, setPendingMyKnowledgeConfirmations] = useState(0)
   useEffect(() => {
     fetch('/api/context')
       .then(res => res.ok ? res.json() : null)
@@ -187,6 +197,9 @@ function FlowShellInner({ children, user, brand }: Props) {
         setPendingLeads(data.pending_leads ?? 0)
         setPendingGuestRequests(data.pending_guest_requests ?? 0)
         setPendingBugReports(data.pending_bug_reports ?? 0)
+        setPendingImportConfirmations(data.pending_import_confirmations ?? 0)
+        setPendingMyReviewConfirmations(data.pending_my_review_confirmations ?? 0)
+        setPendingMyKnowledgeConfirmations(data.pending_my_knowledge_confirmations ?? 0)
       })
       .catch(() => {})
   }, [])
@@ -297,14 +310,14 @@ function FlowShellInner({ children, user, brand }: Props) {
                 <span style={{ fontSize: '0.875rem', fontWeight: active ? 600 : 500, letterSpacing: '-0.005em', color: active ? 'var(--tdgflow-agency-accent)' : 'inherit' }}>
                   {tr(`nav.${tkey}`)}
                 </span>
-                {tkey === 'dicas' && pendingLeads > 0 && (
+                {tkey === 'dicas' && (pendingLeads + pendingMyReviewConfirmations) > 0 && (
                   <span style={{
                     marginLeft: 'auto', minWidth: 16, height: 16, padding: '0 4px', borderRadius: 999,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     background: 'var(--tdgflow-accent-warm)', color: '#fff',
                     fontSize: '0.625rem', fontWeight: 700, lineHeight: 1,
                   }}>
-                    {pendingLeads}
+                    {pendingLeads + pendingMyReviewConfirmations}
                   </span>
                 )}
               </Link>
@@ -345,14 +358,24 @@ function FlowShellInner({ children, user, brand }: Props) {
                       {tr(`nav.${tkey}`)}
                     </span>
                     {soon && <span style={{ marginLeft: 'auto', fontSize: '0.6rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)' }}>{tr('nav.breve')}</span>}
-                    {tkey === 'billing' && pendingGuestRequests > 0 && (
+                    {tkey === 'billing' && (pendingGuestRequests + pendingImportConfirmations) > 0 && (
                       <span style={{
                         marginLeft: 'auto', minWidth: 16, height: 16, padding: '0 4px', borderRadius: 999,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         background: 'var(--tdgflow-accent-warm)', color: '#fff',
                         fontSize: '0.625rem', fontWeight: 700, lineHeight: 1,
                       }}>
-                        {pendingGuestRequests}
+                        {pendingGuestRequests + pendingImportConfirmations}
+                      </span>
+                    )}
+                    {tkey === 'destinos' && pendingMyKnowledgeConfirmations > 0 && (
+                      <span style={{
+                        marginLeft: 'auto', minWidth: 16, height: 16, padding: '0 4px', borderRadius: 999,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: 'var(--tdgflow-accent-warm)', color: '#fff',
+                        fontSize: '0.625rem', fontWeight: 700, lineHeight: 1,
+                      }}>
+                        {pendingMyKnowledgeConfirmations}
                       </span>
                     )}
                   </Link>

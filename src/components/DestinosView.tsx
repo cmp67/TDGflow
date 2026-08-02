@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Search, Users, Loader2, Lightbulb, AlertTriangle } from 'lucide-react'
 import TdgIconSprite from '@/components/TdgIconSprite'
 import CopyLinkButton from '@/components/CopyLinkButton'
+import PendingConfirmationQueue from '@/components/PendingConfirmationQueue'
 
 /* ── Types ──────────────────────────────────────────────────────── */
 interface KnowledgeTip {
@@ -163,6 +164,10 @@ export default function DestinosView() {
 
       {/* ── List ─────────────────────────────────────────────────── */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px' }}>
+        {/* Fase 6 — 3ª seção condicional, "você disse isso, confirma?" (decisão
+            #14). Some sozinha quando não há pendência própria. */}
+        <PendingConfirmationQueue scope="mine" contentType="knowledge" title="Você disse isso — confirma?" />
+
         {loading && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: 60, gap: 8, color: 'var(--tdgflow-text-muted)' }}>
             <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />

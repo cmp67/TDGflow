@@ -17,6 +17,7 @@ import ResponsiveSheet from '@/components/ResponsiveSheet'
 import CopyLinkButton from '@/components/CopyLinkButton'
 import AudioRecord from '@/components/AudioRecord'
 import AudioQueue from '@/components/AudioQueue'
+import PendingConfirmationQueue from '@/components/PendingConfirmationQueue'
 
 /* Fase 6: "Da mesa" saiu da navegação — seu próprio texto já dizia "não é
    conteúdo pra navegar direto" (só 2 botões abrindo modal, nenhum conteúdo
@@ -1663,6 +1664,13 @@ export default function DicasView() {
 
       {/* ── Feed ─────────────────────────────────────────────────── */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '18px 16px 40px' }}>
+        {/* Fase 6 — 3ª seção condicional, "você disse isso, confirma?" (decisão
+            #14). Some sozinha quando não há pendência própria — não some quando
+            o resto da lista (recém-descoberto/aprovado) está vazio. */}
+        <div style={{ maxWidth: 1040, margin: '0 auto' }}>
+          <PendingConfirmationQueue scope="mine" contentType="review" title="Você disse isso — confirma?" />
+        </div>
+
         {loading && (
           <p style={{ textAlign: 'center', color: 'var(--tdgflow-text-muted)', fontSize: '0.875rem', paddingTop: 48 }}>Carregando...</p>
         )}

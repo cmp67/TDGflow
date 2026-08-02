@@ -121,6 +121,37 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ contact: rows[0] })
 }
 
+/* Editar contato — aberto a qualquer TD logado, não só quem cadastrou.
+   Achado da Carla (02/08): quem percebe que um contato ficou desatualizado
+   (pessoa trocou de hotel, saiu da empresa) raramente é quem trouxe a
+   informação original — é quem tentou usar o contato agora. Por isso não
+   trava em "só o autor edita", diferente da fila de confirmação do autor
+   (reviews/conhecimento de destino, que são "confirme o que VOCÊ disse"). */
+export async function PATCH(req: NextRequest) {
+  const session = await auth()
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const body = await req.json()
+  const { id, name, surname, title, email, whatsapp, notes, category, organization } = body
+
+  if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
+  if (!name || !surname) {
+    return NextResponse.json({ error: 'name and surname required' }, { status: 400 })
+  }
+
+  const { rows } = await sql`
+    UPDATE tdg_hotel_contacts
+    SET name = ${name}, surname = ${surname}, title = ${title ?? null},
+        email = ${email ?? null}, whatsapp = ${whatsapp ?? null}, notes = ${notes ?? null},
+        category = ${category ?? null}, organization = ${organization ?? null}
+    WHERE id = ${id}
+    RETURNING *
+  `
+  if (!rows[0]) return NextResponse.json({ error: 'Contato não encontrado' }, { status: 404 })
+
+  return NextResponse.json({ contact: rows[0] })
+}
+
 export async function DELETE(req: NextRequest) {
   const session = await auth()
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

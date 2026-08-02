@@ -12,6 +12,7 @@ import MyLumisTopUp from '@/components/billing/MyLumisTopUp'
 import AgencySubscriptionCard from '@/components/billing/AgencySubscriptionCard'
 import { fetchPendingGuestRequests, reviewGuestRequest, type PendingGuestRequest } from '@/lib/guest-access-client'
 import StatBlock from '@/components/ui/StatBlock'
+import PendingConfirmationQueue from '@/components/PendingConfirmationQueue'
 
 // ── Ícones próprios (traço só, sem biblioteca genérica — consistente com
 //    "Na prática"/Ofertas) para marcadores com personalidade: tipo de ação,
@@ -991,6 +992,13 @@ function TabNetwork() {
       <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
 
         <GuestRequestsPanel />
+
+        <div style={{ background: 'var(--tdgflow-surface)', border: '1px solid var(--tdgflow-border-subtle)', borderRadius: 14, padding: '14px 16px', flexShrink: 0 }}>
+          <PendingConfirmationQueue
+            scope="admin"
+            title="Conteúdo importado do WhatsApp — aguardando confirmação"
+          />
+        </div>
 
         {!balance && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 14px', background: 'var(--tdgflow-border-subtle)', borderRadius: 9, border: '1px solid var(--tdgflow-border-subtle)', flexShrink: 0 }}>

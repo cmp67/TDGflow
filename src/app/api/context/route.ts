@@ -12,7 +12,7 @@ export async function GET() {
 
   // Ensure avatar column exists and fetch it
   await sql`ALTER TABLE tdg_users ADD COLUMN IF NOT EXISTS avatar_url TEXT`
-  const profileRes = await sql`SELECT avatar_url, role, agency_name FROM tdg_users WHERE email = ${session.user?.email ?? ''} LIMIT 1`
+  const profileRes = await sql`SELECT avatar_url, role, agency_name, name FROM tdg_users WHERE email = ${session.user?.email ?? ''} LIMIT 1`
   const avatarUrl: string | null = profileRes.rows[0]?.avatar_url ?? null
   const isAdmin = profileRes.rows[0]?.role === 'admin'
   // Escopo por agência (achado da Carla, 29/07): gravações e atividade de
@@ -44,6 +44,39 @@ export async function GET() {
       pendingBugReports = rows[0]?.count ?? 0
     } catch { /* tabela ainda não existe — sem reports */ }
   }
+
+  // Fase 6 — fila de confirmação (decisões #14-16). Mesma condição de match
+  // usada em /api/pending-content: nome do usuário aparece dentro do texto
+  // livre de source_author. Hoje "mine" é ~sempre 0 (nenhum autor real da
+  // extração tem conta com nome batendo) e "admin" cobre o resto.
+  const userName = (profileRes.rows[0] as { name?: string } | undefined)?.name ?? ''
+  let pendingImportConfirmations = 0
+  let pendingMyReviewConfirmations = 0
+  let pendingMyKnowledgeConfirmations = 0
+  try {
+    if (isAdmin) {
+      const { rows } = await sql`
+        SELECT
+          (SELECT COUNT(*)::int FROM tdg_hotel_reviews r WHERE r.import_approval = 'pending'
+             AND NOT EXISTS (SELECT 1 FROM tdg_users u WHERE r.source_author ILIKE '%' || u.name || '%')) +
+          (SELECT COUNT(*)::int FROM tdg_destination_knowledge k WHERE k.import_approval = 'pending'
+             AND NOT EXISTS (SELECT 1 FROM tdg_users u WHERE k.source_author ILIKE '%' || u.name || '%')) AS count
+      `
+      pendingImportConfirmations = rows[0]?.count ?? 0
+    }
+    if (userName) {
+      const { rows: reviewRows } = await sql`
+        SELECT COUNT(*)::int AS count FROM tdg_hotel_reviews
+        WHERE import_approval = 'pending' AND source_author ILIKE ${'%' + userName + '%'}
+      `
+      pendingMyReviewConfirmations = reviewRows[0]?.count ?? 0
+      const { rows: knowledgeRows } = await sql`
+        SELECT COUNT(*)::int AS count FROM tdg_destination_knowledge
+        WHERE import_approval = 'pending' AND source_author ILIKE ${'%' + userName + '%'}
+      `
+      pendingMyKnowledgeConfirmations = knowledgeRows[0]?.count ?? 0
+    }
+  } catch { /* colunas de import_approval podem não existir em ambiente antigo */ }
 
   const [pendingRes, reviewsRes, promotionsRes, lastReviewRes, pendingLeadsRes, newContentRes] = await Promise.all([
     // Gravações pendentes de transcrição — só da própria agência
@@ -105,5 +138,8 @@ export async function GET() {
     pending_leads: pendingLeadsRes.rows[0]?.count ?? 0,
     new_partnership_content: newContentRes.rows,
     is_admin: isAdmin,
+    pending_import_confirmations: pendingImportConfirmations,
+    pending_my_review_confirmations: pendingMyReviewConfirmations,
+    pending_my_knowledge_confirmations: pendingMyKnowledgeConfirmations,
   })
 }
