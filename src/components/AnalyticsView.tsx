@@ -238,7 +238,7 @@ function InsightsBlock() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
         <IconInline id="i-spark" size={13} />
         <p style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--tdgflow-navy-dim)' }}>
-          Insights da rede · gerado por IA
+          Insights da rede
         </p>
       </div>
       {loading ? (

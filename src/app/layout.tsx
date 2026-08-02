@@ -16,7 +16,7 @@ const raleway = Raleway({
 
 export const metadata: Metadata = {
   title: "TDG Flow — Assistente de Destinos",
-  description: "Travel Designers Group — Assistente de IA para agentes de viagens de luxo",
+  description: "Travel Designers Group — Recomendações e respostas na hora para agentes de viagens de luxo",
 };
 
 // Sinal explícito de <meta name="color-scheme"> no <head> — mais forte e mais
