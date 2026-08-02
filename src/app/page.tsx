@@ -2,8 +2,36 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { ArrowRight, MapPin, Star, Users, Globe, ChevronDown, TrendingUp, Sparkles } from 'lucide-react'
+import { ArrowRight, MapPin, Users, Zap, Megaphone, Radar, ChevronDown } from 'lucide-react'
 import { motion, useInView } from 'framer-motion'
+
+/* ── Marca TDG (manual de identidade visual, recebido 02/08/2026) ────────
+   Paleta própria do Travel Designers Group — distinta da paleta estrutural
+   Bemgsy (--tdgflow-navy #1A2B4C / --tdgflow-gold #D4AF37) usada no produto
+   TDG Flow em si. Esta página representa a marca TDG, não o produto — por
+   isso usa as cores oficiais do manual, escopadas aqui e não nos tokens
+   globais (que continuam servindo o "esqueleto" do app interno). */
+const TDG = {
+  navy:       '#112630',
+  tealDark:   '#104C64',
+  teal:       '#008C94',
+  sage:       '#93A889',
+  terracotta: '#B6410F',
+}
+
+/* Estrela de 4 pontas — asset de marca próprio (página "Pattern" do manual),
+   reaproveitado como textura de fundo no hero e como glifo ao lado dos
+   rótulos de seção, no lugar do dot-grid genérico anterior. */
+const STAR_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40'><path d='M20 4 L23 17 L36 20 L23 23 L20 36 L17 23 L4 20 L17 17 Z' fill='${TDG.terracotta}'/></svg>`
+const STAR_PATTERN_URL = `url("data:image/svg+xml,${encodeURIComponent(STAR_SVG)}")`
+
+function StarGlyph({ size = 9 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 40" style={{ flexShrink: 0 }}>
+      <path d="M20 4 L23 17 L36 20 L23 23 L20 36 L17 23 L4 20 L17 17 Z" fill={TDG.terracotta} />
+    </svg>
+  )
+}
 
 /* ── Fade-up on scroll ─────────────────────────────────────────────── */
 function FadeUp({ children, delay = 0, className = '' }: {
@@ -33,27 +61,34 @@ const PROGRAMS = [
 ]
 
 const PROPERTIES = [
-  { name: 'Velaa Private Island',      location: 'Maldivas',          tag: 'Private Island', bg: 'linear-gradient(135deg,#0d2535 0%,#061820 100%)', dot: '#4a9bbe' },
-  { name: 'Martinhal Sagres',          location: 'Algarve, Portugal',  tag: 'Beach Resort',   bg: 'linear-gradient(135deg,#1a2510 0%,#0e1808 100%)', dot: '#7aaa5a' },
-  { name: 'Martinhal Quinta do Lago',  location: 'Algarve, Portugal',  tag: 'Golf & Nature',  bg: 'linear-gradient(135deg,#251a08 0%,#180e04 100%)', dot: '#c8a060' },
-  { name: 'Martinhal Lisboa',          location: 'Lisboa, Portugal',   tag: 'Urban Luxury',   bg: 'linear-gradient(135deg,#10101e 0%,#080810 100%)', dot: '#8080c8' },
+  { name: 'Velaa Private Island',      location: 'Maldivas',          tag: 'Private Island', bg: `linear-gradient(135deg,${TDG.navy} 0%,#081016 100%)`, dot: TDG.teal },
+  { name: 'Martinhal Sagres',          location: 'Algarve, Portugal',  tag: 'Beach Resort',   bg: `linear-gradient(135deg,#1c2a1e 0%,#0e1710 100%)`, dot: TDG.sage },
+  { name: 'Martinhal Quinta do Lago',  location: 'Algarve, Portugal',  tag: 'Golf & Nature',  bg: `linear-gradient(135deg,#2a1a10 0%,#180e08 100%)`, dot: TDG.terracotta },
+  { name: 'Martinhal Lisboa',          location: 'Lisboa, Portugal',   tag: 'Urban Luxury',   bg: `linear-gradient(135deg,${TDG.tealDark} 0%,#081420 100%)`, dot: TDG.teal },
 ]
 
-const PILLARS = [
+/* Pilares do TDG Flow — texto oficial recebido da Carla 02/08/2026
+   ("SITE TDG FLOW.docx"), verbatim. */
+const FLOW_PILLARS = [
   {
-    icon: TrendingUp,
-    title: 'Curadoria com propósito',
-    desc: 'Cada parceria é escolhida com critério. Quem está com o TDG está em conversas que importam — com os clientes que buscam o que poucos sabem oferecer.',
+    icon: Users,
+    title: 'Curadoria Compartilhada',
+    desc: 'Avaliações de hotéis, vilas, serviços receptivos e gastronomia sob o rigoroso crivo do padrão TDG, gerando um feedback construtivo para o segmento.',
   },
   {
-    icon: Star,
-    title: 'Uma marca que se multiplica',
-    desc: 'O que aprendemos sobre cada propriedade não fica em uma agência. Circula por toda a rede — com a mesma precisão e o mesmo entusiasmo de quem esteve lá.',
+    icon: Zap,
+    title: 'Agilidade Operacional',
+    desc: 'Respostas rápidas a cenários complexos de viagens globais com base no histórico e conexões do grupo.',
   },
   {
-    icon: Globe,
-    title: 'Presença que dura',
-    desc: 'Não somos um canal. Somos uma relação de longo prazo, construída em confiança, renovada em cada experiência entregue com excelência.',
+    icon: Megaphone,
+    title: 'Promoção Eficiente',
+    desc: 'Novidades, renovações, ofertas e experiências inéditas dos fornecedores ganham tração na rede das agências.',
+  },
+  {
+    icon: Radar,
+    title: 'Tendências Antecipadas',
+    desc: 'Monitoramento em tempo real dos destinos e experiências que estão entrando no radar dos viajantes mais exigentes.',
   },
 ]
 
@@ -79,7 +114,7 @@ export default function LandingPage() {
           <Link href="/" className="flex items-center gap-2 no-underline">
             <div
               className="w-7 h-7 rounded-lg flex items-center justify-center font-semibold"
-              style={{ background: 'var(--tdgflow-navy)', color: 'var(--tdgflow-surface)', fontSize: '0.625rem', letterSpacing: '0.05em' }}
+              style={{ background: TDG.navy, color: '#fff', fontSize: '0.625rem', letterSpacing: '0.05em' }}
             >
               TDG
             </div>
@@ -89,7 +124,7 @@ export default function LandingPage() {
           </Link>
 
           <nav className="hidden md:flex items-center gap-7">
-            {['#rede', '#parceiros', '#grupo'].map((href, i) => (
+            {['#rede', '#flow', '#parceiros', '#grupo'].map((href, i) => (
               <a
                 key={href}
                 href={href}
@@ -98,7 +133,7 @@ export default function LandingPage() {
                 onMouseEnter={e => ((e.target as HTMLElement).style.color = 'var(--tdgflow-text-primary)')}
                 onMouseLeave={e => ((e.target as HTMLElement).style.color = 'var(--tdgflow-text-muted)')}
               >
-                {['A Rede', 'Parceiros', 'O Grupo'][i]}
+                {['A Rede', 'TDG Flow', 'Parceiros', 'O Grupo'][i]}
               </a>
             ))}
           </nav>
@@ -106,9 +141,9 @@ export default function LandingPage() {
           <Link
             href="/flow"
             className="no-underline flex items-center gap-1.5 transition-colors duration-150"
-            style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--tdgflow-navy)' }}
-            onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = 'var(--tdgflow-navy-hover)')}
-            onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = 'var(--tdgflow-navy)')}
+            style={{ fontSize: '0.8125rem', fontWeight: 500, color: TDG.teal }}
+            onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = TDG.tealDark)}
+            onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = TDG.teal)}
           >
             Acessar o Flow
             <ArrowRight size={13} />
@@ -125,17 +160,19 @@ export default function LandingPage() {
           className="absolute inset-0"
           style={{
             background: `
-              radial-gradient(ellipse 80% 55% at 50% 45%, rgba(212,165,116,0.06) 0%, transparent 65%),
-              linear-gradient(180deg, #0F0E0D 0%, #131210 50%, #0F0E0D 100%)
+              radial-gradient(ellipse 80% 55% at 50% 45%, rgba(182,65,15,0.07) 0%, transparent 65%),
+              linear-gradient(180deg, ${TDG.navy} 0%, #0B1A21 50%, ${TDG.navy} 100%)
             `,
           }}
         />
-        {/* Subtle dot grid */}
+        {/* Textura de fundo — estrela de 4 pontas da identidade TDG, no lugar
+            do dot-grid genérico anterior */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            backgroundImage: 'radial-gradient(rgba(212,165,116,0.12) 1px, transparent 1px)',
-            backgroundSize: '40px 40px',
+            backgroundImage: STAR_PATTERN_URL,
+            backgroundSize: '72px 72px',
+            opacity: 0.05,
             maskImage: 'radial-gradient(ellipse 60% 50% at 50% 50%, black 0%, transparent 100%)',
           }}
         />
@@ -146,8 +183,10 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.15 }}
-            className="section-label mb-8"
+            className="flex items-center justify-center gap-2 mb-8"
+            style={{ fontSize: '0.6875rem', fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#EAF1F5' }}
           >
+            <StarGlyph />
             Travel Designers Group · Brasil
           </motion.p>
 
@@ -161,22 +200,22 @@ export default function LandingPage() {
               fontWeight: 200,
               letterSpacing: '-0.035em',
               lineHeight: 1.08,
-              color: 'var(--tdgflow-text-primary)',
+              color: '#F4F7F8',
               marginBottom: '1.75rem',
             }}
           >
             Dezenove agências.
             <br />
-            <span style={{ color: 'var(--tdgflow-navy)', fontWeight: 300 }}>Uma visão do luxo.</span>
+            <span style={{ color: TDG.terracotta, fontWeight: 300 }}>Uma visão do luxo.</span>
           </motion.h1>
 
           <motion.p
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.5 }}
-            style={{ fontSize: '1rem', color: 'var(--tdgflow-text-muted)', lineHeight: 1.8, fontWeight: 300, maxWidth: '440px', margin: '0 auto 2.5rem' }}
+            style={{ fontSize: '1rem', color: '#A8C2CB', lineHeight: 1.8, fontWeight: 300, maxWidth: '460px', margin: '0 auto 2.5rem' }}
           >
-            Um grupo de especialistas que compartilham clientes, conhecimento e o mesmo padrão exigente de excelência.
+            Uma rede colaborativa das principais agências boutique e consultores de turismo de alto padrão do Brasil.
           </motion.p>
 
           <motion.div
@@ -185,11 +224,32 @@ export default function LandingPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.65 }}
           >
-            <a href="#grupo" className="btn-gold no-underline" style={{ padding: '11px 26px' }}>
+            <a
+              href="#grupo"
+              className="no-underline"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6, padding: '11px 26px',
+                background: TDG.terracotta, color: '#fff', fontWeight: 600, fontSize: '0.875rem',
+                borderRadius: 'var(--tdgflow-radius-md)', transition: 'transform 150ms var(--tdgflow-ease-smooth), background 150ms',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)' }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'none' }}
+            >
               Sobre o grupo <ArrowRight size={15} />
             </a>
-            <a href="#parceiros" className="btn-ghost no-underline" style={{ padding: '11px 22px' }}>
-              Nossas propriedades
+            <a
+              href="#flow"
+              className="no-underline"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6, padding: '11px 22px',
+                background: 'transparent', color: '#EAF1F5', fontWeight: 500, fontSize: '0.875rem',
+                borderRadius: 'var(--tdgflow-radius-md)', border: '1px solid rgba(234,241,245,0.25)',
+                transition: 'all 150ms var(--tdgflow-ease-smooth)',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(234,241,245,0.08)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+            >
+              Conhecer o TDG Flow
             </a>
           </motion.div>
         </div>
@@ -201,7 +261,7 @@ export default function LandingPage() {
           transition={{ delay: 1.1, duration: 0.5 }}
         >
           <motion.div animate={{ y: [0, 5, 0] }} transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}>
-            <ChevronDown size={18} style={{ color: 'var(--tdgflow-text-muted)' }} />
+            <ChevronDown size={18} style={{ color: '#A8C2CB' }} />
           </motion.div>
         </motion.div>
       </section>
@@ -219,7 +279,7 @@ export default function LandingPage() {
             { value: '25 anos',  label: 'No setor de luxo' },
           ].map(({ value, label }, i) => (
             <FadeUp key={label} delay={i * 0.07}>
-              <p style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)', fontWeight: 200, color: 'var(--tdgflow-navy)', letterSpacing: '-0.03em', lineHeight: 1, marginBottom: '0.375rem' }}>
+              <p style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)', fontWeight: 200, color: TDG.navy, letterSpacing: '-0.03em', lineHeight: 1, marginBottom: '0.375rem' }}>
                 {value}
               </p>
               <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase', fontWeight: 500 }}>
@@ -253,7 +313,9 @@ export default function LandingPage() {
       <section id="parceiros" className="py-24 px-6 relative grain overflow-hidden" style={{ background: 'var(--tdgflow-bg)' }}>
         <div className="max-w-6xl mx-auto">
           <FadeUp className="mb-2">
-            <p className="section-label">Onde já estivemos</p>
+            <p className="flex items-center gap-2" style={{ fontSize: '0.6875rem', fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase', color: TDG.terracotta }}>
+              <StarGlyph />Onde já estivemos
+            </p>
           </FadeUp>
           <FadeUp delay={0.08}>
             <h2 style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)', fontWeight: 200, letterSpacing: '-0.03em', color: 'var(--tdgflow-text-primary)', marginBottom: '2.5rem', lineHeight: 1.15 }}>
@@ -271,13 +333,18 @@ export default function LandingPage() {
                 <div className="absolute top-5 right-5 w-14 h-14 rounded-full opacity-15" style={{ background: `radial-gradient(circle, ${PROPERTIES[0].dot}, transparent)` }} />
                 <div className="prop-card-overlay" />
                 <div className="relative z-10">
-                  <span className="badge badge-gold mb-2" style={{ fontSize: '0.6rem' }}>{PROPERTIES[0].tag}</span>
-                  <h3 style={{ fontSize: '1.5rem', fontWeight: 300, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.02em', lineHeight: 1.2, marginBottom: '0.25rem' }}>
+                  <span
+                    className="mb-2"
+                    style={{ display: 'inline-block', fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.04em', padding: '3px 9px', borderRadius: 999, background: 'rgba(255,255,255,0.14)', color: '#fff' }}
+                  >
+                    {PROPERTIES[0].tag}
+                  </span>
+                  <h3 style={{ fontSize: '1.5rem', fontWeight: 300, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1.2, marginBottom: '0.25rem' }}>
                     {PROPERTIES[0].name}
                   </h3>
                   <div className="flex items-center gap-1">
-                    <MapPin size={11} style={{ color: 'var(--tdgflow-navy-dim)' }} />
-                    <span style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)' }}>{PROPERTIES[0].location}</span>
+                    <MapPin size={11} style={{ color: PROPERTIES[0].dot }} />
+                    <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>{PROPERTIES[0].location}</span>
                   </div>
                 </div>
               </div>
@@ -292,13 +359,18 @@ export default function LandingPage() {
                   <div className="absolute top-4 right-4 w-10 h-10 rounded-full opacity-15" style={{ background: `radial-gradient(circle, ${p.dot}, transparent)` }} />
                   <div className="prop-card-overlay" />
                   <div className="relative z-10">
-                    <span className="badge badge-muted mb-1.5" style={{ fontSize: '0.58rem' }}>{p.tag}</span>
-                    <h3 style={{ fontSize: '1.125rem', fontWeight: 300, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.015em', lineHeight: 1.2 }}>
+                    <span
+                      className="mb-1.5"
+                      style={{ display: 'inline-block', fontSize: '0.58rem', fontWeight: 600, letterSpacing: '0.04em', padding: '2px 8px', borderRadius: 999, background: 'rgba(255,255,255,0.12)', color: '#fff' }}
+                    >
+                      {p.tag}
+                    </span>
+                    <h3 style={{ fontSize: '1.125rem', fontWeight: 300, color: '#fff', letterSpacing: '-0.015em', lineHeight: 1.2 }}>
                       {p.name}
                     </h3>
                     <div className="flex items-center gap-1 mt-0.5">
-                      <MapPin size={10} style={{ color: 'var(--tdgflow-navy-dim)' }} />
-                      <span style={{ fontSize: '0.7rem', color: 'var(--tdgflow-text-muted)' }}>{p.location}</span>
+                      <MapPin size={10} style={{ color: p.dot }} />
+                      <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.7)' }}>{p.location}</span>
                     </div>
                   </div>
                 </div>
@@ -314,26 +386,55 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Pillars ──────────────────────────────────────────────── */}
+      {/* ── TDG Flow ─────────────────────────────────────────────── */}
       <section
-        className="py-20 px-6"
-        style={{ background: 'var(--tdgflow-surface)', borderTop: '1px solid var(--tdgflow-border)', borderBottom: '1px solid var(--tdgflow-border)' }}
+        id="flow"
+        className="py-24 px-6 relative overflow-hidden"
+        style={{ background: TDG.navy }}
       >
-        <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-10">
-          {PILLARS.map(({ icon: Icon, title, desc }, i) => (
-            <FadeUp key={title} delay={i * 0.09}>
-              <div className="space-y-3">
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ backgroundImage: STAR_PATTERN_URL, backgroundSize: '72px 72px', opacity: 0.04 }}
+        />
+        <div className="max-w-5xl mx-auto relative z-10">
+          <FadeUp className="mb-4">
+            <p className="flex items-center justify-center gap-2" style={{ fontSize: '0.6875rem', fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase', color: TDG.terracotta, textAlign: 'center' }}>
+              <StarGlyph />O ecossistema
+            </p>
+          </FadeUp>
+          <FadeUp delay={0.06} className="text-center">
+            <h2 style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)', fontWeight: 200, letterSpacing: '-0.03em', color: '#fff', marginBottom: '1.5rem', lineHeight: 1.15 }}>
+              TDG Flow
+            </h2>
+          </FadeUp>
+          <FadeUp delay={0.1} className="text-center">
+            <p style={{ fontSize: '0.9375rem', color: '#A8C2CB', lineHeight: 1.85, fontWeight: 300, maxWidth: '700px', margin: '0 auto 3.5rem' }}>
+              Estruturado em contrato com a Bemgsy — com know-how em operação de luxury travel — o TDG Flow funciona como um ecossistema digital colaborativo fechado, no qual o banco de dados alimentado diariamente pelo grupo de experts é conectado a agentes de inteligência artificial especialmente treinados para otimizar conhecimento, cruzar informações e buscar recomendações lastreadas nessa genuína curadoria de experiências exclusivas globais.
+            </p>
+          </FadeUp>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-14">
+            {FLOW_PILLARS.map(({ icon: Icon, title, desc }, i) => (
+              <FadeUp key={title} delay={0.14 + i * 0.07}>
                 <div
-                  className="w-9 h-9 rounded-lg flex items-center justify-center"
-                  style={{ background: 'var(--tdgflow-navy-subtle)', border: '1px solid var(--tdgflow-navy-ring)' }}
+                  className="w-9 h-9 rounded-lg flex items-center justify-center mb-3"
+                  style={{ background: 'rgba(0,140,148,0.16)', border: `1px solid rgba(0,140,148,0.35)` }}
                 >
-                  <Icon size={16} style={{ color: 'var(--tdgflow-navy)' }} />
+                  <Icon size={16} style={{ color: TDG.teal }} />
                 </div>
-                <p style={{ fontSize: '0.9375rem', fontWeight: 500, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.01em' }}>{title}</p>
-                <p style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-muted)', lineHeight: 1.7, fontWeight: 300 }}>{desc}</p>
-              </div>
-            </FadeUp>
-          ))}
+                <p style={{ fontSize: '0.875rem', fontWeight: 600, color: '#fff', letterSpacing: '-0.01em', marginBottom: 6 }}>{title}</p>
+                <p style={{ fontSize: '0.8125rem', color: '#A8C2CB', lineHeight: 1.7, fontWeight: 300 }}>{desc}</p>
+              </FadeUp>
+            ))}
+          </div>
+
+          <FadeUp delay={0.4}>
+            <div style={{ borderTop: '1px solid rgba(234,241,245,0.14)', paddingTop: '2.5rem', maxWidth: '760px', margin: '0 auto', textAlign: 'center' }}>
+              <p style={{ fontSize: '0.875rem', color: '#EAF1F5', lineHeight: 1.85, fontWeight: 300 }}>
+                Diferente de sistemas de busca ou agentes de IA que pesquisam na rede mundial informações majoritariamente produzidas por robôs — muitas falsas e quase todas com interesse comercial — o TDG Flow trabalha em ambiente exclusivo e curado, priorizando a qualidade do dado humano e o &ldquo;olhar do designer&rdquo; que caracteriza o grupo. A plataforma apresenta uma vitrine qualificada e hipersegmentada, otimizando o relacionamento comercial ao garantir que as qualidades técnicas e os diferenciais de cada serviço sejam mapeados e compreendidos instantaneamente por todo o comitê de agências.
+              </p>
+            </div>
+          </FadeUp>
         </div>
       </section>
 
@@ -345,7 +446,9 @@ export default function LandingPage() {
       >
         <div className="max-w-xl mx-auto">
           <FadeUp>
-            <p className="section-label mb-5">O grupo</p>
+            <p className="flex items-center justify-center gap-2 mb-5" style={{ fontSize: '0.6875rem', fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase', color: TDG.terracotta }}>
+              <StarGlyph />O grupo
+            </p>
           </FadeUp>
           <FadeUp delay={0.08}>
             <h2 style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.75rem)', fontWeight: 200, letterSpacing: '-0.03em', lineHeight: 1.2, color: 'var(--tdgflow-text-primary)', marginBottom: '1.25rem' }}>
@@ -354,11 +457,19 @@ export default function LandingPage() {
           </FadeUp>
           <FadeUp delay={0.12}>
             <p style={{ fontSize: '0.9375rem', color: 'var(--tdgflow-text-muted)', lineHeight: 1.85, fontWeight: 300, marginBottom: '2rem' }}>
-              O TDG não é uma rede de distribuição. É uma comunidade de especialistas que viajam juntos, aprendem juntos e constroem relações duradouras com as marcas em que acreditam.
+              Somos uma rede colaborativa das principais agências boutique e consultores de turismo de alto padrão do Brasil. Compartilhamos conhecimentos estratégicos, percepções colhidas em viagens de inspeção pelo mundo e experiências vivenciadas por nossos clientes, com o objetivo de proporcionar a cada viajante experiências de viagem ainda mais exclusivas e inesquecíveis.
             </p>
           </FadeUp>
           <FadeUp delay={0.16} className="flex items-center justify-center gap-3 flex-wrap">
-            <a href="mailto:contato@tdgbrasil.com.br" className="btn-gold no-underline" style={{ padding: '12px 28px' }}>
+            <a
+              href="mailto:contato@traveldesignersgroup.com.br"
+              className="no-underline"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6, padding: '12px 28px',
+                background: TDG.terracotta, color: '#fff', fontWeight: 600, fontSize: '0.875rem',
+                borderRadius: 'var(--tdgflow-radius-md)',
+              }}
+            >
               Falar com o grupo
             </a>
             <a href="https://www.instagram.com/traveldesignersgroup" target="_blank" rel="noreferrer" className="btn-ghost no-underline" style={{ padding: '12px 24px' }}>
@@ -369,27 +480,29 @@ export default function LandingPage() {
       </section>
 
       {/* ── Footer ───────────────────────────────────────────────── */}
-      <footer className="px-6 py-10" style={{ background: '#0A0909', borderTop: '1px solid var(--tdgflow-border)' }}>
+      <footer className="px-6 py-10" style={{ background: TDG.navy, borderTop: '1px solid rgba(234,241,245,0.1)' }}>
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center font-semibold" style={{ background: 'var(--tdgflow-navy)', color: 'var(--tdgflow-surface)', fontSize: '0.625rem' }}>TDG</div>
-            <span style={{ fontSize: '0.875rem', fontWeight: 400, color: 'var(--tdgflow-text-secondary)' }}>Travel Designers Group</span>
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center font-semibold" style={{ background: '#fff', color: TDG.navy, fontSize: '0.625rem' }}>TDG</div>
+            <span style={{ fontSize: '0.875rem', fontWeight: 400, color: '#EAF1F5' }}>Travel Designers Group</span>
           </div>
           <div className="flex flex-wrap gap-6">
             {[
               { label: 'A Rede', href: '#rede' },
+              { label: 'TDG Flow', href: '#flow' },
               { label: 'Parceiros', href: '#parceiros' },
               { label: 'O Grupo', href: '#grupo' },
+              { label: 'contato@traveldesignersgroup.com.br', href: 'mailto:contato@traveldesignersgroup.com.br' },
               { label: 'Instagram', href: 'https://www.instagram.com/traveldesignersgroup' },
             ].map(({ label, href }) => (
               <a key={label} href={href} target={href.startsWith('http') ? '_blank' : undefined} rel="noreferrer"
-                className="no-underline" style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-muted)', fontWeight: 300 }}
-                onMouseEnter={e => ((e.target as HTMLElement).style.color = 'var(--tdgflow-text-secondary)')}
-                onMouseLeave={e => ((e.target as HTMLElement).style.color = 'var(--tdgflow-text-muted)')}
+                className="no-underline transition-colors duration-150" style={{ fontSize: '0.8125rem', color: '#A8C2CB', fontWeight: 300 }}
+                onMouseEnter={e => ((e.target as HTMLElement).style.color = '#EAF1F5')}
+                onMouseLeave={e => ((e.target as HTMLElement).style.color = '#A8C2CB')}
               >{label}</a>
             ))}
           </div>
-          <p style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)' }}>
+          <p style={{ fontSize: '0.6875rem', color: '#7A9AA5' }}>
             © {new Date().getFullYear()} Travel Designers Group
           </p>
         </div>
