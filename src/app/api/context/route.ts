@@ -12,7 +12,7 @@ export async function GET() {
 
   // Ensure avatar column exists and fetch it
   await sql`ALTER TABLE tdg_users ADD COLUMN IF NOT EXISTS avatar_url TEXT`
-  const profileRes = await sql`SELECT avatar_url, role, agency_name, name FROM tdg_users WHERE email = ${session.user?.email ?? ''} LIMIT 1`
+  const profileRes = await sql`SELECT id, avatar_url, role, agency_name, name FROM tdg_users WHERE email = ${session.user?.email ?? ''} LIMIT 1`
   const avatarUrl: string | null = profileRes.rows[0]?.avatar_url ?? null
   const isAdmin = profileRes.rows[0]?.role === 'admin'
   // Escopo por agência (achado da Carla, 29/07): gravações e atividade de
@@ -78,6 +78,27 @@ export async function GET() {
     }
   } catch { /* colunas de import_approval podem não existir em ambiente antigo */ }
 
+  // Badges — decisão #20, sino nunca em tom de perda. "Ganho" e "trocou de
+  // dono" (nunca "perdeu"), últimos 7 dias.
+  const userId = (profileRes.rows[0] as { id?: string } | undefined)?.id ?? null
+  let recentBadgesEarned: { badge_type: string; context: string }[] = []
+  let recentBadgesLost: { badge_type: string; context: string }[] = []
+  if (userId) {
+    try {
+      const { rows: earnedRows } = await sql`
+        SELECT badge_type, context FROM tdg_badges
+        WHERE user_id = ${userId} AND earned_at >= NOW() - INTERVAL '7 days'
+      `
+      recentBadgesEarned = earnedRows as { badge_type: string; context: string }[]
+      const { rows: lostRows } = await sql`
+        SELECT badge_type, context FROM tdg_badges
+        WHERE user_id = ${userId} AND is_current = false AND badge_type != 'pioneira'
+          AND lost_at >= NOW() - INTERVAL '7 days'
+      `
+      recentBadgesLost = lostRows as { badge_type: string; context: string }[]
+    } catch { /* tabela pode não existir em ambiente antigo */ }
+  }
+
   const [pendingRes, reviewsRes, promotionsRes, lastReviewRes, pendingLeadsRes, newContentRes] = await Promise.all([
     // Gravações pendentes de transcrição — só da própria agência
     sql`
@@ -141,5 +162,7 @@ export async function GET() {
     pending_import_confirmations: pendingImportConfirmations,
     pending_my_review_confirmations: pendingMyReviewConfirmations,
     pending_my_knowledge_confirmations: pendingMyKnowledgeConfirmations,
+    recent_badges_earned: recentBadgesEarned,
+    recent_badges_lost: recentBadgesLost,
   })
 }

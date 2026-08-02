@@ -2,16 +2,24 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bell, Tag, Lightbulb, Mic, Megaphone, X } from 'lucide-react'
+import { Bell, Tag, Lightbulb, Mic, Megaphone, Award, X } from 'lucide-react'
 import { sounds } from '@/lib/sounds'
 
 interface Notification {
   id: string
-  type: 'offer' | 'review' | 'recording' | 'content'
+  type: 'offer' | 'review' | 'recording' | 'content' | 'badge'
   title: string
   body: string
   time: string
   read: boolean
+}
+
+// Decisão #20 (Fase 7) — nunca tom de perda/fracasso, mesmo quando o
+// título de "Voz de.../Referência em..." trocou de dono.
+const BADGE_TYPE_LABEL: Record<string, (ctx: string) => string> = {
+  voz_do_destino: ctx => `Voz de ${ctx}`,
+  referencia_categoria: ctx => `Referência em ${ctx}`,
+  pioneira: () => 'Pioneira',
 }
 
 function timeAgo(dateStr: string): string {
@@ -30,6 +38,7 @@ const ICON: Record<string, React.ReactNode> = {
   review:    <Lightbulb size={13} />,
   recording: <Mic size={13} />,
   content:   <Megaphone size={13} />,
+  badge:     <Award size={13} />,
 }
 
 const ICON_COLOR: Record<string, string> = {
@@ -37,6 +46,7 @@ const ICON_COLOR: Record<string, string> = {
   review:    '#7DD3FC',
   recording: '#86EFAC',
   content:   'var(--tdgflow-gold-dim)',
+  badge:     'var(--tdgflow-gold-dim)',
 }
 
 const CONTENT_CATEGORY_LABEL: Record<string, string> = {
@@ -137,6 +147,34 @@ export default function NotificationBell({ align = 'right', theme = 'light' }: P
             title: CONTENT_CATEGORY_LABEL[c.category] ?? 'Novo conteúdo da Bemgsy',
             body: `${c.title} — em Central Bemgsy`,
             time: c.created_at,
+            read: readIds.includes(id),
+          })
+        })
+      }
+
+      // Badges (decisão #20) — ganho ou trocou de dono, nunca "perdeu"
+      if (ctx.recent_badges_earned?.length > 0) {
+        ctx.recent_badges_earned.forEach((b: { badge_type: string; context: string }) => {
+          const id = `badge-earned-${b.badge_type}-${b.context}`
+          const label = (BADGE_TYPE_LABEL[b.badge_type] ?? (() => b.badge_type))(b.context)
+          notifs.push({
+            id, type: 'badge',
+            title: `Novo selo: ${label}`,
+            body: 'Reconhecimento pela sua expertise real, visível pra rede.',
+            time: new Date().toISOString(),
+            read: readIds.includes(id),
+          })
+        })
+      }
+      if (ctx.recent_badges_lost?.length > 0) {
+        ctx.recent_badges_lost.forEach((b: { badge_type: string; context: string }) => {
+          const id = `badge-changed-${b.badge_type}-${b.context}`
+          const label = (BADGE_TYPE_LABEL[b.badge_type] ?? (() => b.badge_type))(b.context)
+          notifs.push({
+            id, type: 'badge',
+            title: `${label} tem novo titular`,
+            body: 'A rede está crescendo — a sua experiência ainda conta muito por lá.',
+            time: new Date().toISOString(),
             read: readIds.includes(id),
           })
         })

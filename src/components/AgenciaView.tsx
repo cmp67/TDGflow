@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Save, Loader, Eye, EyeOff, CheckCircle } from 'lucide-react'
 import UserAvatar from '@/components/UserAvatar'
 import GuestActivationCard from '@/components/billing/GuestActivationCard'
+import MyBadges from '@/components/MyBadges'
 import BrandSettings from '@/components/BrandSettings'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { type Lang, LANG_LABELS } from '@/lib/i18n'
@@ -209,6 +210,9 @@ export default function AgenciaView({ user, members }: Props) {
           {pwOk ? 'Senha alterada!' : 'Alterar senha'}
         </button>
       </div>
+
+      {/* Minhas conquistas — decisão #21, badges de expertise (Fase 7) */}
+      <MyBadges />
 
       {/* Idioma — mudou pra cá (01/08, painel arquiteto/designer/UX): preferência
           escolhida uma vez na vida do usuário não merece imóvel fixo na
