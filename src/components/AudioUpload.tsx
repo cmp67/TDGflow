@@ -100,7 +100,7 @@ export default function AudioUpload({ onClose }: { onClose: () => void }) {
     setLoading(true)
     const fd = new FormData()
     fd.append('audio', activeFile)
-    fd.append('agent_name', agentName || 'Stella')
+    fd.append('agent_name', agentName || 'MAX')
     fd.append('agency', agency)
     const res = await fetch('/api/transcribe', { method: 'POST', body: fd })
     if (res.status === 402) { setShowBalanceModal(true); setLoading(false); return }

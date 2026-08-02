@@ -86,7 +86,7 @@ export default function AudioRecord({ defaultAgentName = '', onSaved, onClose }:
     setSaving(true)
     const fd = new FormData()
     fd.append('audio', activeFile)
-    fd.append('agent_name', agentName || 'Stella')
+    fd.append('agent_name', agentName || 'MAX')
     fd.append('interlocutor_name', interlocutorName)
     fd.append('interlocutor_company', interlocutorCompany)
     await fetch('/api/audio-save', { method: 'POST', body: fd })

@@ -269,7 +269,7 @@ function LumisExplainer() {
   const [open, setOpen] = useState(false)
 
   const ACTION_COSTS = [
-    { icon: IconBrain, label: 'Mensagem para a Stella', cost: 9, color: 'var(--tdgflow-accent-info)' },
+    { icon: IconBrain, label: 'Mensagem para o MAX', cost: 9, color: 'var(--tdgflow-accent-info)' },
     { icon: IconZap,   label: 'Extração de dica',        cost: 5, color: 'var(--tdgflow-accent-warm)' },
     { icon: IconMic,   label: 'Transcrição de áudio',   cost: 2, color: 'var(--tdgflow-navy)' },
     { icon: IconGlobe, label: 'Consulta de visto',       cost: 2, color: '#004A7C' },
@@ -310,7 +310,7 @@ function LumisExplainer() {
         <div style={{ padding: '0 14px 14px', borderTop: '1px solid #D8EEF0' }}>
 
           <p style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-secondary)', lineHeight: 1.6, margin: '12px 0 12px', fontWeight: 300 }}>
-            Cada ação debita <strong style={{ fontWeight: 600 }}>Lumis</strong> de um saldo compartilhado por toda a agência. Acabou o saldo, o admin recarrega.
+            Cada ação debita <strong style={{ fontWeight: 600 }}>Lumis</strong> de um saldo compartilhado por toda a agência. Acabou o saldo, é só esperar a cota renovar no próximo ciclo (todo dia 5) ou comprar top-up na hora.
           </p>
 
           {/* Tabela de consumo */}

@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
 
   const formData = await req.formData()
   const audioFile = formData.get('audio') as File
-  const agentName = (formData.get('agent_name') as string) || 'Stella'
+  const agentName = (formData.get('agent_name') as string) || 'MAX'
   const agency = (formData.get('agency') as string) || ''
 
   if (!audioFile) {
