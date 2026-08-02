@@ -259,15 +259,14 @@ function BuyModal({ currentTier, onClose, onSuccess }: {
 
 // ── Card: O que são Lumis? ────────────────────────────────────────────────────
 
+/* Simplificado (02/08, pedido da Carla — "como Tesla team faria?"): o card
+   abria expandido por padrão, competindo com o saldo/cota real (a informação
+   que a pessoa veio ver) logo abaixo. Regra Tesla: número real primeiro,
+   explicação só sob demanda. Fechado por padrão agora; conteúdo cortado de
+   3 caixas pra 2 (a caixa "como comprar" era redundante — o botão de compra
+   de verdade já está no card logo abaixo, MyLumisTopUp). */
 function LumisExplainer() {
-  const [open, setOpen] = useState(() => {
-    try { return localStorage.getItem('lumis_explainer_closed') !== '1' } catch { return true }
-  })
-
-  function dismiss() {
-    setOpen(false)
-    try { localStorage.setItem('lumis_explainer_closed', '1') } catch { /* ignore */ }
-  }
+  const [open, setOpen] = useState(false)
 
   const ACTION_COSTS = [
     { icon: IconBrain, label: 'Mensagem para a Stella', cost: 9, color: 'var(--tdgflow-accent-info)' },
@@ -300,7 +299,7 @@ function LumisExplainer() {
             O que são Lumis?
           </p>
           <p style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)', margin: '1px 0 0' }}>
-            A moeda oficial da Bemgsy — toque para {open ? 'fechar' : 'entender'}
+            A moeda da Bemgsy — toque para {open ? 'fechar' : 'entender'}
           </p>
         </div>
         {open ? <ChevronUp size={14} style={{ color: 'var(--tdgflow-text-faint)', flexShrink: 0 }} /> : <ChevronDown size={14} style={{ color: 'var(--tdgflow-text-faint)', flexShrink: 0 }} />}
@@ -310,18 +309,12 @@ function LumisExplainer() {
       {open && (
         <div style={{ padding: '0 14px 14px', borderTop: '1px solid #D8EEF0' }}>
 
-          {/* Explicação lúdica */}
-          <div style={{ padding: '12px 0 10px' }}>
-            <p style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-secondary)', lineHeight: 1.65, margin: '0 0 8px', fontWeight: 300 }}>
-              <strong style={{ fontWeight: 600 }}>Lumis</strong> é a moeda da <strong style={{ fontWeight: 600 }}>Bemgsy</strong> — cada ação no sistema debita Lumis do saldo da rede. Quando o saldo baixar, o admin recarrega.
-            </p>
-            <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-faint)', lineHeight: 1.55, margin: 0, fontWeight: 300 }}>
-              O saldo é compartilhado entre todos os advisors da rede. Consulte a tabela abaixo para saber o custo de cada ação.
-            </p>
-          </div>
+          <p style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-secondary)', lineHeight: 1.6, margin: '12px 0 12px', fontWeight: 300 }}>
+            Cada ação debita <strong style={{ fontWeight: 600 }}>Lumis</strong> de um saldo compartilhado por toda a agência. Acabou o saldo, o admin recarrega.
+          </p>
 
           {/* Tabela de consumo */}
-          <p style={{ fontSize: '0.55rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--tdgflow-text-faint)', margin: '4px 0 8px' }}>
+          <p style={{ fontSize: '0.55rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--tdgflow-text-faint)', margin: '0 0 8px' }}>
             Quanto gasta cada ação
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 12 }}>
@@ -336,31 +329,14 @@ function LumisExplainer() {
             ))}
           </div>
 
-          {/* Durabilidade */}
-          <div style={{ padding: '10px 12px', background: '#FEF9EE', borderRadius: 8, border: '1px solid #F5E4BA', marginBottom: 10 }}>
-            <p style={{ fontSize: '0.55rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--tdgflow-accent-warm)', margin: '0 0 5px' }}>
-              Quanto dura o saldo?
-            </p>
+          {/* Durabilidade — única caixa de destaque restante (a antiga
+              "como comprar" foi cortada, redundante com o botão real logo
+              abaixo neste mesmo painel) */}
+          <div style={{ padding: '10px 12px', background: '#FEF9EE', borderRadius: 8, border: '1px solid #F5E4BA' }}>
             <p style={{ fontSize: '0.75rem', color: '#7A4F10', lineHeight: 1.6, margin: 0, fontWeight: 300 }}>
-              Um advisor ativo consome em média <strong style={{ fontWeight: 600 }}>~500 lm/mês</strong>. Cada agência recebe <strong style={{ fontWeight: 600 }}>500 lm de cota mensal</strong> — 1 lm equivale a R$0,006 de custo real de IA.
+              Um advisor ativo gasta <strong style={{ fontWeight: 600 }}>~500 lm/mês</strong>, igual à cota mensal de cada agência. Precisou de mais? É só comprar top-up abaixo.
             </p>
           </div>
-
-          {/* Como comprar */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 10px', background: 'var(--tdgflow-navy-subtle)', borderRadius: 8, border: '1px solid #B8E0E3' }}>
-            <IconCoins size={11} style={{ color: 'var(--tdgflow-navy)', flexShrink: 0 }} />
-            <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-navy-dim)', margin: 0, fontWeight: 300 }}>
-              Cada agência recebe uma <strong style={{ fontWeight: 600 }}>cota mensal</strong> de Lumis. Se precisar de mais, compre top-up diretamente com a Bemgsy pelo botão abaixo.
-            </p>
-          </div>
-
-          {/* Fechar e não mostrar mais */}
-          <button
-            onClick={dismiss}
-            style={{ marginTop: 10, width: '100%', padding: '6px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.625rem', color: 'var(--tdgflow-text-faint)', textDecoration: 'underline' }}
-          >
-            Entendi — não mostrar mais
-          </button>
         </div>
       )}
     </div>
