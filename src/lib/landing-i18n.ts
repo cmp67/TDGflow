@@ -29,7 +29,6 @@ export const LANDING_COPY: Record<Lang, Record<string, string>> = {
     'hero.sub': 'Uma rede colaborativa das principais agências boutique e consultores de turismo de alto padrão do Brasil.',
     'hero.cta1': 'Conhecer o grupo',
     'hero.cta2': 'Como funciona o Flow',
-    'hero.recognized': 'Reconhecidos por',
 
     'grupo.eyebrow': 'O grupo',
     'grupo.h2': 'O que é o Travel Designers Group',
@@ -64,7 +63,6 @@ export const LANDING_COPY: Record<Lang, Record<string, string>> = {
     'hero.sub': "A collaborative network of Brazil's leading boutique travel agencies and high-end travel consultants.",
     'hero.cta1': 'Discover the group',
     'hero.cta2': 'How Flow works',
-    'hero.recognized': 'Recognized by',
 
     'grupo.eyebrow': 'The group',
     'grupo.h2': 'What is the Travel Designers Group',
@@ -99,7 +97,6 @@ export const LANDING_COPY: Record<Lang, Record<string, string>> = {
     'hero.sub': 'Una red colaborativa de las principales agencias boutique y consultores de turismo de alto nivel de Brasil.',
     'hero.cta1': 'Conocer el grupo',
     'hero.cta2': 'Cómo funciona Flow',
-    'hero.recognized': 'Reconocidos por',
 
     'grupo.eyebrow': 'El grupo',
     'grupo.h2': 'Qué es el Travel Designers Group',

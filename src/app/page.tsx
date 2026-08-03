@@ -114,13 +114,6 @@ function LangSwitcher({ lang, setLang, navOpaque }: { lang: Lang; setLang: (l: L
 }
 
 /* ── Data ──────────────────────────────────────────────────────────── */
-const PROGRAMS = [
-  'Embark Beyond',
-  'Traveller Made',
-  'Club Med',
-  'Teresa Perez Group',
-]
-
 const FLOW_PILLAR_ICONS = [Users, Zap, Megaphone, Radar]
 
 /* ── Page ──────────────────────────────────────────────────────────── */
@@ -160,13 +153,13 @@ export default function LandingPage() {
         style={{ borderBottom: '1px solid transparent' }}
       >
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 no-underline">
-            <div
-              className="w-7 h-7 rounded-lg flex items-center justify-center font-semibold"
-              style={{ background: TDG.navy, color: '#fff', fontSize: '0.625rem', letterSpacing: '0.05em', border: '1px solid rgba(255,255,255,0.15)' }}
-            >
-              TDG
-            </div>
+          <Link href="/" className="flex items-center gap-2.5 no-underline">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={navOpaque ? '/brand/tdg-mark.png' : '/brand/tdg-mark-white.png'}
+              alt="TDG"
+              style={{ height: 16, objectFit: 'contain' }}
+            />
             <span style={{ fontSize: '0.875rem', fontWeight: 500, color: navOpaque ? 'var(--tdgflow-text-primary)' : '#F4F7F8', letterSpacing: '-0.01em', transition: 'color 200ms' }}>
               Travel Designers Group
             </span>
@@ -229,6 +222,16 @@ export default function LandingPage() {
         />
 
         <div className="relative z-10 text-center max-w-3xl mx-auto px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.05 }}
+            className="flex items-center justify-center mb-6"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/brand/tdg-mark-white.png" alt="TDG" style={{ height: 'clamp(40px, 7vw, 64px)', objectFit: 'contain' }} />
+          </motion.div>
+
           <motion.p
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -302,30 +305,6 @@ export default function LandingPage() {
             </a>
           </motion.div>
         </div>
-
-        {/* "Reconhecidos por" incorporado ao hero — antes era uma faixa clara
-            isolada entre duas seções escuras, um respiro sem função (achado
-            da revisão de design, 03/08). Agora fecha o próprio hero. */}
-        <motion.div
-          className="absolute bottom-0 inset-x-0 px-6"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.0, duration: 0.6 }}
-          style={{ borderTop: '1px solid rgba(234,241,245,0.12)', padding: '16px 24px' }}
-        >
-          <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-10 text-center">
-            <p style={{ fontSize: '0.625rem', fontWeight: 400, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#7A9AA5', whiteSpace: 'nowrap' }}>
-              {T['hero.recognized']}
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2">
-              {PROGRAMS.map(name => (
-                <span key={name} style={{ fontSize: '0.75rem', fontWeight: 300, color: '#A8C2CB', letterSpacing: '0.02em' }}>
-                  {name}
-                </span>
-              ))}
-            </div>
-          </div>
-        </motion.div>
       </section>
 
       {/* ── O Grupo — seção dominante ────────────────────────────── */}
