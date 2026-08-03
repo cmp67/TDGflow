@@ -467,24 +467,26 @@ export default function LandingPage() {
           </p>
         </div>
 
-        {/* Powered by Bemgsy — assinatura discreta (pedido da Carla, 03/08),
-            mesmo padrão/tooltip já usado no rodapé da sidebar interna
-            (FlowShell.tsx): "Powered by" nunca só no hover, mark invertida
-            pra branco porque o arquivo original é navy sólido (pensado pra
-            fundo claro), aqui o rodapé é escuro. */}
+        {/* Powered by Bemgsy — padrão oficial documentado na skill bemgsy-design
+            (03/08/2026): "Powered by" sempre texto visível (nunca só no hover),
+            title com a tagline, mark entre opacity 0.65-0.75 (abaixo disso
+            reprova o piso de legibilidade já achado no FlowShell.tsx — aqui
+            estava em 0.55, corrigido). Mark invertida pra branco via filter
+            porque o arquivo original é navy sólido (pensado pra fundo claro),
+            aqui o rodapé é escuro. */}
         <div
           className="max-w-6xl mx-auto flex items-center justify-center"
           style={{ marginTop: 28, paddingTop: 20, borderTop: '1px solid rgba(234,241,245,0.08)', gap: 6 }}
           title="Bemgsy — Amplifying Human Hospitality"
         >
-          <span style={{ fontSize: '0.5rem', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#5E8590' }}>
+          <span style={{ fontSize: '0.5rem', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#7A9AA5' }}>
             Powered by
           </span>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/brand/bemgsy-mark.png"
             alt="Bemgsy"
-            style={{ height: 13, objectFit: 'contain', filter: 'brightness(0) invert(1)', opacity: 0.55 }}
+            style={{ height: 15, objectFit: 'contain', filter: 'brightness(0) invert(1)', opacity: 0.7 }}
           />
         </div>
       </footer>
