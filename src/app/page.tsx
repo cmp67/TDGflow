@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { ArrowRight, Users, Zap, Megaphone, Radar } from 'lucide-react'
 import { motion, useInView } from 'framer-motion'
+import { type Lang, LANG_LABELS } from '@/lib/i18n'
+import { LANDING_COPY } from '@/lib/landing-i18n'
 
 /* ── Marca TDG (manual de identidade visual, recebido 02/08/2026) ────────
    Paleta própria do Travel Designers Group — distinta da paleta estrutural
@@ -21,7 +23,15 @@ import { motion, useInView } from 'framer-motion'
    terracotta fica reservado a glifos e fundo de botão, nunca texto pequeno
    sobre navy; o nav ganha estado claro/escuro real (antes ficava invisível
    sobre o hero escuro); e a faixa "Reconhecidos por" foi incorporada ao
-   hero para não deixar um respiro claro isolado entre duas seções escuras. */
+   hero para não deixar um respiro claro isolado entre duas seções escuras.
+
+   03/08/2026 — idioma: página ganha PT/EN/ES, mesmo padrão de seletor já
+   usado no app interno (FlowShell.tsx via @/lib/i18n), mas com dicionário
+   próprio em @/lib/landing-i18n — o texto da página institucional é
+   diferente da UI do app logado. Persiste em localStorage na mesma chave
+   do app ('tdg-lang'), assim a escolha de idioma acompanha quem visita o
+   site e depois acessa o Flow. EN/ES são traduções novas (ver comentário
+   no topo de landing-i18n.ts) — ainda sem revisão de falante nativo. */
 const TDG = {
   navy:       '#112630',
   tealDark:   '#104C64',
@@ -94,6 +104,36 @@ function NumberReveal({ value, style }: { value: number; style?: React.CSSProper
   return <span ref={ref} style={style}>{display}</span>
 }
 
+/* Seletor PT/EN/ES — mesmo desenho visual do switcher já usado no app
+   interno (FlowShell.tsx), adaptado às duas cores de fundo do nav (claro
+   quando navOpaque, escuro/transparente sobre o hero). */
+function LangSwitcher({ lang, setLang, navOpaque }: { lang: Lang; setLang: (l: Lang) => void; navOpaque: boolean }) {
+  return (
+    <div className="flex items-center gap-1">
+      {(['pt-BR', 'en', 'es'] as Lang[]).map(l => (
+        <button
+          key={l}
+          onClick={() => setLang(l)}
+          style={{
+            background: lang === l ? (navOpaque ? 'rgba(17,38,48,0.08)' : 'rgba(234,241,245,0.14)') : 'none',
+            border: lang === l
+              ? `1px solid ${navOpaque ? 'rgba(17,38,48,0.25)' : 'rgba(234,241,245,0.35)'}`
+              : '1px solid transparent',
+            borderRadius: 4, padding: '3px 7px', cursor: 'pointer',
+            fontSize: '0.625rem', fontWeight: lang === l ? 700 : 400, letterSpacing: '0.06em',
+            color: lang === l
+              ? (navOpaque ? 'var(--tdgflow-text-primary)' : '#ffffff')
+              : (navOpaque ? 'var(--tdgflow-text-muted)' : 'rgba(234,241,245,0.6)'),
+            transition: 'all 150ms',
+          }}
+        >
+          {LANG_LABELS[l]}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 /* ── Data ──────────────────────────────────────────────────────────── */
 const PROGRAMS = [
   'Embark Beyond',
@@ -102,40 +142,35 @@ const PROGRAMS = [
   'Teresa Perez Group',
 ]
 
-/* Pilares do TDG Flow — texto oficial recebido da Carla 02/08/2026
-   ("SITE TDG FLOW.docx"), verbatim. */
-const FLOW_PILLARS = [
-  {
-    icon: Users,
-    title: 'Curadoria Compartilhada',
-    desc: 'Avaliações de hotéis, vilas, serviços receptivos e gastronomia sob o rigoroso crivo do padrão TDG, gerando um feedback construtivo para o segmento.',
-  },
-  {
-    icon: Zap,
-    title: 'Agilidade Operacional',
-    desc: 'Respostas rápidas a cenários complexos de viagens globais com base no histórico e conexões do grupo.',
-  },
-  {
-    icon: Megaphone,
-    title: 'Promoção Eficiente',
-    desc: 'Novidades, renovações, ofertas e experiências inéditas dos fornecedores ganham tração na rede das agências.',
-  },
-  {
-    icon: Radar,
-    title: 'Tendências Antecipadas',
-    desc: 'Monitoramento em tempo real dos destinos e experiências que estão entrando no radar dos viajantes mais exigentes.',
-  },
-]
+const FLOW_PILLAR_ICONS = [Users, Zap, Megaphone, Radar]
 
 /* ── Page ──────────────────────────────────────────────────────────── */
 export default function LandingPage() {
   const [navOpaque, setNavOpaque] = useState(false)
+  const [lang, setLangState] = useState<Lang>('pt-BR')
 
   useEffect(() => {
     const onScroll = () => setNavOpaque(window.scrollY > 60)
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
+
+  useEffect(() => {
+    const stored = localStorage.getItem('tdg-lang') as Lang | null
+    if (stored && stored in LANDING_COPY) setLangState(stored)
+  }, [])
+
+  function setLang(l: Lang) {
+    setLangState(l)
+    localStorage.setItem('tdg-lang', l)
+  }
+
+  const T = LANDING_COPY[lang]
+  const flowPillars = FLOW_PILLAR_ICONS.map((icon, i) => ({
+    icon,
+    title: T[`flow.pillar${i + 1}Title`],
+    desc: T[`flow.pillar${i + 1}Desc`],
+  }))
 
   return (
     <div style={{ background: 'var(--tdgflow-bg)', color: 'var(--tdgflow-text-primary)', fontFamily: 'var(--tdgflow-font-sans)' }}>
@@ -168,21 +203,24 @@ export default function LandingPage() {
                 onMouseEnter={e => ((e.target as HTMLElement).style.color = navOpaque ? 'var(--tdgflow-text-primary)' : '#ffffff')}
                 onMouseLeave={e => ((e.target as HTMLElement).style.color = navOpaque ? 'var(--tdgflow-text-muted)' : 'rgba(234,241,245,0.78)')}
               >
-                {['O Grupo', 'TDG Flow'][i]}
+                {[T['nav.grupo'], T['nav.flow']][i]}
               </a>
             ))}
           </nav>
 
-          <Link
-            href="/flow"
-            className="no-underline flex items-center gap-1.5 transition-colors duration-150"
-            style={{ fontSize: '0.8125rem', fontWeight: 500, color: navOpaque ? TDG.tealDark : '#EAF1F5' }}
-            onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = navOpaque ? TDG.navy : '#ffffff')}
-            onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = navOpaque ? TDG.tealDark : '#EAF1F5')}
-          >
-            Acessar o Flow
-            <ArrowRight size={13} style={{ color: TDG.teal }} />
-          </Link>
+          <div className="flex items-center gap-4">
+            <LangSwitcher lang={lang} setLang={setLang} navOpaque={navOpaque} />
+            <Link
+              href="/flow"
+              className="no-underline flex items-center gap-1.5 transition-colors duration-150"
+              style={{ fontSize: '0.8125rem', fontWeight: 500, color: navOpaque ? TDG.tealDark : '#EAF1F5' }}
+              onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = navOpaque ? TDG.navy : '#ffffff')}
+              onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = navOpaque ? TDG.tealDark : '#EAF1F5')}
+            >
+              {T['nav.cta']}
+              <ArrowRight size={13} style={{ color: TDG.teal }} />
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -220,7 +258,7 @@ export default function LandingPage() {
             style={{ fontSize: '0.6875rem', fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#EAF1F5' }}
           >
             <StarGlyph />
-            Travel Designers Group · Brasil
+            {T['hero.eyebrow']}
           </motion.p>
 
           <motion.h1
@@ -236,9 +274,9 @@ export default function LandingPage() {
               marginBottom: '1.75rem',
             }}
           >
-            Dezenove agências.
+            {T['hero.h1a']}
             <br />
-            <span style={{ fontWeight: 300 }}>Uma visão do luxo.</span>
+            <span style={{ fontWeight: 300 }}>{T['hero.h1b']}</span>
           </motion.h1>
 
           <motion.p
@@ -247,7 +285,7 @@ export default function LandingPage() {
             transition={{ duration: 0.5, delay: 0.5 }}
             style={{ fontSize: '1rem', color: '#A8C2CB', lineHeight: 1.8, fontWeight: 300, maxWidth: '460px', margin: '0 auto 2.5rem' }}
           >
-            Uma rede colaborativa das principais agências boutique e consultores de turismo de alto padrão do Brasil.
+            {T['hero.sub']}
           </motion.p>
 
           <motion.div
@@ -267,7 +305,7 @@ export default function LandingPage() {
               onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)' }}
               onMouseLeave={e => { e.currentTarget.style.transform = 'none' }}
             >
-              Torne-se parceiro do grupo <ArrowRight size={15} />
+              {T['hero.cta1']} <ArrowRight size={15} />
             </a>
             <a
               href="#flow"
@@ -281,7 +319,7 @@ export default function LandingPage() {
               onMouseEnter={e => { e.currentTarget.style.background = 'rgba(234,241,245,0.08)' }}
               onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
             >
-              Como funciona o Flow
+              {T['hero.cta2']}
             </a>
           </motion.div>
         </div>
@@ -298,7 +336,7 @@ export default function LandingPage() {
         >
           <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-10 text-center">
             <p style={{ fontSize: '0.625rem', fontWeight: 400, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#7A9AA5', whiteSpace: 'nowrap' }}>
-              Reconhecidos por
+              {T['hero.recognized']}
             </p>
             <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2">
               {PROGRAMS.map(name => (
@@ -320,19 +358,19 @@ export default function LandingPage() {
         <div className="max-w-2xl mx-auto">
           <FadeUp>
             <p className="flex items-center justify-center gap-2 mb-5" style={{ fontSize: '0.6875rem', fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase', color: TDG.terracotta }}>
-              <StarGlyph />O grupo
+              <StarGlyph />{T['grupo.eyebrow']}
             </p>
           </FadeUp>
 
           <FadeUp delay={0.06}>
             <h2 style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.75rem)', fontWeight: 200, letterSpacing: '-0.03em', lineHeight: 1.25, color: 'var(--tdgflow-text-primary)', maxWidth: 560, margin: '0 auto 1.25rem' }}>
-              Algumas parcerias chegam a uma agência. Esta chega a dezenove.
+              {T['grupo.h2']}
             </h2>
           </FadeUp>
 
           <FadeUp delay={0.1}>
             <p style={{ fontSize: '0.9375rem', color: 'var(--tdgflow-text-muted)', lineHeight: 1.85, fontWeight: 300, marginBottom: '2.5rem' }}>
-              Somos uma rede colaborativa das principais agências boutique e consultores de turismo de alto padrão do Brasil. Compartilhamos conhecimentos estratégicos, percepções colhidas em viagens de inspeção pelo mundo e experiências vivenciadas por nossos clientes, com o objetivo de proporcionar a cada viajante experiências de viagem ainda mais exclusivas e inesquecíveis.
+              {T['grupo.p1']}
             </p>
           </FadeUp>
 
@@ -341,14 +379,14 @@ export default function LandingPage() {
               <NumberReveal value={19} />
             </div>
             <p style={{ fontSize: '0.6875rem', fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)', marginTop: 6 }}>
-              Agências no grupo
+              {T['grupo.statLabel']}
             </p>
           </FadeUp>
 
           <FadeUp delay={0.22}>
             <div style={{ borderTop: '1px solid var(--tdgflow-border)', paddingTop: '2.25rem', marginBottom: '2rem' }}>
               <p style={{ fontSize: '0.9375rem', color: 'var(--tdgflow-text-secondary)', lineHeight: 1.85, fontWeight: 400 }}>
-                Buscamos fornecedores e experiências que mereçam recomendação exclusiva às nossas dezenove agências — e, em troca, o acesso direto a um comitê de consultores de alto padrão que decide, todos os dias, o que vale a pena oferecer aos viajantes mais exigentes do Brasil.
+                {T['grupo.p2']}
               </p>
             </div>
           </FadeUp>
@@ -363,10 +401,10 @@ export default function LandingPage() {
                 borderRadius: 'var(--tdgflow-radius-md)',
               }}
             >
-              Falar com o grupo <ArrowRight size={15} />
+              {T['grupo.cta']} <ArrowRight size={15} />
             </a>
             <a href="https://www.instagram.com/traveldesignersgroup" target="_blank" rel="noreferrer" className="btn-ghost no-underline" style={{ padding: '12px 24px' }}>
-              Instagram
+              {T['grupo.instagram']}
             </a>
           </FadeUp>
         </div>
@@ -393,17 +431,17 @@ export default function LandingPage() {
 
           <FadeUp delay={0.05} className="text-center">
             <p className="flex items-center justify-center gap-2" style={{ fontSize: '0.6875rem', fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#EAF1F5' }}>
-              <StarGlyph />Como o grupo opera
+              <StarGlyph />{T['flow.eyebrow']}
             </p>
           </FadeUp>
           <FadeUp delay={0.09} className="text-center">
             <p style={{ fontSize: '0.875rem', color: '#A8C2CB', lineHeight: 1.85, fontWeight: 300, maxWidth: '640px', margin: '0.75rem auto 2.75rem' }}>
-              Estruturado em contrato com a Bemgsy — com know-how em operação de luxury travel — o TDG Flow funciona como um ecossistema digital colaborativo fechado, no qual o banco de dados alimentado diariamente pelo grupo de experts é conectado a agentes de inteligência artificial especialmente treinados para otimizar conhecimento, cruzar informações e buscar recomendações lastreadas nessa genuína curadoria de experiências exclusivas globais.
+              {T['flow.p1']}
             </p>
           </FadeUp>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-10">
-            {FLOW_PILLARS.map(({ icon: Icon, title, desc }, i) => (
+            {flowPillars.map(({ icon: Icon, title, desc }, i) => (
               <FadeUp key={title} delay={0.12 + i * 0.06}>
                 <div
                   className="w-8 h-8 rounded-lg flex items-center justify-center mb-3"
@@ -420,7 +458,7 @@ export default function LandingPage() {
           <FadeUp delay={0.35}>
             <div style={{ borderTop: '1px solid rgba(234,241,245,0.14)', paddingTop: '2rem', maxWidth: '700px', margin: '0 auto 2rem', textAlign: 'center' }}>
               <p style={{ fontSize: '0.8125rem', color: '#A8C2CB', lineHeight: 1.8, fontWeight: 300 }}>
-                Diferente de sistemas de busca ou agentes de IA que pesquisam na rede mundial informações majoritariamente produzidas por robôs — muitas falsas e quase todas com interesse comercial — o TDG Flow trabalha em ambiente exclusivo e curado, priorizando a qualidade do dado humano e o &ldquo;olhar do designer&rdquo; que caracteriza o grupo. A plataforma apresenta uma vitrine qualificada e hipersegmentada, otimizando o relacionamento comercial ao garantir que as qualidades técnicas e os diferenciais de cada serviço sejam mapeados e compreendidos instantaneamente por todo o comitê de agências.
+                {T['flow.p2']}
               </p>
             </div>
           </FadeUp>
@@ -435,7 +473,7 @@ export default function LandingPage() {
                 borderRadius: 'var(--tdgflow-radius-md)', border: '1px solid rgba(234,241,245,0.25)',
               }}
             >
-              Acessar o Flow <ArrowRight size={13} style={{ color: TDG.teal }} />
+              {T['flow.cta']} <ArrowRight size={13} style={{ color: TDG.teal }} />
             </Link>
           </FadeUp>
         </div>
@@ -450,12 +488,12 @@ export default function LandingPage() {
           </div>
           <div className="flex flex-wrap gap-6">
             {[
-              { label: 'O Grupo', href: '#grupo' },
-              { label: 'TDG Flow', href: '#flow' },
+              { label: T['footer.grupo'], href: '#grupo' },
+              { label: T['footer.flow'], href: '#flow' },
               { label: 'contact@traveldesignersgroup.com.br', href: 'mailto:contact@traveldesignersgroup.com.br' },
-              { label: 'Instagram', href: 'https://www.instagram.com/traveldesignersgroup' },
+              { label: T['footer.instagram'], href: 'https://www.instagram.com/traveldesignersgroup' },
             ].map(({ label, href }) => (
-              <a key={label} href={href} target={href.startsWith('http') ? '_blank' : undefined} rel="noreferrer"
+              <a key={href} href={href} target={href.startsWith('http') ? '_blank' : undefined} rel="noreferrer"
                 className="no-underline transition-colors duration-150" style={{ fontSize: '0.8125rem', color: '#A8C2CB', fontWeight: 300 }}
                 onMouseEnter={e => ((e.target as HTMLElement).style.color = '#EAF1F5')}
                 onMouseLeave={e => ((e.target as HTMLElement).style.color = '#A8C2CB')}
@@ -475,7 +513,8 @@ export default function LandingPage() {
             de onda que já assina o lockup "TDG · Flow" no app interno
             (reaproveita a classe .flow-wave-once — desenha uma vez só,
             nunca em loop), aqui em tom neutro por ser assinatura da Bemgsy,
-            não da marca TDG. */}
+            não da marca TDG. Tagline em inglês em qualquer idioma da página
+            — é o nome próprio da assinatura da marca, não se traduz. */}
         <div className="max-w-6xl mx-auto flex flex-col items-center" style={{ marginTop: 28, paddingTop: 24 }}>
           <svg className="flow-wave-once" width="96" height="10" viewBox="0 0 96 10" style={{ display: 'block', marginBottom: 10 }}>
             <path d="M 3 5 C 26 -2, 38 12, 62 5 C 72 1, 82 1, 93 5"
