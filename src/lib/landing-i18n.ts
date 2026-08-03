@@ -23,8 +23,7 @@ export const LANDING_COPY: Record<Lang, Record<string, string>> = {
     'nav.flow': 'TDG Flow',
     'nav.cta': 'Acessar o Flow',
 
-    'hero.h1a': 'Travel Designers',
-    'hero.h1b': 'Group',
+    'hero.h1': 'Travel Designers Group',
     'hero.sub': 'Uma rede colaborativa das principais agências boutique e consultores de turismo de alto padrão do Brasil.',
     'hero.cta1': 'Conhecer o grupo',
     'hero.cta2': 'Como funciona o Flow',
@@ -56,8 +55,7 @@ export const LANDING_COPY: Record<Lang, Record<string, string>> = {
     'nav.flow': 'TDG Flow',
     'nav.cta': 'Access Flow',
 
-    'hero.h1a': 'Travel Designers',
-    'hero.h1b': 'Group',
+    'hero.h1': 'Travel Designers Group',
     'hero.sub': "A collaborative network of Brazil's leading boutique travel agencies and high-end travel consultants.",
     'hero.cta1': 'Discover the group',
     'hero.cta2': 'How Flow works',
@@ -89,8 +87,7 @@ export const LANDING_COPY: Record<Lang, Record<string, string>> = {
     'nav.flow': 'TDG Flow',
     'nav.cta': 'Acceder a Flow',
 
-    'hero.h1a': 'Travel Designers',
-    'hero.h1b': 'Group',
+    'hero.h1': 'Travel Designers Group',
     'hero.sub': 'Una red colaborativa de las principales agencias boutique y consultores de turismo de alto nivel de Brasil.',
     'hero.cta1': 'Conocer el grupo',
     'hero.cta2': 'Cómo funciona Flow',

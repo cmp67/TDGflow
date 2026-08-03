@@ -221,7 +221,7 @@ export default function LandingPage() {
           }}
         />
 
-        <div className="relative z-10 text-center max-w-3xl mx-auto px-6">
+        <div className="relative z-10 text-center max-w-5xl mx-auto px-6">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -237,17 +237,16 @@ export default function LandingPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
             style={{
-              fontSize: 'clamp(2.5rem, 7vw, 5rem)',
+              fontSize: 'clamp(1.75rem, 7.5vw, 4.25rem)',
               fontWeight: 200,
-              letterSpacing: '-0.035em',
+              letterSpacing: '-0.03em',
               lineHeight: 1.08,
               color: '#F4F7F8',
               marginBottom: '1.75rem',
+              whiteSpace: 'nowrap',
             }}
           >
-            {T['hero.h1a']}
-            <br />
-            <span style={{ fontWeight: 300 }}>{T['hero.h1b']}</span>
+            {T['hero.h1']}
           </motion.h1>
 
           <motion.p
