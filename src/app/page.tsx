@@ -232,17 +232,6 @@ export default function LandingPage() {
             <img src="/brand/tdg-mark-white.png" alt="TDG" style={{ height: 'clamp(40px, 7vw, 64px)', objectFit: 'contain' }} />
           </motion.div>
 
-          <motion.p
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.15 }}
-            className="flex items-center justify-center gap-2 mb-8"
-            style={{ fontSize: '0.6875rem', fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#EAF1F5' }}
-          >
-            <StarGlyph />
-            {T['hero.eyebrow']}
-          </motion.p>
-
           <motion.h1
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}

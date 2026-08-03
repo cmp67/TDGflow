@@ -23,7 +23,6 @@ export const LANDING_COPY: Record<Lang, Record<string, string>> = {
     'nav.flow': 'TDG Flow',
     'nav.cta': 'Acessar o Flow',
 
-    'hero.eyebrow': 'Agências e Consultores de Alto Padrão · Brasil',
     'hero.h1a': 'Travel Designers',
     'hero.h1b': 'Group',
     'hero.sub': 'Uma rede colaborativa das principais agências boutique e consultores de turismo de alto padrão do Brasil.',
@@ -57,7 +56,6 @@ export const LANDING_COPY: Record<Lang, Record<string, string>> = {
     'nav.flow': 'TDG Flow',
     'nav.cta': 'Access Flow',
 
-    'hero.eyebrow': 'High-End Agencies & Consultants · Brazil',
     'hero.h1a': 'Travel Designers',
     'hero.h1b': 'Group',
     'hero.sub': "A collaborative network of Brazil's leading boutique travel agencies and high-end travel consultants.",
@@ -91,7 +89,6 @@ export const LANDING_COPY: Record<Lang, Record<string, string>> = {
     'nav.flow': 'TDG Flow',
     'nav.cta': 'Acceder a Flow',
 
-    'hero.eyebrow': 'Agencias y Consultores de Alto Nivel · Brasil',
     'hero.h1a': 'Travel Designers',
     'hero.h1b': 'Group',
     'hero.sub': 'Una red colaborativa de las principales agencias boutique y consultores de turismo de alto nivel de Brasil.',
