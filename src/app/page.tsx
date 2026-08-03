@@ -430,16 +430,13 @@ export default function LandingPage() {
           </p>
         </div>
 
-        {/* Powered by Bemgsy — variante "rica" do padrão oficial (skill
-            bemgsy-design, atualizado 03/08/2026): placements únicos e não
-            repetitivos (rodapé de site institucional, login) ganham a
-            assinatura completa — wordmark em tamanho real (não um logo
-            pequeno ao lado do rótulo), tagline por extenso e o mesmo traço
-            de onda que já assina o lockup "TDG · Flow" no app interno
-            (reaproveita a classe .flow-wave-once — desenha uma vez só,
-            nunca em loop), aqui em tom neutro por ser assinatura da Bemgsy,
-            não da marca TDG. Tagline em inglês em qualquer idioma da página
-            — é o nome próprio da assinatura da marca, não se traduz. */}
+        {/* Powered by Bemgsy — variante "rica" (skill bemgsy-design,
+            corrigido 03/08/2026): a Carla viu o resultado ao vivo do
+            wordmark grande (24px/opacity 0.75) e pediu mais sutileza —
+            "não quero brigar por protagonismo com TDG". Mantém a estrutura
+            completa (onda + tagline), mas o wordmark cai pro piso da
+            variante rica (15-16px, opacity 0.55-0.65) — "placement único"
+            não é licença pra dominância visual. */}
         <div className="max-w-6xl mx-auto flex flex-col items-center" style={{ marginTop: 28, paddingTop: 24 }}>
           <svg className="flow-wave-once" width="96" height="10" viewBox="0 0 96 10" style={{ display: 'block', marginBottom: 10 }}>
             <path d="M 3 5 C 26 -2, 38 12, 62 5 C 72 1, 82 1, 93 5"
@@ -453,9 +450,9 @@ export default function LandingPage() {
             <img
               src="/brand/bemgsy-mark.png"
               alt="Bemgsy"
-              style={{ height: 24, objectFit: 'contain', filter: 'brightness(0) invert(1)', opacity: 0.75 }}
+              style={{ height: 16, objectFit: 'contain', filter: 'brightness(0) invert(1)', opacity: 0.6 }}
             />
-            <span style={{ fontSize: '0.75rem', fontWeight: 300, fontStyle: 'italic', color: '#7A9AA5', letterSpacing: '0.02em' }}>
+            <span style={{ fontSize: '0.6875rem', fontWeight: 300, fontStyle: 'italic', color: '#7A9AA5', letterSpacing: '0.02em' }}>
               · Amplifying Human Hospitality
             </span>
           </div>

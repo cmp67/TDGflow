@@ -495,7 +495,7 @@ function FlowShellInner({ children, user, brand }: Props) {
               Powered by
             </span>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/brand/bemgsy-mark.png" alt="Bemgsy" style={{ height: 18, objectFit: 'contain', opacity: 0.8 }} />
+            <img src="/brand/bemgsy-mark.png" alt="Bemgsy" style={{ height: 18, objectFit: 'contain', opacity: 0.6 }} />
             <span style={{ fontSize: '0.5625rem', letterSpacing: '0.1em', color: 'var(--tdgflow-text-faint)' }}>
               · {APP_VERSION}
             </span>
@@ -684,7 +684,7 @@ function FlowShellInner({ children, user, brand }: Props) {
                   Powered by
                 </span>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/brand/bemgsy-mark.png" alt="Bemgsy" style={{ height: 20, objectFit: 'contain', opacity: 0.8 }} />
+                <img src="/brand/bemgsy-mark.png" alt="Bemgsy" style={{ height: 20, objectFit: 'contain', opacity: 0.6 }} />
               </div>
               <p style={{ textAlign: 'center', paddingBottom: 8, paddingTop: 6, fontSize: '0.5625rem', letterSpacing: '0.1em', color: 'var(--tdgflow-text-faint)' }}>
                 {APP_VERSION}
