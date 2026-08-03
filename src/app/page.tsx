@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { ArrowRight, MapPin, Users, Zap, Megaphone, Radar, ChevronDown } from 'lucide-react'
+import { ArrowRight, Users, Zap, Megaphone, Radar, ChevronDown } from 'lucide-react'
 import { motion, useInView } from 'framer-motion'
 
 /* ── Marca TDG (manual de identidade visual, recebido 02/08/2026) ────────
@@ -58,13 +58,6 @@ const PROGRAMS = [
   'Traveller Made',
   'Club Med',
   'Teresa Perez Group',
-]
-
-const PROPERTIES = [
-  { name: 'Velaa Private Island',      location: 'Maldivas',          tag: 'Private Island', bg: `linear-gradient(135deg,${TDG.navy} 0%,#081016 100%)`, dot: TDG.teal },
-  { name: 'Martinhal Sagres',          location: 'Algarve, Portugal',  tag: 'Beach Resort',   bg: `linear-gradient(135deg,#1c2a1e 0%,#0e1710 100%)`, dot: TDG.sage },
-  { name: 'Martinhal Quinta do Lago',  location: 'Algarve, Portugal',  tag: 'Golf & Nature',  bg: `linear-gradient(135deg,#2a1a10 0%,#180e08 100%)`, dot: TDG.terracotta },
-  { name: 'Martinhal Lisboa',          location: 'Lisboa, Portugal',   tag: 'Urban Luxury',   bg: `linear-gradient(135deg,${TDG.tealDark} 0%,#081420 100%)`, dot: TDG.teal },
 ]
 
 /* Pilares do TDG Flow — texto oficial recebido da Carla 02/08/2026
@@ -124,7 +117,7 @@ export default function LandingPage() {
           </Link>
 
           <nav className="hidden md:flex items-center gap-7">
-            {['#rede', '#flow', '#parceiros', '#grupo'].map((href, i) => (
+            {['#flow', '#grupo'].map((href, i) => (
               <a
                 key={href}
                 href={href}
@@ -133,7 +126,7 @@ export default function LandingPage() {
                 onMouseEnter={e => ((e.target as HTMLElement).style.color = 'var(--tdgflow-text-primary)')}
                 onMouseLeave={e => ((e.target as HTMLElement).style.color = 'var(--tdgflow-text-muted)')}
               >
-                {['A Rede', 'TDG Flow', 'Parceiros', 'O Grupo'][i]}
+                {['TDG Flow', 'O Grupo'][i]}
               </a>
             ))}
           </nav>
@@ -266,30 +259,6 @@ export default function LandingPage() {
         </motion.div>
       </section>
 
-      {/* ── Stats ────────────────────────────────────────────────── */}
-      <section
-        id="rede"
-        style={{ borderTop: '1px solid var(--tdgflow-border)', borderBottom: '1px solid var(--tdgflow-border)', background: 'var(--tdgflow-surface)' }}
-      >
-        <div className="max-w-4xl mx-auto px-6 py-12 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-          {[
-            { value: '19',       label: 'Agências' },
-            { value: '80+',      label: 'Destinos' },
-            { value: '200+',     label: 'Propriedades parceiras' },
-            { value: '25 anos',  label: 'No setor de luxo' },
-          ].map(({ value, label }, i) => (
-            <FadeUp key={label} delay={i * 0.07}>
-              <p style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)', fontWeight: 200, color: TDG.navy, letterSpacing: '-0.03em', lineHeight: 1, marginBottom: '0.375rem' }}>
-                {value}
-              </p>
-              <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase', fontWeight: 500 }}>
-                {label}
-              </p>
-            </FadeUp>
-          ))}
-        </div>
-      </section>
-
       {/* ── Programs strip ───────────────────────────────────────── */}
       <section style={{ background: 'var(--tdgflow-bg)', borderTop: '1px solid var(--tdgflow-border)', borderBottom: '1px solid var(--tdgflow-border)', padding: '18px 24px' }}>
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-10 text-center">
@@ -306,83 +275,6 @@ export default function LandingPage() {
               </span>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* ── Properties ───────────────────────────────────────────── */}
-      <section id="parceiros" className="py-24 px-6 relative grain overflow-hidden" style={{ background: 'var(--tdgflow-bg)' }}>
-        <div className="max-w-6xl mx-auto">
-          <FadeUp className="mb-2">
-            <p className="flex items-center gap-2" style={{ fontSize: '0.6875rem', fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase', color: TDG.terracotta }}>
-              <StarGlyph />Onde já estivemos
-            </p>
-          </FadeUp>
-          <FadeUp delay={0.08}>
-            <h2 style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)', fontWeight: 200, letterSpacing: '-0.03em', color: 'var(--tdgflow-text-primary)', marginBottom: '2.5rem', lineHeight: 1.15 }}>
-              Lugares que conhecemos<br />por dentro
-            </h2>
-          </FadeUp>
-
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-3" style={{ gridAutoRows: '180px' }}>
-            {/* Feature card */}
-            <FadeUp delay={0.05} className="md:col-span-7 md:row-span-2">
-              <div
-                className="prop-card h-full flex flex-col justify-end p-6 relative group"
-                style={{ background: PROPERTIES[0].bg }}
-              >
-                <div className="absolute top-5 right-5 w-14 h-14 rounded-full opacity-15" style={{ background: `radial-gradient(circle, ${PROPERTIES[0].dot}, transparent)` }} />
-                <div className="prop-card-overlay" />
-                <div className="relative z-10">
-                  <span
-                    className="mb-2"
-                    style={{ display: 'inline-block', fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.04em', padding: '3px 9px', borderRadius: 999, background: 'rgba(255,255,255,0.14)', color: '#fff' }}
-                  >
-                    {PROPERTIES[0].tag}
-                  </span>
-                  <h3 style={{ fontSize: '1.5rem', fontWeight: 300, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1.2, marginBottom: '0.25rem' }}>
-                    {PROPERTIES[0].name}
-                  </h3>
-                  <div className="flex items-center gap-1">
-                    <MapPin size={11} style={{ color: PROPERTIES[0].dot }} />
-                    <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>{PROPERTIES[0].location}</span>
-                  </div>
-                </div>
-              </div>
-            </FadeUp>
-
-            {PROPERTIES.slice(1).map((p, i) => (
-              <FadeUp key={p.name} delay={0.1 + i * 0.07} className="md:col-span-5">
-                <div
-                  className="prop-card h-full flex flex-col justify-end p-5 relative group"
-                  style={{ background: p.bg }}
-                >
-                  <div className="absolute top-4 right-4 w-10 h-10 rounded-full opacity-15" style={{ background: `radial-gradient(circle, ${p.dot}, transparent)` }} />
-                  <div className="prop-card-overlay" />
-                  <div className="relative z-10">
-                    <span
-                      className="mb-1.5"
-                      style={{ display: 'inline-block', fontSize: '0.58rem', fontWeight: 600, letterSpacing: '0.04em', padding: '2px 8px', borderRadius: 999, background: 'rgba(255,255,255,0.12)', color: '#fff' }}
-                    >
-                      {p.tag}
-                    </span>
-                    <h3 style={{ fontSize: '1.125rem', fontWeight: 300, color: '#fff', letterSpacing: '-0.015em', lineHeight: 1.2 }}>
-                      {p.name}
-                    </h3>
-                    <div className="flex items-center gap-1 mt-0.5">
-                      <MapPin size={10} style={{ color: p.dot }} />
-                      <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.7)' }}>{p.location}</span>
-                    </div>
-                  </div>
-                </div>
-              </FadeUp>
-            ))}
-          </div>
-
-          <FadeUp delay={0.15} className="mt-8">
-            <Link href="/flow" className="btn-ghost no-underline" style={{ fontSize: '0.8125rem' }}>
-              Todos os nossos parceiros <ArrowRight size={13} />
-            </Link>
-          </FadeUp>
         </div>
       </section>
 
@@ -462,7 +354,7 @@ export default function LandingPage() {
           </FadeUp>
           <FadeUp delay={0.16} className="flex items-center justify-center gap-3 flex-wrap">
             <a
-              href="mailto:contato@traveldesignersgroup.com.br"
+              href="mailto:contact@traveldesignersgroup.com.br"
               className="no-underline"
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 6, padding: '12px 28px',
@@ -488,11 +380,9 @@ export default function LandingPage() {
           </div>
           <div className="flex flex-wrap gap-6">
             {[
-              { label: 'A Rede', href: '#rede' },
               { label: 'TDG Flow', href: '#flow' },
-              { label: 'Parceiros', href: '#parceiros' },
               { label: 'O Grupo', href: '#grupo' },
-              { label: 'contato@traveldesignersgroup.com.br', href: 'mailto:contato@traveldesignersgroup.com.br' },
+              { label: 'contact@traveldesignersgroup.com.br', href: 'mailto:contact@traveldesignersgroup.com.br' },
               { label: 'Instagram', href: 'https://www.instagram.com/traveldesignersgroup' },
             ].map(({ label, href }) => (
               <a key={label} href={href} target={href.startsWith('http') ? '_blank' : undefined} rel="noreferrer"
@@ -505,6 +395,27 @@ export default function LandingPage() {
           <p style={{ fontSize: '0.6875rem', color: '#7A9AA5' }}>
             © {new Date().getFullYear()} Travel Designers Group
           </p>
+        </div>
+
+        {/* Powered by Bemgsy — assinatura discreta (pedido da Carla, 03/08),
+            mesmo padrão/tooltip já usado no rodapé da sidebar interna
+            (FlowShell.tsx): "Powered by" nunca só no hover, mark invertida
+            pra branco porque o arquivo original é navy sólido (pensado pra
+            fundo claro), aqui o rodapé é escuro. */}
+        <div
+          className="max-w-6xl mx-auto flex items-center justify-center"
+          style={{ marginTop: 28, paddingTop: 20, borderTop: '1px solid rgba(234,241,245,0.08)', gap: 6 }}
+          title="Bemgsy — Amplifying Human Hospitality"
+        >
+          <span style={{ fontSize: '0.5rem', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#5E8590' }}>
+            Powered by
+          </span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/brand/bemgsy-mark.png"
+            alt="Bemgsy"
+            style={{ height: 13, objectFit: 'contain', filter: 'brightness(0) invert(1)', opacity: 0.55 }}
+          />
         </div>
       </footer>
     </div>
