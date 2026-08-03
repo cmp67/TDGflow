@@ -31,7 +31,15 @@ import { LANDING_COPY } from '@/lib/landing-i18n'
    diferente da UI do app logado. Persiste em localStorage na mesma chave
    do app ('tdg-lang'), assim a escolha de idioma acompanha quem visita o
    site e depois acessa o Flow. EN/ES são traduções novas (ver comentário
-   no topo de landing-i18n.ts) — ainda sem revisão de falante nativo. */
+   no topo de landing-i18n.ts) — ainda sem revisão de falante nativo.
+
+   04/08/2026 — pivô de fase (pedido da Carla): a página deixa de ser um
+   pitch de parceria comercial e vira puramente explicativa. Nenhuma
+   menção ao número de agências; TDG Group ganha mais destaque no hero
+   (o nome do grupo passa a ser a própria headline); removido todo CTA
+   que convida fornecedor/experiência a virar parceiro comercial. Ver
+   comentário no topo de landing-i18n.ts pro detalhe de cada mudança de
+   copy. */
 const TDG = {
   navy:       '#112630',
   tealDark:   '#104C64',
@@ -73,35 +81,6 @@ function FadeUp({ children, delay = 0, className = '' }: {
       {children}
     </motion.div>
   )
-}
-
-/* Número que conta de 0 até o valor real uma única vez, ao entrar em vista
-   — o "19" carrega a credibilidade de escala do grupo, então vale reforçar
-   o momento em que o visitante o lê, sem virar ambiente/loop (pedido da
-   Carla, 03/08: animação sutil que sofistique sem pesar — mesma regra já
-   documentada em globals.css para o lockup "TDG · Flow": feedback, nunca
-   decoração contínua). */
-function NumberReveal({ value, style }: { value: number; style?: React.CSSProperties }) {
-  const ref = useRef(null)
-  const inView = useInView(ref, { once: true, margin: '-80px' })
-  const [display, setDisplay] = useState(0)
-
-  useEffect(() => {
-    if (!inView) return
-    let raf = 0
-    const start = performance.now()
-    const duration = 900
-    const tick = (now: number) => {
-      const progress = Math.min(1, (now - start) / duration)
-      const eased = 1 - Math.pow(1 - progress, 3)
-      setDisplay(Math.round(eased * value))
-      if (progress < 1) raf = requestAnimationFrame(tick)
-    }
-    raf = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(raf)
-  }, [inView, value])
-
-  return <span ref={ref} style={style}>{display}</span>
 }
 
 /* Seletor PT/EN/ES — mesmo desenho visual do switcher já usado no app
@@ -369,40 +348,12 @@ export default function LandingPage() {
           </FadeUp>
 
           <FadeUp delay={0.1}>
-            <p style={{ fontSize: '0.9375rem', color: 'var(--tdgflow-text-muted)', lineHeight: 1.85, fontWeight: 300, marginBottom: '2.5rem' }}>
+            <p style={{ fontSize: '0.9375rem', color: 'var(--tdgflow-text-muted)', lineHeight: 1.85, fontWeight: 300, marginBottom: '2rem' }}>
               {T['grupo.p1']}
             </p>
           </FadeUp>
 
-          <FadeUp delay={0.16} className="mb-10">
-            <div style={{ fontSize: 'clamp(2.75rem, 6vw, 3.75rem)', fontWeight: 200, letterSpacing: '-0.03em', color: TDG.navy, lineHeight: 1 }}>
-              <NumberReveal value={19} />
-            </div>
-            <p style={{ fontSize: '0.6875rem', fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)', marginTop: 6 }}>
-              {T['grupo.statLabel']}
-            </p>
-          </FadeUp>
-
-          <FadeUp delay={0.22}>
-            <div style={{ borderTop: '1px solid var(--tdgflow-border)', paddingTop: '2.25rem', marginBottom: '2rem' }}>
-              <p style={{ fontSize: '0.9375rem', color: 'var(--tdgflow-text-secondary)', lineHeight: 1.85, fontWeight: 400 }}>
-                {T['grupo.p2']}
-              </p>
-            </div>
-          </FadeUp>
-
-          <FadeUp delay={0.28} className="flex items-center justify-center gap-3 flex-wrap">
-            <a
-              href="mailto:contact@traveldesignersgroup.com.br"
-              className="no-underline"
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6, padding: '12px 28px',
-                background: TDG.terracotta, color: '#fff', fontWeight: 600, fontSize: '0.875rem',
-                borderRadius: 'var(--tdgflow-radius-md)',
-              }}
-            >
-              {T['grupo.cta']} <ArrowRight size={15} />
-            </a>
+          <FadeUp delay={0.16} className="flex items-center justify-center">
             <a href="https://www.instagram.com/traveldesignersgroup" target="_blank" rel="noreferrer" className="btn-ghost no-underline" style={{ padding: '12px 24px' }}>
               {T['grupo.instagram']}
             </a>
@@ -430,12 +381,7 @@ export default function LandingPage() {
           </FadeUp>
 
           <FadeUp delay={0.05} className="text-center">
-            <p className="flex items-center justify-center gap-2" style={{ fontSize: '0.6875rem', fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#EAF1F5' }}>
-              <StarGlyph />{T['flow.eyebrow']}
-            </p>
-          </FadeUp>
-          <FadeUp delay={0.09} className="text-center">
-            <p style={{ fontSize: '0.875rem', color: '#A8C2CB', lineHeight: 1.85, fontWeight: 300, maxWidth: '640px', margin: '0.75rem auto 2.75rem' }}>
+            <p style={{ fontSize: '0.875rem', color: '#A8C2CB', lineHeight: 1.85, fontWeight: 300, maxWidth: '640px', margin: '0 auto 2.75rem' }}>
               {T['flow.p1']}
             </p>
           </FadeUp>
