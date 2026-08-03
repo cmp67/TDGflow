@@ -467,27 +467,34 @@ export default function LandingPage() {
           </p>
         </div>
 
-        {/* Powered by Bemgsy — padrão oficial documentado na skill bemgsy-design
-            (03/08/2026): "Powered by" sempre texto visível (nunca só no hover),
-            title com a tagline, mark entre opacity 0.65-0.75 (abaixo disso
-            reprova o piso de legibilidade já achado no FlowShell.tsx — aqui
-            estava em 0.55, corrigido). Mark invertida pra branco via filter
-            porque o arquivo original é navy sólido (pensado pra fundo claro),
-            aqui o rodapé é escuro. */}
-        <div
-          className="max-w-6xl mx-auto flex items-center justify-center"
-          style={{ marginTop: 28, paddingTop: 20, borderTop: '1px solid rgba(234,241,245,0.08)', gap: 6 }}
-          title="Bemgsy — Amplifying Human Hospitality"
-        >
-          <span style={{ fontSize: '0.5rem', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#7A9AA5' }}>
-            Powered by
-          </span>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/brand/bemgsy-mark.png"
-            alt="Bemgsy"
-            style={{ height: 15, objectFit: 'contain', filter: 'brightness(0) invert(1)', opacity: 0.7 }}
-          />
+        {/* Powered by Bemgsy — variante "rica" do padrão oficial (skill
+            bemgsy-design, atualizado 03/08/2026): placements únicos e não
+            repetitivos (rodapé de site institucional, login) ganham a
+            assinatura completa — wordmark em tamanho real (não um logo
+            pequeno ao lado do rótulo), tagline por extenso e o mesmo traço
+            de onda que já assina o lockup "TDG · Flow" no app interno
+            (reaproveita a classe .flow-wave-once — desenha uma vez só,
+            nunca em loop), aqui em tom neutro por ser assinatura da Bemgsy,
+            não da marca TDG. */}
+        <div className="max-w-6xl mx-auto flex flex-col items-center" style={{ marginTop: 28, paddingTop: 24 }}>
+          <svg className="flow-wave-once" width="96" height="10" viewBox="0 0 96 10" style={{ display: 'block', marginBottom: 10 }}>
+            <path d="M 3 5 C 26 -2, 38 12, 62 5 C 72 1, 82 1, 93 5"
+              fill="none" stroke="rgba(234,241,245,0.28)" strokeWidth="1.1" strokeLinecap="round" />
+          </svg>
+          <div className="flex items-center justify-center flex-wrap" style={{ gap: 8 }} title="Bemgsy — Amplifying Human Hospitality">
+            <span style={{ fontSize: '0.625rem', fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#7A9AA5' }}>
+              Powered by
+            </span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/brand/bemgsy-mark.png"
+              alt="Bemgsy"
+              style={{ height: 24, objectFit: 'contain', filter: 'brightness(0) invert(1)', opacity: 0.75 }}
+            />
+            <span style={{ fontSize: '0.75rem', fontWeight: 300, fontStyle: 'italic', color: '#7A9AA5', letterSpacing: '0.02em' }}>
+              · Amplifying Human Hospitality
+            </span>
+          </div>
         </div>
       </footer>
     </div>

@@ -484,13 +484,18 @@ function FlowShellInner({ children, user, brand }: Props) {
               não só "discreta" — achado técnico do arquiteto, não gosto).
               Rótulo "Powered by" garante o significado mesmo sem hover — a
               tooltip nativa continua existindo como bônus, não como único canal.
-              Junto com a versão numa linha só (01/08, eram 2 linhas). */}
+              Junto com a versão numa linha só (01/08, eram 2 linhas).
+              03/08: variante "compacta" do padrão oficial (skill bemgsy-design)
+              — sem tagline/onda porque isso aparece em TODA navegação (chrome
+              persistente, não um placement único); wordmark um pouco maior
+              que antes (16→18) mas limitado pela largura real da sidebar
+              (208px), não pelo tamanho "rico" usado no rodapé do site. */}
           <div className="flex items-center justify-center" style={{ marginTop: 6, gap: 6 }} title="Bemgsy — Amplifying Human Hospitality">
             <span style={{ fontSize: '0.5rem', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--tdgflow-text-faint)' }}>
               Powered by
             </span>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/brand/bemgsy-mark.png" alt="Bemgsy" style={{ height: 16, objectFit: 'contain', opacity: 0.75 }} />
+            <img src="/brand/bemgsy-mark.png" alt="Bemgsy" style={{ height: 18, objectFit: 'contain', opacity: 0.8 }} />
             <span style={{ fontSize: '0.5625rem', letterSpacing: '0.1em', color: 'var(--tdgflow-text-faint)' }}>
               · {APP_VERSION}
             </span>
@@ -679,7 +684,7 @@ function FlowShellInner({ children, user, brand }: Props) {
                   Powered by
                 </span>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/brand/bemgsy-mark.png" alt="Bemgsy" style={{ height: 16, objectFit: 'contain', opacity: 0.75 }} />
+                <img src="/brand/bemgsy-mark.png" alt="Bemgsy" style={{ height: 20, objectFit: 'contain', opacity: 0.8 }} />
               </div>
               <p style={{ textAlign: 'center', paddingBottom: 8, paddingTop: 6, fontSize: '0.5625rem', letterSpacing: '0.1em', color: 'var(--tdgflow-text-faint)' }}>
                 {APP_VERSION}
