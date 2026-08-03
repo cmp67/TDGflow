@@ -457,7 +457,7 @@ p, span, li { line-height: 1.6; }
 /* ── Nav scroll effect handled via JS class ─────────────────────────────── */
 
 .nav-opaque {
-  background: rgba(246, 241, 235, 0.92) !important;
+  background: rgba(243, 247, 248, 0.92) !important;
   backdrop-filter: blur(12px);
   border-bottom-color: var(--tdgflow-border) !important;
 }
