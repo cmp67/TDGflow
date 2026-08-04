@@ -49,20 +49,9 @@ const TDG = {
 }
 
 /* Estrela de 4 pontas — asset de marca próprio (página "Pattern" do manual),
-   reaproveitado como textura de fundo no hero e como glifo ao lado dos
-   rótulos de seção. Uso puramente decorativo (o rótulo ao lado já carrega
-   a informação em texto), por isso mantém a cor de marca mesmo sobre fundo
-   navy sem risco de reprovar contraste de texto. */
+   reaproveitada como textura de fundo repetida no hero e na seção Flow. */
 const STAR_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40'><path d='M20 4 L23 17 L36 20 L23 23 L20 36 L17 23 L4 20 L17 17 Z' fill='${TDG.terracotta}'/></svg>`
 const STAR_PATTERN_URL = `url("data:image/svg+xml,${encodeURIComponent(STAR_SVG)}")`
-
-function StarGlyph({ size = 9 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 40 40" style={{ flexShrink: 0 }}>
-      <path d="M20 4 L23 17 L36 20 L23 23 L20 36 L17 23 L4 20 L17 17 Z" fill={TDG.terracotta} />
-    </svg>
-  )
-}
 
 /* ── Fade-up on scroll ─────────────────────────────────────────────── */
 function FadeUp({ children, delay = 0, className = '' }: {
@@ -160,7 +149,7 @@ export default function LandingPage() {
               alt="TDG"
               style={{ height: 16, objectFit: 'contain' }}
             />
-            <span style={{ fontSize: '0.875rem', fontWeight: 500, color: navOpaque ? 'var(--tdgflow-text-primary)' : '#F4F7F8', letterSpacing: '-0.01em', transition: 'color 200ms' }}>
+            <span className="hidden sm:inline-block" style={{ fontSize: '0.875rem', fontWeight: 500, color: navOpaque ? 'var(--tdgflow-text-primary)' : '#F4F7F8', letterSpacing: '-0.01em', transition: 'color 200ms' }}>
               Travel Designers Group
             </span>
           </Link>
@@ -180,7 +169,7 @@ export default function LandingPage() {
             ))}
           </nav>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <LangSwitcher lang={lang} setLang={setLang} navOpaque={navOpaque} />
             <Link
               href="/flow"
@@ -189,7 +178,7 @@ export default function LandingPage() {
               onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = navOpaque ? TDG.navy : '#ffffff')}
               onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = navOpaque ? TDG.tealDark : '#EAF1F5')}
             >
-              {T['nav.cta']}
+              <span className="hidden sm:inline">{T['nav.cta']}</span>
               <ArrowRight size={13} style={{ color: TDG.teal }} />
             </Link>
           </div>
@@ -199,7 +188,7 @@ export default function LandingPage() {
       {/* ── Hero ─────────────────────────────────────────────────── */}
       <section
         className="relative flex flex-col items-center justify-center grain overflow-hidden"
-        style={{ minHeight: '100vh', paddingTop: '56px' }}
+        style={{ paddingTop: '140px', paddingBottom: '96px' }}
       >
         <div
           className="absolute inset-0"
@@ -242,56 +231,11 @@ export default function LandingPage() {
               letterSpacing: '-0.03em',
               lineHeight: 1.08,
               color: '#F4F7F8',
-              marginBottom: '1.75rem',
               whiteSpace: 'nowrap',
             }}
           >
             {T['hero.h1']}
           </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
-            style={{ fontSize: '1rem', color: '#A8C2CB', lineHeight: 1.8, fontWeight: 300, maxWidth: '460px', margin: '0 auto 2.5rem' }}
-          >
-            {T['hero.sub']}
-          </motion.p>
-
-          <motion.div
-            className="flex items-center justify-center gap-3 flex-wrap"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.65 }}
-          >
-            <a
-              href="#grupo"
-              className="no-underline"
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6, padding: '11px 26px',
-                background: TDG.terracotta, color: '#fff', fontWeight: 600, fontSize: '0.875rem',
-                borderRadius: 'var(--tdgflow-radius-md)', transition: 'transform 150ms var(--tdgflow-ease-smooth), background 150ms',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)' }}
-              onMouseLeave={e => { e.currentTarget.style.transform = 'none' }}
-            >
-              {T['hero.cta1']} <ArrowRight size={15} />
-            </a>
-            <a
-              href="#flow"
-              className="no-underline"
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6, padding: '11px 22px',
-                background: 'transparent', color: '#EAF1F5', fontWeight: 500, fontSize: '0.875rem',
-                borderRadius: 'var(--tdgflow-radius-md)', border: '1px solid rgba(234,241,245,0.25)',
-                transition: 'all 150ms var(--tdgflow-ease-smooth)',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(234,241,245,0.08)' }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
-            >
-              {T['hero.cta2']}
-            </a>
-          </motion.div>
         </div>
       </section>
 
@@ -303,18 +247,6 @@ export default function LandingPage() {
       >
         <div className="max-w-2xl mx-auto">
           <FadeUp>
-            <p className="flex items-center justify-center gap-2 mb-5" style={{ fontSize: '0.6875rem', fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase', color: TDG.terracotta }}>
-              <StarGlyph />{T['grupo.eyebrow']}
-            </p>
-          </FadeUp>
-
-          <FadeUp delay={0.06}>
-            <h2 style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.75rem)', fontWeight: 200, letterSpacing: '-0.03em', lineHeight: 1.25, color: 'var(--tdgflow-text-primary)', maxWidth: 560, margin: '0 auto 1.25rem' }}>
-              {T['grupo.h2']}
-            </h2>
-          </FadeUp>
-
-          <FadeUp delay={0.1}>
             <p style={{ fontSize: '0.9375rem', color: 'var(--tdgflow-text-muted)', lineHeight: 1.85, fontWeight: 300, marginBottom: '2rem' }}>
               {T['grupo.p1']}
             </p>

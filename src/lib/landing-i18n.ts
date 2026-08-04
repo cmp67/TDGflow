@@ -24,12 +24,7 @@ export const LANDING_COPY: Record<Lang, Record<string, string>> = {
     'nav.cta': 'Acessar o Flow',
 
     'hero.h1': 'Travel Designers Group',
-    'hero.sub': 'Uma rede colaborativa das principais agências boutique e consultores de turismo de alto padrão do Brasil.',
-    'hero.cta1': 'Conhecer o grupo',
-    'hero.cta2': 'Como funciona o Flow',
 
-    'grupo.eyebrow': 'O grupo',
-    'grupo.h2': 'O que é o Travel Designers Group',
     'grupo.p1': 'Somos uma rede colaborativa das principais agências boutique e consultores de turismo de alto padrão do Brasil. Compartilhamos conhecimentos estratégicos, percepções colhidas em viagens de inspeção pelo mundo e experiências vivenciadas por nossos clientes, com o objetivo de proporcionar a cada viajante experiências de viagem ainda mais exclusivas e inesquecíveis.',
     'grupo.instagram': 'Instagram',
 
@@ -56,12 +51,7 @@ export const LANDING_COPY: Record<Lang, Record<string, string>> = {
     'nav.cta': 'Access Flow',
 
     'hero.h1': 'Travel Designers Group',
-    'hero.sub': "A collaborative network of Brazil's leading boutique travel agencies and high-end travel consultants.",
-    'hero.cta1': 'Discover the group',
-    'hero.cta2': 'How Flow works',
 
-    'grupo.eyebrow': 'The group',
-    'grupo.h2': 'What is the Travel Designers Group',
     'grupo.p1': "We are a collaborative network of Brazil's leading boutique travel agencies and high-end travel consultants. We share strategic knowledge, insights gathered on inspection trips around the world, and experiences lived by our clients — all with one goal: giving every traveler even more exclusive, unforgettable journeys.",
     'grupo.instagram': 'Instagram',
 
@@ -88,12 +78,7 @@ export const LANDING_COPY: Record<Lang, Record<string, string>> = {
     'nav.cta': 'Acceder a Flow',
 
     'hero.h1': 'Travel Designers Group',
-    'hero.sub': 'Una red colaborativa de las principales agencias boutique y consultores de turismo de alto nivel de Brasil.',
-    'hero.cta1': 'Conocer el grupo',
-    'hero.cta2': 'Cómo funciona Flow',
 
-    'grupo.eyebrow': 'El grupo',
-    'grupo.h2': 'Qué es el Travel Designers Group',
     'grupo.p1': 'Somos una red colaborativa de las principales agencias boutique y consultores de turismo de alto nivel de Brasil. Compartimos conocimientos estratégicos, percepciones recogidas en viajes de inspección por el mundo y experiencias vividas por nuestros clientes, con el objetivo de ofrecer a cada viajero experiencias aún más exclusivas e inolvidables.',
     'grupo.instagram': 'Instagram',
 
