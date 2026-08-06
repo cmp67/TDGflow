@@ -328,7 +328,10 @@ export default function LandingPage() {
       <footer className="px-6 py-10" style={{ background: TDG.navy, borderTop: '1px solid rgba(234,241,245,0.1)' }}>
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center font-semibold" style={{ background: '#fff', color: TDG.navy, fontSize: '0.625rem' }}>TDG</div>
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: '#fff' }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/brand/tdg-mark.png" alt="TDG" style={{ height: 12, objectFit: 'contain' }} />
+            </div>
             <span style={{ fontSize: '0.875rem', fontWeight: 400, color: '#EAF1F5' }}>Travel Designers Group</span>
           </div>
           <div className="flex flex-wrap gap-6">

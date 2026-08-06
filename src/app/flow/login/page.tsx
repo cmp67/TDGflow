@@ -43,13 +43,15 @@ export default function LoginPage() {
         transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
         className="w-full max-w-sm"
       >
-        {/* Logo */}
+        {/* Logo — mark real do TDG (mesmo asset do favicon/nav do site), não
+            mais um badge de texto simulado em CSS. */}
         <div className="text-center mb-10">
           <div
-            className="w-12 h-12 rounded-xl flex items-center justify-center font-semibold text-sm mx-auto mb-5"
-            style={{ background: 'var(--tdgflow-navy)', color: 'var(--tdgflow-surface)', letterSpacing: '0.04em' }}
+            className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-5"
+            style={{ background: 'var(--tdgflow-navy)' }}
           >
-            TDG
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/brand/tdg-mark-white.png" alt="TDG" style={{ height: 18, objectFit: 'contain' }} />
           </div>
           <h1 className="text-lg font-semibold" style={{ color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.02em' }}>
             TDG Flow

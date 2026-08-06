@@ -34,10 +34,11 @@ export default function ForgotPasswordPage() {
       >
         <div className="text-center mb-10">
           <div
-            className="w-12 h-12 rounded-xl flex items-center justify-center font-semibold text-sm mx-auto mb-5"
-            style={{ background: 'var(--tdgflow-navy)', color: 'var(--tdgflow-surface)', letterSpacing: '0.04em' }}
+            className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-5"
+            style={{ background: 'var(--tdgflow-navy)' }}
           >
-            TDG
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/brand/tdg-mark-white.png" alt="TDG" style={{ height: 18, objectFit: 'contain' }} />
           </div>
           <h1 className="text-lg font-semibold" style={{ color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.02em' }}>
             Esqueci minha senha
