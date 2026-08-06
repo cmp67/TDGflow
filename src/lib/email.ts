@@ -68,21 +68,28 @@ export async function sendFirstAccessEmail(
       <p style="font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: #7A9AA5; margin: 0 0 24px;">TDG Flow</p>
       <h1 style="font-size: 20px; font-weight: 600; margin: 0 0 16px;">Seu acesso ao TDG Flow já está pronto</h1>
       <p style="font-size: 14px; line-height: 1.6; color: #4A7580; margin: 0 0 8px;">Olá, ${contactName} 👋</p>
+      <p style="font-size: 14px; line-height: 1.6; color: #4A7580; margin: 0 0 16px;">
+        A partir de hoje, a <strong>${agencyName}</strong> passa a fazer parte do <strong>TDG Flow</strong> — um espaço pensado para potencializar a inteligência coletiva da rede: buscar informação confiável com agilidade, numa fonte de verdade compartilhada e enriquecida por quem, como vocês, escolheu avançar nessa direção.
+      </p>
       <p style="font-size: 14px; line-height: 1.6; color: #4A7580; margin: 0 0 24px;">
-        A partir de agora, a <strong>${agencyName}</strong> já tem acesso ao <strong>TDG Flow</strong>, a plataforma da Travel Designers Group feita pra centralizar cotações, ofertas, hotéis e tudo que a rede compartilha entre si — num só lugar.
+        Ofertas, hotéis testados e a experiência real de cada agência, tudo num só lugar.
       </p>
       <a href="${signupUrl}" style="display: inline-block; background: #112630; color: #fff; font-size: 14px; font-weight: 600; padding: 12px 24px; border-radius: 8px; text-decoration: none; margin-bottom: 8px;">
         Criar minha senha e entrar
       </a>
       <p style="font-size: 12px; line-height: 1.6; color: #7A9AA5; margin: 8px 0 24px;">
-        Esse link é pessoal e único da sua agência.
+        Link pessoal e único da sua agência.
       </p>
       <p style="font-size: 14px; line-height: 1.6; color: #4A7580; margin: 0 0 8px;">
-        Antes de começar, preparei um vídeo rápido mostrando como acessar e os primeiros passos:
+        Preparei também um vídeo rápido mostrando como acessar e os primeiros passos:
       </p>
       <a href="${videoUrl}" style="font-size: 14px; color: #112630; font-weight: 600;">🎥 Assistir ao vídeo</a>
-      <p style="font-size: 12px; line-height: 1.6; color: #7A9AA5; margin: 24px 0 0;">
-        Qualquer dúvida, é só responder este e-mail.
+      <p style="font-size: 14px; line-height: 1.6; color: #4A7580; margin: 24px 0 4px;">
+        Estou muito feliz de darmos esse passo juntos — é um prazer contribuir para essa nova fase da rede ao seu lado.
+      </p>
+      <p style="font-size: 14px; line-height: 1.6; color: #112630; margin: 16px 0 0;">
+        Um abraço e sigamos avançando 🏃&zwj;♀️<br />
+        Carla Moura
       </p>
     </div>
   `.trim()
