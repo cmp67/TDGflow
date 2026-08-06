@@ -48,6 +48,15 @@ export async function GET(req: NextRequest) {
   )
   const myName: string = userRows[0]?.name ?? ''
 
+  // Achado real, 06/08/2026: sem essa trava, scope=mine com myName vazio
+  // (usuário sem nome cadastrado, ou não encontrado em tdg_users) virava
+  // `ILIKE '%' || '' || '%'` = `ILIKE '%%'`, que bate com QUALQUER
+  // source_author — vazando os 1000+ itens pendentes de toda a rede pra
+  // qualquer conta nessa situação, não só os itens do próprio usuário.
+  if (scope === 'mine' && !myName.trim()) {
+    return NextResponse.json({ items: [], total: 0, total_reviews: 0, total_knowledge: 0 })
+  }
+
   const reviewMatchClause = scope === 'admin'
     ? `NOT ${MATCH_CONDITION('r.source_author')}`
     : `r.source_author ILIKE '%' || $1 || '%'`
@@ -115,22 +124,34 @@ export async function PATCH(req: NextRequest) {
 
   const table = content_type === 'review' ? 'tdg_hotel_reviews' : 'tdg_destination_knowledge'
 
-  if (action === 'approve') {
-    const { rows: userRows } = await sql.query(
-      'SELECT id, name FROM tdg_users WHERE email = $1 LIMIT 1', [session.user.email]
-    )
-    const actingUser = userRows[0]
-    if (!actingUser) return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 })
+  // Achado real, 06/08/2026: a tela só esconde os botões Aprovar/Editar/
+  // Excluir de quem não é admin — a API em si não verificava nada, então
+  // qualquer usuário autenticado (qualquer agência, qualquer papel)
+  // conseguia aprovar/editar/apagar o conteúdo pendente de qualquer outra
+  // agência chamando essa rota direto. Toda ação agora exige ser admin OU
+  // dono do item (mesmo critério de match por nome já usado no approve).
+  const { rows: userRows } = await sql.query(
+    'SELECT id, name, role FROM tdg_users WHERE email = $1 LIMIT 1', [session.user.email]
+  )
+  const actingUser = userRows[0]
+  if (!actingUser) return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 })
 
+  const { rows: itemRows } = await sql.query(
+    `SELECT source_author FROM ${table} WHERE id = $1`, [id]
+  )
+  if (!itemRows.length) return NextResponse.json({ error: 'Item não encontrado' }, { status: 404 })
+  const sourceAuthor: string | undefined = itemRows[0]?.source_author
+  const isOwnItem = !!sourceAuthor && !!actingUser.name &&
+    sourceAuthor.toLowerCase().includes(String(actingUser.name).toLowerCase())
+
+  if (actingUser.role !== 'admin' && !isOwnItem) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  if (action === 'approve') {
     // Aprovado pelo próprio autor (nome bate) vs. pelo admin em nome dele
     // (decisão #14 — o badge cinza some nos dois casos, só o valor do
     // import_approval registra qual dos dois foi).
-    const { rows: itemRows } = await sql.query(
-      `SELECT source_author FROM ${table} WHERE id = $1`, [id]
-    )
-    const sourceAuthor: string | undefined = itemRows[0]?.source_author
-    const isOwnItem = !!sourceAuthor && !!actingUser.name &&
-      sourceAuthor.toLowerCase().includes(String(actingUser.name).toLowerCase())
     const approvalValue = isOwnItem ? 'approved_by_author' : 'approved_by_admin'
 
     await sql.query(
