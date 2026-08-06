@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "deploy": "vercel deploy --prod 2>&1 | tee /tmp/vdeploy.log && DEPLOY_URL=$(grep -o 'https://tdg-flow-[^[:space:]]*\\.vercel\\.app' /tmp/vdeploy.log | head -1) && vercel alias set $DEPLOY_URL tdg-flow-carla-4643s-projects.vercel.app"
+    "deploy": "bash scripts/deploy.sh"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.81.0",
