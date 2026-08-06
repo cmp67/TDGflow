@@ -21,9 +21,10 @@ export default function middleware(req: NextRequest) {
 }
 
 export const config = {
-  // Protect all /flow/* except /flow/login and /flow/signup/[token] — the
-  // latter is the public self-registration entry point (invite redemption),
-  // reachable by a signed-out stranger with a valid link. "/" is matched too,
-  // only to run the host-based redirect above (never auth-protected).
-  matcher: ['/', '/flow/((?!login|signup).*)'],
+  // Protect all /flow/* except /flow/login, /flow/signup/[token],
+  // /flow/esqueci-senha and /flow/redefinir-senha — all public entry points
+  // reachable by a signed-out stranger (invite redemption, password reset
+  // request/redemption). "/" is matched too, only to run the host-based
+  // redirect above (never auth-protected).
+  matcher: ['/', '/flow/((?!login|signup|esqueci-senha|redefinir-senha).*)'],
 }

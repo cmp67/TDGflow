@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Loader2, ArrowRight, Eye, EyeOff } from 'lucide-react'
 import { motion } from 'framer-motion'
 
@@ -102,6 +103,11 @@ export default function LoginPage() {
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
+            </div>
+            <div className="text-right mt-1.5">
+              <Link href="/flow/esqueci-senha" className="text-xs no-underline" style={{ color: 'var(--tdgflow-text-muted)' }}>
+                Esqueci minha senha
+              </Link>
             </div>
           </div>
 
