@@ -175,10 +175,28 @@ interface Props {
   // achado da Carla, 30/07: sempre pelo nome, nunca genérico, mesmo no
   // caminho de erro raro de rede.
   fallbackName?: string | null
+  // Achado da Carla, 06/08: o histórico sumia ao trocar de tela porque
+  // `messages` era estado só do componente, perdido no unmount. Persiste em
+  // localStorage escopado por e-mail (nunca vaza entre contas diferentes no
+  // mesmo navegador) até o logout — ver limpeza em FlowShell.tsx.
+  userEmail?: string | null
 }
 
-export default function Chat({ fallbackName }: Props = {}) {
-  const [messages, setMessages] = useState<Message[]>([])
+function chatHistoryKey(email: string | null | undefined): string | null {
+  return email ? `tdg-chat-history:${email}` : null
+}
+
+export default function Chat({ fallbackName, userEmail }: Props = {}) {
+  const storageKey = chatHistoryKey(userEmail)
+  const [messages, setMessages] = useState<Message[]>(() => {
+    if (typeof window === 'undefined' || !storageKey) return []
+    try {
+      const saved = window.localStorage.getItem(storageKey)
+      return saved ? (JSON.parse(saved) as Message[]) : []
+    } catch {
+      return []
+    }
+  })
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [showBalanceModal, setShowBalanceModal] = useState(false)
@@ -191,6 +209,13 @@ export default function Chat({ fallbackName }: Props = {}) {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading])
+
+  useEffect(() => {
+    if (!storageKey) return
+    try {
+      window.localStorage.setItem(storageKey, JSON.stringify(messages))
+    } catch { /* localStorage cheio/indisponível — histórico só não persiste, não quebra o chat */ }
+  }, [messages, storageKey])
 
   useEffect(() => {
     fetch('/api/context')

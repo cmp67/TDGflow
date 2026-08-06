@@ -121,8 +121,18 @@ interface Brand {
 
 interface Props {
   children: React.ReactNode
-  user: { name: string; agency: string; role: string; avatar_url?: string | null }
+  user: { name: string; email: string; agency: string; role: string; avatar_url?: string | null }
   brand?: Brand | null
+}
+
+// Achado da Carla, 06/08: histórico do chat persiste em localStorage (ver
+// Chat.tsx) até o logout — precisa ser limpo explicitamente aqui, senão
+// fica pra sempre no navegador mesmo depois de sair da conta.
+function clearChatHistory(email: string) {
+  if (!email) return
+  try {
+    window.localStorage.removeItem(`tdg-chat-history:${email}`)
+  } catch { /* localStorage indisponível — nada a limpar */ }
 }
 
 // Abre embaixo do item (ou em cima, pro último item da lista — `openUp` —
@@ -464,7 +474,7 @@ function FlowShellInner({ children, user, brand }: Props) {
               </div>
             </Link>
             <button
-              onClick={() => signOut({ callbackUrl: '/flow/login' })}
+              onClick={() => { clearChatHistory(user.email); signOut({ callbackUrl: '/flow/login' }) }}
               title={tr('auth.signout')}
               aria-label={tr('auth.signout')}
               style={{
@@ -669,7 +679,7 @@ function FlowShellInner({ children, user, brand }: Props) {
                 <div style={{ height: 1, background: 'var(--tdgflow-border)', margin: '8px 14px' }} />
 
                 <button
-                  onClick={() => signOut({ callbackUrl: '/flow/login' })}
+                  onClick={() => { clearChatHistory(user.email); signOut({ callbackUrl: '/flow/login' }) }}
                   className="flex items-center gap-3.5 w-full"
                   style={{ padding: '12px 14px', background: 'none', border: '1px solid transparent', cursor: 'pointer', color: 'var(--tdgflow-text-muted)', borderRadius: 2, transition: 'color 150ms' }}
                   onMouseEnter={e => (e.currentTarget.style.color = 'var(--tdgflow-error)')}

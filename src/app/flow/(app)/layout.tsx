@@ -31,6 +31,7 @@ export default async function FlowLayout({ children }: { children: React.ReactNo
   return (
     <FlowShell user={{
       name: session.user?.name ?? '',
+      email: session.user?.email ?? '',
       agency: session.user?.agency ?? '',
       role: session.user?.role ?? 'agent',
       avatar_url: avatarUrl,
