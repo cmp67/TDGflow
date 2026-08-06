@@ -199,6 +199,8 @@ export default function Chat({ fallbackName, userEmail }: Props = {}) {
   })
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [streamingText, setStreamingText] = useState('')
+  const [statusLabel, setStatusLabel] = useState<string | null>(null)
   const [showBalanceModal, setShowBalanceModal] = useState(false)
   const [ctx, setCtx] = useState<AgentContext | null>(null)
   const [greeting, setGreeting] = useState('')
@@ -208,7 +210,7 @@ export default function Chat({ fallbackName, userEmail }: Props = {}) {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, loading])
+  }, [messages, loading, streamingText, statusLabel])
 
   useEffect(() => {
     if (!storageKey) return
@@ -248,6 +250,8 @@ export default function Chat({ fallbackName, userEmail }: Props = {}) {
     const newMessages: Message[] = [...messages, { role: 'user', content }]
     setMessages(newMessages)
     setLoading(true)
+    setStreamingText('')
+    setStatusLabel(null)
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
@@ -261,25 +265,62 @@ export default function Chat({ fallbackName, userEmail }: Props = {}) {
         setLoading(false)
         return
       }
-      const data = await res.json()
       if (!res.ok) {
         // Achado testando com conta sem agência vinculada (admin global):
         // antes disso caía direto em data.content (undefined), virando uma
         // bolha de resposta vazia sem explicação nenhuma pro usuário.
         sounds.error()
-        const message = data.error === 'NO_AGENCY'
+        let errorCode: string | undefined
+        try { errorCode = (await res.json()).error } catch { /* corpo vazio/inesperado — segue com mensagem genérica */ }
+        const message = errorCode === 'NO_AGENCY'
           ? 'Sua conta não está vinculada a uma agência — fale com o suporte para habilitar o Modo Flow.'
           : 'Não foi possível processar sua mensagem agora. Tente novamente.'
         setMessages([...newMessages, { role: 'assistant', content: message }])
         setLoading(false)
         return
       }
-      sounds.reply()
-      setMessages([...newMessages, { role: 'assistant', content: data.content }])
+
+      const reader = res.body?.getReader()
+      if (!reader) throw new Error('Sem corpo de resposta')
+      const decoder = new TextDecoder()
+      let buffer = ''
+      let assembled = ''
+      let repliedYet = false
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() ?? ''
+        for (const line of lines) {
+          if (!line.trim()) continue
+          const event = JSON.parse(line) as
+            | { type: 'status'; label: string }
+            | { type: 'text'; delta: string }
+            | { type: 'done' }
+            | { type: 'error'; message: string }
+
+          if (event.type === 'status') {
+            setStatusLabel(event.label)
+          } else if (event.type === 'text') {
+            if (!repliedYet) { sounds.reply(); repliedYet = true }
+            setStatusLabel(null)
+            assembled += event.delta
+            setStreamingText(assembled)
+          } else if (event.type === 'error') {
+            throw new Error(event.message)
+          }
+        }
+      }
+
+      setMessages(prev => [...prev, { role: 'assistant', content: assembled }])
     } catch {
       sounds.error()
-      setMessages([...newMessages, { role: 'assistant', content: 'Erro ao processar. Tente novamente.' }])
+      setMessages(prev => [...prev, { role: 'assistant', content: 'Erro ao processar. Tente novamente.' }])
     }
+    setStreamingText('')
+    setStatusLabel(null)
     setLoading(false)
   }
 
@@ -461,7 +502,9 @@ export default function Chat({ fallbackName, userEmail }: Props = {}) {
             </motion.div>
           ))}
 
-          {/* Loading */}
+          {/* Loading — mostra status da ferramenta em uso (real, atrelado ao
+              tool_use em andamento) até o texto começar a chegar; depois
+              vira a própria bolha de resposta, preenchida progressivamente */}
           {loading && (
             <motion.div
               key="loading"
@@ -473,18 +516,33 @@ export default function Chat({ fallbackName, userEmail }: Props = {}) {
                 style={{ background: 'var(--tdgflow-navy)', color: 'var(--tdgflow-surface)', fontSize: '0.5625rem', letterSpacing: '0.05em' }}>
                 TDG
               </div>
-              <div className="px-4 py-3 rounded-2xl" style={{ background: 'var(--tdgflow-surface)', border: '1px solid var(--tdgflow-border)', borderRadius: '4px 18px 18px 18px' }}>
-                <div className="flex items-center gap-1.5">
-                  {[0, 1, 2].map(i => (
-                    <motion.span
-                      key={i}
-                      className="rounded-full"
-                      style={{ width: 6, height: 6, background: 'var(--tdgflow-navy)', display: 'inline-block' }}
-                      animate={{ opacity: [0.3, 1, 0.3] }}
-                      transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
-                    />
-                  ))}
-                </div>
+              <div className="px-4 py-3 rounded-2xl max-w-[85%] text-sm leading-relaxed" style={{ background: 'var(--tdgflow-surface)', border: '1px solid var(--tdgflow-border)', color: 'var(--tdgflow-text-secondary)', borderRadius: '4px 18px 18px 18px' }}>
+                {streamingText ? (
+                  <div className="prose-dark">
+                    <ReactMarkdown>{streamingText}</ReactMarkdown>
+                  </div>
+                ) : statusLabel ? (
+                  <motion.span
+                    key={statusLabel}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-muted)' }}
+                  >
+                    {statusLabel}
+                  </motion.span>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+                    {[0, 1, 2].map(i => (
+                      <motion.span
+                        key={i}
+                        className="rounded-full"
+                        style={{ width: 6, height: 6, background: 'var(--tdgflow-navy)', display: 'inline-block' }}
+                        animate={{ opacity: [0.3, 1, 0.3] }}
+                        transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             </motion.div>
           )}

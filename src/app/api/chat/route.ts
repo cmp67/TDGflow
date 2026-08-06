@@ -120,6 +120,26 @@ export async function processToolCall(toolName: string, toolInput: Record<string
   return await callMcpTool(toolName, toolInput)
 }
 
+// Streaming (06/08): antes o chat esperava a resposta completa — incluindo
+// todas as idas e vindas de tool_use — antes de mostrar qualquer coisa,
+// o que a Carla sentiu como lentidão. Mensagem de status só aparece
+// atrelada a uma ferramenta que está DE FATO rodando naquele instante
+// (nunca uma lista fixa de "possíveis" ações) — abordagem Tesla: zero
+// expectativa criada por uma ação que não está de fato acontecendo.
+const TOOL_STATUS_LABELS: Record<string, string> = {
+  search_tdg_suppliers: 'Buscando fornecedores que combinam com o perfil...',
+  get_tdg_supplier_details: 'Consultando condições negociadas pela rede...',
+  search_tdg_offers: 'Consultando ofertas vigentes...',
+  search_reviews: 'Conferindo o que a rede disse sobre esses hotéis...',
+  get_review: 'Conferindo o que a rede disse sobre esses hotéis...',
+  list_hotel_tips: 'Conferindo o que a rede disse sobre esses hotéis...',
+  check_travel_requirements: 'Verificando documentação de viagem...',
+}
+
+function statusLabelForTool(toolName: string): string {
+  return TOOL_STATUS_LABELS[toolName] ?? 'Buscando informações...'
+}
+
 export async function POST(req: NextRequest) {
   const session = await auth()
   const userEmail = session?.user?.email ?? 'unknown'
@@ -142,46 +162,77 @@ export async function POST(req: NextRequest) {
     })
   )
 
-  let response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 4096,
-    system: SYSTEM_PROMPT,
-    tools,
-    messages: anthropicMessages
+  const encoder = new TextEncoder()
+
+  const readable = new ReadableStream({
+    async start(controller) {
+      function send(event: Record<string, unknown>) {
+        controller.enqueue(encoder.encode(JSON.stringify(event) + '\n'))
+      }
+
+      let tokensIn = 0
+      let tokensOut = 0
+
+      try {
+        let finalMessage: Anthropic.Message
+        while (true) {
+          const messageStream = anthropic.messages.stream({
+            model: 'claude-sonnet-4-6',
+            max_tokens: 4096,
+            system: SYSTEM_PROMPT,
+            tools,
+            messages: anthropicMessages
+          })
+
+          messageStream.on('streamEvent', (event) => {
+            if (event.type === 'content_block_start' && event.content_block.type === 'tool_use') {
+              send({ type: 'status', label: statusLabelForTool(event.content_block.name) })
+            }
+          })
+          messageStream.on('text', (delta) => {
+            send({ type: 'text', delta })
+          })
+
+          finalMessage = await messageStream.finalMessage()
+          tokensIn += finalMessage.usage?.input_tokens ?? 0
+          tokensOut += finalMessage.usage?.output_tokens ?? 0
+
+          if (finalMessage.stop_reason !== 'tool_use') break
+
+          const toolUseBlocks = finalMessage.content.filter(
+            (block): block is Anthropic.ToolUseBlock => block.type === 'tool_use'
+          )
+          const toolResults: Anthropic.ToolResultBlockParam[] = await Promise.all(
+            toolUseBlocks.map(async (toolUse) => {
+              const result = await processToolCall(toolUse.name, toolUse.input as Record<string, unknown>)
+              return { type: 'tool_result' as const, tool_use_id: toolUse.id, content: JSON.stringify(result) }
+            })
+          )
+          anthropicMessages.push({ role: 'assistant', content: finalMessage.content })
+          anthropicMessages.push({ role: 'user', content: toolResults })
+        }
+
+        logUsage({
+          event_type: 'chat',
+          user_email: userEmail,
+          tokens_in: tokensIn,
+          tokens_out: tokensOut,
+          meta: { model: 'claude-sonnet-4-6' },
+        })
+
+        send({ type: 'done' })
+      } catch (err) {
+        send({ type: 'error', message: err instanceof Error ? err.message : 'Erro desconhecido' })
+      } finally {
+        controller.close()
+      }
+    }
   })
 
-  while (response.stop_reason === 'tool_use') {
-    const toolUseBlocks = response.content.filter(
-      (block): block is Anthropic.ToolUseBlock => block.type === 'tool_use'
-    )
-    const toolResults: Anthropic.ToolResultBlockParam[] = await Promise.all(
-      toolUseBlocks.map(async (toolUse) => {
-        const result = await processToolCall(toolUse.name, toolUse.input as Record<string, unknown>)
-        return { type: 'tool_result' as const, tool_use_id: toolUse.id, content: JSON.stringify(result) }
-      })
-    )
-    anthropicMessages.push({ role: 'assistant', content: response.content })
-    anthropicMessages.push({ role: 'user', content: toolResults })
-    response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 4096,
-      system: SYSTEM_PROMPT,
-      tools,
-      messages: anthropicMessages
-    })
-  }
-
-  const textBlock = response.content.find((b): b is Anthropic.TextBlock => b.type === 'text')
-
-  // Log token usage + deduct credits (fire-and-forget)
-  logUsage({
-    event_type: 'chat',
-    user_email: userEmail,
-    tokens_in:  response.usage?.input_tokens,
-    tokens_out: response.usage?.output_tokens,
-    meta: { model: 'claude-sonnet-4-6' },
+  return new Response(readable, {
+    headers: {
+      'Content-Type': 'application/x-ndjson; charset=utf-8',
+      'Cache-Control': 'no-cache',
+    }
   })
-  // Credit already deducted at start of request
-
-  return NextResponse.json({ content: textBlock?.text || '' })
 }
