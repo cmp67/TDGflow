@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
     const {
       hotel_name, entity_type, country, visit_date, visit_type,
       overall_rating, rooms_rating, service_rating, food_rating, location_rating,
-      raw_answers, sentiment_map, photo_url, related_lead_id,
+      raw_answers, sentiment_map, photo_url, photo_urls, related_lead_id,
     } = body
 
     // status nunca vem do cliente — é sempre derivado de visit_type no servidor,
@@ -108,13 +108,21 @@ export async function POST(req: NextRequest) {
 
     // Lead de reunião comercial nunca tem foto — ninguém foi lá pessoalmente
     // ainda, não há o que fotografar. Ignora silenciosamente se vier mesmo assim.
-    const finalPhotoUrl = isLead ? null : (photo_url || null)
+    // photo_urls (múltiplas, Fase de multi-foto) é a fonte de verdade quando
+    // vem preenchida; photo_url singular segue aceito pra clientes antigos.
+    const finalPhotoUrls: string[] = isLead ? [] : (Array.isArray(photo_urls) ? photo_urls.filter(Boolean) : (photo_url ? [photo_url] : []))
+    const finalPhotoUrl = finalPhotoUrls[0] ?? null
 
     // Ensure country column exists (idempotent migration)
     await sql`ALTER TABLE tdg_hotel_reviews ADD COLUMN IF NOT EXISTS country TEXT`
 
     // Ensure photo_url column exists (idempotent migration)
     await sql`ALTER TABLE tdg_hotel_reviews ADD COLUMN IF NOT EXISTS photo_url TEXT`
+
+    // Ensure photo_urls column exists (idempotent migration) — array completo;
+    // photo_url continua guardando só a primeira, pra não quebrar telas que já
+    // leem esse campo (capa do card, hero da rede etc.)
+    await sql`ALTER TABLE tdg_hotel_reviews ADD COLUMN IF NOT EXISTS photo_urls JSONB DEFAULT '[]'::jsonb`
 
     // Add sentiment_map column (idempotent)
     await sql`ALTER TABLE tdg_hotel_reviews ADD COLUMN IF NOT EXISTS sentiment_map JSONB`
@@ -219,7 +227,7 @@ export async function POST(req: NextRequest) {
       INSERT INTO tdg_hotel_reviews
         (hotel_name, hotel_id, entity_type, country, agent_id, agent_name, agency_name, visit_date, visit_type,
          overall_rating, rooms_rating, service_rating, food_rating, location_rating,
-         highlights, client_profile, must_experience, heads_up, status, photo_url, related_lead_id, raw_answers, sentiment_map)
+         highlights, client_profile, must_experience, heads_up, status, photo_url, photo_urls, related_lead_id, raw_answers, sentiment_map)
       VALUES (
         ${hotel_name}, ${hotelId}, ${finalEntityType}, ${country || null}, ${user.id}, ${user.name}, ${user.agency_name},
         ${visit_date || null}, ${visit_type || null},
@@ -227,12 +235,22 @@ export async function POST(req: NextRequest) {
         ${food_rating || null}, ${location_rating || null},
         ${JSON.stringify(structured.highlights ?? [])}, ${structured.client_profile ?? null},
         ${structured.must_experience ?? null}, ${structured.heads_up ?? null},
-        ${status}, ${finalPhotoUrl}, ${finalRelatedLeadId},
+        ${status}, ${finalPhotoUrl}, ${JSON.stringify(finalPhotoUrls)}, ${finalRelatedLeadId},
         ${JSON.stringify(raw_answers)},
         ${sentiment_map ? JSON.stringify(sentiment_map) : null}
       )
       RETURNING *
     `
+
+    // Capa do fornecedor = foto da visita mais recente (esta review é a mais
+    // recente no momento em que é salva). Achado da Carla, 07/08: a
+    // Herdade da Malhadinha Nova tinha review com foto real mas capa vazia
+    // — não existia NENHUMA ligação entre foto de review e capa do
+    // fornecedor. Reunião comercial (lead) nunca tem foto, então nunca
+    // sobrescreve a capa com nada.
+    if (finalPhotoUrl && hotelId) {
+      await sql`UPDATE tdg_hotels SET image_url = ${finalPhotoUrl} WHERE id = ${hotelId}`
+    }
 
     return NextResponse.json({ review: rows[0] })
   } catch (e) {

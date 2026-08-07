@@ -56,6 +56,7 @@ interface Review {
   heads_up: string | null
   status: string
   photo_url: string | null
+  photo_urls: string[] | null
   sentiment_map: SentimentMapValue | null
   created_at: string
   is_favorite: boolean
@@ -695,6 +696,21 @@ function HotelCard({ review, onToggleFavorite, onViewHistory, onConfirmLead, hig
                     }
                   </div>
                 )}
+                {review.photo_urls && review.photo_urls.length > 1 && (
+                  <div style={{ marginBottom: 14 }}>
+                    <p style={{ fontSize: '0.55rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)', margin: '0 0 8px' }}>
+                      Fotos da visita
+                    </p>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+                      {review.photo_urls.map(url => (
+                        <a key={url} href={url} target="_blank" rel="noreferrer" style={{ borderRadius: 10, overflow: 'hidden', aspectRatio: '1', display: 'block' }}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {review.client_profile && (
                   <div style={{ marginBottom: 12 }}>
                     <p style={{ fontSize: '0.55rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)', marginBottom: 5 }}>
@@ -790,6 +806,77 @@ function HotelCard({ review, onToggleFavorite, onViewHistory, onConfirmLead, hig
   )
 }
 
+/* ── Photo upload step — grid de miniaturas + dropzone com arrastar-e-
+   soltar, várias fotos por visita (achado da Carla, 07/08). ─────────── */
+function PhotoUploadStep({ photos, uploading, maxPhotos, onSelect, onRemove }: {
+  photos: string[]
+  uploading: boolean
+  maxPhotos: number
+  onSelect: (files: File[]) => void
+  onRemove: (url: string) => void
+}) {
+  const [dragOver, setDragOver] = useState(false)
+  const canAddMore = photos.length < maxPhotos
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {photos.length > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+          {photos.map(url => (
+            <div key={url} style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', border: '1px solid var(--tdgflow-border)', aspectRatio: '1' }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={url} alt="Foto da visita" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+              <button
+                onClick={() => onRemove(url)}
+                style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.55)', border: 'none', borderRadius: '50%', width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+              >
+                <X size={11} style={{ color: '#fff' }} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {canAddMore && (
+        <label
+          onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={e => {
+            e.preventDefault()
+            setDragOver(false)
+            const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'))
+            if (files.length) onSelect(files)
+          }}
+          style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8,
+            padding: '28px 16px', borderRadius: 14,
+            border: `1.5px dashed ${dragOver ? 'var(--tdgflow-navy-dim)' : 'var(--tdgflow-border-light)'}`,
+            background: dragOver ? 'var(--tdgflow-navy-subtle)' : 'var(--tdgflow-surface-high)',
+            cursor: uploading ? 'default' : 'pointer', transition: 'background 150ms, border-color 150ms',
+          }}
+        >
+          {uploading
+            ? <Loader2 size={18} className="animate-spin" style={{ color: 'var(--tdgflow-text-muted)' }} />
+            : (
+              <span style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-muted)', textAlign: 'center' }}>
+                {photos.length > 0 ? 'Adicionar mais fotos' : 'Toque para escolher ou arraste fotos aqui'}
+              </span>
+            )
+          }
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            disabled={uploading}
+            onChange={e => { const files = Array.from(e.target.files ?? []); if (files.length) onSelect(files); e.target.value = '' }}
+            style={{ display: 'none' }}
+          />
+        </label>
+      )}
+    </div>
+  )
+}
+
 /* ── Questionnaire ──────────────────────────────────────────────── */
 // Perguntas ramificadas por entity_type/visit_type — ver src/lib/review-questions.ts
 
@@ -831,20 +918,35 @@ function Questionnaire({ onClose, onSaved, initialAnswers, relatedLeadId }: {
     return !!currentAnswer
   }
 
-  async function handlePhotoSelect(file: File) {
+  const MAX_REVIEW_PHOTOS = 6
+
+  async function handlePhotosSelect(files: File[]) {
+    if (!files.length) return
+    const current = (answers.photo as string[] | undefined) ?? []
+    const room = MAX_REVIEW_PHOTOS - current.length
+    if (room <= 0) {
+      toast(`Máximo de ${MAX_REVIEW_PHOTOS} fotos por visita`, 'error')
+      return
+    }
+    const toUpload = files.slice(0, room)
     setUploadingPhoto(true)
     try {
       const fd = new FormData()
-      fd.append('photo', file)
+      toUpload.forEach(f => fd.append('photo', f))
       const res = await fetch('/api/reviews/photo', { method: 'POST', body: fd })
       if (!res.ok) throw new Error()
       const data = await res.json()
-      setAnswer(data.photo_url)
+      setAnswer([...current, ...(data.photo_urls as string[])])
     } catch {
-      toast('Não foi possível enviar a foto — pode seguir sem ela', 'error')
+      toast('Não foi possível enviar a(s) foto(s) — pode seguir sem elas', 'error')
     } finally {
       setUploadingPhoto(false)
     }
+  }
+
+  function removePhoto(url: string) {
+    const current = (answers.photo as string[] | undefined) ?? []
+    setAnswer(current.filter(u => u !== url))
   }
 
   async function startRecording() {
@@ -913,7 +1015,7 @@ function Questionnaire({ onClose, onSaved, initialAnswers, relatedLeadId }: {
           service_rating:   subRatings.service  ?? null,
           food_rating:      subRatings.food     ?? null,
           location_rating:  subRatings.location ?? null,
-          photo_url:        answers.photo || null,
+          photo_urls:       (answers.photo as string[] | undefined) ?? [],
           related_lead_id:  relatedLeadId || null,
           // status não é enviado — o servidor deriva de visit_type, nunca confia no cliente.
           raw_answers:      rawAnswers,
@@ -1058,43 +1160,17 @@ function Questionnaire({ onClose, onSaved, initialAnswers, relatedLeadId }: {
                 />
               )}
 
-              {/* Photo — prova de que alguém esteve lá de verdade; opcional */}
+              {/* Photo — prova de que alguém esteve lá de verdade; opcional.
+                  Múltiplas fotos + arrastar pra dentro (achado da Carla,
+                  07/08: só dava pra subir uma de cada vez, sem drag&drop). */}
               {q.type === 'photo' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {currentAnswer ? (
-                    <div style={{ position: 'relative', borderRadius: 14, overflow: 'hidden', border: '1px solid var(--tdgflow-border)' }}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={currentAnswer as string} alt="Foto da visita" style={{ width: '100%', height: 180, objectFit: 'cover', display: 'block' }} />
-                      <button
-                        onClick={() => setAnswer(undefined)}
-                        style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.55)', border: 'none', borderRadius: '50%', width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                      >
-                        <X size={13} style={{ color: '#fff' }} />
-                      </button>
-                    </div>
-                  ) : (
-                    <label
-                      style={{
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8,
-                        padding: '28px 16px', borderRadius: 14, border: '1.5px dashed var(--tdgflow-border-light)',
-                        background: 'var(--tdgflow-surface-high)', cursor: uploadingPhoto ? 'default' : 'pointer',
-                      }}
-                    >
-                      {uploadingPhoto
-                        ? <Loader2 size={18} className="animate-spin" style={{ color: 'var(--tdgflow-text-muted)' }} />
-                        : <span style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-muted)' }}>Toque para escolher uma foto</span>
-                      }
-                      <input
-                        type="file"
-                        accept="image/*"
-                        capture="environment"
-                        disabled={uploadingPhoto}
-                        onChange={e => { const f = e.target.files?.[0]; if (f) handlePhotoSelect(f) }}
-                        style={{ display: 'none' }}
-                      />
-                    </label>
-                  )}
-                </div>
+                <PhotoUploadStep
+                  photos={(currentAnswer as string[] | undefined) ?? []}
+                  uploading={uploadingPhoto}
+                  maxPhotos={MAX_REVIEW_PHOTOS}
+                  onSelect={handlePhotosSelect}
+                  onRemove={removePhoto}
+                />
               )}
 
               {/* Voice + text */}
