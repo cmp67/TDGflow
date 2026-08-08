@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Plus, UserCheck, UserX, Loader, Check, X, Eye, EyeOff } from 'lucide-react'
 import AgencyInvitesPanel from '@/components/AgencyInvitesPanel'
 import AdminSubscriptionsPanel from '@/components/AdminSubscriptionsPanel'
+import AdminActivityPanel from '@/components/AdminActivityPanel'
 
 /* ── Ícones próprios — traço só, sem emoji/biblioteca genérica pra badges e
    labels de seção (consistente com Na prática/Ofertas/HoteisView). ────── */
@@ -43,6 +44,13 @@ function IconCrown({ size = 11, style }: { size?: number; style?: React.CSSPrope
     </svg>
   )
 }
+function IconActivity({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 12h4l2.5 7L13.5 5l2.5 7H21" />
+    </svg>
+  )
+}
 function IconPhone({ size = 12 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
@@ -73,7 +81,7 @@ interface Props {
 }
 
 export default function GestaoView({ users: initial }: Props) {
-  const [tab, setTab] = useState<'users' | 'invites' | 'assinaturas'>('users')
+  const [tab, setTab] = useState<'users' | 'invites' | 'assinaturas' | 'atividade'>('users')
   const [users, setUsers] = useState<TdgUser[]>(initial)
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -149,13 +157,15 @@ export default function GestaoView({ users: initial }: Props) {
         <div>
           <p className="section-label mb-1">Administração</p>
           <h1 className="text-xl font-semibold" style={{ color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.02em' }}>
-            {tab === 'users' ? 'Gestão de Usuários' : tab === 'invites' ? 'Convites de Agência' : 'Assinaturas'}
+            {tab === 'users' ? 'Gestão de Usuários' : tab === 'invites' ? 'Convites de Agência' : tab === 'atividade' ? 'Atividade da Rede' : 'Assinaturas'}
           </h1>
           <p className="text-sm mt-1" style={{ color: 'var(--tdgflow-text-muted)' }}>
             {tab === 'users'
               ? `${Object.values(byAgency).flat().length} usuário${Object.values(byAgency).flat().length !== 1 ? 's' : ''} · ${Object.keys(byAgency).length} agênci${Object.keys(byAgency).length !== 1 ? 'as' : 'a'}`
               : tab === 'invites'
               ? 'Links de auto-cadastro para as agências da rede'
+              : tab === 'atividade'
+              ? 'Quem logou, quando, e o quanto está usando o produto'
               : 'Status de cobrança do plano Growth por agência'}
           </p>
         </div>
@@ -199,6 +209,19 @@ export default function GestaoView({ users: initial }: Props) {
           <IconInvite size={14} /> Convites de Agência
         </button>
         <button
+          onClick={() => setTab('atividade')}
+          className="flex items-center gap-1.5"
+          style={{
+            padding: '8px 12px', fontSize: '0.8125rem', fontWeight: tab === 'atividade' ? 600 : 400,
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: tab === 'atividade' ? 'var(--tdgflow-navy-dim)' : 'var(--tdgflow-text-muted)',
+            borderBottom: tab === 'atividade' ? '2px solid var(--tdgflow-navy)' : '2px solid transparent',
+            marginBottom: -1,
+          }}
+        >
+          <IconActivity size={14} /> Atividade
+        </button>
+        <button
           onClick={() => setTab('assinaturas')}
           className="flex items-center gap-1.5"
           style={{
@@ -214,6 +237,7 @@ export default function GestaoView({ users: initial }: Props) {
       </div>
 
       {tab === 'invites' && <AgencyInvitesPanel />}
+      {tab === 'atividade' && <AdminActivityPanel />}
       {tab === 'assinaturas' && <AdminSubscriptionsPanel />}
 
       {/* Create form */}

@@ -29,6 +29,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const valid = await compare(password, user.password_hash)
         if (!valid) return null
 
+        // Log de login — achado da Carla, 08/08: não existia NENHUM
+        // rastro de quem logou/quando em lugar nenhum. Fire-and-forget,
+        // nunca bloqueia nem falha o login por causa do log.
+        sql`CREATE TABLE IF NOT EXISTS tdg_login_events (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          user_id UUID NOT NULL REFERENCES tdg_users(id) ON DELETE CASCADE,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        )`
+          .then(() => sql`INSERT INTO tdg_login_events (user_id) VALUES (${user.id})`)
+          .catch(() => { /* log não pode nunca quebrar o login */ })
+
         return {
           id: user.id,
           name: user.name,
