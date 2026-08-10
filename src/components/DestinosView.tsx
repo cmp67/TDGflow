@@ -31,6 +31,7 @@ export default function DestinosView() {
   const [results, setResults] = useState<SearchResults>(EMPTY_RESULTS)
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [currentUserName, setCurrentUserName] = useState<string | null>(null)
   const debouncedSearch = useDebounce(search, 300).trim()
   const isSearching = debouncedSearch.length > 0
 
@@ -59,6 +60,10 @@ export default function DestinosView() {
     load(controller.signal)
     return () => controller.abort()
   }, [load])
+
+  useEffect(() => {
+    fetch('/api/context').then(r => r.json()).then(ctx => setCurrentUserName(ctx.agent_name ?? null)).catch(() => {})
+  }, [])
 
   const totalResults = results.knowledge.total + results.hotels.total + results.reviews.total
     + results.contacts.total + results.offers.total
@@ -154,7 +159,7 @@ export default function DestinosView() {
             <ResultGroup title="Conhecimento" total={results.knowledge.total}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 8 }}>
                 <AnimatePresence mode="popLayout">
-                  {results.knowledge.items.map(tip => <TipCard key={tip.id} tip={tip} highlightId={highlightTipId} />)}
+                  {results.knowledge.items.map(tip => <TipCard key={tip.id} tip={tip} highlightId={highlightTipId} currentUserName={currentUserName} onActed={() => load(new AbortController().signal)} />)}
                 </AnimatePresence>
               </div>
             </ResultGroup>
@@ -164,7 +169,7 @@ export default function DestinosView() {
             </ResultGroup>
 
             <ResultGroup title="Reviews" total={results.reviews.total}>
-              {results.reviews.items.map(r => <ReviewResultRow key={r.id} review={r} />)}
+              {results.reviews.items.map(r => <ReviewResultRow key={r.id} review={r} currentUserName={currentUserName} onActed={() => load(new AbortController().signal)} />)}
             </ResultGroup>
 
             <ResultGroup title="Contatos" total={results.contacts.total}>
@@ -176,7 +181,7 @@ export default function DestinosView() {
         {!loading && !isSearching && tips.length > 0 && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 10 }}>
             <AnimatePresence mode="popLayout">
-              {tips.map(tip => <TipCard key={tip.id} tip={tip} highlightId={highlightTipId} />)}
+              {tips.map(tip => <TipCard key={tip.id} tip={tip} highlightId={highlightTipId} currentUserName={currentUserName} onActed={() => load(new AbortController().signal)} />)}
             </AnimatePresence>
           </div>
         )}

@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Users, Lightbulb, AlertTriangle, Building2, Star, UserCircle2, MapPin, Tag, Clock } from 'lucide-react'
 import CopyLinkButton from '@/components/CopyLinkButton'
+import { QueueCard, type PendingItem } from '@/components/PendingConfirmationQueue'
+import { isAuthorMatch } from '@/lib/author-match'
 
 /* ── Types compartilhados da Super Busca (Fase 8/8d) ──────────────
    Extraído de DestinosView.tsx pra ser reaproveitado pela busca global
@@ -41,6 +43,8 @@ export interface ReviewResult {
   heads_up: string | null
   overall_rating: number | null
   import_approval?: string | null
+  source_author?: string | null
+  source_date?: string | null
 }
 
 export interface ContactResult {
@@ -136,10 +140,32 @@ function ExpiringBadge({ days }: { days: number }) {
 }
 
 /* ── Tip card (grupo Conhecimento) ─────────────────────────────── */
-export function TipCard({ tip, highlightId }: { tip: KnowledgeTip; highlightId?: string | null }) {
+// Achado da Carla, 10/08: o selo "Aguardando confirmação" era só decorativo
+// — o autor via a própria nota marcada assim no meio do feed de todo mundo,
+// mas não tinha nenhuma ação ali (só existia num painel separado, "Você
+// disse isso — confirma?", que a pessoa podia nem associar à nota
+// específica). Quando é do autor logado (isAuthorMatch), vira QueueCard de
+// verdade — aprovar/editar/excluir ali mesmo, sem precisar caçar em outro lugar.
+export function TipCard({ tip, highlightId, currentUserName, onActed }: {
+  tip: KnowledgeTip
+  highlightId?: string | null
+  currentUserName?: string | null
+  onActed?: () => void
+}) {
   const isHighlighted = !!highlightId && tip.id === highlightId
   const [expanded, setExpanded] = useState(isHighlighted)
+  const [handled, setHandled] = useState(false)
   const cardRef = useRef<HTMLDivElement>(null)
+
+  const isMinePending = tip.import_approval === 'pending' && isAuthorMatch(tip.source_author, currentUserName)
+  if (isMinePending && !handled) {
+    return (
+      <QueueCard
+        item={{ id: tip.id, content_type: 'knowledge', title: tip.title, content: tip.content, source_author: tip.source_author, source_date: tip.source_date }}
+        onActed={() => { setHandled(true); onActed?.() }}
+      />
+    )
+  }
 
   useEffect(() => {
     if (isHighlighted) cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -247,7 +273,27 @@ export function HotelResultRow({ hotel, onNavigate }: { hotel: HotelResult; onNa
   )
 }
 
-export function ReviewResultRow({ review, onNavigate }: { review: ReviewResult; onNavigate?: () => void }) {
+export function ReviewResultRow({ review, onNavigate, currentUserName, onActed }: {
+  review: ReviewResult
+  onNavigate?: () => void
+  currentUserName?: string | null
+  onActed?: () => void
+}) {
+  const [handled, setHandled] = useState(false)
+  const isMinePending = review.import_approval === 'pending' && isAuthorMatch(review.source_author, currentUserName)
+  if (isMinePending && !handled) {
+    return (
+      <QueueCard
+        item={{
+          id: review.id, content_type: 'review', title: review.hotel_name,
+          heads_up: review.heads_up, must_experience: review.must_experience,
+          source_author: review.source_author ?? '', source_date: review.source_date ?? '',
+        }}
+        onActed={() => { setHandled(true); onActed?.() }}
+      />
+    )
+  }
+
   const snippet = review.must_experience || review.heads_up || ''
   return (
     <Link href={`/flow/dicas?reviewId=${review.id}`} onClick={onNavigate} style={rowStyle}>

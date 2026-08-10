@@ -11,7 +11,7 @@ import { CheckCircle2, Pencil, Trash2, Loader2, Search, ShieldQuestion } from 'l
    - scope="admin" na aba Rede TDG do Billing, os dois tipos juntos — fila
      de fallback pra quem ainda não tem conta no Flow com nome batendo. */
 
-interface PendingItem {
+export interface PendingItem {
   id: string
   content_type: 'review' | 'knowledge'
   title: string
@@ -79,7 +79,7 @@ function EditFields({ item, onChange }: { item: PendingItem; onChange: (fields: 
   )
 }
 
-function QueueCard({ item, onActed }: { item: PendingItem; onActed: () => void }) {
+export function QueueCard({ item, onActed }: { item: PendingItem; onActed: () => void }) {
   const [editing, setEditing] = useState(false)
   const [editFields, setEditFields] = useState<Record<string, unknown>>({})
   const [confirmingDelete, setConfirmingDelete] = useState(false)

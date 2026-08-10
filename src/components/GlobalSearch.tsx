@@ -21,9 +21,13 @@ export default function GlobalSearch({ onClose }: { onClose: () => void }) {
   const debouncedQuery = useDebounce(query, 300).trim()
   const [results, setResults] = useState<SearchResults>(EMPTY_RESULTS)
   const [loading, setLoading] = useState(false)
+  const [currentUserName, setCurrentUserName] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => { inputRef.current?.focus() }, [])
+  useEffect(() => {
+    fetch('/api/context').then(r => r.json()).then(ctx => setCurrentUserName(ctx.agent_name ?? null)).catch(() => {})
+  }, [])
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -115,12 +119,12 @@ export default function GlobalSearch({ onClose }: { onClose: () => void }) {
               </ResultGroup>
 
               <ResultGroup title="Reviews" total={results.reviews.total}>
-                {results.reviews.items.map(r => <ReviewResultRow key={r.id} review={r} onNavigate={onClose} />)}
+                {results.reviews.items.map(r => <ReviewResultRow key={r.id} review={r} onNavigate={onClose} currentUserName={currentUserName} onActed={() => load(new AbortController().signal)} />)}
               </ResultGroup>
 
               <ResultGroup title="Conhecimento" total={results.knowledge.total}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {results.knowledge.items.map(tip => <TipCard key={tip.id} tip={tip} />)}
+                  {results.knowledge.items.map(tip => <TipCard key={tip.id} tip={tip} currentUserName={currentUserName} onActed={() => load(new AbortController().signal)} />)}
                 </div>
               </ResultGroup>
 

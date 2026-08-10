@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
     sql`
       SELECT id, hotel_id, hotel_name, country, entity_type, client_profile, must_experience,
              heads_up, highlights, overall_rating, source_author,
-             COALESCE(source_date, visit_date)::text AS recency_date, import_approval
+             COALESCE(source_date, visit_date)::text AS source_date, import_approval
       FROM tdg_hotel_reviews
       WHERE status = 'published'
       ORDER BY COALESCE(source_date, visit_date) DESC NULLS LAST, created_at DESC
