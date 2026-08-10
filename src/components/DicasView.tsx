@@ -877,6 +877,57 @@ function PhotoUploadStep({ photos, uploading, maxPhotos, onSelect, onRemove }: {
   )
 }
 
+/* ── Lista de nomes — lote de "Por testar": mesmo contexto compartilhado
+   (país, motivo/fonte), N nomes, adicionar/remover linhas livremente. ── */
+function NameListStep({ names, onChange }: { names: string[]; onChange: (names: string[]) => void }) {
+  function update(i: number, value: string) {
+    const next = [...names]
+    next[i] = value
+    onChange(next)
+  }
+  function remove(i: number) {
+    onChange(names.length > 1 ? names.filter((_, idx) => idx !== i) : [''])
+  }
+  function add() {
+    onChange([...names, ''])
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {names.map((name, i) => (
+        <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          <input
+            className="input"
+            placeholder={i === 0 ? 'Nome do hotel, restaurante, guia...' : 'Mais um nome...'}
+            value={name}
+            onChange={e => update(i, e.target.value)}
+            autoFocus={i === names.length - 1}
+          />
+          {names.length > 1 && (
+            <button
+              onClick={() => remove(i)}
+              style={{ flexShrink: 0, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tdgflow-text-muted)' }}
+              aria-label="Remover"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+      ))}
+      <button
+        onClick={add}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 6, alignSelf: 'flex-start',
+          padding: '8px 12px', borderRadius: 10, background: 'none', border: '1px dashed var(--tdgflow-border-light)',
+          color: 'var(--tdgflow-text-muted)', fontSize: '0.8125rem', cursor: 'pointer',
+        }}
+      >
+        <Plus size={13} /> Adicionar outro
+      </button>
+    </div>
+  )
+}
+
 /* ── Questionnaire ──────────────────────────────────────────────── */
 // Perguntas ramificadas por entity_type/visit_type — ver src/lib/review-questions.ts
 
@@ -915,6 +966,7 @@ function Questionnaire({ onClose, onSaved, initialAnswers, relatedLeadId }: {
     if (q.type === 'sentiment_map') return true   // optional
     if (q.type === 'photo') return !uploadingPhoto // optional, só trava durante upload
     if (q.type === 'sentiment') return currentAnswer !== undefined  // allow 0
+    if (q.type === 'name_list') return Array.isArray(currentAnswer) && (currentAnswer as string[]).some(n => n.trim())
     return !!currentAnswer
   }
 
@@ -996,11 +1048,46 @@ function Questionnaire({ onClose, onSaved, initialAnswers, relatedLeadId }: {
     const hasSentimentMap = Object.keys(sentimentMap).length > 0
     const rawAnswers = Object.fromEntries(
       Object.entries(answers)
-        .filter(([k]) => !['overall_rating', 'sub_ratings', 'sentiment_map', 'hotel_name', 'visit_date', 'visit_type', 'entity_type', 'photo'].includes(k))
+        .filter(([k]) => !['overall_rating', 'sub_ratings', 'sentiment_map', 'hotel_name', 'hotel_names', 'visit_date', 'visit_type', 'entity_type', 'photo'].includes(k))
         .map(([k, v]) => [k, String(v)])
     )
 
+    // Lote de "Por testar" — mesmo contexto (país, fonte/motivo), N nomes.
+    // Um POST por nome, mas um único submit pro usuário (achado da Carla,
+    // 10/08: repetir o questionário inteiro só porque o nome muda era
+    // fricção sem motivo).
+    const isBatch = Array.isArray(answers.hotel_names)
+    const names = isBatch ? (answers.hotel_names as string[]).map(n => n.trim()).filter(Boolean) : []
+
     try {
+      if (isBatch) {
+        const results = await Promise.all(names.map(name =>
+          fetch('/api/reviews', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              hotel_name:  name,
+              entity_type: answers.entity_type || 'hotel',
+              country:     answers.country || null,
+              visit_type:  answers.visit_type || null,
+              raw_answers: rawAnswers,
+            }),
+          })
+        ))
+        const failed = results.filter(r => !r.ok).length
+        if (failed === results.length) throw new Error('Nenhuma descoberta foi salva.')
+        setDone(true)
+        sounds.saved()
+        const ok = results.length - failed
+        toast(
+          failed > 0
+            ? `${ok} de ${results.length} descobertas registradas — algumas falharam, tente de novo.`
+            : `${ok} descoberta${ok > 1 ? 's' : ''} registrada${ok > 1 ? 's' : ''} — vamos testar!`,
+          failed > 0 ? 'error' : 'success'
+        )
+        return
+      }
+
       const res = await fetch('/api/reviews', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1109,6 +1196,15 @@ function Questionnaire({ onClose, onSaved, initialAnswers, relatedLeadId }: {
                   value={(currentAnswer as string) ?? ''}
                   onChange={e => setAnswer(e.target.value)}
                   autoFocus
+                />
+              )}
+
+              {/* Lista de nomes — lote de "Por testar" (achado da Carla,
+                  10/08: mesmo contexto, N nomes, 1 submit) */}
+              {q.type === 'name_list' && (
+                <NameListStep
+                  names={(currentAnswer as string[] | undefined) ?? ['']}
+                  onChange={setAnswer}
                 />
               )}
 

@@ -1,7 +1,7 @@
 export interface ReviewQuestion {
   id: string
   text: string
-  type: 'text' | 'date' | 'select' | 'sentiment' | 'sentiment_map' | 'voice_text' | 'photo'
+  type: 'text' | 'date' | 'select' | 'sentiment' | 'sentiment_map' | 'voice_text' | 'photo' | 'name_list'
   placeholder?: string
   options?: string[]
 }
@@ -12,19 +12,28 @@ export type EntityType = (typeof ENTITY_TYPES)[number]
 export const VISIT_TYPES = ['fam_trip', 'site_inspection', 'personal_stay', 'commercial_meeting'] as const
 export type VisitType = (typeof VISIT_TYPES)[number]
 
-const BASE_QUESTIONS: ReviewQuestion[] = [
-  { id: 'entity_type', text: 'O que você está avaliando?', type: 'select', options: [...ENTITY_TYPES] },
-  { id: 'hotel_name', text: 'Qual o nome?', type: 'text', placeholder: 'Hotel, beach club, guia, transfer...' },
-  { id: 'country', text: 'Onde fica?', type: 'text', placeholder: 'Ex: Portugal, Comporta, Maldivas...' },
-  { id: 'visit_date', text: 'Quando foi?', type: 'date' },
-  { id: 'visit_type', text: 'O que você está registrando?', type: 'select', options: [...VISIT_TYPES] },
-]
+// entity_type e visit_type vêm primeiro em todo caminho — é o que decide se
+// o resto do questionário pede 1 nome (visita real) ou uma lista de nomes
+// (Por testar, achado da Carla 10/08: pedir a mesma coisa 3x só porque o
+// nome muda era fricção repetida sem motivo — o contexto é o mesmo).
+const ENTITY_QUESTION: ReviewQuestion = { id: 'entity_type', text: 'O que você está avaliando?', type: 'select', options: [...ENTITY_TYPES] }
+const VISIT_TYPE_QUESTION: ReviewQuestion = { id: 'visit_type', text: 'O que você está registrando?', type: 'select', options: [...VISIT_TYPES] }
+const NAME_QUESTION: ReviewQuestion = { id: 'hotel_name', text: 'Qual o nome?', type: 'text', placeholder: 'Hotel, beach club, guia, transfer...' }
+const COUNTRY_QUESTION: ReviewQuestion = { id: 'country', text: 'Onde fica?', type: 'text', placeholder: 'Ex: Portugal, Comporta, Maldivas...' }
+const DATE_QUESTION: ReviewQuestion = { id: 'visit_date', text: 'Quando foi?', type: 'date' }
 
 const COMMERCIAL_MEETING_QUESTION: ReviewQuestion = {
   id: 'why_it_matters',
-  text: 'Por que essa reunião chamou sua atenção? O que vale a pena testar?',
+  text: 'Por que isso chamou sua atenção? O que vale a pena testar?',
   type: 'voice_text',
   placeholder: 'O que você viu ou ouviu que merece atenção da rede...',
+}
+
+const NAMES_LIST_QUESTION: ReviewQuestion = {
+  id: 'hotel_names',
+  text: 'Quais nomes?',
+  type: 'name_list',
+  placeholder: 'Um por linha — adicione quantos quiser da mesma fonte.',
 }
 
 const PHOTO_QUESTION: ReviewQuestion = {
@@ -58,25 +67,30 @@ const LIGHT_TIP_QUESTIONS: ReviewQuestion[] = [
 ]
 
 /**
- * Ramifica o questionário por entity_type e visit_type. Reunião comercial
- * nunca pergunta sobre estadia (não houve estadia) — ganha só a pergunta do
- * porquê. Fora de hotel, pula mapa de sentimento por aspecto, que não faz
- * sentido pra beach club/transfer/guia/restaurante.
+ * Ramifica o questionário por entity_type e visit_type — os dois vêm
+ * sempre primeiro, antes de qualquer pergunta que dependa deles. "Por
+ * testar" (commercial_meeting) nunca pergunta sobre estadia (não houve
+ * visita) e pede uma LISTA de nomes em vez de um só, já que o motivo/fonte é
+ * o mesmo pra todos. Fora de hotel, pula mapa de sentimento por aspecto, que
+ * não faz sentido pra beach club/transfer/guia/restaurante.
  */
 export function getQuestions(answers: Record<string, unknown>): ReviewQuestion[] {
   const entityType = (answers.entity_type as string) || 'hotel'
   const visitType = answers.visit_type as string | undefined
 
+  if (!visitType) {
+    return [ENTITY_QUESTION, VISIT_TYPE_QUESTION]
+  }
+
   if (visitType === 'commercial_meeting') {
-    return [...BASE_QUESTIONS, COMMERCIAL_MEETING_QUESTION]
+    return [ENTITY_QUESTION, VISIT_TYPE_QUESTION, COUNTRY_QUESTION, COMMERCIAL_MEETING_QUESTION, NAMES_LIST_QUESTION]
   }
-  if (entityType === 'hotel') {
-    return [...BASE_QUESTIONS, ...STAY_QUESTIONS]
-  }
-  return [...BASE_QUESTIONS, ...LIGHT_TIP_QUESTIONS]
+
+  const stayQuestions = entityType === 'hotel' ? STAY_QUESTIONS : LIGHT_TIP_QUESTIONS
+  return [ENTITY_QUESTION, VISIT_TYPE_QUESTION, NAME_QUESTION, COUNTRY_QUESTION, DATE_QUESTION, ...stayQuestions]
 }
 
-/** Reunião comercial nasce como lead a testar, nunca como review publicado. */
+/** "Por testar" nasce como lead a testar, nunca como review publicado. */
 export function isLeadSubmission(answers: Record<string, unknown>): boolean {
   return answers.visit_type === 'commercial_meeting'
 }
