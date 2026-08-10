@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, Heart, ChevronDown, ChevronUp,
   Building2, X, Mic, Square, ArrowRight, ArrowLeft,
-  CheckCircle, Loader2, AlertCircle, Search, SlidersHorizontal, MapPin, Eye,
+  CheckCircle, Loader2, AlertCircle, Search, SlidersHorizontal, MapPin, Eye, Pencil,
 } from 'lucide-react'
 import { sounds } from '@/lib/sounds'
 import { useToast } from '@/contexts/ToastContext'
@@ -60,6 +60,7 @@ interface Review {
   sentiment_map: SentimentMapValue | null
   created_at: string
   is_favorite: boolean
+  is_own?: boolean
   view_count?: number
   favorite_count?: number
   visit_count?: number
@@ -424,15 +425,17 @@ function SentimentMapStep({ value, onChange }: {
 }
 
 /* ── Hotel card ─────────────────────────────────────────────────── */
-function HotelCard({ review, onToggleFavorite, onViewHistory, onConfirmLead, highlightId }: {
+function HotelCard({ review, onToggleFavorite, onViewHistory, onConfirmLead, onUpdated, highlightId }: {
   review: Review
   onToggleFavorite: (id: string, current: boolean) => void
   onViewHistory: (hotelName: string) => void
   onConfirmLead: (review: Review) => void
+  onUpdated: () => void
   highlightId?: string | null
 }) {
   const isHighlighted = !!highlightId && review.id === highlightId
   const [expanded, setExpanded] = useState(isHighlighted)
+  const [showEdit, setShowEdit] = useState(false)
   const cardRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -781,6 +784,19 @@ function HotelCard({ review, onToggleFavorite, onViewHistory, onConfirmLead, hig
               </span>
             )}
             <CopyLinkButton path={`/flow/dicas?reviewId=${review.id}`} label={`Review: ${review.hotel_name}`} size={12} />
+            {/* Só o autor edita — sem exceção pra admin (pedido explícito
+                da Carla, 10/08). Também é daqui que dá pra acrescentar
+                mais fotos depois da visita. */}
+            {review.is_own && (
+              <button
+                onClick={() => setShowEdit(true)}
+                style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)', padding: 0, transition: 'color 150ms' }}
+                onMouseEnter={e => (e.currentTarget.style.color = 'var(--tdgflow-text-secondary)')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'var(--tdgflow-text-muted)')}
+              >
+                <Pencil size={11} /> Editar
+              </button>
+            )}
           </div>
           {visitCount > 1 && review.entity_type === 'hotel' && review.hotel_id ? (
             // Hotel tem ficha própria — a lista de visitas mora lá (Fase 2),
@@ -802,7 +818,143 @@ function HotelCard({ review, onToggleFavorite, onViewHistory, onConfirmLead, hig
           )}
         </div>
       )}
+      {showEdit && (
+        <EditReviewModal
+          review={review}
+          onClose={() => setShowEdit(false)}
+          onSaved={() => { setShowEdit(false); onUpdated() }}
+        />
+      )}
     </motion.div>
+  )
+}
+
+/* ── Editar review — exclusivo do autor (review.is_own), gate real fica no
+   servidor (PATCH /api/reviews). Reaproveita PhotoUploadStep pra acrescentar
+   fotos além das já existentes, sem precisar recriar a review. ──────── */
+function EditReviewModal({ review, onClose, onSaved }: {
+  review: Review
+  onClose: () => void
+  onSaved: () => void
+}) {
+  const { toast } = useToast()
+  const [overallRating, setOverallRating] = useState(review.overall_rating)
+  const [clientProfile, setClientProfile] = useState(review.client_profile ?? '')
+  const [mustExperience, setMustExperience] = useState(review.must_experience ?? '')
+  const [headsUp, setHeadsUp] = useState(review.heads_up ?? '')
+  const [newPhotos, setNewPhotos] = useState<string[]>([])
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const existingPhotos = review.photo_urls?.length ? review.photo_urls : (review.photo_url ? [review.photo_url] : [])
+
+  async function handlePhotosSelect(files: File[]) {
+    if (!files.length) return
+    setUploadingPhoto(true)
+    try {
+      const fd = new FormData()
+      files.slice(0, 6 - existingPhotos.length - newPhotos.length).forEach(f => fd.append('photo', f))
+      const res = await fetch('/api/reviews/photo', { method: 'POST', body: fd })
+      if (!res.ok) throw new Error()
+      const data = await res.json()
+      setNewPhotos(prev => [...prev, ...(data.photo_urls as string[])])
+    } catch {
+      toast('Não foi possível enviar a(s) foto(s)', 'error')
+    } finally {
+      setUploadingPhoto(false)
+    }
+  }
+
+  async function handleSave() {
+    setSaving(true)
+    try {
+      const res = await fetch('/api/reviews', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          review_id: review.id,
+          action: 'edit',
+          fields: {
+            overall_rating: overallRating,
+            client_profile: clientProfile || null,
+            must_experience: mustExperience || null,
+            heads_up: headsUp || null,
+          },
+          new_photo_urls: newPhotos,
+        }),
+      })
+      if (!res.ok) throw new Error()
+      sounds.saved()
+      toast('Review atualizada', 'success')
+      onSaved()
+    } catch {
+      toast('Não foi possível salvar as alterações', 'error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 60, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={onClose}>
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{ background: 'var(--tdgflow-surface)', borderRadius: '20px 20px 0 0', width: '100%', maxWidth: 480, maxHeight: '85vh', overflowY: 'auto', padding: 24 }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+          <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--tdgflow-text-primary)', margin: 0 }}>Editar review — {review.hotel_name}</h3>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tdgflow-text-muted)' }}><X size={16} /></button>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div>
+            <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--tdgflow-text-muted)', marginBottom: 8 }}>Avaliação geral</p>
+            <SentimentChips value={overallRating} onChange={v => v !== null && setOverallRating(v)} />
+          </div>
+
+          <div>
+            <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--tdgflow-text-muted)', marginBottom: 6 }}>Perfil de cliente ideal</p>
+            <textarea className="input" rows={2} value={clientProfile} onChange={e => setClientProfile(e.target.value)} style={{ resize: 'vertical' }} />
+          </div>
+
+          <div>
+            <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--tdgflow-text-muted)', marginBottom: 6 }}>Experiência obrigatória</p>
+            <textarea className="input" rows={2} value={mustExperience} onChange={e => setMustExperience(e.target.value)} style={{ resize: 'vertical' }} />
+          </div>
+
+          <div>
+            <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--tdgflow-text-muted)', marginBottom: 6 }}>Ressalva ou ponto de atenção</p>
+            <textarea className="input" rows={2} value={headsUp} onChange={e => setHeadsUp(e.target.value)} style={{ resize: 'vertical' }} />
+          </div>
+
+          <div>
+            <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--tdgflow-text-muted)', marginBottom: 8 }}>Fotos</p>
+            {existingPhotos.length > 0 && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 8 }}>
+                {existingPhotos.map(url => (
+                  <div key={url} style={{ borderRadius: 12, overflow: 'hidden', aspectRatio: '1', border: '1px solid var(--tdgflow-border)' }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                  </div>
+                ))}
+              </div>
+            )}
+            <PhotoUploadStep
+              photos={newPhotos}
+              uploading={uploadingPhoto}
+              maxPhotos={Math.max(0, 6 - existingPhotos.length)}
+              onSelect={handlePhotosSelect}
+              onRemove={url => setNewPhotos(prev => prev.filter(u => u !== url))}
+            />
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
+          <button onClick={onClose} className="btn-ghost" style={{ flex: 1, padding: '11px 14px' }}>Cancelar</button>
+          <button onClick={handleSave} disabled={saving} className="btn-gold" style={{ flex: 2, padding: '11px 14px' }}>
+            {saving ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />} Salvar alterações
+          </button>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -1917,6 +2069,7 @@ export default function DicasView() {
                         onToggleFavorite={toggleFavorite}
                         onViewHistory={setHistoryHotel}
                         onConfirmLead={setConfirmingLead}
+                        onUpdated={loadReviews}
                         highlightId={highlightReviewId}
                       />
                     ))}
@@ -1948,6 +2101,7 @@ export default function DicasView() {
                         onToggleFavorite={toggleFavorite}
                         onViewHistory={setHistoryHotel}
                         onConfirmLead={setConfirmingLead}
+                        onUpdated={loadReviews}
                         highlightId={highlightReviewId}
                       />
                     ))}

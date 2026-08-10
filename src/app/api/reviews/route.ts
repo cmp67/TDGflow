@@ -36,7 +36,8 @@ export async function GET(req: NextRequest) {
     const { rows } = await sql`
       SELECT r.*,
              CASE WHEN f.review_id IS NOT NULL THEN true ELSE false END AS is_favorite,
-             (SELECT COUNT(*)::int FROM tdg_review_favorites WHERE review_id = r.id) AS favorite_count
+             (SELECT COUNT(*)::int FROM tdg_review_favorites WHERE review_id = r.id) AS favorite_count,
+             (r.agent_id IS NOT NULL AND r.agent_id = ${agentId}) AS is_own
       FROM tdg_hotel_reviews r
       LEFT JOIN tdg_review_favorites f
         ON f.review_id = r.id AND f.agent_id = ${agentId}
@@ -49,7 +50,8 @@ export async function GET(req: NextRequest) {
     const { rows } = await sql`
       SELECT r.*,
              CASE WHEN f.review_id IS NOT NULL THEN true ELSE false END AS is_favorite,
-             (SELECT COUNT(*)::int FROM tdg_review_favorites WHERE review_id = r.id) AS favorite_count
+             (SELECT COUNT(*)::int FROM tdg_review_favorites WHERE review_id = r.id) AS favorite_count,
+             (r.agent_id IS NOT NULL AND r.agent_id = ${agentId}) AS is_own
       FROM tdg_hotel_reviews r
       LEFT JOIN tdg_review_favorites f
         ON f.review_id = r.id AND f.agent_id = ${agentId}
@@ -67,7 +69,8 @@ export async function GET(req: NextRequest) {
         COUNT(*) OVER (PARTITION BY r.hotel_name) AS visit_count,
         AVG(r.overall_rating) OVER (PARTITION BY r.hotel_name) AS avg_rating,
         CASE WHEN f.review_id IS NOT NULL THEN true ELSE false END AS is_favorite,
-        (SELECT COUNT(*)::int FROM tdg_review_favorites WHERE review_id = r.id) AS favorite_count
+        (SELECT COUNT(*)::int FROM tdg_review_favorites WHERE review_id = r.id) AS favorite_count,
+        (r.agent_id IS NOT NULL AND r.agent_id = ${agentId}) AS is_own
       FROM tdg_hotel_reviews r
       LEFT JOIN tdg_review_favorites f
         ON f.review_id = r.id AND f.agent_id = ${agentId}
@@ -264,7 +267,7 @@ export async function PATCH(req: NextRequest) {
   const session = await auth()
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { review_id, action } = await req.json() // action: 'add' | 'remove' | 'view'
+  const { review_id, action, fields, new_photo_urls } = await req.json() // action: 'add' | 'remove' | 'view' | 'edit'
 
   if (action === 'view') {
     if (!review_id) return NextResponse.json({ error: 'review_id required' }, { status: 400 })
@@ -277,6 +280,39 @@ export async function PATCH(req: NextRequest) {
   `
   const agentId = userRows[0]?.id
   if (!agentId) return NextResponse.json({ error: 'User not found' }, { status: 404 })
+
+  // Achado da Carla, 10/08: review editável EXCLUSIVAMENTE por quem a fez —
+  // sem exceção de admin aqui (diferente da fila de import, que tem
+  // fallback do admin). Também dá pra acrescentar mais fotos depois, sem
+  // precisar recriar a review inteira.
+  if (action === 'edit') {
+    if (!review_id) return NextResponse.json({ error: 'review_id required' }, { status: 400 })
+    const { rows: ownerRows } = await sql`SELECT agent_id, photo_urls FROM tdg_hotel_reviews WHERE id = ${review_id}`
+    if (!ownerRows.length) return NextResponse.json({ error: 'Review não encontrada' }, { status: 404 })
+    if (ownerRows[0].agent_id !== agentId) {
+      return NextResponse.json({ error: 'Só o autor pode editar esta review' }, { status: 403 })
+    }
+
+    const f = (fields ?? {}) as Record<string, unknown>
+    const existingPhotos: string[] = ownerRows[0].photo_urls ?? []
+    const mergedPhotos = Array.isArray(new_photo_urls) && new_photo_urls.length > 0
+      ? [...existingPhotos, ...new_photo_urls]
+      : existingPhotos
+
+    const { rows: updated } = await sql`
+      UPDATE tdg_hotel_reviews SET
+        overall_rating   = COALESCE(${f.overall_rating as number ?? null}, overall_rating),
+        highlights       = COALESCE(${f.highlights ? JSON.stringify(f.highlights) : null}, highlights),
+        client_profile   = COALESCE(${f.client_profile as string ?? null}, client_profile),
+        must_experience  = COALESCE(${f.must_experience as string ?? null}, must_experience),
+        heads_up         = COALESCE(${f.heads_up as string ?? null}, heads_up),
+        photo_urls       = ${JSON.stringify(mergedPhotos)},
+        photo_url        = COALESCE(photo_url, ${mergedPhotos[0] ?? null})
+      WHERE id = ${review_id}
+      RETURNING *
+    `
+    return NextResponse.json({ review: updated[0] })
+  }
 
   if (action === 'add') {
     await sql`
