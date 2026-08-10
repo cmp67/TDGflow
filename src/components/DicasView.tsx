@@ -70,7 +70,7 @@ const VISIT_TYPE_LABELS: Record<string, string> = {
   fam_trip: 'FAM Trip',
   site_inspection: 'Site Inspection',
   personal_stay: 'Hospedagem pessoal',
-  commercial_meeting: 'Reunião comercial',
+  commercial_meeting: 'Por testar',
 }
 
 const ENTITY_TYPE_LABELS: Record<string, string> = {
