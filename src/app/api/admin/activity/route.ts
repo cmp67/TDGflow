@@ -78,6 +78,9 @@ export async function GET() {
     LEFT JOIN reviews ON reviews.uid = u.id
     LEFT JOIN chats   ON chats.uid = u.id
     WHERE lower(u.agency_name) <> 'bemgsy'
+      AND u.email NOT ILIKE '%@example.com'
+      AND u.email NOT ILIKE '%@internal.test'
+      AND u.agency_name NOT ILIKE '%TDD%'
     ORDER BY u.agency_name, u.name
   `
 
