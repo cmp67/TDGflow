@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bell, Tag, Lightbulb, Mic, Megaphone, Award, X } from 'lucide-react'
 import { sounds } from '@/lib/sounds'
@@ -67,13 +68,26 @@ interface Props {
   theme?: 'light' | 'dark'
 }
 
+const PANEL_WIDTH = 300
+
 export default function NotificationBell({ align = 'right', theme = 'light' }: Props) {
   const iconColor = theme === 'dark' ? 'rgba(234,241,245,0.7)' : 'var(--tdgflow-text-muted)'
   const iconColorHover = theme === 'dark' ? '#EAF1F5' : 'var(--tdgflow-text-primary)'
   const [open, setOpen] = useState(false)
   const [notifications, setNotifications] = useState<Notification[]>([])
+  const [mounted, setMounted] = useState(false)
+  // Achado da Carla, 10/08 (bug tinha "voltado" — na verdade nunca tinha
+  // sido corrigido de verdade): o dropdown vivia dentro do header navy, que
+  // tem overflow:hidden pra recortar a animação da onda decorativa —
+  // qualquer painel absoluto ali dentro é cortado, não importa align left ou
+  // right. Fix real: portal pro body, posicionado pelas coordenadas de tela
+  // do próprio sino, escapando de qualquer overflow ancestral.
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
+  const wrapRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
   const READ_KEY = 'tdg-notif-read'
+
+  useEffect(() => { setMounted(true) }, [])
 
   useEffect(() => {
     loadNotifications()
@@ -192,15 +206,25 @@ export default function NotificationBell({ align = 'right', theme = 'light' }: P
 
   function handleOpen() {
     sounds.nav()
+    if (!open && wrapRef.current) {
+      const rect = wrapRef.current.getBoundingClientRect()
+      const left = align === 'left' ? rect.left : rect.right - PANEL_WIDTH
+      const clampedLeft = Math.min(Math.max(left, 8), window.innerWidth - PANEL_WIDTH - 8)
+      setPos({ top: rect.bottom + 8, left: clampedLeft })
+      setTimeout(markAllRead, 1500)
+    }
     setOpen(v => !v)
-    if (!open) setTimeout(markAllRead, 1500)
   }
 
-  // Close on outside click
+  // Close on outside click — o painel agora vive num portal fora da árvore
+  // do wrapper, então precisa checar os dois refs (botão + painel).
   useEffect(() => {
     if (!open) return
     function handler(e: MouseEvent) {
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) setOpen(false)
+      const target = e.target as Node
+      if (wrapRef.current?.contains(target)) return
+      if (panelRef.current?.contains(target)) return
+      setOpen(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
@@ -209,7 +233,7 @@ export default function NotificationBell({ align = 'right', theme = 'light' }: P
   const unread = notifications.filter(n => !n.read).length
 
   return (
-    <div ref={panelRef} style={{ position: 'relative' }}>
+    <div ref={wrapRef} style={{ position: 'relative' }}>
       <button
         onClick={handleOpen}
         style={{
@@ -238,26 +262,28 @@ export default function NotificationBell({ align = 'right', theme = 'light' }: P
         )}
       </button>
 
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: -6, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.98 }}
-            transition={{ duration: 0.18 }}
-            style={{
-              position: 'absolute',
-              top: 'calc(100% + 8px)',
-              ...(align === 'left' ? { left: 0 } : { right: 0 }),
-              width: 300,
-              background: 'var(--tdgflow-surface)',
-              border: '1px solid var(--tdgflow-border)',
-              borderRadius: 14,
-              boxShadow: '0 8px 32px rgba(28,20,16,0.14)',
-              zIndex: 200,
-              overflow: 'hidden',
-            }}
-          >
+      {mounted && createPortal(
+        <AnimatePresence>
+          {open && pos && (
+            <motion.div
+              ref={panelRef}
+              initial={{ opacity: 0, y: -6, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -4, scale: 0.98 }}
+              transition={{ duration: 0.18 }}
+              style={{
+                position: 'fixed',
+                top: pos.top,
+                left: pos.left,
+                width: PANEL_WIDTH,
+                background: 'var(--tdgflow-surface)',
+                border: '1px solid var(--tdgflow-border)',
+                borderRadius: 14,
+                boxShadow: '0 8px 32px rgba(28,20,16,0.14)',
+                zIndex: 200,
+                overflow: 'hidden',
+              }}
+            >
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px 10px' }}>
               <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.01em' }}>
@@ -311,9 +337,11 @@ export default function NotificationBell({ align = 'right', theme = 'light' }: P
                 ))}
               </div>
             )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   )
 }
