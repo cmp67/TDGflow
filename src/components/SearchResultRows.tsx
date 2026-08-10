@@ -157,6 +157,14 @@ export function TipCard({ tip, highlightId, currentUserName, onActed }: {
   const [handled, setHandled] = useState(false)
   const cardRef = useRef<HTMLDivElement>(null)
 
+  // Hooks sempre correm na mesma ordem todo render — o return condicional
+  // pro QueueCard (achado real, 10/08: React error #300, página quebrava)
+  // precisa vir DEPOIS de todos os hooks, nunca antes.
+  useEffect(() => {
+    if (isHighlighted) cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const isMinePending = tip.import_approval === 'pending' && isAuthorMatch(tip.source_author, currentUserName)
   if (isMinePending && !handled) {
     return (
@@ -166,11 +174,6 @@ export function TipCard({ tip, highlightId, currentUserName, onActed }: {
       />
     )
   }
-
-  useEffect(() => {
-    if (isHighlighted) cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
 
   const isAlert = /⚠️|NÃO|exige|proibido|impede|risco|atenção|jurídico|greve/i.test(tip.content ?? '')
 
