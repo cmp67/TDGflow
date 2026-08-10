@@ -356,8 +356,12 @@ function TabMyUsage() {
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/credits/me').then(r => r.json()),
-      fetch('/api/credits/quota').then(r => r.json()),
+      fetch('/api/credits/me').then(async r => (r.ok ? r.json() : null)),
+      // Achado da Carla, 10/08: sem o check de r.ok, uma conta sem agência
+      // (403 { error: 'NO_AGENCY' }) tinha o corpo de erro tratado como se
+      // fosse QuotaData de verdade — "Cota mensal — Invalid Date" e números
+      // em branco em vez de simplesmente esconder o card.
+      fetch('/api/credits/quota').then(async r => (r.ok ? r.json() : null)),
     ]).then(([myData, quotaData]) => {
       setData(myData); setQuota(quotaData); setLoading(false)
     }).catch(() => setLoading(false))

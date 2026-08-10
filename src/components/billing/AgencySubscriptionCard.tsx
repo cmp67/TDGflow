@@ -114,7 +114,37 @@ export default function AgencySubscriptionCard() {
     )
   }
 
-  // none, cancelled, rejected → offer to subscribe
+  // Achado da Carla, 10/08: sem essas 3 checagens, no_agency/unauthenticated/
+  // error caíam no mesmo bloco de "nunca assinou" e mostravam "Assinar plano
+  // Growth" — enganoso pra uma conta que nem tem como assinar nada (sem
+  // agência vinculada), ou quando o status real nem foi carregado.
+  if (state.status === 'no_agency') {
+    return (
+      <div style={cardBase}>
+        <TdgIconSprite />
+        {header}
+        <div style={{ padding: '14px 16px' }}>
+          <p style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-muted)', margin: 0 }}>Esta conta não está vinculada a uma agência — não há assinatura a gerenciar aqui.</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (state.status === 'unauthenticated' || state.status === 'error') {
+    return (
+      <div style={cardBase}>
+        <TdgIconSprite />
+        {header}
+        <div style={{ padding: '14px 16px' }}>
+          <p style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-error)', margin: 0 }}>
+            {state.status === 'unauthenticated' ? 'Sessão expirada — atualize a página.' : (state as { message: string }).message}
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  // none, cancelled, rejected, not_found → offer to subscribe
   return (
     <div style={cardBase}>
       <TdgIconSprite />
