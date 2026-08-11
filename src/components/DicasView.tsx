@@ -18,6 +18,7 @@ import CopyLinkButton from '@/components/CopyLinkButton'
 import AudioRecord from '@/components/AudioRecord'
 import AudioQueue from '@/components/AudioQueue'
 import PendingConfirmationQueue from '@/components/PendingConfirmationQueue'
+import Toggle from '@/components/ui/Toggle'
 
 /* Fase 6: "Da mesa" saiu da navegação — seu próprio texto já dizia "não é
    conteúdo pra navegar direto" (só 2 botões abrindo modal, nenhum conteúdo
@@ -57,6 +58,7 @@ interface Review {
   status: string
   photo_url: string | null
   photo_urls: string[] | null
+  media_usage_authorized?: boolean
   sentiment_map: SentimentMapValue | null
   created_at: string
   is_favorite: boolean
@@ -436,7 +438,9 @@ function HotelCard({ review, onToggleFavorite, onViewHistory, onConfirmLead, onU
   const isHighlighted = !!highlightId && review.id === highlightId
   const [expanded, setExpanded] = useState(isHighlighted)
   const [showEdit, setShowEdit] = useState(false)
+  const [galleryIndex, setGalleryIndex] = useState<number | null>(null)
   const cardRef = useRef<HTMLDivElement>(null)
+  const galleryPhotos = review.photo_urls?.length ? review.photo_urls : (review.photo_url ? [review.photo_url] : [])
 
   useEffect(() => {
     if (isHighlighted) {
@@ -487,14 +491,17 @@ function HotelCard({ review, onToggleFavorite, onViewHistory, onConfirmLead, onU
           quando ainda não há foto anexada, ou lead (ninguém foi lá ainda —
           por isso é traço, nunca finge ser foto). A cor da tinta conta a
           história: dourado = confirmado pela rede, coral = ainda a testar. */}
-      <div style={{
-        height: 128, position: 'relative', display: 'flex', alignItems: isLead || !review.photo_url ? 'center' : 'flex-end',
-        justifyContent: isLead || !review.photo_url ? 'center' : 'flex-start',
-        padding: isLead || !review.photo_url ? 0 : '10px 12px',
-        background: review.photo_url && !isLead
-          ? `linear-gradient(0deg, rgba(20,12,6,0.6) 0%, rgba(20,12,6,0.02) 55%, transparent 75%), url(${review.photo_url}) center/cover`
-          : 'var(--tdgflow-surface-high)',
-      }}>
+      <div
+        onClick={review.photo_url && !isLead ? () => setGalleryIndex(0) : undefined}
+        style={{
+          height: 128, position: 'relative', display: 'flex', alignItems: isLead || !review.photo_url ? 'center' : 'flex-end',
+          justifyContent: isLead || !review.photo_url ? 'center' : 'flex-start',
+          padding: isLead || !review.photo_url ? 0 : '10px 12px',
+          cursor: review.photo_url && !isLead ? 'pointer' : 'default',
+          background: review.photo_url && !isLead
+            ? `linear-gradient(0deg, rgba(20,12,6,0.6) 0%, rgba(20,12,6,0.02) 55%, transparent 75%), url(${review.photo_url}) center/cover`
+            : 'var(--tdgflow-surface-high)',
+        }}>
         {isLead && (
           <>
             <span style={{
@@ -705,14 +712,23 @@ function HotelCard({ review, onToggleFavorite, onViewHistory, onConfirmLead, onU
                       Fotos da visita
                     </p>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
-                      {review.photo_urls.map(url => (
-                        <a key={url} href={url} target="_blank" rel="noreferrer" style={{ borderRadius: 10, overflow: 'hidden', aspectRatio: '1', display: 'block' }}>
+                      {review.photo_urls.map((url, i) => (
+                        <button
+                          key={url}
+                          onClick={() => setGalleryIndex(i)}
+                          style={{ borderRadius: 10, overflow: 'hidden', aspectRatio: '1', display: 'block', border: 'none', padding: 0, cursor: 'pointer' }}
+                        >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                        </a>
+                        </button>
                       ))}
                     </div>
                   </div>
+                )}
+                {review.media_usage_authorized === false && galleryPhotos.length > 0 && (
+                  <p style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-faint)', margin: '0 0 14px', fontStyle: 'italic' }}>
+                    Uso restrito — fotos só pra referência interna, não autorizadas pra propostas de outras agências.
+                  </p>
                 )}
                 {review.client_profile && (
                   <div style={{ marginBottom: 12 }}>
@@ -825,7 +841,86 @@ function HotelCard({ review, onToggleFavorite, onViewHistory, onConfirmLead, onU
           onSaved={() => { setShowEdit(false); onUpdated() }}
         />
       )}
+      {galleryIndex !== null && (
+        <MediaLightbox
+          photos={galleryPhotos}
+          index={galleryIndex}
+          onIndexChange={setGalleryIndex}
+          onClose={() => setGalleryIndex(null)}
+        />
+      )}
     </motion.div>
+  )
+}
+
+/* ── Carrossel de fotos — clique na capa ou numa miniatura abre em tela
+   cheia, setas/arrastar pra navegar. Vídeo entra aqui depois, no mesmo
+   componente (achado da Carla, 10/08: pediu carrossel pros dois juntos). */
+function MediaLightbox({ photos, index, onIndexChange, onClose }: {
+  photos: string[]
+  index: number
+  onIndexChange: (i: number) => void
+  onClose: () => void
+}) {
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose()
+      if (e.key === 'ArrowRight') onIndexChange((index + 1) % photos.length)
+      if (e.key === 'ArrowLeft') onIndexChange((index - 1 + photos.length) % photos.length)
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [index, photos.length, onIndexChange, onClose])
+
+  return (
+    <div
+      onClick={onClose}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 70, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+    >
+      <button
+        onClick={onClose}
+        style={{ position: 'absolute', top: 16, right: 16, background: 'rgba(255,255,255,0.12)', border: 'none', borderRadius: '50%', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+      >
+        <X size={18} style={{ color: '#fff' }} />
+      </button>
+
+      {photos.length > 1 && (
+        <>
+          <button
+            onClick={e => { e.stopPropagation(); onIndexChange((index - 1 + photos.length) % photos.length) }}
+            style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.12)', border: 'none', borderRadius: '50%', width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+          >
+            <ArrowLeft size={18} style={{ color: '#fff' }} />
+          </button>
+          <button
+            onClick={e => { e.stopPropagation(); onIndexChange((index + 1) % photos.length) }}
+            style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.12)', border: 'none', borderRadius: '50%', width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+          >
+            <ArrowRight size={18} style={{ color: '#fff' }} />
+          </button>
+        </>
+      )}
+
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={photos[index]}
+        alt=""
+        onClick={e => e.stopPropagation()}
+        style={{ maxWidth: '90vw', maxHeight: '85vh', objectFit: 'contain', borderRadius: 8 }}
+      />
+
+      {photos.length > 1 && (
+        <div style={{ position: 'absolute', bottom: 20, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 6 }}>
+          {photos.map((_, i) => (
+            <span
+              key={i}
+              onClick={e => { e.stopPropagation(); onIndexChange(i) }}
+              style={{ width: 6, height: 6, borderRadius: '50%', background: i === index ? '#fff' : 'rgba(255,255,255,0.4)', cursor: 'pointer' }}
+            />
+          ))}
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -845,6 +940,7 @@ function EditReviewModal({ review, onClose, onSaved }: {
   const [newPhotos, setNewPhotos] = useState<string[]>([])
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [mediaAuthorized, setMediaAuthorized] = useState(review.media_usage_authorized ?? true)
   const existingPhotos = review.photo_urls?.length ? review.photo_urls : (review.photo_url ? [review.photo_url] : [])
 
   async function handlePhotosSelect(files: File[]) {
@@ -878,6 +974,7 @@ function EditReviewModal({ review, onClose, onSaved }: {
             client_profile: clientProfile || null,
             must_experience: mustExperience || null,
             heads_up: headsUp || null,
+            media_usage_authorized: mediaAuthorized,
           },
           new_photo_urls: newPhotos,
         }),
@@ -944,6 +1041,18 @@ function EditReviewModal({ review, onClose, onSaved }: {
               onSelect={handlePhotosSelect}
               onRemove={url => setNewPhotos(prev => prev.filter(u => u !== url))}
             />
+            {(existingPhotos.length > 0 || newPhotos.length > 0) && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 12, background: 'var(--tdgflow-surface-high)', marginTop: 10 }}>
+                <Toggle
+                  checked={mediaAuthorized}
+                  onChange={setMediaAuthorized}
+                  label="Autorizar uso das fotos por outras agências"
+                />
+                <span style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-secondary)', lineHeight: 1.4 }}>
+                  Autorizo o uso destas fotos por outras agências em propostas e materiais
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1111,6 +1220,10 @@ function Questionnaire({ onClose, onSaved, initialAnswers, relatedLeadId }: {
     setAnswers(prev => ({ ...prev, [q.id]: val }))
   }
 
+  function setAnswerField(key: string, val: unknown) {
+    setAnswers(prev => ({ ...prev, [key]: val }))
+  }
+
   const currentAnswer = answers[q.id]
 
   function canAdvance() {
@@ -1200,7 +1313,7 @@ function Questionnaire({ onClose, onSaved, initialAnswers, relatedLeadId }: {
     const hasSentimentMap = Object.keys(sentimentMap).length > 0
     const rawAnswers = Object.fromEntries(
       Object.entries(answers)
-        .filter(([k]) => !['overall_rating', 'sub_ratings', 'sentiment_map', 'hotel_name', 'hotel_names', 'visit_date', 'visit_type', 'entity_type', 'photo'].includes(k))
+        .filter(([k]) => !['overall_rating', 'sub_ratings', 'sentiment_map', 'hotel_name', 'hotel_names', 'visit_date', 'visit_type', 'entity_type', 'photo', 'media_usage_authorized'].includes(k))
         .map(([k, v]) => [k, String(v)])
     )
 
@@ -1255,6 +1368,7 @@ function Questionnaire({ onClose, onSaved, initialAnswers, relatedLeadId }: {
           food_rating:      subRatings.food     ?? null,
           location_rating:  subRatings.location ?? null,
           photo_urls:       (answers.photo as string[] | undefined) ?? [],
+          media_usage_authorized: (answers.media_usage_authorized as boolean | undefined) ?? true,
           related_lead_id:  relatedLeadId || null,
           // status não é enviado — o servidor deriva de visit_type, nunca confia no cliente.
           raw_answers:      rawAnswers,
@@ -1412,13 +1526,31 @@ function Questionnaire({ onClose, onSaved, initialAnswers, relatedLeadId }: {
                   Múltiplas fotos + arrastar pra dentro (achado da Carla,
                   07/08: só dava pra subir uma de cada vez, sem drag&drop). */}
               {q.type === 'photo' && (
-                <PhotoUploadStep
-                  photos={(currentAnswer as string[] | undefined) ?? []}
-                  uploading={uploadingPhoto}
-                  maxPhotos={MAX_REVIEW_PHOTOS}
-                  onSelect={handlePhotosSelect}
-                  onRemove={removePhoto}
-                />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <PhotoUploadStep
+                    photos={(currentAnswer as string[] | undefined) ?? []}
+                    uploading={uploadingPhoto}
+                    maxPhotos={MAX_REVIEW_PHOTOS}
+                    onSelect={handlePhotosSelect}
+                    onRemove={removePhoto}
+                  />
+                  {/* Autorização de uso pela rede — só faz sentido perguntar
+                      se tem foto. Default ligado (opt-out), decisão da
+                      Carla, 10/08: combina com o espírito de inteligência
+                      coletiva do produto. */}
+                  {((currentAnswer as string[] | undefined) ?? []).length > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 12, background: 'var(--tdgflow-surface-high)' }}>
+                      <Toggle
+                        checked={(answers.media_usage_authorized as boolean | undefined) ?? true}
+                        onChange={v => setAnswerField('media_usage_authorized', v)}
+                        label="Autorizar uso das fotos por outras agências"
+                      />
+                      <span style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-secondary)', lineHeight: 1.4 }}>
+                        Autorizo o uso destas fotos por outras agências em propostas e materiais
+                      </span>
+                    </div>
+                  )}
+                </div>
               )}
 
               {/* Voice + text */}

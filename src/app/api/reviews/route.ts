@@ -95,6 +95,7 @@ export async function POST(req: NextRequest) {
       hotel_name, entity_type, country, visit_date, visit_type,
       overall_rating, rooms_rating, service_rating, food_rating, location_rating,
       raw_answers, sentiment_map, photo_url, photo_urls, related_lead_id,
+      media_usage_authorized,
     } = body
 
     // status nunca vem do cliente — é sempre derivado de visit_type no servidor,
@@ -126,6 +127,13 @@ export async function POST(req: NextRequest) {
     // photo_url continua guardando só a primeira, pra não quebrar telas que já
     // leem esse campo (capa do card, hero da rede etc.)
     await sql`ALTER TABLE tdg_hotel_reviews ADD COLUMN IF NOT EXISTS photo_urls JSONB DEFAULT '[]'::jsonb`
+
+    // Autorização de uso das fotos/vídeos por outras agências (achado da
+    // Carla, 10/08: sem isso, quem sobe mídia não tem como sinalizar se ela
+    // pode ser reusada em propostas de outra agência ou é só referência
+    // interna). Default ligado (opt-out) — decisão dela, combina com o
+    // espírito de inteligência coletiva do produto.
+    await sql`ALTER TABLE tdg_hotel_reviews ADD COLUMN IF NOT EXISTS media_usage_authorized BOOLEAN NOT NULL DEFAULT true`
 
     // Add sentiment_map column (idempotent)
     await sql`ALTER TABLE tdg_hotel_reviews ADD COLUMN IF NOT EXISTS sentiment_map JSONB`
@@ -230,7 +238,7 @@ export async function POST(req: NextRequest) {
       INSERT INTO tdg_hotel_reviews
         (hotel_name, hotel_id, entity_type, country, agent_id, agent_name, agency_name, visit_date, visit_type,
          overall_rating, rooms_rating, service_rating, food_rating, location_rating,
-         highlights, client_profile, must_experience, heads_up, status, photo_url, photo_urls, related_lead_id, raw_answers, sentiment_map)
+         highlights, client_profile, must_experience, heads_up, status, photo_url, photo_urls, media_usage_authorized, related_lead_id, raw_answers, sentiment_map)
       VALUES (
         ${hotel_name}, ${hotelId}, ${finalEntityType}, ${country || null}, ${user.id}, ${user.name}, ${user.agency_name},
         ${visit_date || null}, ${visit_type || null},
@@ -238,7 +246,7 @@ export async function POST(req: NextRequest) {
         ${food_rating || null}, ${location_rating || null},
         ${JSON.stringify(structured.highlights ?? [])}, ${structured.client_profile ?? null},
         ${structured.must_experience ?? null}, ${structured.heads_up ?? null},
-        ${status}, ${finalPhotoUrl}, ${JSON.stringify(finalPhotoUrls)}, ${finalRelatedLeadId},
+        ${status}, ${finalPhotoUrl}, ${JSON.stringify(finalPhotoUrls)}, ${media_usage_authorized !== false}, ${finalRelatedLeadId},
         ${JSON.stringify(raw_answers)},
         ${sentiment_map ? JSON.stringify(sentiment_map) : null}
       )
@@ -298,16 +306,18 @@ export async function PATCH(req: NextRequest) {
     const mergedPhotos = Array.isArray(new_photo_urls) && new_photo_urls.length > 0
       ? [...existingPhotos, ...new_photo_urls]
       : existingPhotos
+    const mediaAuth = typeof f.media_usage_authorized === 'boolean' ? f.media_usage_authorized : null
 
     const { rows: updated } = await sql`
       UPDATE tdg_hotel_reviews SET
-        overall_rating   = COALESCE(${f.overall_rating as number ?? null}, overall_rating),
-        highlights       = COALESCE(${f.highlights ? JSON.stringify(f.highlights) : null}, highlights),
-        client_profile   = COALESCE(${f.client_profile as string ?? null}, client_profile),
-        must_experience  = COALESCE(${f.must_experience as string ?? null}, must_experience),
-        heads_up         = COALESCE(${f.heads_up as string ?? null}, heads_up),
-        photo_urls       = ${JSON.stringify(mergedPhotos)},
-        photo_url        = COALESCE(photo_url, ${mergedPhotos[0] ?? null})
+        overall_rating          = COALESCE(${f.overall_rating as number ?? null}, overall_rating),
+        highlights              = COALESCE(${f.highlights ? JSON.stringify(f.highlights) : null}, highlights),
+        client_profile          = COALESCE(${f.client_profile as string ?? null}, client_profile),
+        must_experience         = COALESCE(${f.must_experience as string ?? null}, must_experience),
+        heads_up                = COALESCE(${f.heads_up as string ?? null}, heads_up),
+        media_usage_authorized  = COALESCE(${mediaAuth}, media_usage_authorized),
+        photo_urls              = ${JSON.stringify(mergedPhotos)},
+        photo_url               = COALESCE(photo_url, ${mergedPhotos[0] ?? null})
       WHERE id = ${review_id}
       RETURNING *
     `
