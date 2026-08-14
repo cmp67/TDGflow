@@ -327,6 +327,7 @@ export async function PATCH(req: NextRequest) {
         client_profile          = COALESCE(${f.client_profile as string ?? null}, client_profile),
         must_experience         = COALESCE(${f.must_experience as string ?? null}, must_experience),
         heads_up                = COALESCE(${f.heads_up as string ?? null}, heads_up),
+        visit_type               = COALESCE(${f.visit_type as string ?? null}, visit_type),
         media_usage_authorized  = COALESCE(${mediaAuth}, media_usage_authorized),
         photo_urls              = ${JSON.stringify(mergedPhotos)},
         photo_url               = COALESCE(photo_url, ${mergedPhotos[0] ?? null})

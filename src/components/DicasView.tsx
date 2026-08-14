@@ -941,6 +941,10 @@ function EditReviewModal({ review, onClose, onSaved }: {
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [saving, setSaving] = useState(false)
   const [mediaAuthorized, setMediaAuthorized] = useState(review.media_usage_authorized ?? true)
+  // Reviews antigas (import histórico) costumam vir sem visit_type — dá pra
+  // classificar aqui na edição. Só mostra o seletor quando ainda não tem
+  // valor, pra nunca sobrescrever silenciosamente uma classificação real.
+  const [visitType, setVisitType] = useState<string | null>(null)
   const existingPhotos = review.photo_urls?.length ? review.photo_urls : (review.photo_url ? [review.photo_url] : [])
 
   async function handlePhotosSelect(files: File[]) {
@@ -974,6 +978,7 @@ function EditReviewModal({ review, onClose, onSaved }: {
             client_profile: clientProfile || null,
             must_experience: mustExperience || null,
             heads_up: headsUp || null,
+            visit_type: visitType,
             media_usage_authorized: mediaAuthorized,
           },
           new_photo_urls: newPhotos,
@@ -1006,6 +1011,27 @@ function EditReviewModal({ review, onClose, onSaved }: {
             <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--tdgflow-text-muted)', marginBottom: 8 }}>Avaliação geral</p>
             <SentimentChips value={overallRating} onChange={v => v !== null && setOverallRating(v)} />
           </div>
+
+          {!review.visit_type && (
+            <div>
+              <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--tdgflow-text-muted)', marginBottom: 8 }}>
+                Tipo de visita <span style={{ fontWeight: 400 }}>(não classificado — dado importado)</span>
+              </p>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {VISIT_TYPE_FILTER_OPTIONS.map(opt => (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => setVisitType(opt.id)}
+                    className={visitType === opt.id ? 'btn-gold' : 'btn-ghost'}
+                    style={{ padding: '6px 12px', fontSize: '0.75rem' }}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div>
             <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--tdgflow-text-muted)', marginBottom: 6 }}>Perfil de cliente ideal</p>
@@ -1740,6 +1766,10 @@ const VISIT_FILTER_TABS = [
   { id: 'site_inspection',   label: 'Site Inspection' },
   { id: 'personal_stay',     label: 'Personal Stay' },
 ]
+
+// Mesmas 3 opções do filtro acima, sem "Tudo" — usado no EditReviewModal
+// pra classificar retroativamente reviews importadas sem visit_type.
+const VISIT_TYPE_FILTER_OPTIONS = VISIT_FILTER_TABS.filter(t => t.id !== 'all')
 
 const ENTITY_FILTER_TABS = [{ id: 'all', label: 'Todos os tipos' }, ...Object.entries(ENTITY_TYPE_LABELS).map(([id, label]) => ({ id, label }))]
 
