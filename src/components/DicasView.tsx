@@ -1872,8 +1872,11 @@ export default function DicasView() {
 
       {/* ── Header block ─────────────────────────────────────────── */}
       <div style={{ flexShrink: 0, borderBottom: '1px solid var(--tdgflow-border)', background: 'var(--tdgflow-surface)' }}>
-        {/* Title row */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '18px 20px 12px' }}>
+        {/* Title row — flexWrap: achado do áudito mobile (13/08): sem isso, o
+            cluster de stats + botões (incluindo "Registrar experiência", a
+            ação primária da página) simplesmente vazava pra fora da tela em
+            viewports estreitos, ficando inacessível. */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', rowGap: 12, padding: '18px 20px 12px' }}>
           <div>
             <p style={{
               display: 'flex', alignItems: 'center', gap: 5,
@@ -1892,7 +1895,7 @@ export default function DicasView() {
               O que aprendemos indo lá: inspeções, impressões, avisos
             </p>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, paddingTop: 4 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, rowGap: 10, flexWrap: 'wrap', paddingTop: 4 }}>
             {!loading && (
               <div style={{ display: 'flex', gap: 16 }}>
                 <div style={{ textAlign: 'right' }}>

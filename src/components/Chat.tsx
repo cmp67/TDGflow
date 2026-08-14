@@ -188,15 +188,14 @@ function chatHistoryKey(email: string | null | undefined): string | null {
 
 export default function Chat({ fallbackName, userEmail }: Props = {}) {
   const storageKey = chatHistoryKey(userEmail)
-  const [messages, setMessages] = useState<Message[]>(() => {
-    if (typeof window === 'undefined' || !storageKey) return []
-    try {
-      const saved = window.localStorage.getItem(storageKey)
-      return saved ? (JSON.parse(saved) as Message[]) : []
-    } catch {
-      return []
-    }
-  })
+  // Lida em useEffect (nunca no initializer do useState) — o servidor
+  // sempre renderiza vazio (sem window), então ler localStorage durante o
+  // primeiro render do cliente produzia HTML diferente do SSR (React error
+  // #418, hydration mismatch). historyLoaded represa o efeito de salvar até
+  // depois da carga, senão o primeiro save (com messages=[]) apagava o
+  // histórico antes dele ser lido.
+  const [messages, setMessages] = useState<Message[]>([])
+  const [historyLoaded, setHistoryLoaded] = useState(false)
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [streamingText, setStreamingText] = useState('')
@@ -213,11 +212,20 @@ export default function Chat({ fallbackName, userEmail }: Props = {}) {
   }, [messages, loading, streamingText, statusLabel])
 
   useEffect(() => {
-    if (!storageKey) return
+    if (!storageKey) { setHistoryLoaded(true); return }
+    try {
+      const saved = window.localStorage.getItem(storageKey)
+      if (saved) setMessages(JSON.parse(saved) as Message[])
+    } catch { /* histórico corrompido/indisponível — segue com chat vazio */ }
+    setHistoryLoaded(true)
+  }, [storageKey])
+
+  useEffect(() => {
+    if (!historyLoaded || !storageKey) return
     try {
       window.localStorage.setItem(storageKey, JSON.stringify(messages))
     } catch { /* localStorage cheio/indisponível — histórico só não persiste, não quebra o chat */ }
-  }, [messages, storageKey])
+  }, [messages, storageKey, historyLoaded])
 
   useEffect(() => {
     fetch('/api/context')
