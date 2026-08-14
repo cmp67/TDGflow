@@ -19,6 +19,7 @@ export async function GET(req: NextRequest) {
   const hotel = searchParams.get('hotel')
   const hotelId = searchParams.get('hotelId')
   const entityType = searchParams.get('entity_type')
+  const source = searchParams.get('source')
   // Sem status explícito, só o que já foi confirmado pela rede — lead
   // ("a_testar") é opt-in, nunca aparece por padrão misturado com o resto.
   const status = searchParams.get('status') || 'published'
@@ -30,7 +31,20 @@ export async function GET(req: NextRequest) {
   const agentId = userRows[0]?.id ?? null
 
   let reviewRows
-  if (hotelId) {
+  if (source) {
+    // Inbox do Max (14/08) — cada captura via WhatsApp individualmente, em
+    // ordem cronológica direta. Não agrupa por fornecedor (ao contrário do
+    // branch padrão abaixo): o objetivo aqui é ver TUDO que foi processado,
+    // não uma visão consolidada por hotel.
+    await sql`ALTER TABLE tdg_hotel_reviews ADD COLUMN IF NOT EXISTS source TEXT`
+    const { rows } = await sql`
+      SELECT r.* FROM tdg_hotel_reviews r
+      WHERE r.source = ${source}
+      ORDER BY r.created_at DESC
+      LIMIT 100
+    `
+    reviewRows = rows
+  } else if (hotelId) {
     // Fase 2: a ficha do fornecedor pede as próprias reviews por hotel_id
     // real — exato, sem depender de casar hotel_name por texto.
     const { rows } = await sql`
