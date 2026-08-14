@@ -301,18 +301,52 @@ export async function registerTip(args: Record<string, unknown>) {
     highlights = [], client_profile, must_experience, heads_up,
   } = args as Record<string, unknown>
 
+  // Marca de origem — pra distinguir na UI (ex: inbox do Max) o que veio
+  // via WhatsApp/register_tip do que foi registrado direto no app.
+  await sql`ALTER TABLE tdg_hotel_reviews ADD COLUMN IF NOT EXISTS source TEXT`
+
   // Try to find the advisor by name in tdg_users
   const { rows: userRows } = await sql`
     SELECT id FROM tdg_users WHERE name ILIKE ${'%' + (agent_name as string) + '%'} LIMIT 1
   `
   const agentId = userRows[0]?.id ?? null
 
+  // Toda review liga a um fornecedor real no catálogo — mesma lógica de
+  // find-or-create de src/app/api/reviews/route.ts (POST). Sem isso a review
+  // do Max ficava órfã (hotel_id null), invisível em qualquer tela que
+  // agrupa/filtra pelo catálogo em vez do texto livre hotel_name.
+  const trimmedName = String(hotel_name).trim()
+  let hotelId: string | null = null
+  {
+    const { rows: existingHotel } = await sql`
+      SELECT id FROM tdg_hotels WHERE lower(trim(name)) = lower(${trimmedName}) AND entity_type = 'hotel'
+    `
+    if (existingHotel[0]) {
+      hotelId = existingHotel[0].id as string
+    } else {
+      const { rows: createdHotel } = await sql`
+        INSERT INTO tdg_hotels (name, entity_type, country, location) VALUES (${trimmedName}, 'hotel', ${(country as string) ?? null}, ${(country as string) ?? null})
+        ON CONFLICT (lower(trim(name)), entity_type) WHERE agency_id IS NULL DO NOTHING
+        RETURNING id
+      `
+      if (createdHotel[0]) {
+        hotelId = createdHotel[0].id as string
+      } else {
+        const { rows: racedHotel } = await sql`
+          SELECT id FROM tdg_hotels WHERE lower(trim(name)) = lower(${trimmedName}) AND entity_type = 'hotel'
+        `
+        hotelId = racedHotel[0]?.id ?? null
+      }
+    }
+  }
+
   const { rows } = await sql`
     INSERT INTO tdg_hotel_reviews
-      (hotel_name, country, agent_id, agent_name, agency_name, visit_date, visit_type,
-       overall_rating, highlights, client_profile, must_experience, heads_up, status)
+      (hotel_name, hotel_id, country, agent_id, agent_name, agency_name, visit_date, visit_type,
+       overall_rating, highlights, client_profile, must_experience, heads_up, status, source)
     VALUES (
-      ${hotel_name as string},
+      ${trimmedName},
+      ${hotelId},
       ${(country as string) ?? null},
       ${agentId},
       ${agent_name as string},
@@ -324,7 +358,8 @@ export async function registerTip(args: Record<string, unknown>) {
       ${(client_profile as string) ?? null},
       ${(must_experience as string) ?? null},
       ${(heads_up as string) ?? null},
-      'published'
+      'published',
+      'max_whatsapp'
     )
     RETURNING id, hotel_name, agent_name, created_at
   `
