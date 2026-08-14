@@ -37,10 +37,16 @@ export async function buildWeeklyDigest(): Promise<WeeklyDigest> {
   const periodEnd = new Date()
   const periodStart = new Date(periodEnd.getTime() - 7 * 24 * 60 * 60 * 1000)
 
+  // Exclui fixtures de teste (agency_name/agent_name 'TDD' ou prefixo
+  // __TDD_ — mesmo padrão de contaminação já visto no billing) — achado
+  // ao revisar o preview, 14/08: rodar vitest local grava linha real na
+  // mesma tabela de produção, e uma vazou pro digest sem esse filtro.
   const { rows: reviews } = await sql`
     SELECT hotel_name, agent_name, agency_name, country, status, overall_rating, photo_url, heads_up, created_at
     FROM tdg_hotel_reviews
     WHERE created_at >= ${periodStart.toISOString()}
+      AND agency_name IS DISTINCT FROM 'TDD' AND agent_name IS DISTINCT FROM 'TDD'
+      AND agency_name NOT ILIKE '\_\_TDD\_%' ESCAPE '\'
     ORDER BY created_at DESC
   `
 
