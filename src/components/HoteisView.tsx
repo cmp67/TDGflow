@@ -15,6 +15,7 @@ import { readVideoDurationSeconds, MAX_VIDEO_DURATION_SECONDS } from '@/lib/vide
 import TdgIconSprite from '@/components/TdgIconSprite'
 import CopyLinkButton from '@/components/CopyLinkButton'
 import ContactEditForm from '@/components/ContactEditForm'
+import { useToast } from '@/contexts/ToastContext'
 
 /* ── Ícones próprios pra vídeo — traço só, sem emoji/biblioteca genérica
    (regra de personalidade do design system Bemgsy, mesma família visual do
@@ -92,6 +93,7 @@ interface Hotel {
   gallery: { label: string; url: string }[]
   testedCount: number
   pendingLeadCount: number
+  canEdit: boolean
   benefits: HotelBenefit[]
 }
 
@@ -226,6 +228,7 @@ interface HotelApiRow {
   gallery: { label: string; url: string }[] | null
   tested_count: number
   pending_lead_count: number
+  can_edit: boolean
   benefits: HotelBenefit[] | null
 }
 
@@ -249,6 +252,7 @@ function mapHotelApiRow(row: HotelApiRow): Hotel {
     gallery: row.gallery ?? [],
     testedCount: row.tested_count ?? 0,
     pendingLeadCount: row.pending_lead_count ?? 0,
+    canEdit: row.can_edit ?? false,
     benefits: row.benefits ?? [],
   }
 }
@@ -1110,12 +1114,42 @@ function BenefitsSection({ hotelId, initialBenefits }: { hotelId: string; initia
 }
 
 /* ── Hotel detail sheet ─────────────────────────────────────────── */
-function HotelDetail({ hotel, onClose }: { hotel: Hotel; onClose: () => void }) {
+function HotelDetail({ hotel, onClose, onUpdated }: { hotel: Hotel; onClose: () => void; onUpdated: (hotel: Hotel) => void }) {
   const [contacts, setContacts] = useState<HotelContact[]>([])
   const [loadingContacts, setLoadingContacts] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [editingHotel, setEditingHotel] = useState(false)
+  const [savingHotel, setSavingHotel] = useState(false)
+  const [editName, setEditName] = useState(hotel.name)
+  const [editLocation, setEditLocation] = useState(hotel.location)
+  const [editCountry, setEditCountry] = useState(hotel.country)
+  const [editDescription, setEditDescription] = useState(hotel.description)
+  const { toast } = useToast()
+
+  async function saveHotelEdit() {
+    setSavingHotel(true)
+    try {
+      const res = await fetch('/api/hotels', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: hotel.id,
+          fields: { name: editName, location: editLocation, country: editCountry, description: editDescription },
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Erro ao salvar')
+      onUpdated({ ...hotel, name: data.hotel.name, location: data.hotel.location ?? '', country: data.hotel.country ?? '', description: data.hotel.description ?? '' })
+      setEditingHotel(false)
+      toast('Fornecedor atualizado', 'success')
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Não foi possível salvar', 'error')
+    } finally {
+      setSavingHotel(false)
+    }
+  }
 
   const fetchContacts = useCallback(async () => {
     setLoadingContacts(true)
@@ -1225,6 +1259,55 @@ function HotelDetail({ hotel, onClose }: { hotel: Hotel; onClose: () => void }) 
 
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto" style={{ padding: '20px', paddingBottom: 'calc(20px + env(safe-area-inset-bottom))' }}>
+
+          {/* Editar dados do fornecedor — só visível pra quem cadastrou (ou
+              admin, se ninguém tem esse registro). Caso real, 14/08: hotel
+              cadastrado com nome errado ("Mandarin Oriental Miami" no lugar
+              de Hong Kong) sem forma de corrigir. */}
+          {hotel.canEdit && (
+            <div style={{ marginBottom: 16 }}>
+              {!editingHotel ? (
+                <button
+                  onClick={() => {
+                    setEditName(hotel.name); setEditLocation(hotel.location)
+                    setEditCountry(hotel.country); setEditDescription(hotel.description)
+                    setEditingHotel(true)
+                  }}
+                  className="btn-ghost"
+                  style={{ padding: '6px 12px', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                >
+                  <PenLine size={12} /> Editar fornecedor
+                </button>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 14, borderRadius: 14, border: '1px solid var(--tdgflow-border)', background: 'var(--tdgflow-surface-high)' }}>
+                  <div>
+                    <p style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--tdgflow-text-muted)', marginBottom: 4 }}>Nome</p>
+                    <input className="input" value={editName} onChange={e => setEditName(e.target.value)} />
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--tdgflow-text-muted)', marginBottom: 4 }}>Localização</p>
+                    <input className="input" value={editLocation} onChange={e => setEditLocation(e.target.value)} placeholder="Ex: Oia, Grécia" />
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--tdgflow-text-muted)', marginBottom: 4 }}>País</p>
+                    <input className="input" value={editCountry} onChange={e => setEditCountry(e.target.value)} />
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--tdgflow-text-muted)', marginBottom: 4 }}>Descrição</p>
+                    <textarea className="input" rows={2} value={editDescription} onChange={e => setEditDescription(e.target.value)} style={{ resize: 'vertical' }} />
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                    <button onClick={saveHotelEdit} disabled={savingHotel || !editName.trim()} className="btn-gold" style={{ padding: '8px 14px', fontSize: '0.8125rem' }}>
+                      {savingHotel ? <Loader2 size={13} className="animate-spin" /> : 'Salvar'}
+                    </button>
+                    <button onClick={() => setEditingHotel(false)} disabled={savingHotel} className="btn-ghost" style={{ padding: '8px 14px', fontSize: '0.8125rem' }}>
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           <BenefitsSection hotelId={hotel.id} initialBenefits={hotel.benefits} />
 
@@ -1673,7 +1756,16 @@ export default function HoteisView() {
       </div>
 
       <AnimatePresence>
-        {selected && <HotelDetail hotel={selected} onClose={() => setSelected(null)} />}
+        {selected && (
+          <HotelDetail
+            hotel={selected}
+            onClose={() => setSelected(null)}
+            onUpdated={updated => {
+              setSelected(updated)
+              setHotels(prev => prev.map(h => h.id === updated.id ? updated : h))
+            }}
+          />
+        )}
       </AnimatePresence>
     </div>
   )

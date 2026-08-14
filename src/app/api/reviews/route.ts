@@ -244,9 +244,11 @@ export async function POST(req: NextRequest) {
         // Copia country/location da review pro fornecedor recém-criado —
         // achado da Carla, 14/08: fornecedor nascia sem destino nenhum, então
         // sumia de qualquer filtro de região em HoteisView (que filtra por
-        // tdg_hotels.country, não pelo country da review).
+        // tdg_hotels.country, não pelo country da review). created_by marca
+        // quem cadastrou — base da regra "só o criador edita" (14/08).
+        await sql`ALTER TABLE tdg_hotels ADD COLUMN IF NOT EXISTS created_by TEXT`
         const { rows: createdHotel } = await sql`
-          INSERT INTO tdg_hotels (name, entity_type, country, location) VALUES (${trimmedName}, ${finalEntityType}, ${country || null}, ${country || null})
+          INSERT INTO tdg_hotels (name, entity_type, country, location, created_by) VALUES (${trimmedName}, ${finalEntityType}, ${country || null}, ${country || null}, ${session.user?.email ?? null})
           ON CONFLICT (lower(trim(name)), entity_type) WHERE agency_id IS NULL DO NOTHING
           RETURNING id
         `

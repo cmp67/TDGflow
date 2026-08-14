@@ -304,6 +304,7 @@ export async function registerTip(args: Record<string, unknown>) {
   // Marca de origem — pra distinguir na UI (ex: inbox do Max) o que veio
   // via WhatsApp/register_tip do que foi registrado direto no app.
   await sql`ALTER TABLE tdg_hotel_reviews ADD COLUMN IF NOT EXISTS source TEXT`
+  await sql`ALTER TABLE tdg_hotels ADD COLUMN IF NOT EXISTS created_by TEXT`
 
   // Try to find the advisor by name in tdg_users
   const { rows: userRows } = await sql`
