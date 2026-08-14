@@ -15,8 +15,16 @@ interface WikiPage {
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
-  guia: 'Guias',
-  ata: 'Atas de Reunião',
+  guia: 'Guias — dúvidas e boas práticas',
+  ata: 'Atas de Reunião (histórico)',
+}
+
+// Guias vêm antes das atas — é o que resolve dúvida do dia a dia. Atas ficam
+// como registro histórico, não é o primeiro lugar que alguém deveria olhar.
+const CATEGORY_ORDER = ['guia', 'ata']
+function categoryRank(cat: string) {
+  const i = CATEGORY_ORDER.indexOf(cat)
+  return i === -1 ? CATEGORY_ORDER.length : i
 }
 
 function formatDate(iso: string) {
@@ -35,7 +43,10 @@ export default function WikiView() {
       const data = await res.json()
       if (res.ok) {
         setPages(data.pages)
-        if (data.pages.length > 0) setActiveId(data.pages[0].id)
+        if (data.pages.length > 0) {
+          const firstGuia = (data.pages as WikiPage[]).find(p => p.category === 'guia')
+          setActiveId((firstGuia ?? data.pages[0]).id)
+        }
       } else {
         setLoadError(data.error ?? 'Erro ao carregar o wiki.')
       }
@@ -65,7 +76,7 @@ export default function WikiView() {
           Wiki TDG Flow
         </h1>
         <p className="text-sm mt-1" style={{ color: 'var(--tdgflow-text-muted)' }}>
-          Guias de uso e atas das reuniões da rede — tudo num só lugar.
+          Dúvidas, como fazer e boas práticas do Flow. As atas das reuniões ficam como histórico, mais abaixo.
         </p>
       </div>
 
@@ -99,7 +110,9 @@ export default function WikiView() {
               />
             </div>
 
-            {Object.entries(grouped).map(([cat, catPages]) => (
+            {Object.entries(grouped)
+              .sort(([a], [b]) => categoryRank(a) - categoryRank(b))
+              .map(([cat, catPages]) => (
               <div key={cat}>
                 <p className="text-xs font-medium uppercase tracking-wider mb-2" style={{ color: 'var(--tdgflow-text-muted)' }}>
                   {CATEGORY_LABELS[cat] ?? cat} ({catPages.length})
