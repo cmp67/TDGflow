@@ -7,7 +7,7 @@ import { signOut } from 'next-auth/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Mail, Sparkles, Tag, Lightbulb, FileText, Search,
-  LogOut, MoreHorizontal, X, Users, BarChart2, MessageSquarePlus, CreditCard, Network, UserPlus, Globe
+  LogOut, MoreHorizontal, X, Users, BarChart2, MessageSquarePlus, CreditCard, Network, UserPlus, Globe, BookOpen
 } from 'lucide-react'
 import { LanguageProvider, useLanguage } from '@/contexts/LanguageContext'
 import { APP_VERSION } from '@/lib/version'
@@ -51,6 +51,7 @@ const NAV_HINTS: Record<string, string> = {
   gestao:     'Usuários e permissões da agência',
   equipe:     'Convide e gerencie sua equipe',
   docs:       'Documentação e materiais de apoio',
+  wiki:       'Guias de uso do Flow e atas das reuniões da rede',
   destinos:   'Conhecimento prático por país — vistos, costumes, avisos',
   inbox:      'Em breve',
   sugestoes:  'Documentos, atas e roadmap da parceria — e suas sugestões',
@@ -75,6 +76,7 @@ const NAV_HINTS: Record<string, string> = {
 const REFERENCE_ITEMS: NavItem[] = [
   { href: '/flow/docs',      icon: FileText, tkey: 'docs' },
   { href: '/flow/destinos',  icon: Globe,    tkey: 'destinos' },
+  { href: '/flow/wiki',      icon: BookOpen, tkey: 'wiki' },
   { href: '/flow/inbox',     icon: Mail,     tkey: 'inbox', soon: true },
 ]
 
