@@ -1404,7 +1404,7 @@ function Questionnaire({ onClose, onSaved, initialAnswers, relatedLeadId }: {
             <CheckCircle size={28} style={{ color: 'var(--tdgflow-success)' }} />
           </div>
           <p style={{ fontSize: '1rem', fontWeight: 500, color: 'var(--tdgflow-text-primary)', marginBottom: 8 }}>
-            {isLeadSubmission(answers) ? 'Registrado — vamos testar' : 'Visita registrada'}
+            {isLeadSubmission(answers) ? 'Descoberta registrada' : 'Visita registrada'}
           </p>
           <p style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-muted)', lineHeight: 1.6, marginBottom: 24 }}>
             {isLeadSubmission(answers)
@@ -1618,7 +1618,7 @@ function Questionnaire({ onClose, onSaved, initialAnswers, relatedLeadId }: {
             {saving
               ? <><Loader2 size={14} className="animate-spin" /> Processando...</>
               : isLast
-                ? <><CheckCircle size={14} /> {isLeadSubmission(answers) ? 'Registrar descoberta' : 'Publicar dica'}</>
+                ? <><CheckCircle size={14} /> {isLeadSubmission(answers) ? 'Registrar descoberta' : 'Registrar visita'}</>
                 : <>Próxima <ArrowRight size={14} /></>
             }
           </button>

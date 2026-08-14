@@ -62,21 +62,29 @@ export async function GET(req: NextRequest) {
     `
     reviewRows = rows
   } else {
-    // Group: one row por hotel/fornecedor (última visita), com contagem
+    // Group: one row por hotel/fornecedor (última visita), com contagem.
+    // A escolha do representante por fornecedor continua sendo a visita mais
+    // recente (visit_date), mas a ORDEM da lista externa é por created_at —
+    // achado da Carla, 14/08: a lista tava alfabética por nome do hotel
+    // (efeito colateral do DISTINCT ON), então uma review acabada de
+    // registrar não subia pro topo, parecia ter sumido.
     const { rows } = await sql`
-      SELECT DISTINCT ON (r.hotel_name)
-        r.*,
-        COUNT(*) OVER (PARTITION BY r.hotel_name) AS visit_count,
-        AVG(r.overall_rating) OVER (PARTITION BY r.hotel_name) AS avg_rating,
-        CASE WHEN f.review_id IS NOT NULL THEN true ELSE false END AS is_favorite,
-        (SELECT COUNT(*)::int FROM tdg_review_favorites WHERE review_id = r.id) AS favorite_count,
-        (r.agent_id IS NOT NULL AND r.agent_id = ${agentId}) AS is_own
-      FROM tdg_hotel_reviews r
-      LEFT JOIN tdg_review_favorites f
-        ON f.review_id = r.id AND f.agent_id = ${agentId}
-      WHERE r.status = ${status}
-        AND (${entityType}::text IS NULL OR r.entity_type = ${entityType})
-      ORDER BY r.hotel_name, r.visit_date DESC NULLS LAST
+      SELECT * FROM (
+        SELECT DISTINCT ON (r.hotel_name)
+          r.*,
+          COUNT(*) OVER (PARTITION BY r.hotel_name) AS visit_count,
+          AVG(r.overall_rating) OVER (PARTITION BY r.hotel_name) AS avg_rating,
+          CASE WHEN f.review_id IS NOT NULL THEN true ELSE false END AS is_favorite,
+          (SELECT COUNT(*)::int FROM tdg_review_favorites WHERE review_id = r.id) AS favorite_count,
+          (r.agent_id IS NOT NULL AND r.agent_id = ${agentId}) AS is_own
+        FROM tdg_hotel_reviews r
+        LEFT JOIN tdg_review_favorites f
+          ON f.review_id = r.id AND f.agent_id = ${agentId}
+        WHERE r.status = ${status}
+          AND (${entityType}::text IS NULL OR r.entity_type = ${entityType})
+        ORDER BY r.hotel_name, r.visit_date DESC NULLS LAST
+      ) grouped
+      ORDER BY grouped.created_at DESC
     `
     reviewRows = rows
   }
@@ -217,8 +225,12 @@ export async function POST(req: NextRequest) {
       if (existingHotel[0]) {
         hotelId = existingHotel[0].id as string
       } else {
+        // Copia country/location da review pro fornecedor recém-criado —
+        // achado da Carla, 14/08: fornecedor nascia sem destino nenhum, então
+        // sumia de qualquer filtro de região em HoteisView (que filtra por
+        // tdg_hotels.country, não pelo country da review).
         const { rows: createdHotel } = await sql`
-          INSERT INTO tdg_hotels (name, entity_type) VALUES (${trimmedName}, ${finalEntityType})
+          INSERT INTO tdg_hotels (name, entity_type, country, location) VALUES (${trimmedName}, ${finalEntityType}, ${country || null}, ${country || null})
           ON CONFLICT (lower(trim(name)), entity_type) WHERE agency_id IS NULL DO NOTHING
           RETURNING id
         `
