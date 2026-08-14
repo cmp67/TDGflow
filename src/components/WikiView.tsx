@@ -155,7 +155,7 @@ export default function WikiView() {
                 <h2 className="text-lg font-semibold mb-3" style={{ color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.01em' }}>
                   {active.title}
                 </h2>
-                <div className="text-sm leading-relaxed" style={{ color: 'var(--tdgflow-text-secondary)' }}>
+                <div className="prose-dark text-sm leading-relaxed">
                   <ReactMarkdown>{active.content}</ReactMarkdown>
                 </div>
               </article>
