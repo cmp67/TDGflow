@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, Heart, ChevronDown, ChevronUp,
   Building2, X, Mic, Square, ArrowRight, ArrowLeft,
-  CheckCircle, Loader2, AlertCircle, Search, SlidersHorizontal, MapPin, Eye, Pencil,
+  CheckCircle, Loader2, AlertCircle, Search, SlidersHorizontal, MapPin, Eye, Pencil, FileText, Download,
 } from 'lucide-react'
 import { sounds } from '@/lib/sounds'
 import { useToast } from '@/contexts/ToastContext'
@@ -58,6 +58,7 @@ interface Review {
   status: string
   photo_url: string | null
   photo_urls: string[] | null
+  document_url: string | null
   media_usage_authorized?: boolean
   sentiment_map: SentimentMapValue | null
   created_at: string
@@ -82,6 +83,7 @@ const ENTITY_TYPE_LABELS: Record<string, string> = {
   transfer: 'Transfer',
   guide: 'Guia',
   restaurant: 'Restaurante',
+  roteiro: 'Roteiro',
   other: 'Outro',
 }
 
@@ -624,6 +626,35 @@ function HotelCard({ review, onToggleFavorite, onViewHistory, onConfirmLead, onU
                 &ldquo;{review.heads_up}&rdquo;
               </p>
             )}
+
+            {/* Roteiro — visualização direto no card, sem forçar download
+                (pedido da Dani no treinamento, 13/08). PDF/imagem renderiza
+                inline no viewer nativo do navegador; Word não tem preview
+                nativo, então vira link de abrir. */}
+            {review.document_url && (
+              <div style={{ marginBottom: 12 }}>
+                {/\.(pdf|jpe?g|png|webp)$/i.test(review.document_url) ? (
+                  <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--tdgflow-border)' }}>
+                    <iframe src={review.document_url} title={`Roteiro — ${review.hotel_name}`} style={{ width: '100%', height: 320, border: 'none', display: 'block' }} />
+                  </div>
+                ) : (
+                  <a
+                    href={review.document_url} target="_blank" rel="noopener noreferrer"
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 12, border: '1px solid var(--tdgflow-border)', background: 'var(--tdgflow-surface-high)', textDecoration: 'none' }}
+                  >
+                    <FileText size={16} style={{ color: accent }} />
+                    <span style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-secondary)' }}>Abrir roteiro</span>
+                  </a>
+                )}
+                <a
+                  href={review.document_url} download target="_blank" rel="noopener noreferrer"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 6, fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)', textDecoration: 'none' }}
+                >
+                  <Download size={11} /> Baixar arquivo
+                </a>
+              </div>
+            )}
+
             <button
               onClick={() => onConfirmLead(review)}
               style={{
@@ -1164,6 +1195,67 @@ function PhotoUploadStep({ photos, uploading, maxPhotos, onSelect, onRemove }: {
   )
 }
 
+/* ── Documento do roteiro (PDF/Word/foto das páginas) — 1 arquivo só, sem
+   preview de imagem (não é foto), mostra nome do arquivo. ────────────── */
+function DocumentUploadStep({ selectedDoc, uploading, onSelect, onRemove }: {
+  selectedDoc: { url: string; name: string } | undefined
+  uploading: boolean
+  onSelect: (file: File) => void
+  onRemove: () => void
+}) {
+  const [dragOver, setDragOver] = useState(false)
+
+  if (selectedDoc) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderRadius: 12, border: '1px solid var(--tdgflow-border)', background: 'var(--tdgflow-surface-high)' }}>
+        <FileText size={18} style={{ color: 'var(--tdgflow-navy)', flexShrink: 0 }} />
+        <span style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-secondary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {selectedDoc.name}
+        </span>
+        <button onClick={onRemove} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, flexShrink: 0 }}>
+          <X size={14} style={{ color: 'var(--tdgflow-text-muted)' }} />
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <label
+      onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={e => {
+        e.preventDefault()
+        setDragOver(false)
+        const file = e.dataTransfer.files[0]
+        if (file) onSelect(file)
+      }}
+      style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8,
+        padding: '28px 16px', borderRadius: 14,
+        border: `1.5px dashed ${dragOver ? 'var(--tdgflow-navy-dim)' : 'var(--tdgflow-border-light)'}`,
+        background: dragOver ? 'var(--tdgflow-navy-subtle)' : 'var(--tdgflow-surface-high)',
+        cursor: uploading ? 'default' : 'pointer', transition: 'background 150ms, border-color 150ms',
+      }}
+    >
+      {uploading
+        ? <Loader2 size={18} className="animate-spin" style={{ color: 'var(--tdgflow-text-muted)' }} />
+        : (
+          <span style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-muted)', textAlign: 'center' }}>
+            Toque para escolher ou arraste o roteiro aqui
+          </span>
+        )
+      }
+      <input
+        type="file"
+        accept="application/pdf,.pdf,.doc,.docx,image/jpeg,image/png,image/webp"
+        disabled={uploading}
+        onChange={e => { const file = e.target.files?.[0]; if (file) onSelect(file); e.target.value = '' }}
+        style={{ display: 'none' }}
+      />
+    </label>
+  )
+}
+
 /* ── Lista de nomes — lote de "Por testar": mesmo contexto compartilhado
    (país, motivo/fonte), N nomes, adicionar/remover linhas livremente. ── */
 function NameListStep({ names, onChange }: { names: string[]; onChange: (names: string[]) => void }) {
@@ -1230,6 +1322,7 @@ function Questionnaire({ onClose, onSaved, initialAnswers, relatedLeadId }: {
   const [saving, setSaving] = useState(false)
   const [done, setDone] = useState(false)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const [uploadingDocument, setUploadingDocument] = useState(false)
   const { toast } = useToast()
 
   const mediaRef = useRef<MediaRecorder | null>(null)
@@ -1256,6 +1349,7 @@ function Questionnaire({ onClose, onSaved, initialAnswers, relatedLeadId }: {
     if (q.id === 'heads_up') return true          // optional
     if (q.type === 'sentiment_map') return true   // optional
     if (q.type === 'photo') return !uploadingPhoto // optional, só trava durante upload
+    if (q.type === 'document') return !uploadingDocument // optional, só trava durante upload
     if (q.type === 'sentiment') return currentAnswer !== undefined  // allow 0
     if (q.type === 'name_list') return Array.isArray(currentAnswer) && (currentAnswer as string[]).some(n => n.trim())
     return !!currentAnswer
@@ -1290,6 +1384,29 @@ function Questionnaire({ onClose, onSaved, initialAnswers, relatedLeadId }: {
   function removePhoto(url: string) {
     const current = (answers.photo as string[] | undefined) ?? []
     setAnswer(current.filter(u => u !== url))
+  }
+
+  async function handleDocumentSelect(file: File) {
+    setUploadingDocument(true)
+    try {
+      const fd = new FormData()
+      fd.append('document', file)
+      const res = await fetch('/api/reviews/document', { method: 'POST', body: fd })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error ?? 'Erro ao enviar')
+      }
+      const data = await res.json()
+      setAnswer({ url: data.document_url as string, name: data.document_name as string })
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Não foi possível enviar o documento', 'error')
+    } finally {
+      setUploadingDocument(false)
+    }
+  }
+
+  function removeDocument() {
+    setAnswer(undefined)
   }
 
   async function startRecording() {
@@ -1339,7 +1456,7 @@ function Questionnaire({ onClose, onSaved, initialAnswers, relatedLeadId }: {
     const hasSentimentMap = Object.keys(sentimentMap).length > 0
     const rawAnswers = Object.fromEntries(
       Object.entries(answers)
-        .filter(([k]) => !['overall_rating', 'sub_ratings', 'sentiment_map', 'hotel_name', 'hotel_names', 'visit_date', 'visit_type', 'entity_type', 'photo', 'media_usage_authorized'].includes(k))
+        .filter(([k]) => !['overall_rating', 'sub_ratings', 'sentiment_map', 'hotel_name', 'hotel_names', 'visit_date', 'visit_type', 'entity_type', 'photo', 'document', 'media_usage_authorized'].includes(k))
         .map(([k, v]) => [k, String(v)])
     )
 
@@ -1394,6 +1511,7 @@ function Questionnaire({ onClose, onSaved, initialAnswers, relatedLeadId }: {
           food_rating:      subRatings.food     ?? null,
           location_rating:  subRatings.location ?? null,
           photo_urls:       (answers.photo as string[] | undefined) ?? [],
+          document_url:     (answers.document as { url: string } | undefined)?.url ?? null,
           media_usage_authorized: (answers.media_usage_authorized as boolean | undefined) ?? true,
           related_lead_id:  relatedLeadId || null,
           // status não é enviado — o servidor deriva de visit_type, nunca confia no cliente.
@@ -1577,6 +1695,16 @@ function Questionnaire({ onClose, onSaved, initialAnswers, relatedLeadId }: {
                     </div>
                   )}
                 </div>
+              )}
+
+              {/* Documento do roteiro — PDF/Word/fotos das páginas */}
+              {q.type === 'document' && (
+                <DocumentUploadStep
+                  selectedDoc={currentAnswer as { url: string; name: string } | undefined}
+                  uploading={uploadingDocument}
+                  onSelect={handleDocumentSelect}
+                  onRemove={removeDocument}
+                />
               )}
 
               {/* Voice + text */}

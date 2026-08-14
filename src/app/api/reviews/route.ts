@@ -103,13 +103,15 @@ export async function POST(req: NextRequest) {
       hotel_name, entity_type, country, visit_date, visit_type,
       overall_rating, rooms_rating, service_rating, food_rating, location_rating,
       raw_answers, sentiment_map, photo_url, photo_urls, related_lead_id,
-      media_usage_authorized,
+      media_usage_authorized, document_url,
     } = body
 
-    // status nunca vem do cliente — é sempre derivado de visit_type no servidor,
-    // senão um cliente malicioso/com bug publica um lead não testado direto na
-    // fila de confiança da rede.
-    const isLead = visit_type === 'commercial_meeting'
+    // status nunca vem do cliente — é sempre derivado de visit_type/entity_type
+    // no servidor, senão um cliente malicioso/com bug publica um lead não
+    // testado direto na fila de confiança da rede. Roteiro entra no mesmo
+    // grupo de "descoberta" que reunião comercial — documento recebido,
+    // ninguém testou ainda.
+    const isLead = visit_type === 'commercial_meeting' || entity_type === 'roteiro'
     const status = isLead ? 'a_testar' : 'published'
 
     // Reunião comercial nunca pergunta nota geral (não houve estadia) — só
@@ -145,6 +147,9 @@ export async function POST(req: NextRequest) {
 
     // Add sentiment_map column (idempotent)
     await sql`ALTER TABLE tdg_hotel_reviews ADD COLUMN IF NOT EXISTS sentiment_map JSONB`
+
+    // Documento do roteiro (PDF/Word/fotos das páginas) — idempotente
+    await sql`ALTER TABLE tdg_hotel_reviews ADD COLUMN IF NOT EXISTS document_url TEXT`
 
     // hotel_id — Fase 1 da reorganização de caixinhas (ver migration 012):
     // liga a review ao catálogo real de fornecedores em vez de só um texto
@@ -217,7 +222,9 @@ export async function POST(req: NextRequest) {
     // beach_club/transfer/guia/restaurante/outro igual.
     const finalEntityType = entity_type || 'hotel'
     let hotelId: string | null = null
-    {
+    // Roteiro não é fornecedor — é um documento/destino, não entra no
+    // catálogo de tdg_hotels (ficaria lixo entre hotéis/beach clubs reais).
+    if (finalEntityType !== 'roteiro') {
       const trimmedName = String(hotel_name).trim()
       const { rows: existingHotel } = await sql`
         SELECT id FROM tdg_hotels WHERE lower(trim(name)) = lower(${trimmedName}) AND entity_type = ${finalEntityType}
@@ -250,7 +257,7 @@ export async function POST(req: NextRequest) {
       INSERT INTO tdg_hotel_reviews
         (hotel_name, hotel_id, entity_type, country, agent_id, agent_name, agency_name, visit_date, visit_type,
          overall_rating, rooms_rating, service_rating, food_rating, location_rating,
-         highlights, client_profile, must_experience, heads_up, status, photo_url, photo_urls, media_usage_authorized, related_lead_id, raw_answers, sentiment_map)
+         highlights, client_profile, must_experience, heads_up, status, photo_url, photo_urls, media_usage_authorized, related_lead_id, raw_answers, sentiment_map, document_url)
       VALUES (
         ${hotel_name}, ${hotelId}, ${finalEntityType}, ${country || null}, ${user.id}, ${user.name}, ${user.agency_name},
         ${visit_date || null}, ${visit_type || null},
@@ -260,7 +267,8 @@ export async function POST(req: NextRequest) {
         ${structured.must_experience ?? null}, ${structured.heads_up ?? null},
         ${status}, ${finalPhotoUrl}, ${JSON.stringify(finalPhotoUrls)}, ${media_usage_authorized !== false}, ${finalRelatedLeadId},
         ${JSON.stringify(raw_answers)},
-        ${sentiment_map ? JSON.stringify(sentiment_map) : null}
+        ${sentiment_map ? JSON.stringify(sentiment_map) : null},
+        ${document_url || null}
       )
       RETURNING *
     `

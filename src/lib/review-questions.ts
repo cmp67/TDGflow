@@ -1,12 +1,12 @@
 export interface ReviewQuestion {
   id: string
   text: string
-  type: 'text' | 'date' | 'select' | 'sentiment' | 'sentiment_map' | 'voice_text' | 'photo' | 'name_list'
+  type: 'text' | 'date' | 'select' | 'sentiment' | 'sentiment_map' | 'voice_text' | 'photo' | 'name_list' | 'document'
   placeholder?: string
   options?: string[]
 }
 
-export const ENTITY_TYPES = ['hotel', 'beach_club', 'transfer', 'guide', 'restaurant', 'other'] as const
+export const ENTITY_TYPES = ['hotel', 'beach_club', 'transfer', 'guide', 'restaurant', 'roteiro', 'other'] as const
 export type EntityType = (typeof ENTITY_TYPES)[number]
 
 export const VISIT_TYPES = ['fam_trip', 'site_inspection', 'personal_stay', 'commercial_meeting'] as const
@@ -34,6 +34,17 @@ const NAMES_LIST_QUESTION: ReviewQuestion = {
   text: 'Quais nomes?',
   type: 'name_list',
   placeholder: 'Um por linha — adicione quantos quiser da mesma fonte.',
+}
+
+// Roteiro não é fornecedor testado — é um documento (recebido de um MC, por
+// exemplo) que alguém quer compartilhar com a rede antes de qualquer visita.
+// Mesma lógica de "por testar": nasce como descoberta, não como review.
+const ROTEIRO_NAME_QUESTION: ReviewQuestion = { id: 'hotel_name', text: 'Título do roteiro', type: 'text', placeholder: 'Ex: 10 dias em Omã — roteiro recebido do MC...' }
+const DOCUMENT_QUESTION: ReviewQuestion = {
+  id: 'document',
+  text: 'Suba o roteiro',
+  type: 'document',
+  placeholder: 'PDF, Word ou fotos das páginas — a rede vê direto aqui dentro, sem precisar baixar.',
 }
 
 const PHOTO_QUESTION: ReviewQuestion = {
@@ -78,6 +89,13 @@ export function getQuestions(answers: Record<string, unknown>): ReviewQuestion[]
   const entityType = (answers.entity_type as string) || 'hotel'
   const visitType = answers.visit_type as string | undefined
 
+  // Roteiro nunca teve "visita" — não faz sentido perguntar fam trip/site
+  // inspection pra um documento. Ramifica direto, sem passar pelo eixo
+  // visit_type que todo o resto do questionário usa.
+  if (entityType === 'roteiro') {
+    return [ENTITY_QUESTION, ROTEIRO_NAME_QUESTION, COUNTRY_QUESTION, COMMERCIAL_MEETING_QUESTION, DOCUMENT_QUESTION]
+  }
+
   if (!visitType) {
     return [ENTITY_QUESTION, VISIT_TYPE_QUESTION]
   }
@@ -90,7 +108,7 @@ export function getQuestions(answers: Record<string, unknown>): ReviewQuestion[]
   return [ENTITY_QUESTION, VISIT_TYPE_QUESTION, NAME_QUESTION, COUNTRY_QUESTION, DATE_QUESTION, ...stayQuestions]
 }
 
-/** "Por testar" nasce como lead a testar, nunca como review publicado. */
+/** "Por testar" e Roteiro nascem como lead a testar, nunca como review publicado. */
 export function isLeadSubmission(answers: Record<string, unknown>): boolean {
-  return answers.visit_type === 'commercial_meeting'
+  return answers.visit_type === 'commercial_meeting' || answers.entity_type === 'roteiro'
 }
