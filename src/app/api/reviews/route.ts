@@ -151,6 +151,15 @@ export async function POST(req: NextRequest) {
     // Documento do roteiro (PDF/Word/fotos das páginas) — idempotente
     await sql`ALTER TABLE tdg_hotel_reviews ADD COLUMN IF NOT EXISTS document_url TEXT`
 
+    // 'roteiro' é entity_type novo — o CHECK constraint original só
+    // permitia hotel/beach_club/transfer/guide/restaurant/other. Recria
+    // com 'roteiro' incluído (idempotente: sempre dropa e recria).
+    await sql`ALTER TABLE tdg_hotel_reviews DROP CONSTRAINT IF EXISTS tdg_hotel_reviews_entity_type_check`
+    await sql`
+      ALTER TABLE tdg_hotel_reviews ADD CONSTRAINT tdg_hotel_reviews_entity_type_check
+        CHECK (entity_type = ANY (ARRAY['hotel', 'beach_club', 'transfer', 'guide', 'restaurant', 'roteiro', 'other']))
+    `
+
     // hotel_id — Fase 1 da reorganização de caixinhas (ver migration 012):
     // liga a review ao catálogo real de fornecedores em vez de só um texto
     // livre, pra permitir a ficha do hotel puxar suas próprias reviews depois.
