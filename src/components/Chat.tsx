@@ -525,11 +525,15 @@ export default function Chat({ fallbackName, userEmail }: Props = {}) {
                 TDG
               </div>
               <div className="px-4 py-3 rounded-2xl max-w-[85%] text-sm leading-relaxed" style={{ background: 'var(--tdgflow-surface)', border: '1px solid var(--tdgflow-border)', color: 'var(--tdgflow-text-secondary)', borderRadius: '4px 18px 18px 18px' }}>
-                {streamingText ? (
-                  <div className="prose-dark">
-                    <ReactMarkdown>{streamingText}</ReactMarkdown>
-                  </div>
-                ) : statusLabel ? (
+                {statusLabel ? (
+                  // Prioridade sobre streamingText de propósito — achado da
+                  // Carla, 15/08: o modelo pode mandar um pedacinho de texto
+                  // ANTES ou ENTRE chamadas de ferramenta (ex: intro curta,
+                  // depois busca, depois mais texto). Se streamingText
+                  // ganhasse prioridade fixa, o status sumia pra sempre
+                  // assim que qualquer texto chegasse, mesmo com várias
+                  // ferramentas ainda rodando depois — o usuário ficava sem
+                  // feedback no meio de uma resposta de 15-40s.
                   <motion.span
                     key={statusLabel}
                     initial={{ opacity: 0 }}
@@ -538,6 +542,10 @@ export default function Chat({ fallbackName, userEmail }: Props = {}) {
                   >
                     {statusLabel}
                   </motion.span>
+                ) : streamingText ? (
+                  <div className="prose-dark">
+                    <ReactMarkdown>{streamingText}</ReactMarkdown>
+                  </div>
                 ) : (
                   <div className="flex items-center gap-1.5">
                     {[0, 1, 2].map(i => (
