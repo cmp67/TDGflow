@@ -262,13 +262,14 @@ export async function sendWeeklyDigestEmail(to: string, firstName: string, diges
     </tr>
 
     <!-- Footer — Bemgsy é assinatura de infraestrutura, discreta de
-         propósito (achado da Carla, 15/08: tava com protagonismo demais
-         — tinha menção no header E logo+tagline no rodapé; cortado pra
-         uma linha só, mesmo tratamento minimal do rodapé in-app). -->
+         propósito (Carla pediu mais discrição 2x, 15/08: primeiro cortou
+         a menção duplicada no header, depois pediu ainda mais discreto
+         que o rodapé in-app — opacidade mais baixa que a referência
+         (0.45 vs 0.6 do app), texto pequeno, sem negrito/destaque). -->
     <tr>
-      <td style="padding: 24px 32px 28px; text-align: center;">
-        <p style="font-size: 10px; color: ${BRAND.textMuted}; margin: 0; opacity: 0.8;">
-          Powered by <img src="${APP_URL}/brand/bemgsy-mark.png" alt="Bemgsy" height="9" style="height: 9px; width: auto; vertical-align: middle; opacity: 0.7;" />
+      <td style="padding: 22px 32px 26px; text-align: center;">
+        <p style="font-size: 9px; color: ${BRAND.textMuted}; margin: 0; opacity: 0.45;">
+          Powered by <img src="${APP_URL}/brand/bemgsy-mark.png" alt="Bemgsy" height="8" style="height: 8px; width: auto; vertical-align: middle; opacity: 0.6;" />
         </p>
       </td>
     </tr>
