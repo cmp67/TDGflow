@@ -190,16 +190,10 @@ export async function sendWeeklyDigestEmail(to: string, firstName: string, diges
     sections.push(emailSection('Novidades no Flow', `<table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table>`))
   }
 
-  if (digest.newOffers.length > 0 || digest.expiringOffers.length > 0 || digest.activeOffers.length > 0) {
-    let body = ''
-    if (digest.newOffers.length > 0) {
-      body += `<p style="font-size: 13.5px; color: ${BRAND.textSecondary}; margin: 0 0 8px;"><strong style="color: ${BRAND.navy};">Novas:</strong> ${digest.newOffers.map(o => `${o.hotel_name} (${o.commission}%)`).join(', ')}</p>`
-    }
-    if (digest.expiringOffers.length > 0) {
-      body += `<p style="font-size: 13.5px; color: ${BRAND.textSecondary}; margin: 0;"><strong style="color: ${BRAND.navy};">Vencendo em breve:</strong> ${digest.expiringOffers.map(o => `${o.hotel_name} (${o.commission}%)`).join(', ')}</p>`
-    }
-    if (digest.activeOffers.length > 0) {
-      body += `<p style="font-size: 13.5px; color: ${BRAND.textSecondary}; margin: 0;"><strong style="color: ${BRAND.navy};">Ofertas ativas:</strong> ${digest.activeOffers.map(o => `${o.hotel_name} (${o.commission}%)`).join(', ')}</p>`
+  if (digest.activeOfferHotels.length > 0) {
+    let body = `<p style="font-size: 13.5px; color: ${BRAND.textSecondary}; margin: 0 0 8px;"><strong style="color: ${BRAND.navy};">Fornecedores com oferta ativa:</strong> ${digest.activeOfferHotels.join(', ')}</p>`
+    if (digest.expiringOfferHotels.length > 0) {
+      body += `<p style="font-size: 13.5px; color: ${BRAND.textSecondary}; margin: 0;"><strong style="color: ${BRAND.navy};">Vencendo em breve:</strong> ${digest.expiringOfferHotels.join(', ')}</p>`
     }
     sections.push(emailSection('Ofertas', body))
   }
