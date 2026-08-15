@@ -145,7 +145,7 @@ export default function LandingPage() {
           <Link href="/" className="flex items-center gap-2.5 no-underline">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={navOpaque ? '/brand/tdg-mark.png' : '/brand/tdg-mark-white.png'}
+              src={navOpaque ? '/brand/tdg-mark.png' : '/brand/tdg-mark.png'}
               alt="TDG"
               style={{ height: 16, objectFit: 'contain' }}
             />
@@ -218,7 +218,7 @@ export default function LandingPage() {
             className="flex items-center justify-center mb-6"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/brand/tdg-mark-white.png" alt="TDG" style={{ height: 'clamp(40px, 7vw, 64px)', objectFit: 'contain' }} />
+            <img src="/brand/tdg-mark.png" alt="TDG" style={{ height: 'clamp(40px, 7vw, 64px)', objectFit: 'contain' }} />
           </motion.div>
 
           <motion.h1
@@ -273,7 +273,7 @@ export default function LandingPage() {
         <div className="max-w-4xl mx-auto relative z-10">
           <FadeUp className="flex items-center justify-center gap-2 mb-5">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/brand/tdg-mark-white.png" alt="TDG" style={{ height: 20, objectFit: 'contain' }} />
+            <img src="/brand/tdg-mark.png" alt="TDG" style={{ height: 20, objectFit: 'contain' }} />
             <span style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontStyle: 'italic', fontSize: '1.375rem', color: 'var(--tdgflow-gold)', lineHeight: 1 }}>
               Flow
             </span>

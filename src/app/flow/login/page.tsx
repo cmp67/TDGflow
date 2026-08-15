@@ -51,7 +51,7 @@ export default function LoginPage() {
             style={{ background: 'var(--tdgflow-navy)' }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/brand/tdg-mark-white.png" alt="TDG" style={{ height: 18, objectFit: 'contain' }} />
+            <img src="/brand/tdg-mark.png" alt="TDG" style={{ height: 18, objectFit: 'contain' }} />
           </div>
           <h1 className="text-lg font-semibold" style={{ color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.02em' }}>
             TDG Flow
