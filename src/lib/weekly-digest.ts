@@ -11,6 +11,7 @@ export interface WeeklyDigest {
   featuredReview: { hotel_name: string; country: string | null; agent_name: string; photo_url: string | null; heads_up: string | null; overall_rating: number | null } | null
   newOffers: { hotel_name: string; commission: number; offer_type: string | null }[]
   expiringOffers: { hotel_name: string; valid_until: string | null; commission: number }[]
+  activeOffers: { hotel_name: string; commission: number; valid_until: string | null }[]
   newGuides: { title: string }[]
   changelog: { title: string; description: string | null }[]
 }
@@ -78,10 +79,22 @@ export async function buildWeeklyDigest(): Promise<WeeklyDigest> {
     ORDER BY released_at DESC
   `
 
+  // Achado da Carla, 15/08: com só um punhado de ofertas ativas na rede
+  // (curadoria manual, não muda toda semana) e horizontes de validade de
+  // meses, uma janela de "vencendo em 7 dias" fica vazia quase sempre —
+  // a seção sumia mesmo com ofertas de verdade disponíveis. Amplia
+  // "vencendo em breve" pra 60 dias e adiciona um fallback: se não há
+  // nada novo nem vencendo, mostra as ofertas ativas mesmo assim — a
+  // seção nunca desaparece silenciosamente enquanto existir oferta.
   const offers = await getOffers()
   const newOffers = offers.filter(o => o.curated_at && new Date(o.curated_at) >= periodStart)
-  const soon = new Date(periodEnd.getTime() + 7 * 24 * 60 * 60 * 1000)
+  const soon = new Date(periodEnd.getTime() + 60 * 24 * 60 * 60 * 1000)
   const expiringOffers = offers.filter(o => o.valid_until && new Date(o.valid_until) <= soon && new Date(o.valid_until) >= periodEnd)
+  const activeOffers = (newOffers.length === 0 && expiringOffers.length === 0)
+    ? [...offers]
+        .sort((a, b) => (a.valid_until ? new Date(a.valid_until).getTime() : Infinity) - (b.valid_until ? new Date(b.valid_until).getTime() : Infinity))
+        .slice(0, 5)
+    : []
 
   return {
     periodStart: periodStart.toISOString(),
@@ -100,6 +113,7 @@ export async function buildWeeklyDigest(): Promise<WeeklyDigest> {
     } : null,
     newOffers: newOffers.map(o => ({ hotel_name: o.hotel_name, commission: o.commission, offer_type: o.offer_type })),
     expiringOffers: expiringOffers.map(o => ({ hotel_name: o.hotel_name, valid_until: o.valid_until, commission: o.commission })),
+    activeOffers: activeOffers.map(o => ({ hotel_name: o.hotel_name, commission: o.commission, valid_until: o.valid_until })),
     newGuides: guides.map(g => ({ title: g.title as string })),
     changelog: changelog.map(c => ({ title: c.title as string, description: c.description as string | null })),
   }

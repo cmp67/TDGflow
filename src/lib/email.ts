@@ -190,13 +190,16 @@ export async function sendWeeklyDigestEmail(to: string, firstName: string, diges
     sections.push(emailSection('Novidades no Flow', `<table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table>`))
   }
 
-  if (digest.newOffers.length > 0 || digest.expiringOffers.length > 0) {
+  if (digest.newOffers.length > 0 || digest.expiringOffers.length > 0 || digest.activeOffers.length > 0) {
     let body = ''
     if (digest.newOffers.length > 0) {
       body += `<p style="font-size: 13.5px; color: ${BRAND.textSecondary}; margin: 0 0 8px;"><strong style="color: ${BRAND.navy};">Novas:</strong> ${digest.newOffers.map(o => `${o.hotel_name} (${o.commission}%)`).join(', ')}</p>`
     }
     if (digest.expiringOffers.length > 0) {
-      body += `<p style="font-size: 13.5px; color: ${BRAND.textSecondary}; margin: 0;"><strong style="color: ${BRAND.navy};">Vencendo em breve:</strong> ${digest.expiringOffers.map(o => o.hotel_name).join(', ')}</p>`
+      body += `<p style="font-size: 13.5px; color: ${BRAND.textSecondary}; margin: 0;"><strong style="color: ${BRAND.navy};">Vencendo em breve:</strong> ${digest.expiringOffers.map(o => `${o.hotel_name} (${o.commission}%)`).join(', ')}</p>`
+    }
+    if (digest.activeOffers.length > 0) {
+      body += `<p style="font-size: 13.5px; color: ${BRAND.textSecondary}; margin: 0;"><strong style="color: ${BRAND.navy};">Ofertas ativas:</strong> ${digest.activeOffers.map(o => `${o.hotel_name} (${o.commission}%)`).join(', ')}</p>`
     }
     sections.push(emailSection('Ofertas', body))
   }
@@ -251,6 +254,16 @@ export async function sendWeeklyDigestEmail(to: string, firstName: string, diges
         <a href="${APP_URL}/flow/dicas" style="display: inline-block; background: ${BRAND.gold}; color: ${BRAND.navyDim}; font-size: 14px; font-weight: 700; padding: 13px 32px; border-radius: 999px; text-decoration: none;">
           Ver tudo no TDG Flow
         </a>
+      </td>
+    </tr>
+
+    <!-- Convite fechando o e-mail — reforça inteligência coletiva com
+         pergunta pessoal, não só CTA transacional (pedido da Carla, 15/08) -->
+    <tr>
+      <td style="padding: 22px 32px 4px; text-align: center;">
+        <p style="font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 14px; color: ${BRAND.textSecondary}; margin: 0; line-height: 1.6;">
+          E essa semana — o que você vai trazer pra rede?
+        </p>
       </td>
     </tr>
 
