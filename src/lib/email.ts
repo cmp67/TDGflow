@@ -100,77 +100,170 @@ export async function sendFirstAccessEmail(
   await sendEmail(to, 'Seu acesso ao TDG Flow já está pronto', html)
 }
 
-function digestSection(title: string, bodyHtml: string): string {
+// ── Newsletter semanal — v2, identidade visual oficial (15/08) ─────────
+// Tokens copiados de src/app/globals.css (email não lê CSS vars, precisa
+// de hex direto). Teal só na marca TDG — no resto do produto teal foi
+// substituído por navy/gold, então a newsletter segue a mesma regra.
+const BRAND = {
+  navy: '#1A2B4C',
+  navyDim: '#0D1826',
+  gold: '#D4AF37',
+  bg: '#F3F7F8',
+  surface: '#FFFFFF',
+  border: '#D0E2E5',
+  textPrimary: '#112630',
+  textSecondary: '#104C64',
+  textMuted: '#4A7580',
+}
+
+function emailSectionLabel(text: string): string {
+  return `<p style="font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: ${BRAND.gold}; margin: 0 0 12px;">${text}</p>`
+}
+
+function emailSection(title: string, bodyHtml: string, isFirst = false): string {
   return `
-    <div style="margin: 0 0 28px;">
-      <p style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #7A9AA5; margin: 0 0 10px;">${title}</p>
-      ${bodyHtml}
-    </div>
+    <tr><td style="padding: ${isFirst ? '0' : '28px'} 32px 0;">
+      <div style="${isFirst ? '' : `border-top: 1px solid ${BRAND.border}; padding-top: 28px;`}">
+        ${emailSectionLabel(title)}
+        ${bodyHtml}
+      </div>
+    </td></tr>
   `
 }
 
 export async function sendWeeklyDigestEmail(to: string, firstName: string, digest: WeeklyDigest): Promise<void> {
   const sections: string[] = []
 
-  sections.push(digestSection(
+  sections.push(emailSection(
     'Essa semana na rede',
-    `<p style="font-size: 14px; line-height: 1.6; color: #4A7580; margin: 0;">
-      <strong style="color: #112630;">${digest.reviewCount}</strong> avaliaç${digest.reviewCount === 1 ? 'ão registrada' : 'ões registradas'} por ${digest.reviewsByAgency.length} agência${digest.reviewsByAgency.length === 1 ? '' : 's'}${digest.openDiscoveries > 0 ? `, e <strong style="color: #112630;">${digest.openDiscoveries}</strong> descoberta${digest.openDiscoveries === 1 ? '' : 's'} nova${digest.openDiscoveries === 1 ? '' : 's'} esperando alguém confirmar de perto` : ''}.
-    </p>`
+    `<div style="border-left: 3px solid ${BRAND.gold}; background: ${BRAND.bg}; border-radius: 0 8px 8px 0; padding: 14px 18px;">
+      <p style="font-size: 15px; line-height: 1.6; color: ${BRAND.textSecondary}; margin: 0;">
+        <strong style="color: ${BRAND.navy}; font-size: 17px;">${digest.reviewCount}</strong> avaliaç${digest.reviewCount === 1 ? 'ão registrada' : 'ões registradas'} por ${digest.reviewsByAgency.length} agência${digest.reviewsByAgency.length === 1 ? '' : 's'}${digest.openDiscoveries > 0 ? `, e <strong style="color: ${BRAND.navy};">${digest.openDiscoveries}</strong> descoberta${digest.openDiscoveries === 1 ? '' : 's'} nova${digest.openDiscoveries === 1 ? '' : 's'} esperando alguém confirmar de perto` : ''}.
+      </p>
+    </div>`,
+    true
   ))
 
   if (digest.recentReviews.length > 0) {
-    const rows = digest.recentReviews.map(r => `
-      <li style="font-size: 13px; line-height: 1.7; color: #4A7580;">
-        <strong style="color: #112630;">${r.agent_name}</strong> (${r.agency_name}) — ${r.hotel_name}${r.country ? `, ${r.country}` : ''}
-      </li>`).join('')
-    sections.push(digestSection('Quem foi pra onde', `<ul style="margin: 0; padding-left: 18px;">${rows}</ul>`))
+    const rows = digest.recentReviews.map((r, i) => `
+      <tr>
+        <td style="padding: 10px 0; ${i > 0 ? `border-top: 1px solid ${BRAND.border};` : ''}">
+          <span style="font-size: 13.5px; color: ${BRAND.textSecondary};">
+            <strong style="color: ${BRAND.navy};">${r.agent_name}</strong>
+            <span style="color: ${BRAND.textMuted};"> (${r.agency_name})</span>
+            — ${r.hotel_name}${r.country ? `, ${r.country}` : ''}
+          </span>
+        </td>
+      </tr>`).join('')
+    sections.push(emailSection('Quem foi pra onde', `<table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table>`))
   }
 
   if (digest.featuredReview) {
     const f = digest.featuredReview
-    sections.push(digestSection(
+    const photo = f.photo_url
+      ? `<img src="${f.photo_url}" alt="${f.hotel_name}" width="536" style="width: 100%; max-width: 536px; height: auto; border-radius: 10px; display: block; margin: 0 0 14px;" />`
+      : ''
+    const stars = f.overall_rating != null
+      ? `<span style="color: ${BRAND.gold}; font-size: 13px; font-weight: 700;">★ ${f.overall_rating}</span>`
+      : ''
+    sections.push(emailSection(
       'Fornecedor em destaque',
-      `<p style="font-size: 14px; line-height: 1.6; color: #4A7580; margin: 0;">
-        <strong style="color: #112630;">${f.hotel_name}</strong>${f.country ? ` — ${f.country}` : ''}, por ${f.agent_name}${f.overall_rating != null ? ` · nota ${f.overall_rating}` : ''}<br/>
-        ${f.heads_up ? `<span style="font-style: italic;">"${f.heads_up}"</span>` : ''}
-      </p>`
+      `${photo}
+      <p style="font-size: 16px; font-weight: 700; color: ${BRAND.navy}; margin: 0 0 2px;">${f.hotel_name} ${stars}</p>
+      <p style="font-size: 12.5px; color: ${BRAND.textMuted}; margin: 0 0 10px;">${f.country ?? ''}${f.country ? ' · ' : ''}por ${f.agent_name}</p>
+      ${f.heads_up ? `<p style="font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 14px; color: ${BRAND.textSecondary}; line-height: 1.55; margin: 0;">&ldquo;${f.heads_up}&rdquo;</p>` : ''}`
     ))
   }
 
   if (digest.changelog.length > 0) {
     const rows = digest.changelog.map(c => `
-      <li style="font-size: 13px; line-height: 1.7; color: #4A7580;">
-        <strong style="color: #112630;">${c.title}</strong>${c.description ? ` — ${c.description}` : ''}
-      </li>`).join('')
-    sections.push(digestSection('Novidades no Flow', `<ul style="margin: 0; padding-left: 18px;">${rows}</ul>`))
+      <tr>
+        <td valign="top" style="padding: 0 8px 12px 0; width: 14px;">
+          <div style="width: 6px; height: 6px; border-radius: 50%; background: ${BRAND.gold}; margin-top: 6px;"></div>
+        </td>
+        <td style="padding: 0 0 12px;">
+          <span style="font-size: 13.5px; color: ${BRAND.textSecondary};">
+            <strong style="color: ${BRAND.navy};">${c.title}</strong>${c.description ? ` — ${c.description}` : ''}
+          </span>
+        </td>
+      </tr>`).join('')
+    sections.push(emailSection('Novidades no Flow', `<table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table>`))
   }
 
   if (digest.newOffers.length > 0 || digest.expiringOffers.length > 0) {
     let body = ''
     if (digest.newOffers.length > 0) {
-      body += `<p style="font-size: 13px; color: #4A7580; margin: 0 0 6px;"><strong style="color: #112630;">Novas:</strong> ${digest.newOffers.map(o => `${o.hotel_name} (${o.commission}%)`).join(', ')}</p>`
+      body += `<p style="font-size: 13.5px; color: ${BRAND.textSecondary}; margin: 0 0 8px;"><strong style="color: ${BRAND.navy};">Novas:</strong> ${digest.newOffers.map(o => `${o.hotel_name} (${o.commission}%)`).join(', ')}</p>`
     }
     if (digest.expiringOffers.length > 0) {
-      body += `<p style="font-size: 13px; color: #4A7580; margin: 0;"><strong style="color: #112630;">Vencendo em breve:</strong> ${digest.expiringOffers.map(o => o.hotel_name).join(', ')}</p>`
+      body += `<p style="font-size: 13.5px; color: ${BRAND.textSecondary}; margin: 0;"><strong style="color: ${BRAND.navy};">Vencendo em breve:</strong> ${digest.expiringOffers.map(o => o.hotel_name).join(', ')}</p>`
     }
-    sections.push(digestSection('Ofertas', body))
+    sections.push(emailSection('Ofertas', body))
   }
 
   if (digest.newGuides.length > 0) {
-    const rows = digest.newGuides.map(g => `<li style="font-size: 13px; line-height: 1.7; color: #4A7580;">${g.title}</li>`).join('')
-    sections.push(digestSection('Novo na Wiki', `<ul style="margin: 0; padding-left: 18px;">${rows}</ul>`))
+    const rows = digest.newGuides.map(g => `<li style="font-size: 13.5px; line-height: 1.8; color: ${BRAND.textSecondary};">${g.title}</li>`).join('')
+    sections.push(emailSection('Novo na Wiki', `<ul style="margin: 0; padding-left: 18px;">${rows}</ul>`))
   }
 
   const html = `
-    <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px; color: #112630;">
-      <p style="font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: #7A9AA5; margin: 0 0 24px;">TDG Flow</p>
-      <h1 style="font-size: 20px; font-weight: 600; margin: 0 0 16px;">Olá, ${firstName} — aqui vai o que a rede fez essa semana</h1>
-      ${sections.join('')}
-      <a href="${APP_URL}/flow/dicas" style="display: inline-block; background: #112630; color: #fff; font-size: 14px; font-weight: 600; padding: 12px 24px; border-radius: 8px; text-decoration: none; margin-top: 8px;">
-        Ver tudo no TDG Flow
-      </a>
-    </div>
+<div style="background: ${BRAND.bg}; padding: 32px 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background: ${BRAND.surface}; border-radius: 16px; overflow: hidden; border: 1px solid ${BRAND.border};">
+
+    <!-- Header -->
+    <tr>
+      <td style="background: ${BRAND.navyDim}; padding: 36px 32px 26px; text-align: center;">
+        <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 auto;">
+          <tr>
+            <td style="vertical-align: middle;">
+              <img src="${APP_URL}/brand/tdg-mark.png" alt="TDG" height="26" style="height: 26px; width: auto; display: block;" />
+            </td>
+            <td style="padding: 0 14px; vertical-align: middle;">
+              <div style="width: 1px; height: 22px; background: rgba(234,241,245,0.25);"></div>
+            </td>
+            <td style="vertical-align: middle;">
+              <span style="font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 30px; color: ${BRAND.gold}; line-height: 1;">Flow</span>
+            </td>
+          </tr>
+        </table>
+        <div style="width: 56px; height: 2px; background: ${BRAND.gold}; opacity: 0.6; margin: 16px auto 14px; border-radius: 2px;"></div>
+        <p style="font-size: 10.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: #7E93A3; margin: 0;">Rede TDG · Powered by Bemgsy</p>
+      </td>
+    </tr>
+
+    <!-- Greeting -->
+    <tr>
+      <td style="padding: 30px 32px 0;">
+        <p style="font-size: 20px; color: ${BRAND.navy}; margin: 0 0 4px; line-height: 1.35;">
+          Olá, <strong>${firstName}</strong>
+        </p>
+        <p style="font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 15px; color: ${BRAND.gold}; margin: 0 0 24px;">
+          aqui vai o que a rede fez essa semana
+        </p>
+      </td>
+    </tr>
+
+    ${sections.join('')}
+
+    <!-- CTA -->
+    <tr>
+      <td style="padding: 32px 32px 8px; text-align: center;">
+        <a href="${APP_URL}/flow/dicas" style="display: inline-block; background: ${BRAND.gold}; color: ${BRAND.navyDim}; font-size: 14px; font-weight: 700; padding: 13px 32px; border-radius: 999px; text-decoration: none;">
+          Ver tudo no TDG Flow
+        </a>
+      </td>
+    </tr>
+
+    <!-- Footer -->
+    <tr>
+      <td style="padding: 28px 32px 32px; text-align: center;">
+        <img src="${APP_URL}/brand/bemgsy-mark.png" alt="Bemgsy" height="16" style="height: 16px; width: auto; display: inline-block; opacity: 0.7;" />
+        <p style="font-size: 11px; color: ${BRAND.textMuted}; margin: 10px 0 0;">Amplifying Human Hospitality</p>
+      </td>
+    </tr>
+
+  </table>
+</div>
   `.trim()
 
   await sendEmail(to, 'TDG Flow — o que a rede fez essa semana', html)
