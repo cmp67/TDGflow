@@ -230,7 +230,7 @@ export async function sendWeeklyDigestEmail(to: string, firstName: string, diges
           </tr>
         </table>
         <div style="width: 56px; height: 2px; background: ${BRAND.gold}; opacity: 0.6; margin: 16px auto 14px; border-radius: 2px;"></div>
-        <p style="font-size: 10.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: #7E93A3; margin: 0;">Rede TDG · Powered by Bemgsy</p>
+        <p style="font-size: 10.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: #7E93A3; margin: 0;">Rede TDG</p>
       </td>
     </tr>
 
@@ -267,11 +267,15 @@ export async function sendWeeklyDigestEmail(to: string, firstName: string, diges
       </td>
     </tr>
 
-    <!-- Footer -->
+    <!-- Footer — Bemgsy é assinatura de infraestrutura, discreta de
+         propósito (achado da Carla, 15/08: tava com protagonismo demais
+         — tinha menção no header E logo+tagline no rodapé; cortado pra
+         uma linha só, mesmo tratamento minimal do rodapé in-app). -->
     <tr>
-      <td style="padding: 28px 32px 32px; text-align: center;">
-        <img src="${APP_URL}/brand/bemgsy-mark.png" alt="Bemgsy" height="16" style="height: 16px; width: auto; display: inline-block; opacity: 0.7;" />
-        <p style="font-size: 11px; color: ${BRAND.textMuted}; margin: 10px 0 0;">Amplifying Human Hospitality</p>
+      <td style="padding: 24px 32px 28px; text-align: center;">
+        <p style="font-size: 10px; color: ${BRAND.textMuted}; margin: 0; opacity: 0.8;">
+          Powered by <img src="${APP_URL}/brand/bemgsy-mark.png" alt="Bemgsy" height="9" style="height: 9px; width: auto; vertical-align: middle; opacity: 0.7;" />
+        </p>
       </td>
     </tr>
 
