@@ -2381,7 +2381,7 @@ export default function DicasView() {
                     color: 'var(--tdgflow-text-muted)',
                   }}>
                     <svg style={{ width: 12, height: 12, fill: 'var(--tdgflow-gold-dim, #8C6436)' }}><use href="#i-verified" /></svg>
-                    Aprovado pela rede
+                    Testado pela rede
                   </h4>
                   <span style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)' }}>Foto de quem esteve lá — nunca banco de imagens</span>
                 </div>
