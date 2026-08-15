@@ -28,7 +28,8 @@ Retorne APENAS um JSON válido com esta estrutura:
 
 export async function POST(req: NextRequest) {
   const session = await auth()
-  const userEmail = session?.user?.email ?? 'unknown'
+  if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const userEmail = session.user.email
 
   const agencyId = await getAgencyId(userEmail)
   const credit = await checkAndDeductCredits({ agencyId, action: 'transcription', userEmail, isBemgsyAdmin: session?.user?.role === 'admin' })
@@ -37,13 +38,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: INSUFFICIENT_BALANCE }, { status: 402 })
   }
 
+  // Identidade sempre do lado do servidor, nunca do formulário — mesmo
+  // achado da Carla, 15/08, aplicado aqui também (ver audio-save/route.ts).
+  const { rows: userRows } = await sql`
+    SELECT id, name, agency_name FROM tdg_users WHERE email = ${userEmail} LIMIT 1
+  `
+  const user = userRows[0]
+  if (!user) return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 })
+  await sql`ALTER TABLE tdg_audio_inputs ADD COLUMN IF NOT EXISTS agent_id UUID REFERENCES tdg_users(id)`
+
   const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
   const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
   const formData = await req.formData()
   const audioFile = formData.get('audio') as File
-  const agentName = (formData.get('agent_name') as string) || 'MAX'
-  const agency = (formData.get('agency') as string) || ''
+  const agentName = user.name as string
+  const agency = user.agency_name as string
 
   if (!audioFile) {
     return NextResponse.json({ error: 'Audio file required' }, { status: 400 })
@@ -86,9 +96,9 @@ export async function POST(req: NextRequest) {
 
   // 4. Guardar no Postgres
   const { rows } = await sql`
-    INSERT INTO tdg_audio_inputs (agent_name, agency, visit_type, transcript, summary, audio_url, audio_shared)
+    INSERT INTO tdg_audio_inputs (agent_id, agent_name, agency, agency_id, visit_type, transcript, summary, audio_url, audio_shared)
     VALUES (
-      ${agentName}, ${agency},
+      ${user.id}, ${agentName}, ${agency}, ${agencyId},
       ${(summary.visit_type as string) || 'DEBRIEF'},
       ${transcript},
       ${JSON.stringify(summary)},

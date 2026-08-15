@@ -1,10 +1,23 @@
 import { sql } from '@vercel/postgres'
+import { auth } from '@/auth'
 import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
+  const session = await auth()
+  if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const { id, audio_shared, summary } = await req.json()
+  if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
+
+  const { rows: userRows } = await sql`SELECT id FROM tdg_users WHERE email = ${session.user.email} LIMIT 1`
+  const userId = userRows[0]?.id
+  if (!userId) return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 })
+
+  const { rows: ownerRows } = await sql`SELECT agent_id FROM tdg_audio_inputs WHERE id = ${id}`
+  if (!ownerRows.length) return NextResponse.json({ error: 'Áudio não encontrado' }, { status: 404 })
+  if (ownerRows[0].agent_id !== userId) return NextResponse.json({ error: 'Só o autor pode confirmar este áudio' }, { status: 403 })
 
   const { rows } = await sql`
     UPDATE tdg_audio_inputs

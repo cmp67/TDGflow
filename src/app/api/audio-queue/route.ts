@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import Groq from 'groq-sdk'
 import { sql } from '@vercel/postgres'
+import { auth } from '@/auth'
 import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
@@ -21,28 +22,52 @@ Retorne APENAS um JSON válido com esta estrutura:
   "notes": "observações gerais"
 }`
 
-// GET — lista todos os audios (mais recentes primeiro)
+async function currentUserId(email: string): Promise<string | null> {
+  const { rows } = await sql`SELECT id FROM tdg_users WHERE email = ${email} LIMIT 1`
+  return (rows[0]?.id as string | undefined) ?? null
+}
+
+// GET — lista só os áudios do próprio usuário (mais recentes primeiro).
+// Achado da Carla, 15/08: antes retornava os 50 mais recentes de TODO
+// MUNDO, sem sequer checar autenticação — qualquer um via a fila
+// inteira da rede, incluindo transcrições de reuniões comerciais de
+// outras agências.
 export async function GET() {
+  const session = await auth()
+  if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  await sql`ALTER TABLE tdg_audio_inputs ADD COLUMN IF NOT EXISTS agent_id UUID REFERENCES tdg_users(id)`
+  const userId = await currentUserId(session.user.email)
+  if (!userId) return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 })
+
   const { rows } = await sql`
     SELECT id, agent_name, agency, interlocutor_name, interlocutor_company,
            visit_type, status, audio_url, transcript, summary,
            audio_shared, confirmed_at, created_at
     FROM tdg_audio_inputs
+    WHERE agent_id = ${userId}
     ORDER BY created_at DESC
     LIMIT 50`
   return NextResponse.json({ items: rows })
 }
 
-// POST — transcreve um audio pendente pelo id
+// POST — transcreve um audio pendente pelo id (só o dono pode disparar)
 export async function POST(req: NextRequest) {
+  const session = await auth()
+  if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const { id } = await req.json()
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
+
+  const userId = await currentUserId(session.user.email)
+  const { rows: ownerRows } = await sql`SELECT agent_id, audio_url FROM tdg_audio_inputs WHERE id = ${id}`
+  if (!ownerRows.length) return NextResponse.json({ error: 'Áudio não encontrado' }, { status: 404 })
+  if (ownerRows[0].agent_id !== userId) return NextResponse.json({ error: 'Só o autor pode transcrever este áudio' }, { status: 403 })
 
   // Marca como processing
   await sql`UPDATE tdg_audio_inputs SET status = 'processing' WHERE id = ${id}`
 
-  const { rows } = await sql`SELECT audio_url FROM tdg_audio_inputs WHERE id = ${id}`
-  const audioUrl = rows[0]?.audio_url
+  const audioUrl = ownerRows[0].audio_url
   if (!audioUrl) {
     await sql`UPDATE tdg_audio_inputs SET status = 'pending' WHERE id = ${id}`
     return NextResponse.json({ error: 'Audio URL not found' }, { status: 404 })
@@ -92,10 +117,19 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// PATCH — edita interlocutor_name e interlocutor_company
+// PATCH — edita interlocutor_name e interlocutor_company (só o dono)
 export async function PATCH(req: NextRequest) {
+  const session = await auth()
+  if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const { id, interlocutor_name, interlocutor_company } = await req.json()
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
+
+  const userId = await currentUserId(session.user.email)
+  const { rows: ownerRows } = await sql`SELECT agent_id FROM tdg_audio_inputs WHERE id = ${id}`
+  if (!ownerRows.length) return NextResponse.json({ error: 'Áudio não encontrado' }, { status: 404 })
+  if (ownerRows[0].agent_id !== userId) return NextResponse.json({ error: 'Só o autor pode editar este áudio' }, { status: 403 })
+
   await sql`
     UPDATE tdg_audio_inputs
     SET interlocutor_name = ${interlocutor_name ?? ''},
