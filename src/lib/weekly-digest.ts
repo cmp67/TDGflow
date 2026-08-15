@@ -86,7 +86,18 @@ export async function buildWeeklyDigest(): Promise<WeeklyDigest> {
   // "vencendo em breve" pra 60 dias e adiciona um fallback: se não há
   // nada novo nem vencendo, mostra as ofertas ativas mesmo assim — a
   // seção nunca desaparece silenciosamente enquanto existir oferta.
-  const offers = await getOffers()
+  // Dedup por fornecedor — Bemgsy Central tem registros duplicados pra
+  // algumas ofertas (ex: Velaa Private Island aparecia 4x idêntica),
+  // achado revisando o preview, 15/08. A tela de Ofertas do app já
+  // convive com isso via outra lógica; aqui, pro resumo, dedup simples
+  // é suficiente.
+  const rawOffers = await getOffers()
+  const seenOfferHotels = new Set<string>()
+  const offers = rawOffers.filter(o => {
+    if (seenOfferHotels.has(o.hotel_name)) return false
+    seenOfferHotels.add(o.hotel_name)
+    return true
+  })
   const newOffers = offers.filter(o => o.curated_at && new Date(o.curated_at) >= periodStart)
   const soon = new Date(periodEnd.getTime() + 60 * 24 * 60 * 60 * 1000)
   const expiringOffers = offers.filter(o => o.valid_until && new Date(o.valid_until) <= soon && new Date(o.valid_until) >= periodEnd)
