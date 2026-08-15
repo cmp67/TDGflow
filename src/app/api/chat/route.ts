@@ -172,6 +172,14 @@ export async function POST(req: NextRequest) {
 
       let tokensIn = 0
       let tokensOut = 0
+      // Achado da Carla, 15/08: narração colava sem espaço ("...Ibiza!Nenhum
+      // resultado..."). Causa: o modelo intercala blocos de texto curtos
+      // entre chamadas de ferramenta (texto → tool_use → texto → tool_use →
+      // texto...), inclusive entre voltas separadas deste while (cada volta
+      // é uma stream nova). Concatenar os deltas direto, sem separador entre
+      // um bloco de texto e o próximo, gruda frase com frase. anyTextSent
+      // precisa sobreviver entre as voltas do loop (por isso fora dele).
+      let anyTextSent = false
 
       try {
         let finalMessage: Anthropic.Message
@@ -187,9 +195,12 @@ export async function POST(req: NextRequest) {
           messageStream.on('streamEvent', (event) => {
             if (event.type === 'content_block_start' && event.content_block.type === 'tool_use') {
               send({ type: 'status', label: statusLabelForTool(event.content_block.name) })
+            } else if (event.type === 'content_block_start' && event.content_block.type === 'text' && anyTextSent) {
+              send({ type: 'text', delta: '\n\n' })
             }
           })
           messageStream.on('text', (delta) => {
+            anyTextSent = true
             send({ type: 'text', delta })
           })
 
