@@ -1,7 +1,18 @@
 import { sql } from '@vercel/postgres'
 import { getOffers } from '@/lib/offers'
 
+// Primeira edição sai domingo 16/08/2026 — epoch fixo em vez de contador
+// em banco, pra não depender de estado (idempotente mesmo se o cron
+// rodar de novo por engano numa mesma semana).
+const NEWSLETTER_EPOCH = new Date('2026-08-16T00:00:00Z')
+
+function computeIssueNumber(now: Date): number {
+  const weeksSinceEpoch = Math.floor((now.getTime() - NEWSLETTER_EPOCH.getTime()) / (7 * 24 * 60 * 60 * 1000))
+  return Math.max(1, weeksSinceEpoch + 1)
+}
+
 export interface WeeklyDigest {
+  issueNumber: number
   periodStart: string
   periodEnd: string
   reviewCount: number
@@ -98,6 +109,7 @@ export async function buildWeeklyDigest(): Promise<WeeklyDigest> {
     .map(o => o.hotel_name)
 
   return {
+    issueNumber: computeIssueNumber(periodEnd),
     periodStart: periodStart.toISOString(),
     periodEnd: periodEnd.toISOString(),
     reviewCount: reviews.length,
