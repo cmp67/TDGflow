@@ -16,7 +16,7 @@ import TdgIconSprite, { ENTITY_SCENE_ID } from '@/components/TdgIconSprite'
 import ResponsiveSheet from '@/components/ResponsiveSheet'
 import CopyLinkButton from '@/components/CopyLinkButton'
 import AudioRecord from '@/components/AudioRecord'
-import AudioQueue from '@/components/AudioQueue'
+import AudioQueue, { type AudioItem as AudioQueueItem } from '@/components/AudioQueue'
 import PendingConfirmationQueue from '@/components/PendingConfirmationQueue'
 import Toggle from '@/components/ui/Toggle'
 
@@ -68,6 +68,31 @@ interface Review {
   favorite_count?: number
   visit_count?: number
   avg_rating?: number
+}
+
+// Fila de áudio → questionário pré-preenchido (achado da Carla, 15/08:
+// transcrever um áudio nunca virava registro de verdade — a pessoa tinha
+// que digitar tudo de novo). audio.visit_type usa um enum próprio da
+// gravação (SITE_INSPECTION/MEETING/DEBRIEF); DEBRIEF fica sem mapa —
+// ambíguo demais (pode ser fam trip ou estadia pessoal) pra arriscar
+// adivinhar, melhor deixar a pessoa escolher.
+const AUDIO_VISIT_TYPE_MAP: Record<string, string> = {
+  SITE_INSPECTION: 'site_inspection',
+  MEETING: 'commercial_meeting',
+}
+
+function audioAnswersFrom(item: AudioQueueItem): Record<string, unknown> {
+  const s = item.summary ?? {}
+  const impressions = [s.notes, ...(Array.isArray(s.highlights) ? s.highlights : [])]
+    .filter(Boolean)
+    .join(' — ')
+  return {
+    entity_type: 'hotel',
+    hotel_name: s.hotel_name ?? undefined,
+    country: s.location ?? undefined,
+    visit_type: AUDIO_VISIT_TYPE_MAP[item.visit_type] ?? undefined,
+    impressions: impressions || undefined,
+  }
 }
 
 const VISIT_TYPE_LABELS: Record<string, string> = {
@@ -1939,6 +1964,7 @@ export default function DicasView() {
   const [showQueue, setShowQueue] = useState(false)
   const [queueCount, setQueueCount] = useState(0)
   const [confirmingLead, setConfirmingLead] = useState<Review | null>(null)
+  const [audioToRegister, setAudioToRegister] = useState<AudioQueueItem | null>(null)
   const [historyHotel, setHistoryHotel] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [favoritesOnly, setFavoritesOnly] = useState(false)
@@ -2086,6 +2112,7 @@ export default function DicasView() {
               onClick={() => setShowRecord(true)}
               className="btn-ghost"
               style={{ padding: '8px 13px', fontSize: '0.8125rem' }}
+              title="Vai pra Fila — transcreva quando quiser, depois vira registro com 1 clique"
             >
               <Mic size={13} /> Gravar
             </button>
@@ -2426,6 +2453,22 @@ export default function DicasView() {
             }}
           />
         )}
+        {audioToRegister && (
+          <Questionnaire
+            onClose={() => setAudioToRegister(null)}
+            onSaved={() => {
+              loadReviews()
+              // Marca o áudio como convertido — não volta a sugerir "Criar
+              // registro" pro mesmo item depois de já ter virado review.
+              fetch('/api/audio-confirm', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: audioToRegister.id }),
+              }).catch(() => {})
+            }}
+            initialAnswers={audioAnswersFrom(audioToRegister)}
+          />
+        )}
         {historyHotel && (
           <HistoryDrawer
             hotelName={historyHotel}
@@ -2441,7 +2484,12 @@ export default function DicasView() {
           onClose={() => setShowRecord(false)}
         />
       )}
-      {showQueue && <AudioQueue onClose={() => { setShowQueue(false); setQueueCount(0) }} />}
+      {showQueue && (
+        <AudioQueue
+          onClose={() => { setShowQueue(false); setQueueCount(0) }}
+          onCreateRegister={item => { setAudioToRegister(item); setShowQueue(false) }}
+        />
+      )}
     </div>
   )
 }

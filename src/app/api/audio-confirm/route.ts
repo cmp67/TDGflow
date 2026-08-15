@@ -19,10 +19,16 @@ export async function POST(req: NextRequest) {
   if (!ownerRows.length) return NextResponse.json({ error: 'Áudio não encontrado' }, { status: 404 })
   if (ownerRows[0].agent_id !== userId) return NextResponse.json({ error: 'Só o autor pode confirmar este áudio' }, { status: 403 })
 
+  // status='confirmed' marca que esse áudio já virou um registro de
+  // verdade — achado da Carla, 15/08: antes esse endpoint só marcava
+  // audio_shared/confirmed_at, nunca mudava o status, então o item
+  // continuava sugerindo "criar registro" pra sempre mesmo depois de
+  // convertido.
   const { rows } = await sql`
     UPDATE tdg_audio_inputs
-    SET audio_shared = ${audio_shared},
-        summary = ${JSON.stringify(summary)},
+    SET audio_shared = COALESCE(${audio_shared ?? null}, audio_shared),
+        summary = COALESCE(${summary ? JSON.stringify(summary) : null}, summary),
+        status = 'confirmed',
         confirmed_at = NOW()
     WHERE id = ${id}
     RETURNING *`

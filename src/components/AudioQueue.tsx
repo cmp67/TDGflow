@@ -5,7 +5,7 @@ import { Mic, Clock, CheckCircle, Loader, FileText, Play, X, ChevronDown, Chevro
 import { motion, AnimatePresence } from 'framer-motion'
 import { sounds } from '@/lib/sounds'
 
-interface AudioItem {
+export interface AudioItem {
   id: string
   agent_name: string
   interlocutor_name?: string
@@ -14,23 +14,28 @@ interface AudioItem {
   status: 'pending' | 'processing' | 'transcribed' | 'confirmed'
   audio_url?: string
   transcript?: string
-  summary?: { hotel_name?: string; commission_rate?: number; highlights?: string[]; notes?: string; [key: string]: unknown }
+  summary?: { hotel_name?: string; location?: string; commission_rate?: number; highlights?: string[]; notes?: string; [key: string]: unknown }
   created_at: string
   transcribe_error?: string
 }
 
 interface Props {
   onClose: () => void
+  // Achado da Carla, 15/08: transcrever um áudio nunca virava um registro
+  // de verdade — a pessoa falava tudo, a IA extraía estrutura, e isso
+  // morria aqui. "Criar registro" abre o questionário já pré-preenchido
+  // com o que foi extraído, em vez de pedir pra digitar tudo de novo.
+  onCreateRegister: (item: AudioItem) => void
 }
 
 const STATUS_CONFIG = {
   pending:     { label: 'Pendente',      color: { color: 'var(--tdgflow-text-muted)',  background: 'var(--tdgflow-surface-high)' },        icon: Clock },
   processing:  { label: 'Transcrevendo', color: { color: 'var(--tdgflow-navy)', background: 'var(--tdgflow-navy-subtle)' },          icon: Loader },
   transcribed: { label: 'Transcrito',    color: { color: 'var(--tdgflow-warning)', background: 'rgba(251,191,36,0.10)' },       icon: FileText },
-  confirmed:   { label: 'Confirmado',    color: { color: 'var(--tdgflow-success)', background: 'rgba(134,239,172,0.10)' },      icon: CheckCircle },
+  confirmed:   { label: 'Registro criado', color: { color: 'var(--tdgflow-success)', background: 'rgba(134,239,172,0.10)' },    icon: CheckCircle },
 }
 
-export default function AudioQueue({ onClose }: Props) {
+export default function AudioQueue({ onClose, onCreateRegister }: Props) {
   const [items, setItems] = useState<AudioItem[]>([])
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState<string | null>(null)
@@ -266,6 +271,16 @@ export default function AudioQueue({ onClose }: Props) {
                             >
                               {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                               {isExpanded ? 'Fechar' : 'Resumo'}
+                            </button>
+                          )}
+
+                          {item.status === 'transcribed' && (
+                            <button
+                              onClick={() => onCreateRegister(item)}
+                              className="btn-gold"
+                              style={{ padding: '4px 10px', fontSize: '0.75rem' }}
+                            >
+                              Criar registro
                             </button>
                           )}
                         </>
