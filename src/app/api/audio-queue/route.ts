@@ -3,6 +3,8 @@ import Groq from 'groq-sdk'
 import { sql } from '@vercel/postgres'
 import { auth } from '@/auth'
 import { NextRequest, NextResponse } from 'next/server'
+import { checkAndDeductCredits, deductCredits, INSUFFICIENT_BALANCE, NO_AGENCY } from '@/lib/credits'
+import { getAgencyId } from '@/lib/agency'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -64,6 +66,23 @@ export async function POST(req: NextRequest) {
   if (!ownerRows.length) return NextResponse.json({ error: 'Áudio não encontrado' }, { status: 404 })
   if (ownerRows[0].agent_id !== userId) return NextResponse.json({ error: 'Só o autor pode transcrever este áudio' }, { status: 403 })
 
+  // Cobra Lumis de verdade — achado da Carla, 15/08: este caminho (o
+  // real, usado pela Fila) nunca debitava nada; só a rota antiga
+  // /api/transcribe debitava, e ela ficou sem consumidor depois da
+  // limpeza do AudioUpload.tsx morto. Base cobrada adiantada (cobre o
+  // 1º minuto + a extração com Haiku); complemento por minuto adicional
+  // vem depois, quando a duração real do áudio chega no verbose_json do
+  // Whisper — ver deductCredits mais abaixo.
+  const agencyId = await getAgencyId(session.user.email)
+  const credit = await checkAndDeductCredits({
+    agencyId, action: 'transcription', userEmail: session.user.email,
+    isBemgsyAdmin: session.user.role === 'admin',
+  })
+  if (!credit.ok) {
+    if (credit.reason === NO_AGENCY) return NextResponse.json({ error: NO_AGENCY }, { status: 403 })
+    return NextResponse.json({ error: INSUFFICIENT_BALANCE }, { status: 402 })
+  }
+
   // Marca como processing
   await sql`UPDATE tdg_audio_inputs SET status = 'processing' WHERE id = ${id}`
 
@@ -81,12 +100,32 @@ export async function POST(req: NextRequest) {
     const fileName = audioUrl.split('/').pop() || 'audio.webm'
     const audioFile = new File([audioBlob], fileName)
 
-    // Transcrever com Groq Whisper (whisper-large-v3-turbo)
+    // Transcrever com Groq Whisper (whisper-large-v3-turbo) — verbose_json
+    // pra pegar a duração real do áudio (necessário pro complemento de
+    // cobrança por minuto, achado da Carla 15/08).
     const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
     const transcription = await groq.audio.transcriptions.create({
-      file: audioFile, model: 'whisper-large-v3-turbo', language: 'pt', response_format: 'text'
+      file: audioFile, model: 'whisper-large-v3-turbo', language: 'pt', response_format: 'verbose_json'
     })
-    const transcript = transcription as unknown as string
+    // O tipo do SDK só declara `text` — verbose_json também devolve
+    // `duration` em runtime (mesmo formato do Whisper da OpenAI), só não
+    // está tipado.
+    const verbose = transcription as unknown as { text: string; duration?: number }
+    const transcript = verbose.text
+    const durationSeconds = verbose.duration ?? 0
+
+    // Complemento por duração — 1 lm por minuto além do 1º (já coberto
+    // pela base). Fire-and-forget: não vale bloquear/desfazer uma
+    // transcrição já feita por causa do complemento não caber no saldo.
+    const extraMinutes = Math.max(0, Math.ceil(durationSeconds / 60) - 1)
+    if (extraMinutes > 0) {
+      deductCredits({
+        agencyId, action: 'transcription', userEmail: session.user.email,
+        isBemgsyAdmin: session.user.role === 'admin',
+        costOverride: extraMinutes,
+        meta: { durationSeconds, extraMinutes },
+      })
+    }
 
     // Extrair estrutura com Claude Haiku
     const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })

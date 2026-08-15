@@ -5,7 +5,15 @@ import { sql, db } from '@vercel/postgres'
 export const CREDIT_COSTS: Record<string, number> = {
   chat:              9,   // 9 lm × R$0,006 = R$0,054 real (Claude Sonnet)
   review_extraction: 5,   // 5 lm × R$0,006 = R$0,030 real (Claude Haiku)
-  transcription:     2,   // 2 lm × R$0,006 = R$0,012 real (Groq Whisper)
+  // Achado da Carla, 15/08: custo fixo não refletia o tamanho do áudio —
+  // e pior, o caminho real de transcrição (fila de áudio) nem chegava a
+  // debitar Lumis, só a rota antiga /api/transcribe (sem consumidor
+  // depois da limpeza do AudioUpload.tsx morto). Agora é base + duração:
+  // 2 lm cobrados na hora (cobre o 1º minuto + a extração com Haiku),
+  // +1 lm por minuto adicional, cobrado depois que o Whisper devolve a
+  // duração real (verbose_json) — sinal visível pra não deixar gravação
+  // rodando sem necessidade.
+  transcription:     2,   // base: 1º minuto + extração Haiku — ver deductCredits do complemento em audio-queue/route.ts
   travel_docs:       2,   // 2 lm × R$0,006 = R$0,012 real (Claude Haiku)
   scan_card:         3,   // 3 lm × R$0,006 = R$0,018 real (Claude Haiku vision)
 }
@@ -158,6 +166,12 @@ export async function checkAndDeductCredits(params: {
   // não fazem parte do modelo de cota por agência, então não há de onde
   // debitar nem sentido em fazer isso.
   isBemgsyAdmin?: boolean
+  // Sobrepõe CREDIT_COSTS[action] — usado quando o custo real só é
+  // conhecido depois de já ter feito parte do trabalho (ex: transcrição
+  // cobra por minuto de áudio, e a duração só vem na resposta do Whisper).
+  // Achado da Carla, 15/08: custo fixo de transcrição não refletia o
+  // tamanho do áudio.
+  costOverride?: number
 }): Promise<
   | { ok: true; source?: string }
   | { ok: false; reason: typeof INSUFFICIENT_BALANCE | typeof NO_AGENCY }
@@ -170,7 +184,7 @@ export async function checkAndDeductCredits(params: {
   }
 
   const agencyId = params.agencyId
-  const cost     = CREDIT_COSTS[params.action] ?? 1
+  const cost     = params.costOverride ?? CREDIT_COSTS[params.action] ?? 1
   const period   = getCurrentPeriod()
 
   await ensureTablesOnce()
@@ -263,6 +277,7 @@ export function deductCredits(params: {
   userEmail:  string
   meta?:      Record<string, unknown>
   isBemgsyAdmin?: boolean
+  costOverride?: number
 }): void {
   // Admin global da Bemgsy — acesso ilimitado, nada a debitar (ver mesma
   // decisão em checkAndDeductCredits).
@@ -270,9 +285,12 @@ export function deductCredits(params: {
   // No real agency assigned (see NO_AGENCY) — nothing to bill, skip silently.
   // This path is fire-and-forget and must never block the main flow.
   if (!params.agencyId) return
+  // Nada a cobrar (ex: complemento de duração que já cabia no mínimo
+  // cobrado adiantado) — evita registro de ledger com valor zero.
+  if (params.costOverride === 0) return
 
   const agencyId = params.agencyId
-  const cost     = CREDIT_COSTS[params.action] ?? 1
+  const cost     = params.costOverride ?? CREDIT_COSTS[params.action] ?? 1
 
   ;(async () => {
     try {
