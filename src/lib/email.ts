@@ -132,37 +132,43 @@ function emailSection(title: string, bodyHtml: string, isFirst = false): string 
 }
 
 // Carta de estreia — só na edição #1 (pedido da Carla, 15/08, estilo
-// newsletter da LilaMonde: carta assinada + retrato). Sem foto real dela
-// disponível nesta sessão — usa avatar de iniciais no mesmo padrão do
-// UserAvatar in-app (círculo navy + inicial dourada) até ela mandar uma
-// foto de verdade pra substituir.
-function firstIssueLetter(): string {
+// newsletter da LilaMonde: carta assinada + retrato). Vive num card próprio,
+// separado do card do Flow (que tem sua própria logo/saudação) — pedido
+// explícito da Carla (16/08): a carta é dela, não é uma seção "dentro" da
+// comunicação do Flow, então precisa ficar visualmente antes e à parte,
+// não é um formato que se repete a cada edição. Ilustração: mesmo avatar
+// usado no design system da newsletter LilaMonde (public/brand/carla-avatar.png).
+// Texto calibrado pela Escola Romano ("Fica Entre Nós"): afirma sem pedir
+// licença, parceria mútua em vez de gratidão por favor.
+function firstIssueLetterCard(): string {
   return `
-    <tr><td style="padding: 26px 32px 0;">
-      <div style="background: ${BRAND.bg}; border-radius: 14px; padding: 26px 24px;">
-        <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 0 16px;">
-          <tr>
-            <td style="width: 44px; vertical-align: middle;">
-              <div style="width: 40px; height: 40px; border-radius: 50%; background: ${BRAND.navy}; text-align: center; line-height: 40px; font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 18px; color: ${BRAND.gold};">C</div>
-            </td>
-            <td style="vertical-align: middle; padding-left: 12px;">
-              <p style="font-size: 13.5px; font-weight: 700; color: ${BRAND.navy}; margin: 0;">Carla Moura</p>
-              <p style="font-size: 11px; color: ${BRAND.textMuted}; margin: 0;">Bemgsy</p>
-            </td>
-          </tr>
-        </table>
-        <p style="font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 14.5px; color: ${BRAND.textSecondary}; line-height: 1.7; margin: 0 0 14px;">
-          Chegamos numa fase nova — o Flow já é realidade, construído com a confiança de cada uma de vocês. Obrigada por embarcarem nessa comigo.
-        </p>
-        <p style="font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 14.5px; color: ${BRAND.textSecondary}; line-height: 1.7; margin: 0 0 14px;">
-          Desejo a cada agência muito crescimento com esse novo superpoder — a força da inteligência coletiva, trabalhando por todos. Sigam contando com a gente pra amplificar cada vez mais a nossa forma de fazer hospitalidade.
-        </p>
-        <p style="font-size: 13.5px; color: ${BRAND.navy}; margin: 0;">
-          Sigamos caminhando juntos. 🏃&zwj;♀️🏃<br/>
-          <strong>Carla Moura</strong>
-        </p>
-      </div>
-    </td></tr>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto 20px; background: ${BRAND.surface}; border-radius: 16px; overflow: hidden; border: 1px solid ${BRAND.border};">
+  <tr><td style="padding: 30px 32px;">
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 0 18px;">
+      <tr>
+        <td style="width: 52px; vertical-align: middle;">
+          <img src="${APP_URL}/brand/carla-avatar.png" alt="Carla Moura" width="48" height="48" style="width: 48px; height: 48px; border-radius: 50%; display: block; object-fit: cover;" />
+        </td>
+        <td style="vertical-align: middle; padding-left: 12px;">
+          <p style="font-size: 13.5px; font-weight: 700; color: ${BRAND.navy}; margin: 0;">Carla Moura</p>
+          <p style="font-size: 11px; color: ${BRAND.textMuted}; margin: 0;">Bemgsy</p>
+        </td>
+      </tr>
+    </table>
+    <p style="font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 14.5px; color: ${BRAND.textSecondary}; line-height: 1.7; margin: 0 0 14px;">
+      Chega uma fase que a gente sente que muda o jogo — o Flow é essa fase. Não é mais promessa, é o que a rede já usa todo dia: cada descoberta registrada, cada fornecedor testado, cada ressalva compartilhada fica mais forte porque é coletiva.
+    </p>
+    <p style="font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 14.5px; color: ${BRAND.textSecondary}; line-height: 1.7; margin: 0 0 14px;">
+      É disso que eu gosto nessa parceria — crescer com vocês, não pra vocês. Uma rede que aprende junto chega mais longe que qualquer agência sozinha, e essa edição é só o primeiro degrau desse caminho.
+    </p>
+    <p style="font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 14.5px; color: ${BRAND.textSecondary}; line-height: 1.7; margin: 0 0 14px;">
+      Um horizonte próspero está logo ali na nossa frente — e ele se abre mais rápido pra quem caminha em rede.
+    </p>
+    <p style="font-size: 13.5px; color: ${BRAND.navy}; margin: 0;">
+      <strong>Carla Moura</strong>
+    </p>
+  </td></tr>
+</table>
   `
 }
 
@@ -240,6 +246,9 @@ export async function sendWeeklyDigestEmail(to: string, firstName: string, diges
 
   const html = `
 <div style="background: ${BRAND.bg}; padding: 32px 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;">
+
+  ${digest.issueNumber === 1 ? firstIssueLetterCard() : ''}
+
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background: ${BRAND.surface}; border-radius: 16px; overflow: hidden; border: 1px solid ${BRAND.border};">
 
     <!-- Header -->
@@ -274,8 +283,6 @@ export async function sendWeeklyDigestEmail(to: string, firstName: string, diges
         </p>
       </td>
     </tr>
-
-    ${digest.issueNumber === 1 ? firstIssueLetter() : ''}
 
     ${sections.join('')}
 
