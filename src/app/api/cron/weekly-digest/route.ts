@@ -1,6 +1,6 @@
 import { sql } from '@vercel/postgres'
 import { NextRequest, NextResponse } from 'next/server'
-import { buildWeeklyDigest } from '@/lib/weekly-digest'
+import { buildWeeklyDigest, isIssueApproved, recordNewsletterSend } from '@/lib/weekly-digest'
 import { sendWeeklyDigestEmail } from '@/lib/email'
 
 export const dynamic = 'force-dynamic'
@@ -17,6 +17,16 @@ export async function GET(req: NextRequest) {
   }
 
   const digest = await buildWeeklyDigest()
+
+  // Aprovação obrigatória (16/08, pedido da Carla) — ela revê a prévia de
+  // 7h e aprova pelo link antes do disparo pra rede sair. FAIL-CLOSED: sem
+  // aprovação registrada pra essa edição, não manda nada, mesmo que o cron
+  // rode. ?preview= abaixo ignora esse gate de propósito — é ela mesma
+  // testando, não o disparo real.
+  const previewCheck = req.nextUrl.searchParams.get('preview')
+  if (!previewCheck && !(await isIssueApproved(digest.issueNumber))) {
+    return NextResponse.json({ sent: 0, skipped: 'não aprovado', issue: digest.issueNumber })
+  }
 
   // ?preview=email@... manda só pra esse endereço (precisa já existir em
   // tdg_users), pra testar/revisar o conteúdo real antes do disparo geral —
@@ -47,7 +57,8 @@ export async function GET(req: NextRequest) {
   for (const r of recipients) {
     const firstName = (r.name as string)?.split(' ')[0] ?? 'Travel Advisor'
     try {
-      await sendWeeklyDigestEmail(r.email as string, firstName, digest)
+      const resendId = await sendWeeklyDigestEmail(r.email as string, firstName, digest)
+      await recordNewsletterSend(digest.issueNumber, r.email as string, resendId)
       sent++
     } catch (e) {
       errors.push(`${r.email}: ${String(e)}`)

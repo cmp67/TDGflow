@@ -1,4 +1,5 @@
 import { sql } from '@vercel/postgres'
+import { randomBytes } from 'node:crypto'
 import { getOffers } from '@/lib/offers'
 
 // Primeira edição sai domingo 16/08/2026 — epoch fixo em vez de contador
@@ -9,6 +10,12 @@ const NEWSLETTER_EPOCH = new Date('2026-08-16T00:00:00Z')
 function computeIssueNumber(now: Date): number {
   const weeksSinceEpoch = Math.floor((now.getTime() - NEWSLETTER_EPOCH.getTime()) / (7 * 24 * 60 * 60 * 1000))
   return Math.max(1, weeksSinceEpoch + 1)
+}
+
+// Usado pelo cron de relatório (roda 1h depois do envio real) pra saber
+// qual edição acabou de sair, sem precisar rebuildar o digest inteiro.
+export function getCurrentIssueNumber(): number {
+  return computeIssueNumber(new Date())
 }
 
 export interface WeeklyDigest {
@@ -129,4 +136,92 @@ export async function buildWeeklyDigest(): Promise<WeeklyDigest> {
     newGuides: guides.map(g => ({ title: g.title as string })),
     changelog: changelog.map(c => ({ title: c.title as string, description: c.description as string | null })),
   }
+}
+
+// ── Aprovação obrigatória (16/08) ────────────────────────────────────────
+// Pedido da Carla: o disparo real pra rede (19h57 BRT) só sai depois que
+// ela aprovar a edição, a partir da prévia que recebe às 7h. Uma linha por
+// edição — token gerado na prévia, marcado quando ela clica no link do
+// e-mail. FAIL-CLOSED: sem linha ou sem approved_at, o cron do disparo
+// real pula o envio (ver /api/cron/weekly-digest).
+async function ensureApprovalsTable() {
+  await sql`
+    CREATE TABLE IF NOT EXISTS tdg_digest_approvals (
+      issue_number INTEGER PRIMARY KEY,
+      token TEXT NOT NULL UNIQUE,
+      approved_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `
+}
+
+// Chamado pela prévia — cria o token na primeira vez que a prévia dessa
+// edição é enviada, ou devolve o já existente (idempotente: se o cron de
+// prévia rodar de novo, o link continua o mesmo, não invalida aprovação já
+// dada).
+export async function getOrCreateApprovalToken(issueNumber: number): Promise<string> {
+  await ensureApprovalsTable()
+  const token = randomBytes(32).toString('hex')
+  const { rows } = await sql`
+    INSERT INTO tdg_digest_approvals (issue_number, token)
+    VALUES (${issueNumber}, ${token})
+    ON CONFLICT (issue_number) DO UPDATE SET issue_number = EXCLUDED.issue_number
+    RETURNING token
+  `
+  return rows[0].token as string
+}
+
+// Chamado pelo cron do disparo real antes de mandar qualquer coisa.
+export async function isIssueApproved(issueNumber: number): Promise<boolean> {
+  await ensureApprovalsTable()
+  const { rows } = await sql`
+    SELECT approved_at FROM tdg_digest_approvals WHERE issue_number = ${issueNumber}
+  `
+  return Boolean(rows[0]?.approved_at)
+}
+
+// Chamado pela rota pública /api/digest/approve — marca aprovado, idempotente
+// (clicar 2x não faz diferença). Retorna o número da edição aprovada, ou
+// null se o token não existir.
+export async function approveIssueByToken(token: string): Promise<number | null> {
+  await ensureApprovalsTable()
+  const { rows } = await sql`
+    UPDATE tdg_digest_approvals
+    SET approved_at = COALESCE(approved_at, NOW())
+    WHERE token = ${token}
+    RETURNING issue_number
+  `
+  return rows[0] ? (rows[0].issue_number as number) : null
+}
+
+// ── Rastreio de envio (16/08) ────────────────────────────────────────────
+// Uma linha por destinatário do disparo real, guardando o id do Resend —
+// usado pelo cron de relatório (roda 1h depois) pra consultar o status de
+// entrega de cada e-mail via GET /emails/:id.
+async function ensureSendsTable() {
+  await sql`
+    CREATE TABLE IF NOT EXISTS tdg_newsletter_sends (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      issue_number INTEGER NOT NULL,
+      email TEXT NOT NULL,
+      resend_email_id TEXT,
+      sent_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `
+}
+
+export async function recordNewsletterSend(issueNumber: number, email: string, resendEmailId: string | null): Promise<void> {
+  await ensureSendsTable()
+  await sql`
+    INSERT INTO tdg_newsletter_sends (issue_number, email, resend_email_id)
+    VALUES (${issueNumber}, ${email}, ${resendEmailId})
+  `
+}
+
+export async function getNewsletterSends(issueNumber: number): Promise<{ email: string; resend_email_id: string | null }[]> {
+  await ensureSendsTable()
+  const { rows } = await sql`
+    SELECT email, resend_email_id FROM tdg_newsletter_sends WHERE issue_number = ${issueNumber}
+  `
+  return rows.map(r => ({ email: r.email as string, resend_email_id: r.resend_email_id as string | null }))
 }

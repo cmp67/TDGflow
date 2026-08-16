@@ -11,9 +11,12 @@
 import type { WeeklyDigest } from '@/lib/weekly-digest'
 
 const FROM_ADDRESS = 'TDG Flow <tdg-flow@bemgsy-flow.app>'
-const APP_URL = 'https://traveldesignersgroup.com.br'
+export const APP_URL = 'https://traveldesignersgroup.com.br'
 
-async function sendEmail(to: string, subject: string, html: string): Promise<void> {
+// Retorna o id do Resend (usado pra rastrear entrega/abertura no relatório
+// pós-envio, 16/08) — null quando a chave não está configurada, nunca lança
+// nesse caso (ver comentário abaixo).
+async function sendEmail(to: string, subject: string, html: string): Promise<string | null> {
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) {
     // Sem a chave ainda: não falha silenciosamente pro caller, mas também
@@ -21,7 +24,7 @@ async function sendEmail(to: string, subject: string, html: string): Promise<voi
     // sucesso genérico, ver /api/auth/forgot-password). Loga o suficiente
     // pra completar o teste manual do fluxo enquanto o Resend não está ligado.
     console.error(`[email] RESEND_API_KEY não configurada — e-mail para ${to} não enviado.\nAssunto: ${subject}\n${html}`)
-    return
+    return null
   }
 
   const res = await fetch('https://api.resend.com/emails', {
@@ -37,6 +40,21 @@ async function sendEmail(to: string, subject: string, html: string): Promise<voi
     const body = await res.text().catch(() => '')
     throw new Error(`Resend respondeu ${res.status}: ${body}`)
   }
+
+  const { id } = await res.json() as { id: string }
+  return id
+}
+
+// Relatório de entrega da newsletter — mandado pro cron de +1h (16/08),
+// não tem template de marca, é uma mensagem operacional só pra Carla.
+export async function sendDigestReportEmail(to: string, subject: string, bodyHtml: string): Promise<void> {
+  const html = `
+    <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px; color: #112630;">
+      <p style="font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: #7A9AA5; margin: 0 0 24px;">TDG Flow — relatório</p>
+      ${bodyHtml}
+    </div>
+  `.trim()
+  await sendEmail(to, subject, html)
 }
 
 export async function sendPasswordResetEmail(to: string, resetUrl: string): Promise<void> {
@@ -178,7 +196,16 @@ function firstIssueLetterCard(firstName: string): string {
   `
 }
 
-export async function sendWeeklyDigestEmail(to: string, firstName: string, digest: WeeklyDigest): Promise<void> {
+// approveUrl: só passado pela prévia (07h) — pedido da Carla, 16/08: o
+// disparo real pra rede fica condicionado a ela aprovar essa edição depois
+// de ver a prévia, não é mais automático. Banner unico, fica de fora do
+// e-mail que vai pra rede.
+export async function sendWeeklyDigestEmail(
+  to: string,
+  firstName: string,
+  digest: WeeklyDigest,
+  approveUrl?: string
+): Promise<string | null> {
   const sections: string[] = []
 
   sections.push(emailSection(
@@ -250,9 +277,23 @@ export async function sendWeeklyDigestEmail(to: string, firstName: string, diges
     sections.push(emailSection('Novo na Wiki', `<ul style="margin: 0; padding-left: 18px;">${rows}</ul>`))
   }
 
+  const approvalBanner = approveUrl ? `
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto 20px; background: ${BRAND.navy}; border-radius: 16px; overflow: hidden;">
+  <tr><td style="padding: 22px 28px; text-align: center;">
+    <p style="font-size: 13.5px; color: #EAF1F5; margin: 0 0 14px; line-height: 1.6;">
+      Prévia da edição #${digest.issueNumber}. A rede só recebe depois que você aprovar.
+    </p>
+    <a href="${approveUrl}" style="display: inline-block; background: ${BRAND.gold}; color: ${BRAND.navyDim}; font-size: 13.5px; font-weight: 700; padding: 11px 26px; border-radius: 999px; text-decoration: none;">
+      Aprovar envio de hoje
+    </a>
+  </td></tr>
+</table>
+  ` : ''
+
   const html = `
 <div style="background: ${BRAND.bg}; padding: 32px 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;">
 
+  ${approvalBanner}
   ${digest.issueNumber === 1 ? firstIssueLetterCard(firstName) : ''}
 
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background: ${BRAND.surface}; border-radius: 16px; overflow: hidden; border: 1px solid ${BRAND.border};">
@@ -328,5 +369,5 @@ export async function sendWeeklyDigestEmail(to: string, firstName: string, diges
 </div>
   `.trim()
 
-  await sendEmail(to, `TDG Flow Weekly Wrap-up #${digest.issueNumber}`, html)
+  return sendEmail(to, `TDG Flow Weekly Wrap-up #${digest.issueNumber}`, html)
 }
