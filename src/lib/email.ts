@@ -9,6 +9,7 @@
 // log se chamado antes disso.
 
 import type { WeeklyDigest } from '@/lib/weekly-digest'
+import type { DailyDigest } from '@/lib/daily-digest'
 
 const FROM_ADDRESS = 'TDG Flow <tdg-flow@bemgsy-flow.app>'
 export const APP_URL = 'https://traveldesignersgroup.com.br'
@@ -370,4 +371,69 @@ export async function sendWeeklyDigestEmail(
   `.trim()
 
   return sendEmail(to, `TDG Flow Weekly Wrap-up #${digest.issueNumber}`, html)
+}
+
+// ── Relatório diário (16/08) ─────────────────────────────────────────────
+// Operacional, só pra Carla — mesmos tokens de marca do Weekly Wrap-up mas
+// layout mais denso (não é peça editorial pra rede, é painel de operação).
+export async function sendDailyDigestEmail(to: string, digest: DailyDigest, insights: string[]): Promise<void> {
+  const dateLabel = new Date(digest.periodEnd).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })
+
+  const reviewRows = digest.newReviews.slice(0, 10).map(r => `
+    <tr><td style="padding: 6px 0; font-size: 13px; color: ${BRAND.textSecondary};">
+      <strong style="color: ${BRAND.navy};">${r.agent_name}</strong> (${r.agency_name}) — ${r.hotel_name}
+      <span style="color: ${BRAND.textMuted};">${r.status === 'a_testar' ? '· descoberta' : ''}</span>
+    </td></tr>`).join('')
+
+  const suggestionRows = digest.newSuggestions.map(s => `
+    <tr><td style="padding: 6px 0; font-size: 13px; color: ${BRAND.textSecondary};">
+      ${s.type === 'bug_report' ? '🐞' : '💡'} ${s.title} <span style="color: ${BRAND.textMuted};">(${s.agency_name})</span>
+    </td></tr>`).join('')
+
+  const insightItems = insights.map(i => `<li style="font-size: 13.5px; line-height: 1.8; color: ${BRAND.textSecondary};">${i}</li>`).join('')
+
+  const html = `
+<div style="background: ${BRAND.bg}; padding: 32px 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background: ${BRAND.surface}; border-radius: 16px; overflow: hidden; border: 1px solid ${BRAND.border};">
+
+    <tr>
+      <td style="background: ${BRAND.navyDim}; padding: 26px 32px; text-align: center;">
+        <img src="${APP_URL}/brand/tdg-mark.png" alt="TDG" height="24" style="height: 24px; width: auto;" />
+        <p style="font-size: 10.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: #7E93A3; margin: 12px 0 0;">Relatório diário · ${dateLabel}</p>
+      </td>
+    </tr>
+
+    <tr><td style="padding: 24px 32px 0;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background: ${BRAND.bg}; border-radius: 10px;">
+        <tr>
+          <td style="padding: 14px 16px; text-align: center; width: 25%;"><p style="font-size: 20px; font-weight: 700; color: ${BRAND.navy}; margin: 0;">${digest.reviewCount}</p><p style="font-size: 10.5px; color: ${BRAND.textMuted}; margin: 0;">avaliações</p></td>
+          <td style="padding: 14px 16px; text-align: center; width: 25%;"><p style="font-size: 20px; font-weight: 700; color: ${BRAND.navy}; margin: 0;">${digest.loginCount}</p><p style="font-size: 10.5px; color: ${BRAND.textMuted}; margin: 0;">logins</p></td>
+          <td style="padding: 14px 16px; text-align: center; width: 25%;"><p style="font-size: 20px; font-weight: 700; color: ${BRAND.navy}; margin: 0;">${digest.newSuggestions.length}</p><p style="font-size: 10.5px; color: ${BRAND.textMuted}; margin: 0;">sugestões</p></td>
+          <td style="padding: 14px 16px; text-align: center; width: 25%;"><p style="font-size: 20px; font-weight: 700; color: ${BRAND.navy}; margin: 0;">${digest.lumisUsedToday}</p><p style="font-size: 10.5px; color: ${BRAND.textMuted}; margin: 0;">Lumis</p></td>
+        </tr>
+      </table>
+    </td></tr>
+
+    ${digest.newReviews.length > 0 ? emailSection('Avaliações e descobertas', `<table role="presentation" width="100%" cellpadding="0" cellspacing="0">${reviewRows}</table>`) : ''}
+    ${digest.newSuggestions.length > 0 ? emailSection('Sugestões novas', `<table role="presentation" width="100%" cellpadding="0" cellspacing="0">${suggestionRows}</table>`) : ''}
+    ${digest.newSignups.length > 0 ? emailSection('Cadastros completados', `<p style="font-size: 13px; color: ${BRAND.textSecondary}; margin: 0;">${digest.newSignups.map(s => `${s.name} (${s.agency_name})`).join(', ')}</p>`) : ''}
+
+    <tr><td style="padding: 28px 32px 0;">
+      <div style="border-top: 1px solid ${BRAND.border}; padding-top: 24px;">
+        ${emailSectionLabel('Insights')}
+        <ul style="margin: 0; padding-left: 18px;">${insightItems}</ul>
+      </div>
+    </td></tr>
+
+    <tr><td style="padding: 24px 32px 26px; text-align: center;">
+      <p style="font-size: 9px; color: ${BRAND.textMuted}; margin: 0; opacity: 0.45;">
+        Powered by <img src="${APP_URL}/brand/bemgsy-mark.png" alt="Bemgsy" height="8" style="height: 8px; width: auto; vertical-align: middle; opacity: 0.6;" />
+      </p>
+    </td></tr>
+
+  </table>
+</div>
+  `.trim()
+
+  await sendEmail(to, `TDG Flow — relatório diário, ${dateLabel}`, html)
 }

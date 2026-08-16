@@ -2,6 +2,7 @@
   "alias": ["tdg-flow-carla-4643s-projects.vercel.app"],
   "crons": [
     { "path": "/api/cron/recompute-badges", "schedule": "0 3 * * *" },
+    { "path": "/api/cron/daily-digest", "schedule": "0 22 * * *" },
     { "path": "/api/cron/weekly-digest-preview", "schedule": "0 10 * * 0" },
     { "path": "/api/cron/weekly-digest", "schedule": "57 22 * * 0" },
     { "path": "/api/cron/weekly-digest-report", "schedule": "57 23 * * 0" }
