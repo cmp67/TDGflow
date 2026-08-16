@@ -136,15 +136,33 @@ function emailSection(title: string, bodyHtml: string, isFirst = false): string 
 // separado do card do Flow (que tem sua própria logo/saudação) — pedido
 // explícito da Carla (16/08): a carta é dela, não é uma seção "dentro" da
 // comunicação do Flow, então precisa ficar visualmente antes e à parte,
-// não é um formato que se repete a cada edição. Ilustração: mesmo avatar
-// usado no design system da newsletter LilaMonde (public/brand/carla-avatar.png).
-// Texto calibrado pela Escola Romano ("Fica Entre Nós"): afirma sem pedir
-// licença, parceria mútua em vez de gratidão por favor.
-function firstIssueLetterCard(): string {
+// não é um formato que se repete a cada edição. Abre com o nome do
+// destinatário (não com a foto/nome da Carla) — assinatura (ilustração +
+// nome) vai só no fechamento, estilo carta de verdade. Ilustração: mesmo
+// avatar usado no design system da newsletter LilaMonde
+// (public/brand/carla-avatar.png). Texto calibrado pela Escola Romano
+// ("Fica Entre Nós"): afirma sem pedir licença, parceria mútua em vez de
+// gratidão por favor. "Partiu!" como assinatura de fechamento recorrente.
+function firstIssueLetterCard(firstName: string): string {
   return `
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto 20px; background: ${BRAND.surface}; border-radius: 16px; overflow: hidden; border: 1px solid ${BRAND.border};">
   <tr><td style="padding: 30px 32px;">
-    <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 0 18px;">
+    <p style="font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 15px; color: ${BRAND.navy}; margin: 0 0 18px;">
+      ${firstName},
+    </p>
+    <p style="font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 14.5px; color: ${BRAND.textSecondary}; line-height: 1.7; margin: 0 0 14px;">
+      Chega uma fase que a gente sente que muda o jogo — o Flow é essa fase. Não é mais promessa, é o que a rede já usa todo dia: cada descoberta registrada, cada fornecedor testado, cada ressalva compartilhada fica mais forte porque é coletiva.
+    </p>
+    <p style="font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 14.5px; color: ${BRAND.textSecondary}; line-height: 1.7; margin: 0 0 14px;">
+      É disso que eu gosto nessa parceria — crescer com vocês, não pra vocês. Uma rede que aprende junto chega mais longe que qualquer agência sozinha, e essa edição é só o primeiro degrau desse caminho.
+    </p>
+    <p style="font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 14.5px; color: ${BRAND.textSecondary}; line-height: 1.7; margin: 0 0 22px;">
+      Um horizonte próspero está logo ali na nossa frente — e ele se abre mais rápido pra quem caminha em rede.
+    </p>
+    <p style="font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 16px; color: ${BRAND.gold}; margin: 0 0 18px;">
+      Partiu!
+    </p>
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0;">
       <tr>
         <td style="width: 52px; vertical-align: middle;">
           <img src="${APP_URL}/brand/carla-avatar.png" alt="Carla Moura" width="48" height="48" style="width: 48px; height: 48px; border-radius: 50%; display: block; object-fit: cover;" />
@@ -155,18 +173,6 @@ function firstIssueLetterCard(): string {
         </td>
       </tr>
     </table>
-    <p style="font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 14.5px; color: ${BRAND.textSecondary}; line-height: 1.7; margin: 0 0 14px;">
-      Chega uma fase que a gente sente que muda o jogo — o Flow é essa fase. Não é mais promessa, é o que a rede já usa todo dia: cada descoberta registrada, cada fornecedor testado, cada ressalva compartilhada fica mais forte porque é coletiva.
-    </p>
-    <p style="font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 14.5px; color: ${BRAND.textSecondary}; line-height: 1.7; margin: 0 0 14px;">
-      É disso que eu gosto nessa parceria — crescer com vocês, não pra vocês. Uma rede que aprende junto chega mais longe que qualquer agência sozinha, e essa edição é só o primeiro degrau desse caminho.
-    </p>
-    <p style="font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 14.5px; color: ${BRAND.textSecondary}; line-height: 1.7; margin: 0 0 14px;">
-      Um horizonte próspero está logo ali na nossa frente — e ele se abre mais rápido pra quem caminha em rede.
-    </p>
-    <p style="font-size: 13.5px; color: ${BRAND.navy}; margin: 0;">
-      <strong>Carla Moura</strong>
-    </p>
   </td></tr>
 </table>
   `
@@ -247,7 +253,7 @@ export async function sendWeeklyDigestEmail(to: string, firstName: string, diges
   const html = `
 <div style="background: ${BRAND.bg}; padding: 32px 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;">
 
-  ${digest.issueNumber === 1 ? firstIssueLetterCard() : ''}
+  ${digest.issueNumber === 1 ? firstIssueLetterCard(firstName) : ''}
 
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background: ${BRAND.surface}; border-radius: 16px; overflow: hidden; border: 1px solid ${BRAND.border};">
 
