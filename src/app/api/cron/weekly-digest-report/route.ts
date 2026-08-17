@@ -35,10 +35,14 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ issue: issueNumber, sent: 0, skipped: 'nenhum envio registrado (não aprovado ou sem conteúdo essa semana)' })
   }
 
-  const apiKey = process.env.RESEND_API_KEY
+  // Chave separada da que envia (17/08) — RESEND_API_KEY é "Sending
+  // access" só, GET /emails/:id dava 401. RESEND_READ_API_KEY é uma
+  // segunda chave "Full access" dedicada a leitura, menor privilégio do
+  // que trocar a chave de envio inteira pra Full access.
+  const apiKey = process.env.RESEND_READ_API_KEY
   const tally: Record<string, string[]> = {}
   for (const s of sends) {
-    let status = 'sem id (RESEND_API_KEY ausente no envio)'
+    let status = 'sem id (RESEND_READ_API_KEY ausente)'
     if (s.resend_email_id && apiKey) {
       try {
         const res = await fetch(`https://api.resend.com/emails/${s.resend_email_id}`, {
