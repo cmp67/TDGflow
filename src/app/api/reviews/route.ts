@@ -179,6 +179,10 @@ export async function POST(req: NextRequest) {
     // livre, pra permitir a ficha do hotel puxar suas próprias reviews depois.
     await sql`ALTER TABLE tdg_hotel_reviews ADD COLUMN IF NOT EXISTS hotel_id UUID REFERENCES tdg_hotels(id) ON DELETE SET NULL`
 
+    // agency_id em tdg_hotels — acervo privado por agência (migration 021),
+    // necessário pro ON CONFLICT parcial do find-or-create logo abaixo.
+    await sql`ALTER TABLE tdg_hotels ADD COLUMN IF NOT EXISTS agency_id UUID REFERENCES tdg_agencies(id)`
+
     // Migrate highlights from TEXT[] to JSONB (idempotent via column type check)
     await sql`
       ALTER TABLE tdg_hotel_reviews
@@ -260,6 +264,10 @@ export async function POST(req: NextRequest) {
         // sumia de qualquer filtro de região em HoteisView (que filtra por
         // tdg_hotels.country, não pelo country da review). created_by marca
         // quem cadastrou — base da regra "só o criador edita" (14/08).
+        // find-or-create aqui sempre nasce compartilhado com a rede (agency_id
+        // NULL, não passado) — é o espírito de "Na prática". Índice único é
+        // parcial por escopo (migration 021): ON CONFLICT precisa do WHERE
+        // pra bater com ele.
         await sql`ALTER TABLE tdg_hotels ADD COLUMN IF NOT EXISTS created_by TEXT`
         const { rows: createdHotel } = await sql`
           INSERT INTO tdg_hotels (name, entity_type, country, location, created_by) VALUES (${trimmedName}, ${finalEntityType}, ${country || null}, ${country || null}, ${session.user?.email ?? null})
