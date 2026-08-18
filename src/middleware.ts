@@ -21,6 +21,18 @@ export default function middleware(req: NextRequest) {
   const host = req.headers.get('host') || ''
   const { pathname } = req.nextUrl
 
+  // Alias feio do Vercel (*.vercel.app) → domínio próprio, preservando path
+  // e querystring. Pedido da Carla, 18/08/2026: o alias sempre funcionou
+  // em paralelo ao domínio custom (é assim que o Vercel funciona — não dá
+  // pra "desligar" o alias), mas não tinha motivo pra deixar alguém com
+  // esse link feio salvo no navegador continuar caindo nele pra sempre.
+  if (host.endsWith('.vercel.app')) {
+    const url = new URL(req.url)
+    url.protocol = 'https:'
+    url.host = 'traveldesignersgroup.com.br'
+    return NextResponse.redirect(url, 308)
+  }
+
   // www → domínio raiz, preservando o path. Roda antes de tudo o mais e pra
   // qualquer rota do matcher — sem isso teríamos duas versões do site
   // competindo no Google como conteúdo duplicado (pedido da Carla,
