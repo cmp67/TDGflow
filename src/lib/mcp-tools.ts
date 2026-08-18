@@ -19,7 +19,7 @@ export const TOOL_DEFINITIONS = [
       properties: {
         query: { type: 'string', description: 'Nome do fornecedor (busca parcial, ex: "Martinhal", "Velaa")' },
         region: { type: 'string', description: 'Região/destino (ex: Algarve, Lisboa, Maldivas)' },
-        country: { type: 'string', description: 'País (ex: Portugal, Itália)' },
+        country: { type: 'string', description: 'País (ex: Portugal, Itália) ou continente/região ampla (ex: Europa, Caribe, África, Ásia) — continente expande automaticamente pra vários países reais do catálogo' },
         entity_type: {
           type: 'string',
           enum: ['hotel', 'beach_club', 'transfer', 'guide', 'restaurant', 'other'],
@@ -138,16 +138,47 @@ export const TOOL_DEFINITIONS = [
   },
 ]
 
+// Apelidos de continente/região ampla aceitos no parâmetro `country` —
+// listas derivadas dos valores reais de tdg_hotels.country (17/08).
+// Achado: instruir via prompt pro modelo sempre quebrar "Europa" em
+// várias chamadas (uma por país) não é confiável — comportamento de LLM
+// não é determinístico, um teste real (Carla, 18/08) voltou só Portugal
+// mesmo com a instrução no ar. Resolvido no código: se o valor bater com
+// um continente conhecido, expande pra países reais aqui, sem depender
+// do modelo lembrar de repetir a busca.
+const CONTINENT_COUNTRIES: Record<string, string[]> = {
+  europa: ['Portugal', 'Spain', 'Italy', 'France', 'Greece', 'United Kingdom', 'Switzerland', 'Austria', 'Germany', 'Netherlands', 'Croatia', 'Türkiye', 'Denmark', 'Sweden', 'Czechia', 'Hungary'],
+  europe: ['Portugal', 'Spain', 'Italy', 'France', 'Greece', 'United Kingdom', 'Switzerland', 'Austria', 'Germany', 'Netherlands', 'Croatia', 'Türkiye', 'Denmark', 'Sweden', 'Czechia', 'Hungary'],
+  caribe: ['Anguilla', 'Saint Barthélemy', 'The Bahamas', 'Turks and Caicos Islands', 'Dominican Republic', 'Curaçao', 'Saint Martin'],
+  caribbean: ['Anguilla', 'Saint Barthélemy', 'The Bahamas', 'Turks and Caicos Islands', 'Dominican Republic', 'Curaçao', 'Saint Martin'],
+  africa: ['South Africa', 'Tanzania', 'Morocco', 'Egypt', 'Seychelles'],
+  'áfrica': ['South Africa', 'Tanzania', 'Morocco', 'Egypt', 'Seychelles'],
+  asia: ['Japan', 'Singapore', 'Indonesia', 'South Korea', 'Hong Kong', 'Thailand', 'Cambodia', 'Macau', 'Qatar', 'United Arab Emirates', 'Israel'],
+  'ásia': ['Japan', 'Singapore', 'Indonesia', 'South Korea', 'Hong Kong', 'Thailand', 'Cambodia', 'Macau', 'Qatar', 'United Arab Emirates', 'Israel'],
+  'américa do sul': ['Argentina', 'Chile', 'Uruguay', 'Colombia', 'Peru', 'Brazil'],
+  'south america': ['Argentina', 'Chile', 'Uruguay', 'Colombia', 'Peru', 'Brazil'],
+  'américa do norte': ['United States', 'Canada', 'Mexico'],
+  'north america': ['United States', 'Canada', 'Mexico'],
+}
+
 export async function searchTdgSuppliers(args: Record<string, unknown>) {
   const query = args.query as string | undefined
   const region = args.region as string | undefined
-  const country = args.country as string | undefined
+  const countryInput = args.country as string | undefined
   const entityType = args.entity_type as string | undefined
   const profiles = args.profiles as string[] | undefined
   const tags = args.tags as string[] | undefined
   const limit = (args.limit as number | undefined) ?? 10
 
-  let sqlQuery = `
+  const continentCountries = countryInput ? CONTINENT_COUNTRIES[countryInput.trim().toLowerCase()] : undefined
+  // Busca ampla — sem país específico resolvido (nem passado, nem um
+  // continente) e sem região — diversifica por país no ORDER BY em vez de
+  // alfabético puro. Sem isso, os resultados ficam dominados por qualquer
+  // país cujos nomes de hotel comecem cedo no alfabeto, mesmo quando outro
+  // país tem mais opções reais no catálogo.
+  const diversifyByCountry = !region && (!countryInput || Boolean(continentCountries))
+
+  let baseQuery = `
     SELECT h.id, h.name, h.entity_type, h.location, h.region, h.country, h.tags, h.profiles,
            COUNT(*) FILTER (WHERE r.status = 'published')::int AS tested_count,
            EXISTS (SELECT 1 FROM tdg_hotel_benefits b WHERE b.hotel_id = h.id) AS has_negotiated_benefits
@@ -157,18 +188,35 @@ export async function searchTdgSuppliers(args: Record<string, unknown>) {
   `
   const params: unknown[] = []
   let i = 1
-  if (query) { sqlQuery += ` AND h.name ILIKE $${i++}`; params.push(`%${query}%`) }
-  if (region) { sqlQuery += ` AND h.region ILIKE $${i++}`; params.push(`%${region}%`) }
-  if (country) { sqlQuery += ` AND h.country ILIKE $${i++}`; params.push(`%${country}%`) }
-  if (entityType) { sqlQuery += ` AND h.entity_type = $${i++}`; params.push(entityType) }
-  if (profiles?.length) { sqlQuery += ` AND h.profiles && $${i++}`; params.push(profiles) }
+  if (query) { baseQuery += ` AND h.name ILIKE $${i++}`; params.push(`%${query}%`) }
+  if (region) { baseQuery += ` AND h.region ILIKE $${i++}`; params.push(`%${region}%`) }
+  if (continentCountries) {
+    baseQuery += ` AND h.country = ANY($${i++})`
+    params.push(continentCountries)
+  } else if (countryInput) {
+    baseQuery += ` AND h.country ILIKE $${i++}`
+    params.push(`%${countryInput}%`)
+  }
+  if (entityType) { baseQuery += ` AND h.entity_type = $${i++}`; params.push(entityType) }
+  if (profiles?.length) { baseQuery += ` AND h.profiles && $${i++}`; params.push(profiles) }
   // tags é texto livre — busca parcial case-insensitive em vez de match
   // exato de array, pra não depender do modelo acertar a grafia idêntica.
   if (tags?.length) {
-    sqlQuery += ` AND EXISTS (SELECT 1 FROM unnest(h.tags) AS tg WHERE tg ILIKE ANY($${i++}))`
+    baseQuery += ` AND EXISTS (SELECT 1 FROM unnest(h.tags) AS tg WHERE tg ILIKE ANY($${i++}))`
     params.push(tags.map(t => `%${t}%`))
   }
-  sqlQuery += ` GROUP BY h.id ORDER BY h.name LIMIT $${i++}`
+  baseQuery += ` GROUP BY h.id`
+
+  // Round-robin por país (rn=1 de cada país primeiro, depois rn=2...)
+  // garante a maior diversidade geográfica possível dentro do LIMIT —
+  // com 16 países europeus e limit=10, por exemplo, vem 1 hotel de 10
+  // países diferentes em vez de 10 hotéis do mesmo país.
+  const sqlQuery = diversifyByCountry
+    ? `SELECT * FROM (
+         SELECT s.*, ROW_NUMBER() OVER (PARTITION BY s.country ORDER BY s.name) AS rn
+         FROM (${baseQuery}) s
+       ) ranked ORDER BY rn, country LIMIT $${i++}`
+    : `${baseQuery} ORDER BY h.name LIMIT $${i++}`
   params.push(limit)
 
   const { rows } = await sql.query(sqlQuery, params)
