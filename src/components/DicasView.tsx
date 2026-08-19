@@ -517,9 +517,13 @@ function HotelCard({ review, onToggleFavorite, onViewHistory, onConfirmLead, onU
       {/* Card art — foto real de quem confirmou (published), ou traço próprio
           quando ainda não há foto anexada, ou lead (ninguém foi lá ainda —
           por isso é traço, nunca finge ser foto). A cor da tinta conta a
-          história: dourado = confirmado pela rede, coral = ainda a testar. */}
+          história: dourado = confirmado pela rede, coral = ainda a testar.
+          Clique na foto: card fechado → expande o review (mesmo efeito de
+          "Ver detalhes"), nunca pula direto pra lightbox — achado da Carla,
+          19/08: abrir a foto de cara escondia o review em si. Card já
+          aberto → aí sim clicar na foto abre o carrossel. */}
       <div
-        onClick={review.photo_url && !isLead ? () => setGalleryIndex(0) : undefined}
+        onClick={review.photo_url && !isLead ? (expanded ? () => setGalleryIndex(0) : toggleExpanded) : undefined}
         style={{
           height: 128, position: 'relative', display: 'flex', alignItems: isLead || !review.photo_url ? 'center' : 'flex-end',
           justifyContent: isLead || !review.photo_url ? 'center' : 'flex-start',
