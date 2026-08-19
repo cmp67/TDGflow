@@ -22,6 +22,8 @@ export async function GET() {
     myByMonth,
     recentActivity,
     topCountries,
+    topAgenciesWeek,
+    topAgenciesMonth,
   ] = await Promise.all([
 
     // ── Network totals ───────────────────────────────────────────
@@ -147,6 +149,34 @@ export async function GET() {
       ORDER BY visit_count DESC
       LIMIT 8
     `,
+
+    // ── Top agencies — última semana (filtro de período no card) ──
+    sql`
+      SELECT
+        agency_name,
+        COUNT(*)::int                          AS review_count,
+        COUNT(DISTINCT hotel_name)::int        AS unique_hotels,
+        ROUND(AVG(overall_rating)::numeric, 1) AS avg_rating
+      FROM tdg_hotel_reviews
+      WHERE created_at >= NOW() - INTERVAL '7 days'
+      GROUP BY agency_name
+      ORDER BY review_count DESC
+      LIMIT 10
+    `,
+
+    // ── Top agencies — este mês (filtro de período no card) ────────
+    sql`
+      SELECT
+        agency_name,
+        COUNT(*)::int                          AS review_count,
+        COUNT(DISTINCT hotel_name)::int        AS unique_hotels,
+        ROUND(AVG(overall_rating)::numeric, 1) AS avg_rating
+      FROM tdg_hotel_reviews
+      WHERE created_at >= date_trunc('month', NOW())
+      GROUP BY agency_name
+      ORDER BY review_count DESC
+      LIMIT 10
+    `,
   ])
 
   return NextResponse.json({
@@ -156,6 +186,8 @@ export async function GET() {
       monthly_trend: byMonth.rows,
       top_hotels: topHotels.rows,
       top_agencies: topAgencies.rows,
+      top_agencies_week: topAgenciesWeek.rows,
+      top_agencies_month: topAgenciesMonth.rows,
       recent_activity: recentActivity.rows,
       top_countries: topCountries.rows,
     },

@@ -174,7 +174,22 @@ export async function GET(req: Request) {
   `
   await sql`CREATE INDEX IF NOT EXISTS idx_tdg_hotels_entity_type ON tdg_hotels (entity_type)`
   await sql`DROP INDEX IF EXISTS idx_tdg_hotels_name_unique`
-  await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_tdg_hotels_name_type_unique ON tdg_hotels (lower(trim(name)), entity_type)`
+  // idx_tdg_hotels_name_type_unique (global) foi substituído por 2 índices
+  // parciais na migration 024 (acervo privado por agência) — mantém o drop
+  // aqui pra não recriar o índice global se /api/setup rodar de novo depois
+  // da migration, o que quebraria silenciosamente a garantia de duas
+  // agências poderem ter cada uma seu próprio fornecedor privado com o
+  // mesmo nome.
+  await sql`ALTER TABLE tdg_hotels ADD COLUMN IF NOT EXISTS agency_id UUID REFERENCES tdg_agencies(id)`
+  await sql`DROP INDEX IF EXISTS idx_tdg_hotels_name_type_unique`
+  await sql`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_tdg_hotels_name_type_unique_rede
+      ON tdg_hotels (lower(trim(name)), entity_type) WHERE agency_id IS NULL
+  `
+  await sql`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_tdg_hotels_name_type_unique_agencia
+      ON tdg_hotels (lower(trim(name)), entity_type, agency_id) WHERE agency_id IS NOT NULL
+  `
 
   // tdg_knowledge nunca teve bootstrap em código nenhum — só existia em
   // produção porque foi criada fora de banda (achado da migration 009).

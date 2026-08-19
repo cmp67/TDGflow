@@ -354,9 +354,23 @@ export async function registerTip(args: Record<string, unknown>) {
   await sql`ALTER TABLE tdg_hotel_reviews ADD COLUMN IF NOT EXISTS source TEXT`
   await sql`ALTER TABLE tdg_hotels ADD COLUMN IF NOT EXISTS created_by TEXT`
 
-  // Try to find the advisor by name in tdg_users
+  // agency_name vem de texto livre do chamador MCP (ex: bot de WhatsApp) —
+  // valida contra o catálogo real antes de gravar (achado da auditoria de
+  // 29/07: sem isso, qualquer chamador atribuía a review a qualquer nome de
+  // agência, real ou inventado). Usa o nome canônico de tdg_agencies daqui
+  // pra frente, não o texto bruto recebido.
+  const { rows: agencyRows } = await sql`
+    SELECT id, name FROM tdg_agencies WHERE lower(trim(name)) = lower(trim(${agency_name as string})) LIMIT 1
+  `
+  const agency = agencyRows[0]
+  if (!agency) {
+    return { success: false, error: `Agência "${agency_name}" não encontrada na rede TDG` }
+  }
+
+  // Advisor buscado por nome, escopado à agência resolvida — evita atribuir
+  // a review ao advisor errado quando duas agências têm gente com nome parecido.
   const { rows: userRows } = await sql`
-    SELECT id FROM tdg_users WHERE name ILIKE ${'%' + (agent_name as string) + '%'} LIMIT 1
+    SELECT id FROM tdg_users WHERE name ILIKE ${'%' + (agent_name as string) + '%'} AND agency_id = ${agency.id} LIMIT 1
   `
   const agentId = userRows[0]?.id ?? null
 
@@ -399,7 +413,7 @@ export async function registerTip(args: Record<string, unknown>) {
       ${(country as string) ?? null},
       ${agentId},
       ${agent_name as string},
-      ${agency_name as string},
+      ${agency.name as string},
       ${(visit_date as string) ?? null},
       ${(visit_type as string) ?? null},
       ${(overall_rating as number) ?? null},
