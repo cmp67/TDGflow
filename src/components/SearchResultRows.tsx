@@ -226,7 +226,7 @@ export function TipCard({ tip, highlightId, currentUserName, onActed }: {
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <Users size={9} style={{ color: 'var(--tdgflow-text-muted)' }} />
           <span style={{ fontSize: '0.5625rem', color: 'var(--tdgflow-text-muted)', letterSpacing: '0.04em' }}>
-            {tip.source_author ?? 'TDG Knowledge Base'}
+            {tip.source_author ?? 'Acervo TDG'}
             {tip.source_date && <span style={{ opacity: 0.7 }}> · {formatDate(tip.source_date)}</span>}
           </span>
         </div>

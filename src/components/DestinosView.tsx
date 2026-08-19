@@ -86,7 +86,7 @@ export default function DestinosView() {
               Direto do WhatsApp
             </p>
             <h2 style={{ fontSize: '1.125rem', fontWeight: 500, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.025em', lineHeight: 1, marginBottom: 4 }}>
-              TDG Knowledge Base
+              Acervo TDG
             </h2>
             <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)' }}>
               Conhecimento prático por país e destino: vistos, costumes, avisos

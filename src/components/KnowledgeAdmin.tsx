@@ -94,7 +94,7 @@ export default function KnowledgeAdmin() {
             <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center">
               <span className="text-white text-xs font-bold">TDG</span>
             </div>
-            <h1 className="text-xl font-semibold text-gray-900">Base de Conhecimento</h1>
+            <h1 className="text-xl font-semibold text-gray-900">Acervo TDG</h1>
           </div>
           <p className="text-sm text-gray-500 ml-11">Informação verificada que o assistente usa para responder. Nada é inventado.</p>
         </div>
