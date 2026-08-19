@@ -69,11 +69,15 @@ describe('GET /api/external/hotels — consumo server-to-server (Gonna Travel GU
     expect(ids).not.toContain(otherPrivateHotelId)
   })
 
-  it('com agency_id: retorna compartilhado + acervo privado DESSA agência, não da outra', async () => {
+  it('com agency_id: retorna SÓ o acervo privado dessa agência (exclusivo, nunca compartilhado nem de outra agência)', async () => {
+    // Exclusivo de propósito — o chamador (HttpFlowContentProvider,
+    // gonna-travel-guest) faz uma chamada por escopo e rotula o resultado
+    // inteiro com aquele escopo; união faria item compartilhado vir
+    // rotulado "agencia" e duplicado com a chamada do escopo "rede".
     const res = await GET(req(`?destino=__TDD&agency_id=${agencyId}`))
     const body = await res.json()
     const ids = body.hotels.map((h: { id: string }) => h.id)
-    expect(ids).toContain(sharedHotelId)
+    expect(ids).not.toContain(sharedHotelId)
     expect(ids).toContain(privateHotelId)
     expect(ids).not.toContain(otherPrivateHotelId)
   })

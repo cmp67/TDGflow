@@ -60,11 +60,16 @@ export async function GET(req: NextRequest) {
   const limitParam = Number(searchParams.get('limit'))
   const limit = Number.isFinite(limitParam) && limitParam > 0 ? Math.min(limitParam, MAX_LIMIT) : DEFAULT_LIMIT
 
-  // Mesma regra de visibilidade do catálogo interno (GET /api/hotels):
-  // compartilhado com a rede (agency_id NULL) sempre visível; privado só
-  // aparece quando o chamador pede explicitamente pela própria agência.
-  // Sem agency_id no pedido, só o catálogo compartilhado — nunca vaza
-  // acervo privado de agência nenhuma por omissão.
+  // agency_id presente = SÓ o acervo privado dessa agência (exclusivo, não
+  // união com o compartilhado). Ausente = só o catálogo compartilhado da
+  // rede. Diferente do GET /api/hotels interno (que faz união, pensado pra
+  // agência ver "meu + da rede" numa tela só) — aqui o chamador
+  // (HttpFlowContentProvider, gonna-travel-guest) já faz duas chamadas
+  // separadas, uma por escopo ("agencia" com agency_id, "rede" sem), e
+  // rotula o resultado inteiro de cada chamada com aquele escopo. União
+  // faria hotel compartilhado vir rotulado "agencia" e duplicado entre as
+  // duas chamadas — bug real, achado testando o fluxo ponta a ponta contra
+  // o código de verdade do outro lado (19/08), não só em teste com mock.
   let sqlQuery = `
     SELECT h.id, h.name, h.entity_type, h.location, h.region, h.country, h.description,
            h.image_url, h.tags, h.profiles, h.agency_id, (h.agency_id IS NOT NULL) AS is_private
@@ -75,7 +80,7 @@ export async function GET(req: NextRequest) {
   let i = 1
 
   if (agencyIdParam) {
-    sqlQuery += ` AND (h.agency_id IS NULL OR h.agency_id = $${i++}::uuid)`
+    sqlQuery += ` AND h.agency_id = $${i++}::uuid`
     params.push(agencyIdParam)
   } else {
     sqlQuery += ' AND h.agency_id IS NULL'
