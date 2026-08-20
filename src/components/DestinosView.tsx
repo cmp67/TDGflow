@@ -6,6 +6,7 @@ import { AnimatePresence } from 'framer-motion'
 import { Search, Loader2, Lightbulb, Plus, X } from 'lucide-react'
 import TdgIconSprite from '@/components/TdgIconSprite'
 import PendingConfirmationQueue from '@/components/PendingConfirmationQueue'
+import TagInput from '@/components/TagInput'
 import { useDebounce } from '@/hooks/useDebounce'
 import {
   KnowledgeTip, SearchResults, EMPTY_RESULTS, ResultGroup,
@@ -22,7 +23,7 @@ function NewNoteModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [country, setCountry] = useState('')
-  const [tagsText, setTagsText] = useState('')
+  const [tags, setTags] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -30,7 +31,6 @@ function NewNoteModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
     if (!title.trim()) { setError('Título é obrigatório'); return }
     setSaving(true)
     setError(null)
-    const tags = tagsText.split(',').map(t => t.trim()).filter(Boolean)
     const res = await fetch('/api/knowledge-tips', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -62,10 +62,8 @@ function NewNoteModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
         </p>
         <input className="input" placeholder="Título" value={title} onChange={e => setTitle(e.target.value)} style={{ fontSize: '0.8125rem' }} autoFocus />
         <textarea className="input" placeholder="Conteúdo" value={content} onChange={e => setContent(e.target.value)} rows={4} style={{ fontSize: '0.8125rem', resize: 'vertical' }} />
-        <div style={{ display: 'flex', gap: 8 }}>
-          <input className="input" placeholder="País (opcional)" value={country} onChange={e => setCountry(e.target.value)} style={{ fontSize: '0.8125rem', flex: 1 }} />
-          <input className="input" placeholder="Tags, separadas por vírgula" value={tagsText} onChange={e => setTagsText(e.target.value)} style={{ fontSize: '0.8125rem', flex: 1 }} />
-        </div>
+        <input className="input" placeholder="País (opcional)" value={country} onChange={e => setCountry(e.target.value)} style={{ fontSize: '0.8125rem' }} />
+        <TagInput value={tags} onChange={setTags} />
         {error && <span style={{ fontSize: '0.75rem', color: '#dc2626' }}>{error}</span>}
         <button
           onClick={submit}
@@ -102,6 +100,7 @@ export default function DestinosView() {
   const [search, setSearch] = useState('')
   const [currentUserName, setCurrentUserName] = useState<string | null>(null)
   const [showNoteModal, setShowNoteModal] = useState(false)
+  const [topTags, setTopTags] = useState<{ tag: string; count: number }[]>([])
   const debouncedSearch = useDebounce(search, 300).trim()
   const isSearching = debouncedSearch.length > 0
 
@@ -133,6 +132,13 @@ export default function DestinosView() {
 
   useEffect(() => {
     fetch('/api/context').then(r => r.json()).then(ctx => setCurrentUserName(ctx.agent_name ?? null)).catch(() => {})
+  }, [])
+
+  // Chips de filtro por tag — mesmo vocabulário do autocomplete de
+  // TagInput.tsx, as mais usadas primeiro. Clicar preenche a busca com a
+  // tag (reaproveita /api/search, que já cruza tags no matchesSearch).
+  useEffect(() => {
+    fetch('/api/knowledge-tips/tags').then(r => r.ok ? r.json() : null).then(data => { if (data?.tags) setTopTags(data.tags.slice(0, 12)) }).catch(() => {})
   }, [])
 
   const totalResults = results.knowledge.total + results.hotels.total + results.reviews.total
@@ -190,6 +196,28 @@ export default function DestinosView() {
             style={{ paddingLeft: 38, fontSize: '0.8125rem', background: 'var(--tdgflow-bg)' }}
           />
         </div>
+
+        {topTags.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '0 20px 12px' }}>
+            {topTags.map(t => {
+              const active = debouncedSearch.toLowerCase() === t.tag
+              return (
+                <button
+                  key={t.tag}
+                  onClick={() => setSearch(active ? '' : t.tag)}
+                  style={{
+                    fontSize: '0.6875rem', fontWeight: 600, padding: '4px 10px', borderRadius: 999, cursor: 'pointer',
+                    border: active ? 'none' : '1px solid var(--tdgflow-border)',
+                    background: active ? 'var(--tdgflow-gold)' : 'var(--tdgflow-surface)',
+                    color: active ? 'var(--tdgflow-navy-dim)' : 'var(--tdgflow-text-secondary)',
+                  }}
+                >
+                  {t.tag}
+                </button>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {/* ── List ─────────────────────────────────────────────────── */}

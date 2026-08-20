@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CheckCircle2, Pencil, Trash2, Loader2, Search, ShieldQuestion } from 'lucide-react'
+import TagInput from '@/components/TagInput'
 
 /* Fase 6 — fila de confirmação (decisões #14-16 do plano TDG Knowledge
    Base). Um componente, dois usos:
@@ -39,19 +40,17 @@ function EditFields({ item, onChange }: { item: PendingItem; onChange: (fields: 
     const [title, setTitle] = useState(item.title)
     const [content, setContent] = useState(item.content ?? '')
     const [country, setCountry] = useState(item.country ?? '')
-    const [tagsText, setTagsText] = useState((item.tags ?? []).join(', '))
+    const [tags, setTags] = useState<string[]>(item.tags ?? [])
     useEffect(() => {
-      onChange({ title, content, country: country || null, tags: tagsText.split(',').map(t => t.trim()).filter(Boolean) })
+      onChange({ title, content, country: country || null, tags })
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [title, content, country, tagsText])
+    }, [title, content, country, tags])
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         <input className="input" value={title} onChange={e => setTitle(e.target.value)} style={{ fontSize: '0.8125rem' }} placeholder="Título" />
         <textarea className="input" value={content} onChange={e => setContent(e.target.value)} rows={3} style={{ fontSize: '0.8125rem', resize: 'vertical' }} placeholder="Conteúdo" />
-        <div style={{ display: 'flex', gap: 8 }}>
-          <input className="input" value={country} onChange={e => setCountry(e.target.value)} style={{ fontSize: '0.8125rem', flex: 1 }} placeholder="País (opcional)" />
-          <input className="input" value={tagsText} onChange={e => setTagsText(e.target.value)} style={{ fontSize: '0.8125rem', flex: 1 }} placeholder="Tags, separadas por vírgula" />
-        </div>
+        <input className="input" value={country} onChange={e => setCountry(e.target.value)} style={{ fontSize: '0.8125rem' }} placeholder="País (opcional)" />
+        <TagInput value={tags} onChange={setTags} />
       </div>
     )
   }
