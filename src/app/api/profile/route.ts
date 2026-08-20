@@ -24,6 +24,37 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ ok: true })
   }
 
+  // ── Update WhatsApp (pedido da Carla, 20/08) ─────────────────────
+  // É daqui que o MAX (agente WhatsApp do TDG Flow) resolve quem está
+  // mandando mensagem — GET /api/agent/verify-user faz WHERE whatsapp =
+  // <dígitos>. Mesma normalização usada lá e em /api/users (cadastro pelo
+  // admin): só dígitos, sem "+", com código do país. Coluna é UNIQUE —
+  // duas contas não podem reivindicar o mesmo número.
+  if (body.whatsapp !== undefined) {
+    const raw = String(body.whatsapp ?? '').trim()
+
+    if (!raw) {
+      await sql`UPDATE tdg_users SET whatsapp = NULL WHERE email = ${email}`
+      return NextResponse.json({ ok: true, whatsapp: null })
+    }
+
+    const whatsappNorm = raw.replace(/\D/g, '')
+    if (whatsappNorm.length < 10) {
+      return NextResponse.json({ error: 'Número inválido — inclua o código do país (ex: 55 11 99999-9999).' }, { status: 400 })
+    }
+
+    try {
+      await sql`UPDATE tdg_users SET whatsapp = ${whatsappNorm} WHERE email = ${email}`
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
+      if (msg.includes('unique') || msg.includes('duplicate')) {
+        return NextResponse.json({ error: 'Este número já está associado a outra conta.' }, { status: 409 })
+      }
+      throw err
+    }
+    return NextResponse.json({ ok: true, whatsapp: whatsappNorm })
+  }
+
   // ── Update password ────────────────────────────────────────────
   if (body.currentPassword !== undefined && body.newPassword !== undefined) {
     const { currentPassword, newPassword } = body

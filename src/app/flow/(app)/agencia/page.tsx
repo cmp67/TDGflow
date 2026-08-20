@@ -10,15 +10,15 @@ export default async function AgenciaPage() {
   const agency = session.user?.agency ?? ''
   const email  = session.user?.email  ?? ''
 
-  // Fetch user's own profile row (avatar, etc.)
-  let profile: { avatar_url: string | null } = { avatar_url: null }
+  // Fetch user's own profile row (avatar, whatsapp)
+  let profile: { avatar_url: string | null; whatsapp: string | null } = { avatar_url: null, whatsapp: null }
   let members: { id: string; name: string; email: string; role: string; created_at: string }[] = []
 
   try {
     const { rows } = await sql`
-      SELECT avatar_url FROM tdg_users WHERE email = ${email} LIMIT 1
+      SELECT avatar_url, whatsapp FROM tdg_users WHERE email = ${email} LIMIT 1
     `
-    if (rows[0]) profile = { avatar_url: rows[0].avatar_url ?? null }
+    if (rows[0]) profile = { avatar_url: rows[0].avatar_url ?? null, whatsapp: rows[0].whatsapp ?? null }
   } catch { /* non-blocking */ }
 
   if (agency) {
@@ -41,6 +41,7 @@ export default async function AgenciaPage() {
         agency,
         role:       session.user?.role   ?? 'agent',
         avatar_url: profile.avatar_url,
+        whatsapp:   profile.whatsapp,
       }}
       members={members}
     />

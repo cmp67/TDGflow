@@ -42,8 +42,18 @@ interface Member {
 }
 
 interface Props {
-  user: { name: string; email: string; agency: string; role: string; avatar_url?: string | null }
+  user: { name: string; email: string; agency: string; role: string; avatar_url?: string | null; whatsapp?: string | null }
   members: Member[]
+}
+
+// Exibe dígitos crus (como fica salvo, ex: 5511999920122) formatado só
+// pra leitura — nunca reformata o que a pessoa está digitando, isso
+// quebraria o cursor no meio da digitação.
+function formatWhatsappDisplay(digits: string): string {
+  if (!digits) return ''
+  const country = digits.slice(0, 2)
+  const rest = digits.slice(2)
+  return rest ? `+${country} ${rest}` : `+${digits}`
 }
 
 function formatDate(iso: string) {
@@ -53,15 +63,19 @@ function formatDate(iso: string) {
 export default function AgenciaView({ user, members }: Props) {
   const { lang, setLang } = useLanguage()
   const [name,        setName]        = useState(user.name)
+  const [whatsapp,    setWhatsapp]    = useState(user.whatsapp ? formatWhatsappDisplay(user.whatsapp) : '')
   const [currentPw,  setCurrentPw]   = useState('')
   const [newPw,      setNewPw]       = useState('')
   const [showCur,    setShowCur]     = useState(false)
   const [showNew,    setShowNew]     = useState(false)
   const [saving,     setSaving]      = useState(false)
+  const [savingWa,   setSavingWa]    = useState(false)
   const [savingPw,   setSavingPw]    = useState(false)
   const [nameOk,     setNameOk]      = useState(false)
+  const [waOk,       setWaOk]        = useState(false)
   const [pwOk,       setPwOk]        = useState(false)
   const [nameErr,    setNameErr]     = useState('')
+  const [waErr,      setWaErr]       = useState('')
   const [pwErr,      setPwErr]       = useState('')
 
   async function saveName() {
@@ -75,6 +89,26 @@ export default function AgenciaView({ user, members }: Props) {
     if (res.ok) { setNameOk(true); setTimeout(() => setNameOk(false), 3000) }
     else { const d = await res.json(); setNameErr(d.error ?? 'Erro ao salvar.') }
     setSaving(false)
+  }
+
+  // Número que o MAX (agente WhatsApp do TDG Flow) usa pra reconhecer quem
+  // está mandando mensagem no grupo — GET /api/agent/verify-user busca por
+  // este campo. Formato internacional (código do país + DDD + número).
+  async function saveWhatsapp() {
+    setSavingWa(true); setWaErr(''); setWaOk(false)
+    const res = await fetch('/api/profile', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ whatsapp }),
+    })
+    if (res.ok) {
+      const d = await res.json()
+      setWhatsapp(d.whatsapp ? formatWhatsappDisplay(d.whatsapp) : '')
+      setWaOk(true); setTimeout(() => setWaOk(false), 3000)
+    } else {
+      const d = await res.json(); setWaErr(d.error ?? 'Erro ao salvar.')
+    }
+    setSavingWa(false)
   }
 
   async function savePassword() {
@@ -150,6 +184,37 @@ export default function AgenciaView({ user, members }: Props) {
           </button>
         </div>
         {nameErr && <p className="text-xs" style={{ color: 'var(--tdgflow-error)' }}>{nameErr}</p>}
+      </div>
+
+      {/* WhatsApp — número que o MAX usa pra reconhecer quem manda
+          mensagem no grupo da rede (pedido da Carla, 20/08). */}
+      <div className="card space-y-3">
+        <h3 className="text-sm font-semibold" style={{ color: 'var(--tdgflow-text-primary)' }}>WhatsApp</h3>
+        <p className="text-xs" style={{ color: 'var(--tdgflow-text-muted)', marginTop: -6 }}>
+          É por aqui que o Max reconhece você quando manda uma mensagem no grupo da rede.
+        </p>
+        <div className="flex gap-2">
+          <input
+            className="input flex-1"
+            value={whatsapp}
+            onChange={e => setWhatsapp(e.target.value)}
+            placeholder="+55 11 99999-9999"
+          />
+          <button
+            onClick={saveWhatsapp}
+            disabled={savingWa}
+            className="btn-gold"
+            style={{ padding: '10px 14px', fontSize: '0.8125rem', flexShrink: 0 }}
+          >
+            {savingWa
+              ? <Loader size={13} className="animate-spin" />
+              : waOk
+                ? <CheckCircle size={13} />
+                : <Save size={13} />}
+            {waOk ? 'Salvo!' : 'Salvar'}
+          </button>
+        </div>
+        {waErr && <p className="text-xs" style={{ color: 'var(--tdgflow-error)' }}>{waErr}</p>}
       </div>
 
       {/* Change password */}
