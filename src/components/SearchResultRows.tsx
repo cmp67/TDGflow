@@ -8,6 +8,73 @@ import CopyLinkButton from '@/components/CopyLinkButton'
 import { QueueCard, type PendingItem } from '@/components/PendingConfirmationQueue'
 import { isAuthorMatch } from '@/lib/author-match'
 
+/* "Esse card é seu?" — pedido da Carla, 20/08: quando o nome da conta
+   logada não bate com o autor extraído do WhatsApp (apelido, grafia
+   diferente), a pessoa pode digitar a variação pra confirmar que é dela.
+   Checagem client-side aqui é só feedback imediato — o servidor
+   (PATCH /api/pending-content) reavalia as duas condições de novo em cada
+   ação, nunca confia neste resultado. Escopo deliberado: só confirma a
+   PRÓPRIA autoria (o nome digitado precisa também bater com a conta
+   logada) — nunca destrava card de outra pessoa. */
+function ClaimAuthorPrompt({ sourceAuthor, currentUserName, onClaimed }: {
+  sourceAuthor: string | null | undefined
+  currentUserName: string | null | undefined
+  onClaimed: (name: string) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const [name, setName] = useState('')
+  const [error, setError] = useState(false)
+
+  function submit() {
+    const trimmed = name.trim()
+    const matchesAccount = isAuthorMatch(trimmed, currentUserName)
+    const matchesCard = isAuthorMatch(sourceAuthor, trimmed)
+    if (!trimmed || !matchesAccount || !matchesCard) {
+      setError(true)
+      return
+    }
+    setError(false)
+    onClaimed(trimmed)
+  }
+
+  if (!open) {
+    return (
+      <button
+        onClick={e => { e.stopPropagation(); setOpen(true) }}
+        style={{ fontSize: '0.625rem', color: 'var(--tdgflow-text-muted)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 2 }}
+      >
+        Esse card é seu? Confirme seu nome
+      </button>
+    )
+  }
+
+  return (
+    <div onClick={e => e.stopPropagation()} style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 4 }}>
+      <div style={{ display: 'flex', gap: 6 }}>
+        <input
+          className="input"
+          value={name}
+          onChange={e => { setName(e.target.value); setError(false) }}
+          onKeyDown={e => { if (e.key === 'Enter') submit() }}
+          placeholder="Como seu nome aparece na mensagem antiga"
+          style={{ fontSize: '0.75rem', padding: '4px 8px', flex: 1 }}
+        />
+        <button
+          onClick={submit}
+          style={{ fontSize: '0.6875rem', padding: '4px 10px', borderRadius: 6, background: 'var(--tdgflow-gold)', border: 'none', color: 'var(--tdgflow-navy-dim)', fontWeight: 600, cursor: 'pointer' }}
+        >
+          Confirmar
+        </button>
+      </div>
+      {error && (
+        <span style={{ fontSize: '0.625rem', color: '#dc2626' }}>
+          Esse nome não bate com este card ou com sua conta.
+        </span>
+      )}
+    </div>
+  )
+}
+
 /* ── Types compartilhados da Super Busca (Fase 8/8d) ──────────────
    Extraído de DestinosView.tsx pra ser reaproveitado pela busca global
    (GlobalSearch.tsx, acessível em qualquer tela) sem duplicar. */
@@ -155,6 +222,7 @@ export function TipCard({ tip, highlightId, currentUserName, onActed }: {
   const isHighlighted = !!highlightId && tip.id === highlightId
   const [expanded, setExpanded] = useState(isHighlighted)
   const [handled, setHandled] = useState(false)
+  const [claimedName, setClaimedName] = useState<string | null>(null)
   const cardRef = useRef<HTMLDivElement>(null)
 
   // Hooks sempre correm na mesma ordem todo render — o return condicional
@@ -165,11 +233,13 @@ export function TipCard({ tip, highlightId, currentUserName, onActed }: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const isMinePending = tip.import_approval === 'pending' && isAuthorMatch(tip.source_author, currentUserName)
+  const isMinePending = tip.import_approval === 'pending'
+    && (isAuthorMatch(tip.source_author, currentUserName) || claimedName !== null)
   if (isMinePending && !handled) {
     return (
       <QueueCard
         item={{ id: tip.id, content_type: 'knowledge', title: tip.title, content: tip.content, source_author: tip.source_author, source_date: tip.source_date }}
+        claimedName={claimedName ?? undefined}
         onActed={() => { setHandled(true); onActed?.() }}
       />
     )
@@ -232,6 +302,9 @@ export function TipCard({ tip, highlightId, currentUserName, onActed }: {
         </div>
         <CopyLinkButton path={`/flow/destinos?tipId=${tip.id}`} label={`Dica: ${tip.title}`} size={12} />
       </div>
+      {tip.import_approval === 'pending' && !isMinePending && (
+        <ClaimAuthorPrompt sourceAuthor={tip.source_author} currentUserName={currentUserName} onClaimed={setClaimedName} />
+      )}
     </motion.div>
   )
 }
@@ -283,7 +356,9 @@ export function ReviewResultRow({ review, onNavigate, currentUserName, onActed }
   onActed?: () => void
 }) {
   const [handled, setHandled] = useState(false)
-  const isMinePending = review.import_approval === 'pending' && isAuthorMatch(review.source_author, currentUserName)
+  const [claimedName, setClaimedName] = useState<string | null>(null)
+  const isMinePending = review.import_approval === 'pending'
+    && (isAuthorMatch(review.source_author, currentUserName) || claimedName !== null)
   if (isMinePending && !handled) {
     return (
       <QueueCard
@@ -292,36 +367,45 @@ export function ReviewResultRow({ review, onNavigate, currentUserName, onActed }
           heads_up: review.heads_up, must_experience: review.must_experience,
           source_author: review.source_author ?? '', source_date: review.source_date ?? '',
         }}
+        claimedName={claimedName ?? undefined}
         onActed={() => { setHandled(true); onActed?.() }}
       />
     )
   }
 
   const snippet = review.must_experience || review.heads_up || ''
+  const showClaimPrompt = review.import_approval === 'pending' && !isMinePending
   return (
-    <Link href={`/flow/dicas?reviewId=${review.id}`} onClick={onNavigate} style={rowStyle}>
-      <div style={{
-        width: 34, height: 34, borderRadius: 8, flexShrink: 0,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'var(--tdgflow-surface-high)',
-      }}>
-        <Star size={14} style={{ color: 'var(--tdgflow-navy-dim)' }} />
-      </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
-          <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)', lineHeight: 1.3 }}>{review.hotel_name}</p>
-          {review.import_approval === 'pending' && <PendingBadge />}
+    <div>
+      <Link href={`/flow/dicas?reviewId=${review.id}`} onClick={onNavigate} style={rowStyle}>
+        <div style={{
+          width: 34, height: 34, borderRadius: 8, flexShrink: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: 'var(--tdgflow-surface-high)',
+        }}>
+          <Star size={14} style={{ color: 'var(--tdgflow-navy-dim)' }} />
         </div>
-        {snippet && (
-          <p style={{
-            fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)', marginTop: 2,
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-          }}>
-            {snippet}
-          </p>
-        )}
-      </div>
-    </Link>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+            <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)', lineHeight: 1.3 }}>{review.hotel_name}</p>
+            {review.import_approval === 'pending' && <PendingBadge />}
+          </div>
+          {snippet && (
+            <p style={{
+              fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)', marginTop: 2,
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }}>
+              {snippet}
+            </p>
+          )}
+        </div>
+      </Link>
+      {showClaimPrompt && (
+        <div style={{ padding: '0 12px 8px' }}>
+          <ClaimAuthorPrompt sourceAuthor={review.source_author} currentUserName={currentUserName} onClaimed={setClaimedName} />
+        </div>
+      )}
+    </div>
   )
 }
 

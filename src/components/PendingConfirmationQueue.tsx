@@ -79,7 +79,7 @@ function EditFields({ item, onChange }: { item: PendingItem; onChange: (fields: 
   )
 }
 
-export function QueueCard({ item, onActed }: { item: PendingItem; onActed: () => void }) {
+export function QueueCard({ item, onActed, claimedName }: { item: PendingItem; onActed: () => void; claimedName?: string }) {
   const [editing, setEditing] = useState(false)
   const [editFields, setEditFields] = useState<Record<string, unknown>>({})
   const [confirmingDelete, setConfirmingDelete] = useState(false)
@@ -96,7 +96,10 @@ export function QueueCard({ item, onActed }: { item: PendingItem; onActed: () =>
     await fetch('/api/pending-content', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: item.id, content_type: item.content_type, action, fields }),
+      // claimed_name segue em toda ação, não só a primeira — o servidor
+      // reavalia autoria a cada chamada, nunca confia num "claim" anterior
+      // guardado só no client.
+      body: JSON.stringify({ id: item.id, content_type: item.content_type, action, fields, claimed_name: claimedName }),
     })
     setBusy(null)
     onActed()

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { AnimatePresence } from 'framer-motion'
-import { Search, Loader2, Lightbulb } from 'lucide-react'
+import { Search, Loader2, Lightbulb, Plus, X } from 'lucide-react'
 import TdgIconSprite from '@/components/TdgIconSprite'
 import PendingConfirmationQueue from '@/components/PendingConfirmationQueue'
 import { useDebounce } from '@/hooks/useDebounce'
@@ -11,6 +11,75 @@ import {
   KnowledgeTip, SearchResults, EMPTY_RESULTS, ResultGroup,
   TipCard, HotelResultRow, ReviewResultRow, ContactResultRow, OfferResultRow,
 } from '@/components/SearchResultRows'
+
+/* Registrar nota — pedido da Carla, 20/08: até aqui o Acervo TDG só
+   crescia via importação do WhatsApp (em lote, sem interface). Botão
+   simples pra qualquer pessoa registrar ao vivo o que não é review de
+   fornecedor (fato, alerta, blacklist etc.) — mesmo destino final
+   (tdg_destination_knowledge), mas nasce já publicado, sem passar pela
+   fila de confirmação (ver POST /api/knowledge-tips). */
+function NewNoteModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  const [title, setTitle] = useState('')
+  const [content, setContent] = useState('')
+  const [country, setCountry] = useState('')
+  const [tagsText, setTagsText] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function submit() {
+    if (!title.trim()) { setError('Título é obrigatório'); return }
+    setSaving(true)
+    setError(null)
+    const tags = tagsText.split(',').map(t => t.trim()).filter(Boolean)
+    const res = await fetch('/api/knowledge-tips', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: title.trim(), content: content.trim() || null, country: country.trim() || null, tags }),
+    })
+    setSaving(false)
+    if (!res.ok) { setError('Não deu pra salvar — tenta de novo.'); return }
+    onCreated()
+    onClose()
+  }
+
+  return (
+    <div
+      onClick={onClose}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(20,12,6,0.4)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{ background: 'var(--tdgflow-surface)', borderRadius: 14, padding: 20, width: '100%', maxWidth: 440, display: 'flex', flexDirection: 'column', gap: 10 }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <p style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)' }}>Registrar nota</p>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tdgflow-text-muted)', padding: 4 }}>
+            <X size={16} />
+          </button>
+        </div>
+        <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)', marginTop: -4 }}>
+          Tudo que não é review de fornecedor — fato, alerta, blacklist, dica prática.
+        </p>
+        <input className="input" placeholder="Título" value={title} onChange={e => setTitle(e.target.value)} style={{ fontSize: '0.8125rem' }} autoFocus />
+        <textarea className="input" placeholder="Conteúdo" value={content} onChange={e => setContent(e.target.value)} rows={4} style={{ fontSize: '0.8125rem', resize: 'vertical' }} />
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input className="input" placeholder="País (opcional)" value={country} onChange={e => setCountry(e.target.value)} style={{ fontSize: '0.8125rem', flex: 1 }} />
+          <input className="input" placeholder="Tags, separadas por vírgula" value={tagsText} onChange={e => setTagsText(e.target.value)} style={{ fontSize: '0.8125rem', flex: 1 }} />
+        </div>
+        {error && <span style={{ fontSize: '0.75rem', color: '#dc2626' }}>{error}</span>}
+        <button
+          onClick={submit}
+          disabled={saving}
+          className="btn-gold"
+          style={{ fontSize: '0.8125rem', padding: '9px 14px', marginTop: 4 }}
+        >
+          {saving ? <Loader2 size={13} className="animate-spin" /> : null}
+          Registrar
+        </button>
+      </div>
+    </div>
+  )
+}
 
 /* ── Main export ────────────────────────────────────────────────────
    Fase 4 da reorganização de caixinhas: "Dicas de Destino" morava dentro
@@ -32,6 +101,7 @@ export default function DestinosView() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [currentUserName, setCurrentUserName] = useState<string | null>(null)
+  const [showNoteModal, setShowNoteModal] = useState(false)
   const debouncedSearch = useDebounce(search, 300).trim()
   const isSearching = debouncedSearch.length > 0
 
@@ -83,7 +153,7 @@ export default function DestinosView() {
               <svg style={{ width: 10, height: 10, stroke: 'currentColor', fill: 'none', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
                 <use href="#i-compass" />
               </svg>
-              Direto do WhatsApp
+              Conhecimento coletivo
             </p>
             <h2 style={{ fontSize: '1.125rem', fontWeight: 500, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.025em', lineHeight: 1, marginBottom: 4 }}>
               Acervo TDG
@@ -92,12 +162,21 @@ export default function DestinosView() {
               Conhecimento prático por país e destino: vistos, costumes, avisos
             </p>
           </div>
-          {!loading && (
-            <div style={{ textAlign: 'right', paddingTop: 4 }}>
-              <p style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.02em', lineHeight: 1 }}>{headerCount}</p>
-              <p style={{ fontSize: '0.55rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)', marginTop: 2 }}>{headerLabel}</p>
-            </div>
-          )}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+            <button
+              onClick={() => setShowNoteModal(true)}
+              className="btn-gold"
+              style={{ fontSize: '0.75rem', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 5 }}
+            >
+              <Plus size={13} /> Registrar nota
+            </button>
+            {!loading && (
+              <div style={{ textAlign: 'right' }}>
+                <p style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)', letterSpacing: '-0.02em', lineHeight: 1 }}>{headerCount}</p>
+                <p style={{ fontSize: '0.55rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)', marginTop: 2 }}>{headerLabel}</p>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Search */}
@@ -188,10 +267,17 @@ export default function DestinosView() {
 
         {!loading && !isSearching && tips.length > 0 && (
           <p style={{ textAlign: 'center', fontSize: '0.625rem', color: 'var(--tdgflow-text-muted)', opacity: 0.6, letterSpacing: '0.08em', marginTop: 24, marginBottom: 8 }}>
-            FONTE · DIRETO DO WHATSAPP · SET 2024 – MAR 2026
+            FONTE · WHATSAPP + REGISTROS DA REDE
           </p>
         )}
       </div>
+
+      {showNoteModal && (
+        <NewNoteModal
+          onClose={() => setShowNoteModal(false)}
+          onCreated={() => load(new AbortController().signal)}
+        />
+      )}
     </div>
   )
 }

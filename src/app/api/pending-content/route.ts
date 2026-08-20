@@ -114,9 +114,9 @@ export async function PATCH(req: NextRequest) {
   if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json()
-  const { id, content_type, action, fields } = body as {
+  const { id, content_type, action, fields, claimed_name } = body as {
     id: string; content_type: 'review' | 'knowledge'; action: string
-    fields?: Record<string, unknown>
+    fields?: Record<string, unknown>; claimed_name?: string
   }
   if (!id || !content_type || !action) {
     return NextResponse.json({ error: 'id, content_type e action são obrigatórios' }, { status: 400 })
@@ -134,7 +134,22 @@ export async function PATCH(req: NextRequest) {
   )
   if (!itemRows.length) return NextResponse.json({ error: 'Item não encontrado' }, { status: 404 })
   const sourceAuthor: string | undefined = itemRows[0]?.source_author
-  const isOwnItem = isAuthorMatch(sourceAuthor, caller.name)
+
+  // claimed_name — autoconfirmação de autoria (20/08, pedido da Carla): a
+  // conta logada pode ter um nome cadastrado que não bate com a grafia/
+  // apelido usado na extração do WhatsApp (ex: conta "Roberto Nascimento",
+  // mensagens antigas assinadas "Beto"). Em vez de só comparar
+  // source_author × caller.name, deixa a pessoa digitar a variação — mas
+  // SÓ conta se o nome digitado também for reconhecível como uma forma do
+  // nome da PRÓPRIA conta logada (isAuthorMatch(claimed_name, caller.name)).
+  // Sem essa segunda checagem, qualquer usuário logado poderia digitar o
+  // nome que já aparece impresso em card de outra pessoa (ex: "Elaine
+  // Scanavacca") e aprovar/editar/excluir conteúdo alheio — nunca confiar
+  // só no texto que o cliente manda. Escopo deliberadamente restrito a
+  // "confirmar a própria autoria", nunca "aprovar em nome de terceiros".
+  const claimedName = claimed_name?.trim()
+  const effectiveName = claimedName && isAuthorMatch(claimedName, caller.name) ? claimedName : caller.name
+  const isOwnItem = isAuthorMatch(sourceAuthor, effectiveName)
 
   if (caller.role !== 'admin' && !isOwnItem) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
