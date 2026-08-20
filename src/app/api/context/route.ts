@@ -1,6 +1,7 @@
 import { sql } from '@vercel/postgres'
 import { NextResponse } from 'next/server'
 import { auth } from '@/auth'
+import { isAuthorMatch } from '@/lib/author-match'
 
 export const dynamic = 'force-dynamic'
 
@@ -45,36 +46,36 @@ export async function GET() {
     } catch { /* tabela ainda não existe — sem reports */ }
   }
 
-  // Fase 6 — fila de confirmação (decisões #14-16). Mesma condição de match
-  // usada em /api/pending-content: nome do usuário aparece dentro do texto
-  // livre de source_author. Hoje "mine" é ~sempre 0 (nenhum autor real da
-  // extração tem conta com nome batendo) e "admin" cobre o resto.
+  // Fase 6 — fila de confirmação (decisões #14-16). Match por token
+  // (isAuthorMatch, src/lib/author-match.ts) — mesma função usada em
+  // /api/pending-content desde 10/08. Achado da Carla, 20/08: esta rota
+  // (que alimenta o badge da sidebar) tinha ficado pra trás usando o match
+  // antigo por substring exato (SQL ILIKE), nunca migrado junto — inflava
+  // o badge de Billing pra 1248 (763 reviews + 484 knowledge órfãos) quando
+  // boa parte já tinha autor real cadastrado, só não batia pela grafia
+  // diferente do nome extraído do WhatsApp. Com o match correto, cai pra
+  // ~535 — os que restam são de fato sem conta na rede (ex: sócios/pessoas
+  // fora do TDG citadas na importação).
   const userName = (profileRes.rows[0] as { name?: string } | undefined)?.name ?? ''
   let pendingImportConfirmations = 0
   let pendingMyReviewConfirmations = 0
   let pendingMyKnowledgeConfirmations = 0
   try {
+    const [{ rows: allReviews }, { rows: allKnowledge }, { rows: allUsers }] = await Promise.all([
+      sql`SELECT source_author FROM tdg_hotel_reviews WHERE import_approval = 'pending'`,
+      sql`SELECT source_author FROM tdg_destination_knowledge WHERE import_approval = 'pending'`,
+      sql`SELECT name FROM tdg_users WHERE name IS NOT NULL AND name <> ''`,
+    ])
+    const realNames = allUsers.map(u => u.name as string)
+
     if (isAdmin) {
-      const { rows } = await sql`
-        SELECT
-          (SELECT COUNT(*)::int FROM tdg_hotel_reviews r WHERE r.import_approval = 'pending'
-             AND NOT EXISTS (SELECT 1 FROM tdg_users u WHERE r.source_author ILIKE '%' || u.name || '%')) +
-          (SELECT COUNT(*)::int FROM tdg_destination_knowledge k WHERE k.import_approval = 'pending'
-             AND NOT EXISTS (SELECT 1 FROM tdg_users u WHERE k.source_author ILIKE '%' || u.name || '%')) AS count
-      `
-      pendingImportConfirmations = rows[0]?.count ?? 0
+      const orphanReviews = allReviews.filter(r => !realNames.some(n => isAuthorMatch(r.source_author as string | null, n))).length
+      const orphanKnowledge = allKnowledge.filter(k => !realNames.some(n => isAuthorMatch(k.source_author as string | null, n))).length
+      pendingImportConfirmations = orphanReviews + orphanKnowledge
     }
     if (userName) {
-      const { rows: reviewRows } = await sql`
-        SELECT COUNT(*)::int AS count FROM tdg_hotel_reviews
-        WHERE import_approval = 'pending' AND source_author ILIKE ${'%' + userName + '%'}
-      `
-      pendingMyReviewConfirmations = reviewRows[0]?.count ?? 0
-      const { rows: knowledgeRows } = await sql`
-        SELECT COUNT(*)::int AS count FROM tdg_destination_knowledge
-        WHERE import_approval = 'pending' AND source_author ILIKE ${'%' + userName + '%'}
-      `
-      pendingMyKnowledgeConfirmations = knowledgeRows[0]?.count ?? 0
+      pendingMyReviewConfirmations = allReviews.filter(r => isAuthorMatch(r.source_author as string | null, userName)).length
+      pendingMyKnowledgeConfirmations = allKnowledge.filter(k => isAuthorMatch(k.source_author as string | null, userName)).length
     }
   } catch { /* colunas de import_approval podem não existir em ambiente antigo */ }
 
