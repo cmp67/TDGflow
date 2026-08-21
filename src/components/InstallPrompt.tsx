@@ -28,9 +28,18 @@ type BeforeInstallPromptEvent = Event & {
 const DISMISS_KEY = 'tdgflow-install-dismissed-at'
 const DISMISS_DAYS = 14
 
+function isMobile(): boolean {
+  return /android|iphone|ipad|ipod/i.test(navigator.userAgent)
+}
+
+// Pedido da Carla, 21/08: no desktop, fechar o banner é definitivo — não
+// insiste de novo depois de um tempo como faz no celular. No celular a
+// pessoa pode ter fechado sem querer no meio de outra tarefa, então ainda
+// faz sentido voltar a perguntar depois de DISMISS_DAYS.
 function recentlyDismissed(): boolean {
   const raw = localStorage.getItem(DISMISS_KEY)
   if (!raw) return false
+  if (!isMobile()) return true
   const elapsedDays = (Date.now() - Number(raw)) / (1000 * 60 * 60 * 24)
   return elapsedDays < DISMISS_DAYS
 }
