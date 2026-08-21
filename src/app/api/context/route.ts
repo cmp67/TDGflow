@@ -35,13 +35,18 @@ export async function GET() {
     } catch { /* tabela ainda não existe — sem pedidos */ }
   }
 
-  // Reports de erro pendentes de resolução — só pro admin global, é fila de
-  // trabalho dele (mesmo padrão de pending_guest_requests: badge no item da
-  // nav onde se resolve, não aviso passageiro no sino).
+  // Reports de erro NÃO LIDOS — só pro admin global (fila de trabalho dele).
+  // Achado da Carla, 21/08: contava por status='pending', então reler o
+  // report na Linha Direta nunca fazia o badge sumir — só mudar o status
+  // fazia, e "lido" e "resolvido" são coisas diferentes. Agora conta por
+  // viewed_at IS NULL; abrir a Linha Direta como admin marca como visto
+  // (ver PATCH mark_bug_reports_viewed em /api/suggestions), sem precisar
+  // resolver o report ainda pra ele sumir do sino.
   let pendingBugReports = 0
   if (isAdmin) {
     try {
-      const { rows } = await sql`SELECT COUNT(*)::int AS count FROM tdg_suggestions WHERE type = 'bug_report' AND status = 'pending'`
+      await sql`ALTER TABLE tdg_suggestions ADD COLUMN IF NOT EXISTS viewed_at TIMESTAMPTZ`
+      const { rows } = await sql`SELECT COUNT(*)::int AS count FROM tdg_suggestions WHERE type = 'bug_report' AND status = 'pending' AND viewed_at IS NULL`
       pendingBugReports = rows[0]?.count ?? 0
     } catch { /* tabela ainda não existe — sem reports */ }
   }

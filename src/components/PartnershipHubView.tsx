@@ -231,6 +231,18 @@ export default function PartnershipHubView({ userRole }: { userRole: string }) {
       .catch(() => setLoading(false))
   }, [])
 
+  // "Lido" ≠ "resolvido" (achado da Carla, 21/08) — abrir a Linha Direta
+  // como admin marca os bug_reports pendentes como vistos, some do badge
+  // da sidebar sem esperar alguém mudar o status pra "Investigando"/"Resolvido".
+  useEffect(() => {
+    if (!isAdmin) return
+    fetch('/api/suggestions', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'mark_bug_reports_viewed' }),
+    }).catch(() => {})
+  }, [isAdmin])
+
   async function handleVote(id: number) {
     if (votingId) return
     setVotingId(id)

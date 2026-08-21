@@ -100,3 +100,45 @@ describe('POST /api/suggestions — tipo bug_report (Reportar problema, Linha Di
     expect(data.suggestions.some((s: { screenshot_url?: string }) => 'screenshot_url' in s)).toBe(true)
   })
 })
+
+describe('PATCH /api/suggestions — mark_bug_reports_viewed ("lido" ≠ "resolvido")', () => {
+  const email = `__tdd_viewed_${Date.now()}__@example.com`
+  const createdIds: number[] = []
+
+  beforeAll(async () => {
+    await sql`
+      INSERT INTO tdg_users (name, email, agency_name, password_hash, role)
+      VALUES ('TDD Viewer', ${email}, 'TDD Agency', 'x', 'admin')
+    `
+  })
+
+  afterAll(async () => {
+    if (createdIds.length > 0) {
+      await sql.query('DELETE FROM tdg_suggestions WHERE id = ANY($1)', [createdIds])
+    }
+    await sql`DELETE FROM tdg_users WHERE email = ${email}`
+  })
+
+  it('marca bug_reports pendentes como vistos sem mudar o status', async () => {
+    mockAuth.mockResolvedValueOnce({ user: { email, name: 'TDD Viewer' } })
+    const createRes = await POST(jsonReq({ title: '__TDD viewed__', description: 'x', type: 'bug_report', impact: 2 }))
+    const created    = (await createRes.json()).suggestion
+    createdIds.push(created.id)
+
+    mockAuth.mockResolvedValueOnce({ user: { email, name: 'TDD Viewer' } })
+    const patchRes = await PATCH(jsonReq({ action: 'mark_bug_reports_viewed' }))
+    expect(patchRes.status).toBe(200)
+
+    const { rows } = await sql`SELECT status, viewed_at FROM tdg_suggestions WHERE id = ${created.id}`
+    expect(rows[0].status).toBe('pending')
+    expect(rows[0].viewed_at).not.toBeNull()
+  })
+
+  it('bloqueia quem não é admin', async () => {
+    await sql`UPDATE tdg_users SET role = 'agent' WHERE email = ${email}`
+    mockAuth.mockResolvedValueOnce({ user: { email, name: 'TDD Viewer' } })
+    const res = await PATCH(jsonReq({ action: 'mark_bug_reports_viewed' }))
+    expect(res.status).toBe(403)
+    await sql`UPDATE tdg_users SET role = 'admin' WHERE email = ${email}`
+  })
+})

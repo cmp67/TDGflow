@@ -32,6 +32,12 @@ async function ensureTables() {
   // screenshot_url: só preenchido quando type = 'bug_report' e o usuário
   // anexou print do erro (upload em /api/suggestions/screenshot).
   await sql`ALTER TABLE tdg_suggestions ADD COLUMN IF NOT EXISTS screenshot_url TEXT`
+  // viewed_at: "lido" é diferente de "resolvido" (achado da Carla, 21/08) —
+  // o badge da Linha Direta contava só por status='pending', então reabrir
+  // e ler o report nunca fazia o número sumir, só mudar o status fazia.
+  // Agora o badge conta por viewed_at IS NULL (ver /api/context); status
+  // continua controlando o board/roadmap normalmente.
+  await sql`ALTER TABLE tdg_suggestions ADD COLUMN IF NOT EXISTS viewed_at TIMESTAMPTZ`
 }
 
 // GET /api/suggestions — list all sorted by weighted score (votes × impact) desc
@@ -138,6 +144,21 @@ export async function PATCH(req: NextRequest) {
         RETURNING id, title, description, type, impact, status, votes, created_at, screenshot_url
       `
       return NextResponse.json({ suggestion: rows[0] })
+    }
+
+    // Marca os bug_reports pendentes como lidos — abrir a Linha Direta como
+    // admin dispara isso (ver PartnershipHubView), some do badge da sidebar
+    // sem precisar resolver o report ainda.
+    if (action === 'mark_bug_reports_viewed') {
+      const { rows: userRows } = await sql`SELECT role FROM tdg_users WHERE email = ${email} LIMIT 1`
+      if (userRows[0]?.role !== 'admin') {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+      await sql`
+        UPDATE tdg_suggestions SET viewed_at = NOW()
+        WHERE type = 'bug_report' AND status = 'pending' AND viewed_at IS NULL
+      `
+      return NextResponse.json({ ok: true })
     }
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
