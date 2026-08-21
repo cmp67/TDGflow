@@ -1,0 +1,17 @@
+{
+  "name": "TDG Flow",
+  "short_name": "TDG Flow",
+  "description": "Assistente de destinos da rede TDG — Travel Designers Group",
+  "start_url": "/flow",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0D1826",
+  "theme_color": "#1A2B4C",
+  "lang": "pt-BR",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
