@@ -45,7 +45,18 @@ export default function middleware(req: NextRequest) {
 
   if (pathname === '/') {
     if (host.startsWith('flow.')) {
-      return NextResponse.redirect(new URL('/flow/login', req.url))
+      // Achado 21/08 (Carla): SSO do Gonna Travel GUEST termina com
+      // signIn(..., { redirectTo: '/' }) — em sucesso, a sessão já está
+      // válida (cookie setado) quando a requisição chega aqui. Redirecionar
+      // sempre pra /flow/login (incondicional, sem checar sessão) jogava
+      // fora login SSO bem-sucedido: a página de login não tem nenhum
+      // useSession()/redirect client-side, então o usuário ficava
+      // visualmente preso na tela de login mesmo autenticado. Manda pra
+      // /flow/chat — se não houver sessão, o guard server-side do próprio
+      // layout ((app)/layout.tsx: auth() + redirect('/flow/login')) já
+      // devolve pro login normalmente, então o caso não-autenticado
+      // continua funcionando igual.
+      return NextResponse.redirect(new URL('/flow/chat', req.url))
     }
     return NextResponse.next()
   }
