@@ -888,11 +888,85 @@ interface HotelReviewRow {
   overall_rating: number
   highlights: string[] | null
   client_profile: string | null
+  created_at: string
+  is_own: boolean
 }
 
-function fmtReviewDate(d: string | null) {
-  if (!d) return null
+function fmtMonthYear(d: string) {
   return new Date(d).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })
+}
+
+// Achado da Carla, 26/08: card sem visit_date (TD não informou quando
+// visitou) ficava sem data nenhuma — parecia "sem data" em vez de mostrar
+// o que a gente sabe de verdade, quando o depoimento foi colhido. Toda
+// dica tem created_at (é automático); visit_date é opcional, só quando o
+// TD informa. Rótulo muda pra não fingir que created_at é a visita.
+function reviewDateLabel(r: Pick<HotelReviewRow, 'visit_date' | 'created_at'>): string {
+  if (r.visit_date) return fmtMonthYear(r.visit_date)
+  return `Registrado em ${fmtMonthYear(r.created_at)}`
+}
+
+// Convite pra completar o perfil de cliente — só aparece pra quem é dono
+// da própria dica (is_own), nunca bloqueia (a dica já vale como está).
+// Reusa o PATCH action=edit já construído pro fluxo do Humberto (26/08).
+function EnrichClientProfilePrompt({ reviewId, onSaved }: { reviewId: string; onSaved: (clientProfile: string) => void }) {
+  const [open, setOpen] = useState(false)
+  const [value, setValue] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 5, marginTop: 6,
+          background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+          fontSize: '0.6875rem', color: 'var(--tdgflow-gold)', fontWeight: 600,
+        }}
+      >
+        <PenLine size={11} /> Adicionar perfil de cliente ideal
+      </button>
+    )
+  }
+
+  async function save() {
+    if (!value.trim()) return
+    setSaving(true)
+    try {
+      const res = await fetch('/api/reviews', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ review_id: reviewId, action: 'edit', fields: { client_profile: value.trim() } }),
+      })
+      if (res.ok) onSaved(value.trim())
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div style={{ marginTop: 8 }}>
+      <p style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)', marginBottom: 4 }}>
+        Pra quem esse hotel é ideal? Ajuda o próximo TD a saber se indica.
+      </p>
+      <textarea
+        className="input"
+        value={value}
+        onChange={e => setValue(e.target.value)}
+        placeholder="Ex: casais em lua de mel, famílias com filhos pequenos…"
+        rows={2}
+        style={{ fontSize: '0.75rem', width: '100%' }}
+      />
+      <button
+        onClick={save}
+        disabled={saving || !value.trim()}
+        className="btn btn-primary"
+        style={{ marginTop: 6, fontSize: '0.6875rem', padding: '5px 12px' }}
+      >
+        {saving ? 'Salvando…' : 'Salvar'}
+      </button>
+    </div>
+  )
 }
 
 function HotelReviews({ hotelId, hotelName }: { hotelId: string; hotelName: string }) {
@@ -949,8 +1023,13 @@ function HotelReviews({ hotelId, hotelName }: { hotelId: string; hotelName: stri
               {r.highlights[0]}
             </p>
           )}
-          {fmtReviewDate(r.visit_date) && (
-            <p style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)', marginTop: 5 }}>{fmtReviewDate(r.visit_date)}</p>
+          <p style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)', marginTop: 5 }}>{reviewDateLabel(r)}</p>
+
+          {r.is_own && !r.client_profile && (
+            <EnrichClientProfilePrompt
+              reviewId={r.id}
+              onSaved={clientProfile => setReviews(prev => prev.map(rev => rev.id === r.id ? { ...rev, client_profile: clientProfile } : rev))}
+            />
           )}
         </div>
       ))}
