@@ -81,9 +81,22 @@ export async function buildWeeklyDigest(): Promise<WeeklyDigest> {
     .map(([agency_name, count]) => ({ agency_name, count }))
     .sort((a, b) => b.count - a.count)
 
-  const featuredCandidate = published
-    .filter(r => r.photo_url)
-    .sort((a, b) => (b.overall_rating ?? 0) - (a.overall_rating ?? 0))[0]
+  // Achado da Carla, 26/08: destaque preso na janela de 7 dias sumia toda
+  // semana fraca — mesmo existindo review recente com foto no catálogo, se
+  // não foi ESSA semana, a edição saía sem nome nem foto nenhuma. Desacoplado
+  // do resto do digest de propósito: é "o melhor que a rede tem pra mostrar
+  // agora", não "o que aconteceu nos últimos 7 dias" (isso já é o resto do
+  // e-mail). Mesmo filtro de fixture de teste do resto da query.
+  const { rows: featuredRows } = await sql`
+    SELECT hotel_name, country, agent_name, photo_url, heads_up, overall_rating
+    FROM tdg_hotel_reviews
+    WHERE status = 'published' AND photo_url IS NOT NULL
+      AND agency_name IS DISTINCT FROM 'TDD' AND agent_name IS DISTINCT FROM 'TDD'
+      AND agency_name NOT ILIKE '\_\_TDD\_%' ESCAPE '\'
+    ORDER BY created_at DESC
+    LIMIT 1
+  `
+  const featuredCandidate = featuredRows[0]
 
   const { rows: guides } = await sql`
     SELECT title FROM tdg_wiki_pages
