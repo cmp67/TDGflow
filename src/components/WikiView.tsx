@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Loader, BookOpen, FileText, Search } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 interface WikiPage {
   id: string
@@ -169,7 +170,7 @@ export default function WikiView() {
                   {active.title}
                 </h2>
                 <div className="prose-dark text-sm leading-relaxed">
-                  <ReactMarkdown>{active.content}</ReactMarkdown>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{active.content}</ReactMarkdown>
                 </div>
               </article>
             ) : (

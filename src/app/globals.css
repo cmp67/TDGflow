@@ -317,6 +317,41 @@ p, span, li { line-height: 1.6; }
 }
 .prose-dark a { color: #1A2B4C; text-decoration: underline; }
 
+/* Tabela GFM (ex: comparativo de hotéis do Max) — achado da Carla, 26/08:
+   sem remark-gfm o Markdown de tabela nunca virava <table>, só texto cru
+   com | e --- visíveis. Com o plugin ligado, ainda falta estilo: tabela de
+   verdade sem regra própria fica larga e cortada dentro da bolha de chat
+   (max-w-3xl, geralmente mobile). display:block + overflow-x:auto no
+   próprio <table> deixa só ELA rolar de lado, nunca a página/bolha inteira. */
+.prose-dark table {
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-collapse: collapse;
+  min-width: 100%;
+  width: max-content;
+  max-width: 100%;
+  margin: 0.6em 0 1em;
+  font-size: 0.8125rem;
+  border: 1px solid #D0E2E5;
+  border-radius: 8px;
+}
+.prose-dark th, .prose-dark td {
+  padding: 7px 12px;
+  text-align: left;
+  border-bottom: 1px solid #D0E2E5;
+  white-space: nowrap;
+}
+.prose-dark thead th {
+  background: #E8F0F2;
+  color: #112630;
+  font-weight: 600;
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+}
+.prose-dark tbody tr:last-child td { border-bottom: none; }
+.prose-dark tbody tr:nth-child(even) { background: #F6FAFB; }
+
 /* ── Animations ──────────────────────────────────────────────────────────── */
 
 @keyframes pulse-gold {

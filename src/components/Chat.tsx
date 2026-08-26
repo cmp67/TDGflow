@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Send, Loader2, Sparkles } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 /* ── Ícones próprios — traço só, sem lucide genérico pros marcadores de
    conteúdo/categoria (regra de personalidade Bemgsy). Utilitários puros
@@ -496,7 +497,7 @@ export default function Chat({ fallbackName, userEmail }: Props = {}) {
               >
                 {msg.role === 'assistant' ? (
                   <div className="prose-dark">
-                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
                   </div>
                 ) : (
                   msg.content
@@ -544,7 +545,7 @@ export default function Chat({ fallbackName, userEmail }: Props = {}) {
                   </motion.span>
                 ) : streamingText ? (
                   <div className="prose-dark">
-                    <ReactMarkdown>{streamingText}</ReactMarkdown>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{streamingText}</ReactMarkdown>
                   </div>
                 ) : (
                   <div className="flex items-center gap-1.5">
