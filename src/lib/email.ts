@@ -220,6 +220,10 @@ export async function sendWeeklyDigestEmail(
   ))
 
   if (digest.recentReviews.length > 0) {
+    // Selo sutil pra dica capturada pelo Max via WhatsApp — pedido da
+    // Carla, 26/08, mesmo tratamento discreto já aplicado nos cards do
+    // app: só um "· via WhatsApp" pequeno e apagado, não compete com a
+    // atribuição real (quem escreveu continua sendo o dado principal).
     const rows = digest.recentReviews.map((r, i) => `
       <tr>
         <td style="padding: 10px 0; ${i > 0 ? `border-top: 1px solid ${BRAND.border};` : ''}">
@@ -227,6 +231,7 @@ export async function sendWeeklyDigestEmail(
             <strong style="color: ${BRAND.navy};">${r.agent_name}</strong>
             <span style="color: ${BRAND.textMuted};"> (${r.agency_name})</span>
             — ${r.hotel_name}${r.country ? `, ${r.country}` : ''}
+            ${r.source === 'max_whatsapp' ? `<span style="font-size: 11px; color: ${BRAND.textMuted}; opacity: 0.65;"> · via WhatsApp</span>` : ''}
           </span>
         </td>
       </tr>`).join('')
@@ -265,11 +270,21 @@ export async function sendWeeklyDigestEmail(
     sections.push(emailSection('Novidades no Flow', `<table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table>`))
   }
 
-  if (digest.activeOfferHotels.length > 0) {
-    let body = `<p style="font-size: 13.5px; color: ${BRAND.textSecondary}; margin: 0 0 8px;"><strong style="color: ${BRAND.navy};">Fornecedores com oferta ativa:</strong> ${digest.activeOfferHotels.join(', ')}</p>`
-    if (digest.expiringOfferHotels.length > 0) {
-      body += `<p style="font-size: 13.5px; color: ${BRAND.textSecondary}; margin: 0;"><strong style="color: ${BRAND.navy};">Vencendo em breve:</strong> ${digest.expiringOfferHotels.join(', ')}</p>`
+  {
+    // Lembrete de curadoria sempre presente (pedido da Carla, 26/08) — a
+    // listagem de ofertas ativas é condicional (só existe quando já tem
+    // dado), mas o convite pra começar/continuar mandando ofertas precisa
+    // aparecer toda edição, não só quando já existe alguma cadastrada.
+    let body = ''
+    if (digest.activeOfferHotels.length > 0) {
+      body += `<p style="font-size: 13.5px; color: ${BRAND.textSecondary}; margin: 0 0 8px;"><strong style="color: ${BRAND.navy};">Fornecedores com oferta ativa:</strong> ${digest.activeOfferHotels.join(', ')}</p>`
+      if (digest.expiringOfferHotels.length > 0) {
+        body += `<p style="font-size: 13.5px; color: ${BRAND.textSecondary}; margin: 0 0 8px;"><strong style="color: ${BRAND.navy};">Vencendo em breve:</strong> ${digest.expiringOfferHotels.join(', ')}</p>`
+      }
     }
+    body += `<p style="font-size: 13.5px; color: ${BRAND.textSecondary}; margin: 0; line-height: 1.6;">
+      Tem oferta ativa com algum fornecedor? Manda pra <a href="mailto:flow@traveldesignersgroup.com.br" style="color: ${BRAND.navy}; font-weight: 600;">flow@traveldesignersgroup.com.br</a> que a gente cadastra pra rede toda ver.
+    </p>`
     sections.push(emailSection('Ofertas', body))
   }
 

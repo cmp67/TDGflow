@@ -8,6 +8,7 @@ import {
   Plus, Heart, ChevronDown, ChevronUp,
   Building2, X, Mic, Square, ArrowRight, ArrowLeft,
   CheckCircle, Loader2, AlertCircle, Search, SlidersHorizontal, MapPin, Eye, Pencil, FileText, Download,
+  MessageCircle,
 } from 'lucide-react'
 import { sounds } from '@/lib/sounds'
 import { useToast } from '@/contexts/ToastContext'
@@ -64,6 +65,7 @@ interface Review {
   created_at: string
   is_favorite: boolean
   is_own?: boolean
+  source?: string | null
   view_count?: number
   favorite_count?: number
   visit_count?: number
@@ -119,6 +121,19 @@ const OPTION_LABELS: Record<string, string> = { ...VISIT_TYPE_LABELS, ...ENTITY_
 // com outras telas, ex. OfertasList.tsx) — importado abaixo.
 
 /* ── Sentiment badge — shows +3 / −2 / 0 ────────────────────────── */
+// Selo sutil pra dica capturada pelo Max via WhatsApp — pedido da Carla,
+// 26/08: "todos os registros feitos pelo max precisam indicar sutilmente
+// no card". Só ícone pequeno + tooltip, sem texto/cor de destaque — não
+// compete com a atribuição real (quem escreveu continua sendo o dado
+// principal do card).
+function MaxSourceBadge() {
+  return (
+    <span title="Registrada via WhatsApp (Max)" style={{ display: 'inline-flex', alignItems: 'center', flexShrink: 0 }}>
+      <MessageCircle size={11} style={{ color: 'var(--tdgflow-text-muted)', opacity: 0.6 }} />
+    </span>
+  )
+}
+
 function SentimentBadge({ value }: { value: number }) {
   // Legacy data: 5=positive(old thumbs), 1=negative(old thumbs), 4-5=seed stars
   const isLegacyPositive = value >= 4 && value <= 5
@@ -604,8 +619,9 @@ function HotelCard({ review, onToggleFavorite, onViewHistory, onConfirmLead, onU
                 engajamento/curtidas (lição Pinterest/AFAR/Fora Travel, skill
                 bemgsy-design § Benchmarks Externos). Dado já existia
                 (agent_name) mas não aparecia em lugar nenhum do card. */}
-            <p style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--tdgflow-text-secondary)', marginBottom: 5 }}>
+            <p style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--tdgflow-text-secondary)', marginBottom: 5, display: 'flex', alignItems: 'center', gap: 4 }}>
               por {review.agent_name}
+              {review.source === 'max_whatsapp' && <MaxSourceBadge />}
             </p>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               {!isLead && <SentimentBadge value={Math.round(avgRating)} />}
@@ -1878,8 +1894,9 @@ function HistoryDrawer({ hotelName, onClose, onToggleFavorite }: {
                     <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'var(--tdgflow-surface-high)', border: '1px solid var(--tdgflow-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.5625rem', fontWeight: 600, color: 'var(--tdgflow-text-secondary)' }}>
                       {r.agent_name[0]}
                     </div>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                       {r.agent_name} · {r.agency_name}
+                      {r.source === 'max_whatsapp' && <MaxSourceBadge />}
                     </span>
                     {idx === 0 && <span style={{ fontSize: '0.6rem', color: 'var(--tdgflow-navy)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>mais recente</span>}
                   </div>

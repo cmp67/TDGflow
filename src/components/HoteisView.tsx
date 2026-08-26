@@ -890,6 +890,7 @@ interface HotelReviewRow {
   client_profile: string | null
   created_at: string
   is_own: boolean
+  source: string | null
 }
 
 function fmtMonthYear(d: string) {
@@ -1008,8 +1009,13 @@ function HotelReviews({ hotelId, hotelName }: { hotelId: string; hotelName: stri
           border: '1px solid var(--tdgflow-border)', background: 'var(--tdgflow-surface-high)',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-            <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)' }}>
+            <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
               {r.agent_name} <span style={{ fontWeight: 400, color: 'var(--tdgflow-text-muted)' }}>· {r.agency_name}</span>
+              {r.source === 'max_whatsapp' && (
+                <span title="Registrada via WhatsApp (Max)" style={{ display: 'inline-flex' }}>
+                  <MessageCircle size={11} style={{ color: 'var(--tdgflow-text-muted)', opacity: 0.6 }} />
+                </span>
+              )}
             </span>
             <span style={{
               fontSize: '0.6875rem', fontWeight: 700, padding: '2px 8px', borderRadius: 999,

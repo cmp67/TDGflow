@@ -24,7 +24,7 @@ export interface WeeklyDigest {
   periodEnd: string
   reviewCount: number
   reviewsByAgency: { agency_name: string; count: number }[]
-  recentReviews: { hotel_name: string; agent_name: string; agency_name: string; country: string | null }[]
+  recentReviews: { hotel_name: string; agent_name: string; agency_name: string; country: string | null; source: string | null }[]
   openDiscoveries: number
   featuredReview: { hotel_name: string; country: string | null; agent_name: string; photo_url: string | null; heads_up: string | null; overall_rating: number | null } | null
   activeOfferHotels: string[]
@@ -51,6 +51,7 @@ async function ensureChangelogTable() {
    manual, então fica isolado da lógica de e-mail/envio. */
 export async function buildWeeklyDigest(): Promise<WeeklyDigest> {
   await ensureChangelogTable()
+  await sql`ALTER TABLE tdg_hotel_reviews ADD COLUMN IF NOT EXISTS source TEXT`
 
   const periodEnd = new Date()
   const periodStart = new Date(periodEnd.getTime() - 7 * 24 * 60 * 60 * 1000)
@@ -60,7 +61,7 @@ export async function buildWeeklyDigest(): Promise<WeeklyDigest> {
   // ao revisar o preview, 14/08: rodar vitest local grava linha real na
   // mesma tabela de produção, e uma vazou pro digest sem esse filtro.
   const { rows: reviews } = await sql`
-    SELECT hotel_name, agent_name, agency_name, country, status, overall_rating, photo_url, heads_up, created_at
+    SELECT hotel_name, agent_name, agency_name, country, status, overall_rating, photo_url, heads_up, created_at, source
     FROM tdg_hotel_reviews
     WHERE created_at >= ${periodStart.toISOString()}
       AND agency_name IS DISTINCT FROM 'TDD' AND agent_name IS DISTINCT FROM 'TDD'
@@ -124,6 +125,7 @@ export async function buildWeeklyDigest(): Promise<WeeklyDigest> {
     recentReviews: published.slice(0, 8).map(r => ({
       hotel_name: r.hotel_name as string, agent_name: r.agent_name as string,
       agency_name: r.agency_name as string, country: r.country as string | null,
+      source: r.source as string | null,
     })),
     openDiscoveries: discoveries.length,
     featuredReview: featuredCandidate ? {
