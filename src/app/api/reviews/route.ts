@@ -37,8 +37,14 @@ export async function GET(req: NextRequest) {
     // branch padrão abaixo): o objetivo aqui é ver TUDO que foi processado,
     // não uma visão consolidada por hotel.
     await sql`ALTER TABLE tdg_hotel_reviews ADD COLUMN IF NOT EXISTS source TEXT`
+    // 'needs_review' — dica capturada com dado incerto (achado 26/08), fica
+    // visível na inbox do Max com aviso, editável só pelo autor. Ver PATCH
+    // action=edit mais abaixo, que resolve o hotel_id de verdade e publica.
+    await sql`ALTER TABLE tdg_hotel_reviews DROP CONSTRAINT IF EXISTS tdg_hotel_reviews_status_check`
+    await sql`ALTER TABLE tdg_hotel_reviews ADD CONSTRAINT tdg_hotel_reviews_status_check CHECK (status = ANY (ARRAY['published', 'a_testar', 'needs_review']))`
     const { rows } = await sql`
-      SELECT r.* FROM tdg_hotel_reviews r
+      SELECT r.*, (r.agent_id IS NOT NULL AND r.agent_id = ${agentId}) AS is_own
+      FROM tdg_hotel_reviews r
       WHERE r.source = ${source}
       ORDER BY r.created_at DESC
       LIMIT 100
@@ -348,7 +354,7 @@ export async function PATCH(req: NextRequest) {
   // precisar recriar a review inteira.
   if (action === 'edit') {
     if (!review_id) return NextResponse.json({ error: 'review_id required' }, { status: 400 })
-    const { rows: ownerRows } = await sql`SELECT agent_id, photo_urls FROM tdg_hotel_reviews WHERE id = ${review_id}`
+    const { rows: ownerRows } = await sql`SELECT agent_id, photo_urls, hotel_name, status FROM tdg_hotel_reviews WHERE id = ${review_id}`
     if (!ownerRows.length) return NextResponse.json({ error: 'Review não encontrada' }, { status: 404 })
     if (ownerRows[0].agent_id !== agentId) {
       return NextResponse.json({ error: 'Só o autor pode editar esta review' }, { status: 403 })
@@ -361,6 +367,40 @@ export async function PATCH(req: NextRequest) {
       : existingPhotos
     const mediaAuth = typeof f.media_usage_authorized === 'boolean' ? f.media_usage_authorized : null
 
+    // Dica capturada pelo Max com dado incerto (ex: nome de hotel que saiu
+    // errado na transcrição de voz) entra como status='needs_review' — só o
+    // autor confirma. Corrigir o nome (ou confirmar como está) resolve o
+    // fornecedor de verdade no catálogo (mesmo find-or-create do register_tip)
+    // e publica. Achado da Carla, 26/08: a decisão de como corrigir é de quem
+    // mandou a dica, não da gente adivinhar.
+    const newHotelName = typeof f.hotel_name === 'string' ? f.hotel_name.trim() : ''
+    const isPendingReview = ownerRows[0].status === 'needs_review'
+    const shouldResolve = isPendingReview && (newHotelName || f.confirm === true)
+
+    let resolvedHotelId: string | null = null
+    let resolvedHotelName: string | null = null
+    let resolvedStatus: string | null = null
+    if (shouldResolve) {
+      const finalName = newHotelName || (ownerRows[0].hotel_name as string)
+      const { rows: existingHotel } = await sql`
+        SELECT id FROM tdg_hotels WHERE lower(trim(name)) = lower(${finalName}) AND entity_type = 'hotel'
+      `
+      if (existingHotel[0]) {
+        resolvedHotelId = existingHotel[0].id as string
+      } else {
+        const { rows: createdHotel } = await sql`
+          INSERT INTO tdg_hotels (name, entity_type) VALUES (${finalName}, 'hotel')
+          ON CONFLICT (lower(trim(name)), entity_type) WHERE agency_id IS NULL DO NOTHING
+          RETURNING id
+        `
+        resolvedHotelId = createdHotel[0]?.id
+          ?? (await sql`SELECT id FROM tdg_hotels WHERE lower(trim(name)) = lower(${finalName}) AND entity_type = 'hotel'`).rows[0]?.id
+          ?? null
+      }
+      resolvedHotelName = finalName
+      resolvedStatus = 'published'
+    }
+
     const { rows: updated } = await sql`
       UPDATE tdg_hotel_reviews SET
         overall_rating          = COALESCE(${f.overall_rating as number ?? null}, overall_rating),
@@ -371,7 +411,10 @@ export async function PATCH(req: NextRequest) {
         visit_type               = COALESCE(${f.visit_type as string ?? null}, visit_type),
         media_usage_authorized  = COALESCE(${mediaAuth}, media_usage_authorized),
         photo_urls              = ${JSON.stringify(mergedPhotos)},
-        photo_url               = COALESCE(photo_url, ${mergedPhotos[0] ?? null})
+        photo_url               = COALESCE(photo_url, ${mergedPhotos[0] ?? null}),
+        hotel_name              = COALESCE(${resolvedHotelName}, hotel_name),
+        hotel_id                = COALESCE(${resolvedHotelId}, hotel_id),
+        status                  = COALESCE(${resolvedStatus}, status)
       WHERE id = ${review_id}
       RETURNING *
     `

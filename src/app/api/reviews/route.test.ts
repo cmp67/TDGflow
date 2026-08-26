@@ -211,3 +211,112 @@ describe('GET /api/reviews?hotelId= (Fase 2 — ficha do fornecedor puxa as pró
     await sql`DELETE FROM tdg_users WHERE email = ${otherEmail}`
   })
 })
+
+function patchReq(body: unknown) {
+  return new Request('http://localhost/api/reviews', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  }) as unknown as Parameters<typeof PATCH>[0]
+}
+
+describe('PATCH /api/reviews action=edit — status needs_review (dica com dado incerto, achado 26/08)', () => {
+  const suffix = Date.now()
+  const email = `__tdd_needs_review_${suffix}__@example.com`
+  const otherEmail = `__tdd_needs_review_other_${suffix}__@example.com`
+  const correctedHotelName = `__TDD Corrected Hotel__${suffix}`
+  const createdHotelNames = [correctedHotelName]
+  const reviewIds: string[] = []
+
+  beforeAll(async () => {
+    await sql`ALTER TABLE tdg_hotel_reviews DROP CONSTRAINT IF EXISTS tdg_hotel_reviews_status_check`
+    await sql`ALTER TABLE tdg_hotel_reviews ADD CONSTRAINT tdg_hotel_reviews_status_check CHECK (status = ANY (ARRAY['published', 'a_testar', 'needs_review']))`
+
+    await sql`
+      INSERT INTO tdg_users (name, email, agency_name, password_hash, role)
+      VALUES ('TDD Needs Review', ${email}, '__TDD_AGENCY__', 'x', 'agent')
+    `
+    await sql`
+      INSERT INTO tdg_users (name, email, agency_name, password_hash, role)
+      VALUES ('TDD Other', ${otherEmail}, '__TDD_AGENCY__', 'x', 'agent')
+    `
+
+    const { rows: userRows } = await sql`SELECT id FROM tdg_users WHERE email = ${email}`
+    const agentId = userRows[0].id
+
+    const { rows } = await sql`
+      INSERT INTO tdg_hotel_reviews (hotel_name, agent_id, agent_name, agency_name, status, source, heads_up)
+      VALUES (${`__TDD Uncertain Name__${suffix}`}, ${agentId}, 'TDD Needs Review', '__TDD_AGENCY__', 'needs_review', 'max_whatsapp', 'Texto original do TD')
+      RETURNING id
+    `
+    reviewIds.push(rows[0].id)
+  })
+
+  afterAll(async () => {
+    await sql.query('DELETE FROM tdg_hotel_reviews WHERE id = ANY($1)', [reviewIds])
+    await sql`DELETE FROM tdg_users WHERE email IN (${email}, ${otherEmail})`
+    await sql.query('DELETE FROM tdg_hotels WHERE name = ANY($1)', [createdHotelNames])
+  })
+
+  it('só o autor pode confirmar/editar — outro usuário toma 403', async () => {
+    mockAuth.mockResolvedValueOnce(sessionFor(otherEmail))
+    const res = await PATCH(patchReq({ review_id: reviewIds[0], action: 'edit', fields: { confirm: true } }))
+    expect(res.status).toBe(403)
+  })
+
+  it('autor corrige o nome do hotel: publica, resolve hotel_id, cria fornecedor no catálogo', async () => {
+    mockAuth.mockResolvedValueOnce(sessionFor(email))
+    const res = await PATCH(patchReq({ review_id: reviewIds[0], action: 'edit', fields: { hotel_name: correctedHotelName } }))
+    const body = await res.json()
+    expect(res.status).toBe(200)
+    expect(body.review.status).toBe('published')
+    expect(body.review.hotel_name).toBe(correctedHotelName)
+    expect(body.review.hotel_id).toBeTruthy()
+
+    const { rows: hotelRows } = await sql`SELECT id FROM tdg_hotels WHERE name = ${correctedHotelName}`
+    expect(hotelRows.length).toBe(1)
+  })
+})
+
+describe('PATCH /api/reviews action=edit — confirmar sem alterar o nome', () => {
+  const suffix = Date.now() + 1
+  const email = `__tdd_needs_review_confirm_${suffix}__@example.com`
+  const existingHotelName = `__TDD Existing Hotel__${suffix}`
+  const createdHotelNames = [existingHotelName]
+  const reviewIds: string[] = []
+
+  beforeAll(async () => {
+    await sql`ALTER TABLE tdg_hotel_reviews DROP CONSTRAINT IF EXISTS tdg_hotel_reviews_status_check`
+    await sql`ALTER TABLE tdg_hotel_reviews ADD CONSTRAINT tdg_hotel_reviews_status_check CHECK (status = ANY (ARRAY['published', 'a_testar', 'needs_review']))`
+
+    await sql`
+      INSERT INTO tdg_users (name, email, agency_name, password_hash, role)
+      VALUES ('TDD Confirm', ${email}, '__TDD_AGENCY__', 'x', 'agent')
+    `
+    const { rows: userRows } = await sql`SELECT id FROM tdg_users WHERE email = ${email}`
+    const agentId = userRows[0].id
+
+    const { rows } = await sql`
+      INSERT INTO tdg_hotel_reviews (hotel_name, agent_id, agent_name, agency_name, status, source)
+      VALUES (${existingHotelName}, ${agentId}, 'TDD Confirm', '__TDD_AGENCY__', 'needs_review', 'max_whatsapp')
+      RETURNING id
+    `
+    reviewIds.push(rows[0].id)
+  })
+
+  afterAll(async () => {
+    await sql.query('DELETE FROM tdg_hotel_reviews WHERE id = ANY($1)', [reviewIds])
+    await sql`DELETE FROM tdg_users WHERE email = ${email}`
+    await sql.query('DELETE FROM tdg_hotels WHERE name = ANY($1)', [createdHotelNames])
+  })
+
+  it('confirm=true sem hotel_name: publica usando o nome já capturado', async () => {
+    mockAuth.mockResolvedValueOnce(sessionFor(email))
+    const res = await PATCH(patchReq({ review_id: reviewIds[0], action: 'edit', fields: { confirm: true } }))
+    const body = await res.json()
+    expect(res.status).toBe(200)
+    expect(body.review.status).toBe('published')
+    expect(body.review.hotel_name).toBe(existingHotelName)
+    expect(body.review.hotel_id).toBeTruthy()
+  })
+})
