@@ -117,25 +117,39 @@ export async function getOffers(): Promise<OfferRow[]> {
     }]))
   }
 
-  return bemgsyOffers.map((o, i) => {
-    const hotel = o.hotel_id ? hotelsById[o.hotel_id] : undefined
+  // Combo/pacote entre propriedades (Bemgsy Central só tem hotel_id
+  // singular, não suporta vincular mais de um hotel) — achado da Carla,
+  // 27/08: "Combo Algarve + Lisboa" cobre os 4 Martinhal, mas com hotel_id
+  // nulo virava UM "hotel" fantasma com o título da oferta inteira como
+  // nome, e os outros 3 Martinhal ficavam sem essa oferta. Sem mexer no
+  // schema do Central (Lovable é fonte de verdade lá), casa o texto da
+  // oferta contra o catálogo real e expande em uma linha por hotel citado.
+  const needsCatalogMatch = bemgsyOffers.some(o => !o.hotel_id)
+  let catalog: { id: string; name: string; location: string | null; image_url: string | null }[] = []
+  if (needsCatalogMatch) {
+    const { rows } = await sql`SELECT id, name, location, image_url FROM tdg_hotels WHERE entity_type = 'hotel'`
+    catalog = rows.map(r => ({
+      id: r.id as string, name: r.name as string,
+      location: r.location as string | null, image_url: r.image_url as string | null,
+    }))
+  }
+  function matchHotelsInText(text: string) {
+    const lower = text.toLowerCase()
+    return catalog.filter(h => lower.includes(h.name.toLowerCase()))
+  }
+
+  return bemgsyOffers.flatMap((o, i): OfferRow[] => {
     const highlights = (o.smart_tags ?? [])
       .filter(t => t.category !== 'financial') // comissão já aparece em destaque na foto, não repete na lista
       .slice(0, 3)
       .map(t => `${t.emoji} ${t.label}`)
 
-    return {
-      id: o.id,
-      hotel_id: o.hotel_id,
-      hotel_name: hotel?.name ?? o.title,
-      location: hotel?.location ?? null,
+    const shared = {
       offer_type: offerTypeLabel(o.offer_type),
       commission: o.commission_percentage ?? 0,
       valid_until: o.valid_until,
       highlights: highlights.length > 0 ? highlights : [summarizeDescription(o.description)].filter((h): h is string => !!h),
       full_description: cleanDescription(o.description),
-      image_url: o.image_url ?? hotel?.image_url ?? null,
-      accent: ACCENTS[i % ACCENTS.length],
       // Toda oferta hoje vem do Bemgsy Central (fonte central com processo
       // de aprovação — is_active+is_public+share_slug), nunca solta de
       // agente. Combinado com Adriano: fonte precisa ficar visível — quando
@@ -144,5 +158,40 @@ export async function getOffers(): Promise<OfferRow[]> {
       curated_by: CURATOR_NAME,
       curated_at: o.created_at,
     }
+
+    if (o.hotel_id) {
+      const hotel = hotelsById[o.hotel_id]
+      return [{
+        ...shared,
+        id: o.id,
+        hotel_id: o.hotel_id,
+        hotel_name: hotel?.name ?? o.title,
+        location: hotel?.location ?? null,
+        image_url: o.image_url ?? hotel?.image_url ?? null,
+        accent: ACCENTS[i % ACCENTS.length],
+      }]
+    }
+
+    const matched = matchHotelsInText(`${o.title} ${o.description ?? ''}`)
+    if (matched.length === 0) {
+      return [{
+        ...shared,
+        id: o.id,
+        hotel_id: null,
+        hotel_name: o.title,
+        location: null,
+        image_url: o.image_url ?? null,
+        accent: ACCENTS[i % ACCENTS.length],
+      }]
+    }
+    return matched.map((hotel, j) => ({
+      ...shared,
+      id: `${o.id}-${hotel.id}`,
+      hotel_id: hotel.id,
+      hotel_name: hotel.name,
+      location: hotel.location,
+      image_url: o.image_url ?? hotel.image_url ?? null,
+      accent: ACCENTS[(i + j) % ACCENTS.length],
+    }))
   })
 }
