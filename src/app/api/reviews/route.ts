@@ -367,20 +367,24 @@ export async function PATCH(req: NextRequest) {
       : existingPhotos
     const mediaAuth = typeof f.media_usage_authorized === 'boolean' ? f.media_usage_authorized : null
 
-    // Dica capturada pelo Max com dado incerto (ex: nome de hotel que saiu
-    // errado na transcrição de voz) entra como status='needs_review' — só o
-    // autor confirma. Corrigir o nome (ou confirmar como está) resolve o
-    // fornecedor de verdade no catálogo (mesmo find-or-create do register_tip)
-    // e publica. Achado da Carla, 26/08: a decisão de como corrigir é de quem
-    // mandou a dica, não da gente adivinhar.
+    // Corrigir o hotel — dois casos usam a mesma resolução (mesmo
+    // find-or-create do register_tip):
+    // 1) Dica capturada pelo Max com dado incerto (status='needs_review')
+    //    — corrigir o nome (ou confirmar como está) resolve o fornecedor
+    //    de verdade e publica. Achado da Carla, 26/08.
+    // 2) Review normal já publicada, mas presa num fornecedor genérico
+    //    demais no catálogo (achado da Carla, 28/08 — Ana Roberta/Haus 22
+    //    não conseguia trocar "Fasano" pela unidade certa, "Fasano Rio de
+    //    Janeiro", porque não existia campo nenhum pra isso). Aqui o status
+    //    não muda — só reprocessa hotel_id pro nome novo.
     const newHotelName = typeof f.hotel_name === 'string' ? f.hotel_name.trim() : ''
     const isPendingReview = ownerRows[0].status === 'needs_review'
-    const shouldResolve = isPendingReview && (newHotelName || f.confirm === true)
+    const shouldResolveHotel = Boolean(newHotelName) || (isPendingReview && f.confirm === true)
 
     let resolvedHotelId: string | null = null
     let resolvedHotelName: string | null = null
     let resolvedStatus: string | null = null
-    if (shouldResolve) {
+    if (shouldResolveHotel) {
       const finalName = newHotelName || (ownerRows[0].hotel_name as string)
       const { rows: existingHotel } = await sql`
         SELECT id FROM tdg_hotels WHERE lower(trim(name)) = lower(${finalName}) AND entity_type = 'hotel'
@@ -398,7 +402,7 @@ export async function PATCH(req: NextRequest) {
           ?? null
       }
       resolvedHotelName = finalName
-      resolvedStatus = 'published'
+      if (isPendingReview) resolvedStatus = 'published'
     }
 
     const { rows: updated } = await sql`

@@ -1009,6 +1009,17 @@ function EditReviewModal({ review, onClose, onSaved }: {
   onSaved: () => void
 }) {
   const { toast } = useToast()
+  // Nome do hotel editável — achado da Carla, 28/08: Ana Roberta (Haus 22)
+  // não conseguia trocar a review presa no fornecedor genérico "Fasano"
+  // pela unidade certa ("Fasano Rio de Janeiro"), porque esse campo nunca
+  // existiu no formulário de edição. Autocomplete contra o catálogo real
+  // evita criar fornecedor duplicado por erro de digitação — quem digitar
+  // um nome que não bate com nada existente ainda pode salvar (vira
+  // fornecedor novo, mesmo find-or-create do resto do app).
+  const [hotelName, setHotelName] = useState(review.hotel_name)
+  const [hotelSuggestions, setHotelSuggestions] = useState<{ id: string; name: string }[]>([])
+  const [showHotelSuggestions, setShowHotelSuggestions] = useState(false)
+  const [allHotelNames, setAllHotelNames] = useState<{ id: string; name: string }[]>([])
   const [overallRating, setOverallRating] = useState(review.overall_rating)
   const [clientProfile, setClientProfile] = useState(review.client_profile ?? '')
   const [mustExperience, setMustExperience] = useState(review.must_experience ?? '')
@@ -1022,6 +1033,22 @@ function EditReviewModal({ review, onClose, onSaved }: {
   // valor, pra nunca sobrescrever silenciosamente uma classificação real.
   const [visitType, setVisitType] = useState<string | null>(null)
   const existingPhotos = review.photo_urls?.length ? review.photo_urls : (review.photo_url ? [review.photo_url] : [])
+
+  useEffect(() => {
+    fetch('/api/hotels')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => { if (data?.hotels) setAllHotelNames(data.hotels.map((h: { id: string; name: string }) => ({ id: h.id, name: h.name }))) })
+      .catch(() => {})
+  }, [])
+
+  function onHotelNameChange(value: string) {
+    setHotelName(value)
+    const q = value.trim().toLowerCase()
+    if (!q) { setHotelSuggestions([]); return }
+    setHotelSuggestions(
+      allHotelNames.filter(h => h.name.toLowerCase().includes(q) && h.name !== value).slice(0, 6)
+    )
+  }
 
   async function handlePhotosSelect(files: File[]) {
     if (!files.length) return
@@ -1056,6 +1083,7 @@ function EditReviewModal({ review, onClose, onSaved }: {
             heads_up: headsUp || null,
             visit_type: visitType,
             media_usage_authorized: mediaAuthorized,
+            ...(hotelName.trim() && hotelName.trim() !== review.hotel_name ? { hotel_name: hotelName.trim() } : {}),
           },
           new_photo_urls: newPhotos,
         }),
@@ -1078,11 +1106,48 @@ function EditReviewModal({ review, onClose, onSaved }: {
         style={{ background: 'var(--tdgflow-surface)', borderRadius: '20px 20px 0 0', width: '100%', maxWidth: 480, maxHeight: '85vh', overflowY: 'auto', padding: 24 }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-          <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--tdgflow-text-primary)', margin: 0 }}>Editar review — {review.hotel_name}</h3>
+          <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--tdgflow-text-primary)', margin: 0 }}>Editar review</h3>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tdgflow-text-muted)' }}><X size={16} /></button>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ position: 'relative' }}>
+            <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--tdgflow-text-muted)', marginBottom: 6 }}>Hotel</p>
+            <input
+              className="input"
+              value={hotelName}
+              onChange={e => onHotelNameChange(e.target.value)}
+              onFocus={() => setShowHotelSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowHotelSuggestions(false), 150)}
+            />
+            {showHotelSuggestions && hotelSuggestions.length > 0 && (
+              <div style={{
+                position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4, zIndex: 5,
+                background: 'var(--tdgflow-surface)', border: '1px solid var(--tdgflow-border)', borderRadius: 10,
+                boxShadow: '0 8px 24px rgba(0,0,0,0.12)', overflow: 'hidden',
+              }}>
+                {hotelSuggestions.map(h => (
+                  <button
+                    key={h.id}
+                    type="button"
+                    onMouseDown={() => { setHotelName(h.name); setHotelSuggestions([]) }}
+                    style={{
+                      display: 'block', width: '100%', textAlign: 'left', padding: '9px 12px', fontSize: '0.8125rem',
+                      background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tdgflow-text-secondary)',
+                    }}
+                  >
+                    {h.name}
+                  </button>
+                ))}
+              </div>
+            )}
+            {hotelName.trim() && hotelName.trim() !== review.hotel_name && !allHotelNames.some(h => h.name === hotelName.trim()) && (
+              <p style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)', marginTop: 4 }}>
+                Fornecedor novo — vai ser criado no catálogo ao salvar.
+              </p>
+            )}
+          </div>
+
           <div>
             <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--tdgflow-text-muted)', marginBottom: 8 }}>Avaliação geral</p>
             <SentimentChips value={overallRating} onChange={v => v !== null && setOverallRating(v)} />

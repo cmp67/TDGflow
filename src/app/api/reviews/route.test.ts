@@ -320,3 +320,48 @@ describe('PATCH /api/reviews action=edit — confirmar sem alterar o nome', () =
     expect(body.review.hotel_id).toBeTruthy()
   })
 })
+
+describe('PATCH /api/reviews action=edit — corrigir hotel de review já publicada (achado 28/08, Ana Roberta/Fasano)', () => {
+  const suffix = Date.now() + 2
+  const email = `__tdd_rename_hotel_${suffix}__@example.com`
+  const genericHotel = `__TDD Fasano Generico__${suffix}`
+  const specificHotel = `__TDD Fasano Rio de Janeiro__${suffix}`
+  const reviewIds: string[] = []
+
+  beforeAll(async () => {
+    await sql`
+      INSERT INTO tdg_users (name, email, agency_name, password_hash, role)
+      VALUES ('TDD Rename', ${email}, '__TDD_AGENCY__', 'x', 'agent')
+    `
+    const { rows: userRows } = await sql`SELECT id FROM tdg_users WHERE email = ${email}`
+    const agentId = userRows[0].id
+
+    await sql`INSERT INTO tdg_hotels (name, entity_type) VALUES (${specificHotel}, 'hotel')`
+
+    const { rows } = await sql`
+      INSERT INTO tdg_hotel_reviews (hotel_name, agent_id, agent_name, agency_name, status, overall_rating)
+      VALUES (${genericHotel}, ${agentId}, 'TDD Rename', '__TDD_AGENCY__', 'published', 5)
+      RETURNING id
+    `
+    reviewIds.push(rows[0].id)
+  })
+
+  afterAll(async () => {
+    await sql.query('DELETE FROM tdg_hotel_reviews WHERE id = ANY($1)', [reviewIds])
+    await sql.query('DELETE FROM tdg_hotels WHERE name = ANY($1)', [[genericHotel, specificHotel]])
+    await sql`DELETE FROM tdg_users WHERE email = ${email}`
+  })
+
+  it('dono corrige o hotel de uma review já publicada — status não muda, hotel_id resolve pro fornecedor certo', async () => {
+    mockAuth.mockResolvedValueOnce(sessionFor(email))
+    const res = await PATCH(patchReq({ review_id: reviewIds[0], action: 'edit', fields: { hotel_name: specificHotel } }))
+    const body = await res.json()
+    expect(res.status).toBe(200)
+    expect(body.review.status).toBe('published') // continuava publicada, não devia mexer
+    expect(body.review.hotel_name).toBe(specificHotel)
+    expect(body.review.hotel_id).toBeTruthy()
+
+    const { rows: hotelCheck } = await sql`SELECT id FROM tdg_hotels WHERE name = ${specificHotel}`
+    expect(body.review.hotel_id).toBe(hotelCheck[0].id)
+  })
+})
