@@ -51,10 +51,19 @@ async function ensureChangelogTable() {
    manual, então fica isolado da lógica de e-mail/envio. */
 export async function buildWeeklyDigest(): Promise<WeeklyDigest> {
   await ensureChangelogTable()
+  await ensureSendsTable()
   await sql`ALTER TABLE tdg_hotel_reviews ADD COLUMN IF NOT EXISTS source TEXT`
 
   const periodEnd = new Date()
-  const periodStart = new Date(periodEnd.getTime() - 7 * 24 * 60 * 60 * 1000)
+  // Janela desde o ÚLTIMO ENVIO REAL, não um "últimos 7 dias" fixo — achado
+  // da Carla, 30/08: o disparo de recuperação de terça (26/08, fora do
+  // ritmo normal de domingo) fazia a janela rolante de 7 dias da edição
+  // seguinte se sobrepor com a anterior, duplicando review/changelog que já
+  // tinham ido. Sem envio anterior (1ª edição), cai no fallback de 7 dias.
+  const { rows: lastSendRows } = await sql`SELECT MAX(sent_at) AS last_sent FROM tdg_newsletter_sends`
+  const lastSentAt = lastSendRows[0]?.last_sent ? new Date(lastSendRows[0].last_sent as string) : null
+  const fallbackStart = new Date(periodEnd.getTime() - 7 * 24 * 60 * 60 * 1000)
+  const periodStart = lastSentAt ?? fallbackStart
 
   // Exclui fixtures de teste (agency_name/agent_name 'TDD' ou prefixo
   // __TDD_ — mesmo padrão de contaminação já visto no billing) — achado
