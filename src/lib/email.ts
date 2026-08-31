@@ -197,72 +197,49 @@ function firstIssueLetterCard(firstName: string): string {
   `
 }
 
-// Dica de uso + script de bolso — pedido da Carla, 31/08. Estática (não
-// depende de dado da semana), sempre aparece, fora do card branco
-// principal (mesmo tratamento visual do firstIssueLetterCard) porque é
-// conteúdo editorial fixo, não um resumo do que aconteceu. Ensina o
-// hábito que sustenta todo o resto do e-mail: sem gente registrando no
-// tempo morto, não tem "quem foi pra onde" pra mostrar.
-function usageTipCard(): string {
+// Dica de uso + script de bolso — pedido da Carla, 31/08. Achado no mesmo
+// pedido, 31/08: cards soltos fora do corpo branco principal empurravam o
+// "Powered by Bemgsy" pro meio do e-mail em vez do fim, e cada seção nova
+// ganhava um tratamento visual diferente — virou bagunça, não newsletter.
+// Regra fixa daqui pra frente: só a carta de estreia (edição #1) e o
+// banner de aprovação (interno, nunca vai pra rede) ficam fora do corpo
+// único; TUDO mais — incluindo isso — é emailSection() como qualquer
+// outra seção, mesma tipografia, mesma cor, sem card/fundo próprio.
+function usageTipSectionBody(): string {
   const steps = [
-    'Manda um <strong style="color: #EAF1F5;">áudio curto pro Max</strong> — 30 a 60 segundos, direto ao ponto — contando o que achou do fornecedor.',
-    'Ele <strong style="color: #EAF1F5;">estrutura tudo sozinho</strong> — nota, destaques, ressalvas — sem você digitar nada.',
-    'Mais tarde, abre o TDG Flow no celular pra <strong style="color: #EAF1F5;">conferir o que ele registrou</strong> em seu nome, ajusta se precisar — e aproveita pra <strong style="color: #EAF1F5;">anexar as fotos que já estão no seu celular</strong>, direto da viagem — antes de aprovar pra rede toda ver.',
+    'Manda um <strong style="color: ' + BRAND.navy + ';">áudio curto pro Max</strong> — 30 a 60 segundos, direto ao ponto — contando o que achou do fornecedor.',
+    'Ele <strong style="color: ' + BRAND.navy + ';">estrutura tudo sozinho</strong> — nota, destaques, ressalvas — sem você digitar nada.',
+    'Mais tarde, abre o TDG Flow no celular pra <strong style="color: ' + BRAND.navy + ';">conferir o que ele registrou</strong> em seu nome, ajusta se precisar — e aproveita pra <strong style="color: ' + BRAND.navy + ';">anexar as fotos que já estão no seu celular</strong>, direto da viagem — antes de aprovar pra rede toda ver.',
   ]
   const stepRows = steps.map((text, i) => `
     <tr>
-      <td width="26" valign="top" style="padding: 0 10px 12px 0;">
-        <div style="width: 20px; height: 20px; border-radius: 50%; background: rgba(212,175,55,0.16); color: ${BRAND.gold}; font-size: 10.5px; font-weight: 700; text-align: center; line-height: 20px;">${i + 1}</div>
+      <td width="24" valign="top" style="padding: 0 10px 10px 0;">
+        <div style="width: 18px; height: 18px; border-radius: 50%; background: ${BRAND.bg}; color: ${BRAND.navy}; font-size: 10px; font-weight: 700; text-align: center; line-height: 18px; border: 1px solid ${BRAND.border};">${i + 1}</div>
       </td>
-      <td style="padding: 0 0 12px;">
-        <p style="font-size: 13.5px; line-height: 1.55; color: #B9C7CE; margin: 0;">${text}</p>
+      <td style="padding: 0 0 10px;">
+        <p style="font-size: 13.5px; line-height: 1.55; color: ${BRAND.textSecondary}; margin: 0;">${text}</p>
       </td>
     </tr>`).join('')
 
   const scriptLines = [
-    ['"Fui ao <strong>[hotel]</strong>, em <strong>[destino]</strong> — <strong>[fam trip / inspeção / hospedagem própria]</strong>, em <strong>[mês]</strong>."'],
-    ['"Nota de 1 a 5: <strong>[nota]</strong>."'],
-    ['"O que mais chamou atenção: <strong>[2 a 3 destaques]</strong>."'],
-    ['"Recomendo pra: <strong>[perfil de cliente ideal]</strong>."'],
-    ['"Não pode perder: <strong>[experiência obrigatória]</strong>."'],
-    ['"Fica ligado: <strong>[ressalva — preço, localização, algo pra avisar o cliente antes]</strong>."'],
+    '"Fui ao <strong>[hotel]</strong>, em <strong>[destino]</strong> — <strong>[fam trip / inspeção / hospedagem própria]</strong>, em <strong>[mês]</strong>."',
+    '"Nota de 1 a 5: <strong>[nota]</strong>."',
+    '"O que mais chamou atenção: <strong>[2 a 3 destaques]</strong>."',
+    '"Recomendo pra: <strong>[perfil de cliente ideal]</strong>."',
+    '"Não pode perder: <strong>[experiência obrigatória]</strong>."',
+    '"Fica ligado: <strong>[ressalva — preço, localização, algo pra avisar o cliente antes]</strong>."',
   ]
-  const scriptRows = scriptLines.map(([text], i) => `
-    <tr>
-      <td width="22" valign="top" style="padding: 0 8px 8px 0;">
-        <span style="font-size: 11.5px; font-weight: 700; color: ${BRAND.navy};">${i + 1}.</span>
-      </td>
-      <td style="padding: 0 0 8px;">
-        <p style="font-size: 12.5px; line-height: 1.5; color: ${BRAND.textSecondary}; margin: 0;">${text}</p>
-      </td>
-    </tr>`).join('')
+  const scriptText = scriptLines.map((line, i) => `${i + 1}. ${line}`).join('<br/>')
 
   return `
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 20px auto 0;">
-  <tr><td style="background: ${BRAND.navyDim}; border-radius: 16px; padding: 26px 24px;">
-    <p style="font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: ${BRAND.gold}; margin: 0 0 8px;">Dica de uso da semana</p>
-    <p style="font-size: 17px; font-weight: 700; color: #EAF1F5; margin: 0 0 6px;">Aproveite o tempo morto pra registrar</p>
-    <p style="font-size: 13.5px; color: #B9C7CE; margin: 0 0 16px; line-height: 1.6;">Aquela espera no embarque ou no transfer de saída é a hora certa — a experiência ainda está fresca, e você já tem tempo livre mesmo.</p>
+    <p style="font-size: 13.5px; line-height: 1.6; color: ${BRAND.textSecondary}; margin: 0 0 12px;">Aquela espera no embarque ou no transfer de saída é a hora certa pra registrar — a experiência ainda está fresca, e você já tem tempo livre mesmo.</p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${stepRows}</table>
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top: 1px solid rgba(234,241,245,0.14);">
-      <tr><td style="padding-top: 16px;">
-        <p style="font-size: 12.5px; line-height: 1.6; color: #B9C7CE; margin: 0;"><strong style="color: #EAF1F5;">E já que é no celular que isso acontece:</strong> dá pra instalar o TDG Flow como aplicativo — pensado assim de propósito, pra usar on the go, sem abrir navegador nem digitar endereço.</p>
-      </td></tr>
-    </table>
-    <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 20px auto 0;">
-      <tr><td style="text-align: center;">
-        <a href="${APP_URL}/flow" style="display: inline-block; background: ${BRAND.gold}; color: ${BRAND.navyDim}; font-size: 13.5px; font-weight: 700; padding: 12px 28px; border-radius: 999px; text-decoration: none;">Acessar e instalar o TDG Flow</a>
-      </td></tr>
-    </table>
-  </td></tr>
-</table>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 14px auto 0; background: ${BRAND.surface}; border-radius: 16px; border: 1px solid ${BRAND.border};">
-  <tr><td style="padding: 22px 24px;">
-    <p style="font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: ${BRAND.gold}; margin: 0 0 8px;">Script de bolso — o que falar no áudio</p>
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${scriptRows}</table>
-    <p style="font-size: 11.5px; color: ${BRAND.textMuted}; margin: 8px 0 0; line-height: 1.5;">Não precisa decorar nem falar robótico — é só um lembrete dos 6 pontos que viram os campos da review. Curto é melhor: 30 a 60 segundos já dá pra cobrir tudo.</p>
-  </td></tr>
-</table>
+    <div style="border-left: 3px solid ${BRAND.gold}; background: ${BRAND.bg}; border-radius: 0 8px 8px 0; padding: 12px 16px; margin: 4px 0 14px;">
+      <p style="font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: ${BRAND.textMuted}; margin: 0 0 6px;">Script de bolso — o que falar no áudio</p>
+      <p style="font-size: 12.5px; line-height: 1.7; color: ${BRAND.textSecondary}; margin: 0;">${scriptText}</p>
+    </div>
+    <p style="font-size: 13.5px; line-height: 1.6; color: ${BRAND.textSecondary}; margin: 0 0 14px;">E já que é no celular que isso acontece: dá pra <strong style="color: ${BRAND.navy};">instalar o TDG Flow como aplicativo</strong> — pensado assim de propósito, pra usar on the go, sem abrir navegador nem digitar endereço.</p>
+    <a href="${APP_URL}/flow" style="display: inline-block; background: ${BRAND.gold}; color: ${BRAND.navyDim}; font-size: 13px; font-weight: 700; padding: 10px 24px; border-radius: 999px; text-decoration: none;">Acessar e instalar o TDG Flow</a>
   `
 }
 
@@ -397,6 +374,10 @@ export async function sendWeeklyDigestEmail(
     sections.push(emailSection('Novo na Wiki', `<ul style="margin: 0; padding-left: 18px;">${rows}</ul>`))
   }
 
+  // Fixa, toda edição, sempre por último entre as seções (logo antes do
+  // CTA) — é convite pra ação, faz sentido fechar o corpo de conteúdo.
+  sections.push(emailSection('Dica de uso da semana', usageTipSectionBody()))
+
   const approvalBanner = approveUrl ? `
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto 20px; background: ${BRAND.navy}; border-radius: 16px; overflow: hidden;">
   <tr><td style="padding: 22px 28px; text-align: center;">
@@ -486,7 +467,6 @@ export async function sendWeeklyDigestEmail(
     </tr>
 
   </table>
-  ${usageTipCard()}
 </div>
   `.trim()
 
