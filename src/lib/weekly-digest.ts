@@ -28,6 +28,10 @@ export interface WeeklyDigest {
   updatedReviews: { hotel_name: string; agent_name: string; agency_name: string }[]
   openDiscoveries: number
   featuredReview: { hotel_name: string; country: string | null; agent_name: string; photo_url: string | null; heads_up: string | null; overall_rating: number | null } | null
+  networkInsight:
+    | { type: 'consensus'; hotel_name: string; agencyCount: number; reviewCount: number }
+    | { type: 'most_used'; hotel_name: string; agent_name: string; viewCount: number }
+    | null
   activeOfferHotels: string[]
   expiringOfferHotels: string[]
   newGuides: { title: string }[]
@@ -125,6 +129,53 @@ export async function buildWeeklyDigest(): Promise<WeeklyDigest> {
   `
   const featuredCandidate = featuredRows[0]
 
+  // Insight de colaboração — pedido explícito da Carla, 31/08: reforçar
+  // que a rede se apoia de verdade, não métrica de negociação com
+  // fornecedor. Prioridade: 1) consenso (3+ agências avaliaram o mesmo
+  // fornecedor de forma independente — validação coletiva), 2) fallback
+  // pra dica mais consultada (alguém realmente usou o registro de outra
+  // pessoa). Sem os dois, a seção não aparece — nunca inventa sinal fraco
+  // só pra preencher espaço. Decoupled da janela semanal, igual featuredReview:
+  // é "o melhor que a rede tem pra mostrar agora", não "essa semana".
+  let networkInsight: WeeklyDigest['networkInsight'] = null
+  const { rows: consensusRows } = await sql`
+    SELECT hotel_name, COUNT(DISTINCT agency_name)::int AS agency_count, COUNT(*)::int AS review_count
+    FROM tdg_hotel_reviews
+    WHERE status = 'published'
+      AND agency_name IS DISTINCT FROM 'TDD' AND agent_name IS DISTINCT FROM 'TDD'
+      AND agency_name NOT ILIKE '\_\_TDD\_%' ESCAPE '\'
+    GROUP BY hotel_name
+    HAVING COUNT(DISTINCT agency_name) >= 3
+    ORDER BY agency_count DESC, review_count DESC
+    LIMIT 1
+  `
+  if (consensusRows[0]) {
+    networkInsight = {
+      type: 'consensus',
+      hotel_name: consensusRows[0].hotel_name as string,
+      agencyCount: consensusRows[0].agency_count as number,
+      reviewCount: consensusRows[0].review_count as number,
+    }
+  } else {
+    const { rows: mostUsedRows } = await sql`
+      SELECT hotel_name, agent_name, view_count
+      FROM tdg_hotel_reviews
+      WHERE status = 'published' AND view_count > 0
+        AND agency_name IS DISTINCT FROM 'TDD' AND agent_name IS DISTINCT FROM 'TDD'
+        AND agency_name NOT ILIKE '\_\_TDD\_%' ESCAPE '\'
+      ORDER BY view_count DESC
+      LIMIT 1
+    `
+    if (mostUsedRows[0]) {
+      networkInsight = {
+        type: 'most_used',
+        hotel_name: mostUsedRows[0].hotel_name as string,
+        agent_name: mostUsedRows[0].agent_name as string,
+        viewCount: mostUsedRows[0].view_count as number,
+      }
+    }
+  }
+
   const { rows: guides } = await sql`
     SELECT title FROM tdg_wiki_pages
     WHERE category = 'guia' AND updated_at >= ${periodStart.toISOString()}
@@ -176,6 +227,7 @@ export async function buildWeeklyDigest(): Promise<WeeklyDigest> {
       agent_name: featuredCandidate.agent_name as string, photo_url: featuredCandidate.photo_url as string | null,
       heads_up: featuredCandidate.heads_up as string | null, overall_rating: featuredCandidate.overall_rating as number | null,
     } : null,
+    networkInsight,
     activeOfferHotels,
     expiringOfferHotels,
     newGuides: guides.map(g => ({ title: g.title as string })),
