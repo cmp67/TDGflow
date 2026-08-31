@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
 
   // Sem nada pra contar essa semana, não manda e-mail vazio — silêncio é
   // melhor que ruído.
-  const hasContent = digest.reviewCount > 0 || digest.changelog.length > 0 || digest.activeOfferHotels.length > 0
+  const hasContent = digest.reviewCount > 0 || digest.changelog.length > 0 || digest.activeOfferHotels.length > 0 || digest.updatedReviews.length > 0
   if (!hasContent) {
     return NextResponse.json({ sent: 0, skipped: 'sem conteúdo essa semana' })
   }

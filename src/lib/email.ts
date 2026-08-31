@@ -238,6 +238,24 @@ export async function sendWeeklyDigestEmail(
     sections.push(emailSection('Quem foi pra onde', `<table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table>`))
   }
 
+  // Dica atualizada essa semana — seção própria, separada de "Quem foi pra
+  // onde" (achado da Carla, 30/08: editar/corrigir uma dica antiga é
+  // trabalho real, mas é diferente de registrar uma visita nova; misturar
+  // os dois esconderia qual é qual).
+  if (digest.updatedReviews.length > 0) {
+    const rows = digest.updatedReviews.map((r, i) => `
+      <tr>
+        <td style="padding: 10px 0; ${i > 0 ? `border-top: 1px solid ${BRAND.border};` : ''}">
+          <span style="font-size: 13.5px; color: ${BRAND.textSecondary};">
+            <strong style="color: ${BRAND.navy};">${r.agent_name}</strong>
+            <span style="color: ${BRAND.textMuted};"> (${r.agency_name})</span>
+            atualizou a dica de <strong style="color: ${BRAND.navy};">${r.hotel_name}</strong>
+          </span>
+        </td>
+      </tr>`).join('')
+    sections.push(emailSection('Dicas atualizadas essa semana', `<table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table>`))
+  }
+
   if (digest.featuredReview) {
     const f = digest.featuredReview
     const photo = f.photo_url

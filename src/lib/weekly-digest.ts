@@ -25,6 +25,7 @@ export interface WeeklyDigest {
   reviewCount: number
   reviewsByAgency: { agency_name: string; count: number }[]
   recentReviews: { hotel_name: string; agent_name: string; agency_name: string; country: string | null; source: string | null }[]
+  updatedReviews: { hotel_name: string; agent_name: string; agency_name: string }[]
   openDiscoveries: number
   featuredReview: { hotel_name: string; country: string | null; agent_name: string; photo_url: string | null; heads_up: string | null; overall_rating: number | null } | null
   activeOfferHotels: string[]
@@ -80,6 +81,23 @@ export async function buildWeeklyDigest(): Promise<WeeklyDigest> {
 
   const published = reviews.filter(r => r.status === 'published')
   const discoveries = reviews.filter(r => r.status === 'a_testar')
+
+  // Dica atualizada essa semana (ex: corrigir o hotel de uma review antiga)
+  // — achado da Carla, 30/08: isso é trabalho real, mas ficava invisível
+  // porque só created_at existia. Exclui quem já foi criado nesta mesma
+  // janela pra não listar a mesma review duas vezes (nova + "atualizada").
+  await sql`ALTER TABLE tdg_hotel_reviews ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ`
+  const { rows: updatedRows } = await sql`
+    SELECT hotel_name, agent_name, agency_name
+    FROM tdg_hotel_reviews
+    WHERE updated_at >= ${periodStart.toISOString()}
+      AND created_at < ${periodStart.toISOString()}
+      AND status = 'published'
+      AND agency_name IS DISTINCT FROM 'TDD' AND agent_name IS DISTINCT FROM 'TDD'
+      AND agency_name NOT ILIKE '\_\_TDD\_%' ESCAPE '\'
+    ORDER BY updated_at DESC
+    LIMIT 8
+  `
 
   const agencyCounts = new Map<string, number>()
   for (const r of reviews) {
@@ -148,6 +166,9 @@ export async function buildWeeklyDigest(): Promise<WeeklyDigest> {
       hotel_name: r.hotel_name as string, agent_name: r.agent_name as string,
       agency_name: r.agency_name as string, country: r.country as string | null,
       source: r.source as string | null,
+    })),
+    updatedReviews: updatedRows.map(r => ({
+      hotel_name: r.hotel_name as string, agent_name: r.agent_name as string, agency_name: r.agency_name as string,
     })),
     openDiscoveries: discoveries.length,
     featuredReview: featuredCandidate ? {

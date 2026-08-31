@@ -405,6 +405,12 @@ export async function PATCH(req: NextRequest) {
       if (isPendingReview) resolvedStatus = 'published'
     }
 
+    // updated_at — achado da Carla, 30/08: edição de review (ex: corrigir o
+    // hotel) não deixava rastro nenhum de "quando" além do created_at
+    // original, então nunca aparecia como atividade no Weekly Wrap-up
+    // mesmo sendo trabalho real feito na semana. Ver buildWeeklyDigest.
+    await sql`ALTER TABLE tdg_hotel_reviews ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ`
+
     const { rows: updated } = await sql`
       UPDATE tdg_hotel_reviews SET
         overall_rating          = COALESCE(${f.overall_rating as number ?? null}, overall_rating),
@@ -418,7 +424,8 @@ export async function PATCH(req: NextRequest) {
         photo_url               = COALESCE(photo_url, ${mergedPhotos[0] ?? null}),
         hotel_name              = COALESCE(${resolvedHotelName}, hotel_name),
         hotel_id                = COALESCE(${resolvedHotelId}, hotel_id),
-        status                  = COALESCE(${resolvedStatus}, status)
+        status                  = COALESCE(${resolvedStatus}, status),
+        updated_at               = NOW()
       WHERE id = ${review_id}
       RETURNING *
     `
