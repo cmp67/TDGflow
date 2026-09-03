@@ -25,6 +25,24 @@ async function ensureFallbackLogTable() {
   `
 }
 
+async function ensureRequestLogTable() {
+  await sql`
+    CREATE TABLE IF NOT EXISTS tdg_agent_verify_request_log (
+      id          SERIAL PRIMARY KEY,
+      raw_query   TEXT,
+      created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `
+}
+
+async function logRequest(rawQuery: string) {
+  await ensureRequestLogTable()
+  await sql`
+    INSERT INTO tdg_agent_verify_request_log (raw_query)
+    VALUES (${rawQuery})
+  `
+}
+
 function respondForUser(user: UserRow, verifiedBy: 'phone' | 'name') {
   if (!user.active) {
     return NextResponse.json({ registered: true, active: false, name: user.name }, { status: 403 })
@@ -71,6 +89,10 @@ export async function GET(req: NextRequest) {
   const phoneNorm = phone.replace(/\D/g, '')
   const name = (url.searchParams.get('name') ?? '').trim()
   const context = url.searchParams.get('context') ?? ''
+
+  const loggedParams = new URLSearchParams(url.searchParams)
+  loggedParams.delete('secret')
+  await logRequest(loggedParams.toString())
 
   if (phoneNorm.length < 10 && !name) {
     return NextResponse.json({ error: 'phone or name param required' }, { status: 400 })
