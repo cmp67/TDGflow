@@ -43,6 +43,55 @@ async function logRequest(rawQuery: string) {
   `
 }
 
+// Celular BR chega do WhatsApp às vezes sem o 9 depois do DDD (achado
+// 11/09: Dani Filippozzi chega como 555181477111, cadastrada como
+// 5551981477111). Mesmo número, dois formatos — devolve os dois pra
+// busca casar em qualquer sentido. Fora do padrão BR, só o próprio número.
+// Só ganha o 9 quem já era celular no formato antigo (começava com 6-9) —
+// fixo (2-5) nunca, senão casaria com o celular de outra pessoa.
+function brPhoneVariants(phoneNorm: string): [string, string] {
+  const isBr = phoneNorm.startsWith('55')
+  if (isBr && phoneNorm.length === 12 && /[6-9]/.test(phoneNorm[4])) {
+    return [phoneNorm, `${phoneNorm.slice(0, 4)}9${phoneNorm.slice(4)}`]
+  }
+  if (isBr && phoneNorm.length === 13 && phoneNorm[4] === '9') {
+    return [phoneNorm, `${phoneNorm.slice(0, 4)}${phoneNorm.slice(5)}`]
+  }
+  return [phoneNorm, phoneNorm]
+}
+
+// Achado 11/09: o modelo do Max não enxerga o telefone do contato — mandou
+// phone=0 num 1:1 real. O GPT Maker injeta `contact_phone` como variável de
+// SISTEMA (não passa pelo modelo), então ela manda na identidade:
+// - 1:1: contact_phone é o número de quem fala → identidade confiável.
+// - grupo: contact_phone é o ID do grupo "<número do criador>-<timestamp>" →
+//   só prova que é grupo; NUNCA vira identidade (senão todo membro vira o
+//   criador). A identidade volta a ser o telefone/nome que o modelo lê da
+//   mensagem, com o fallback por nome liberado.
+// O "grupo vs. individual" também sai da mão do modelo quando há sinal do
+// sistema — ele não consegue mais abrir o fallback por nome num 1:1.
+// Sem contact_phone (intenção antiga), comportamento anterior intacto.
+// Formato real: número completo com DDI (10+ dígitos) + timestamp unix de
+// 10 dígitos. Estrito de propósito — um número hifenizado de 1:1
+// ("96398-9538") não pode virar "grupo" e abrir o fallback por nome.
+const GROUP_JID = /^\d{10,15}-\d{10}$/
+
+type Identity = { phoneNorm: string; context: string; hasSystemContact: boolean }
+
+function resolveIdentity(params: URLSearchParams): Identity {
+  // Sufixo de JID do WhatsApp (@g.us, @lid, @s.whatsapp.net) não faz parte do número.
+  const contactPhone = (params.get('contact_phone') ?? '').trim().replace(/@.*$/, '')
+  const modelPhoneNorm = (params.get('phone') ?? '').replace(/\D/g, '')
+  if (GROUP_JID.test(contactPhone)) {
+    return { phoneNorm: modelPhoneNorm, context: 'grupo', hasSystemContact: true }
+  }
+  const contactDigits = contactPhone.replace(/\D/g, '')
+  if (contactDigits.length >= 10) {
+    return { phoneNorm: contactDigits, context: 'individual', hasSystemContact: true }
+  }
+  return { phoneNorm: modelPhoneNorm, context: params.get('context') ?? '', hasSystemContact: false }
+}
+
 function respondForUser(user: UserRow, verifiedBy: 'phone' | 'name') {
   if (!user.active) {
     return NextResponse.json({ registered: true, active: false, name: user.name }, { status: 403 })
@@ -85,24 +134,24 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const phone = url.searchParams.get('phone') ?? ''
-  const phoneNorm = phone.replace(/\D/g, '')
+  const { phoneNorm, context, hasSystemContact } = resolveIdentity(url.searchParams)
   const name = (url.searchParams.get('name') ?? '').trim()
-  const context = url.searchParams.get('context') ?? ''
 
   const loggedParams = new URLSearchParams(url.searchParams)
   loggedParams.delete('secret')
   await logRequest(loggedParams.toString())
 
-  if (phoneNorm.length < 10 && !name) {
+  if (phoneNorm.length < 10 && !name && !hasSystemContact) {
     return NextResponse.json({ error: 'phone or name param required' }, { status: 400 })
   }
 
   if (phoneNorm.length >= 10) {
+    const [asSent, alternate] = brPhoneVariants(phoneNorm)
     const { rows } = await sql`
       SELECT id, name, agency_name, role, active, agent_interaction_id
       FROM tdg_users
-      WHERE whatsapp = ${phoneNorm}
+      WHERE whatsapp = ${asSent} OR whatsapp = ${alternate}
+      ORDER BY (whatsapp = ${asSent}) DESC
       LIMIT 1
     `
     if (rows[0]) {
