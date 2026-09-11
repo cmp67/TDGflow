@@ -75,6 +75,12 @@ function brPhoneVariants(phoneNorm: string): [string, string] {
 // 10 dígitos. Estrito de propósito — um número hifenizado de 1:1
 // ("96398-9538") não pode virar "grupo" e abrir o fallback por nome.
 const GROUP_JID = /^\d{10,15}-\d{10}$/
+// Segundo sinal, também de sistema: chat_id de grupo é "<canal hex>-<número
+// do criador>-<timestamp>" (1:1 é "<canal hex>-<número>"). Rede de segurança
+// caso o GPT Maker mande em grupo só o número do criador em contact_phone —
+// sem isso, todo membro autenticaria como o criador. Chat de API
+// ("public-api-…") não tem o prefixo hex e fica de fora.
+const GROUP_CHAT_ID = /^[0-9A-F]{32}-\d{10,15}-\d{10}$/i
 
 type Identity = { phoneNorm: string; context: string; hasSystemContact: boolean }
 
@@ -82,7 +88,8 @@ function resolveIdentity(params: URLSearchParams): Identity {
   // Sufixo de JID do WhatsApp (@g.us, @lid, @s.whatsapp.net) não faz parte do número.
   const contactPhone = (params.get('contact_phone') ?? '').trim().replace(/@.*$/, '')
   const modelPhoneNorm = (params.get('phone') ?? '').replace(/\D/g, '')
-  if (GROUP_JID.test(contactPhone)) {
+  const isGroup = GROUP_JID.test(contactPhone) || GROUP_CHAT_ID.test(params.get('chat_id') ?? '')
+  if (isGroup) {
     return { phoneNorm: modelPhoneNorm, context: 'grupo', hasSystemContact: true }
   }
   const contactDigits = contactPhone.replace(/\D/g, '')

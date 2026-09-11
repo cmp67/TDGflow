@@ -259,4 +259,33 @@ describe('GET /api/agent/verify-user — bordas apontadas na revisão (11/09)', 
     const res = await GET(req(`?phone=5511${landlineTail}`))
     expect(res.status).toBe(404)
   })
+
+  // Rede de segurança: se o GPT Maker mandar em grupo só o número do
+  // criador em contact_phone (em vez do ID do grupo), o chat_id ainda
+  // denuncia o grupo — "<canal hex>-<número>-<timestamp>".
+  const channel = '3F61D3C497FCA16E05B0BAC033931060'
+
+  it('grupo pelo chat_id: número do criador em contact_phone NÃO autentica o criador', async () => {
+    const res = await GET(req(`?contact_phone=${mobile}&chat_id=${channel}-${mobile}-1597779397&phone=desconhecido&name=desconhecido`))
+    expect(res.status).toBe(404)
+  })
+
+  it('grupo pelo chat_id: libera fallback por nome do remetente', async () => {
+    const res = await GET(req(`?contact_phone=5511000000000&chat_id=${channel}-5511000000000-1597779397&phone=desconhecido&name=${encodeURIComponent(fullName)}`))
+    const data = await res.json()
+    expect(res.status).toBe(200)
+    expect(data.verified_by).toBe('name')
+  })
+
+  it('1:1 pelo chat_id continua autenticando pelo contact_phone', async () => {
+    const res = await GET(req(`?contact_phone=${mobile}&chat_id=${channel}-${mobile}&phone=sistema`))
+    expect(res.status).toBe(200)
+  })
+
+  it('chat de API com hífens no contexto não é tratado como grupo', async () => {
+    const res = await GET(req(`?contact_phone=${mobile}&chat_id=public-api-3F1A294F6854313BDCA57A2FA8D0FC36-audit-0911-99-12345&phone=sistema`))
+    const data = await res.json()
+    expect(res.status).toBe(200)
+    expect(data.verified_by).toBe('phone')
+  })
 })
