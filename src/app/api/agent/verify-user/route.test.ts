@@ -282,6 +282,21 @@ describe('GET /api/agent/verify-user — bordas apontadas na revisão (11/09)', 
     expect(res.status).toBe(200)
   })
 
+  // Observado em produção 11/09 23:08Z: em grupo o GPT Maker mandou o ID
+  // do grupo GRUDADO, sem hífen (5511963989538 + 1597779397 = 23 dígitos).
+  // Telefone nenhum tem mais de 15 dígitos (E.164), então isso é grupo.
+  it('ID de grupo sem hífen (23 dígitos) não é tratado como telefone', async () => {
+    const res = await GET(req(`?contact_phone=${mobile}1597779397&phone=sistema&name=${encodeURIComponent(fullName)}`))
+    const data = await res.json()
+    expect(res.status).toBe(200)
+    expect(data.verified_by).toBe('name')
+  })
+
+  it('ID de grupo sem hífen não autentica o criador do grupo', async () => {
+    const res = await GET(req(`?contact_phone=${mobile}1597779397&phone=sistema&name=desconhecido`))
+    expect(res.status).toBe(404)
+  })
+
   it('chat de API com hífens no contexto não é tratado como grupo', async () => {
     const res = await GET(req(`?contact_phone=${mobile}&chat_id=public-api-3F1A294F6854313BDCA57A2FA8D0FC36-audit-0911-99-12345&phone=sistema`))
     const data = await res.json()

@@ -88,7 +88,13 @@ function resolveIdentity(params: URLSearchParams): Identity {
   // Sufixo de JID do WhatsApp (@g.us, @lid, @s.whatsapp.net) não faz parte do número.
   const contactPhone = (params.get('contact_phone') ?? '').trim().replace(/@.*$/, '')
   const modelPhoneNorm = (params.get('phone') ?? '').replace(/\D/g, '')
-  const isGroup = GROUP_JID.test(contactPhone) || GROUP_CHAT_ID.test(params.get('chat_id') ?? '')
+  // Em produção (11/09) o ID do grupo chegou GRUDADO, sem hífen — 23
+  // dígitos. E.164 vai até 15, então qualquer coisa maior é ID de grupo.
+  const contactIsTooLongForPhone = contactPhone.replace(/\D/g, '').length > 15
+  const isGroup =
+    GROUP_JID.test(contactPhone) ||
+    contactIsTooLongForPhone ||
+    GROUP_CHAT_ID.test(params.get('chat_id') ?? '')
   if (isGroup) {
     return { phoneNorm: modelPhoneNorm, context: 'grupo', hasSystemContact: true }
   }
