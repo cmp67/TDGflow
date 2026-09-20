@@ -1,6 +1,6 @@
 import { sql } from '@vercel/postgres'
 import { auth } from '@/auth'
-import { put, del } from '@vercel/blob'
+import { putPrivateFile, deleteStoredFile, fileExtension } from '@/lib/blob-files'
 import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
@@ -64,14 +64,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Arquivo muito grande — o limite é 20MB' }, { status: 400 })
   }
 
+  // Ata e documento da parceria são privados (13/09): só saem pela rota autenticada.
   let fileUrl: string | null = null
   if (file) {
-    const blob = await put(
-      `partnership-content/${category}-${Date.now()}.${file.name.split('.').pop() ?? 'pdf'}`,
+    const stored = await putPrivateFile(
+      `partnership-content/${category}.${fileExtension(file.name)}`,
       file,
-      { access: 'public', addRandomSuffix: false }
     )
-    fileUrl = blob.url
+    fileUrl = stored.href
   }
 
   const { rows } = await sql<PartnershipContentRow>`
@@ -96,9 +96,7 @@ export async function DELETE(req: NextRequest) {
   `
   if (rows.length === 0) return NextResponse.json({ error: 'Conteúdo não encontrado' }, { status: 404 })
 
-  if (rows[0].file_url) {
-    await del(rows[0].file_url).catch(() => {}) // blob órfão não deve travar a exclusão do registro
-  }
+  await deleteStoredFile(rows[0].file_url) // arquivo órfão não trava a exclusão do registro
 
   return NextResponse.json({ ok: true })
 }

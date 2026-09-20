@@ -1,6 +1,6 @@
 // Guarda audio rapidamente sem transcrever — para uso em feiras
 import { sql } from '@vercel/postgres'
-import { put } from '@vercel/blob'
+import { putPrivateFile, safeFileName } from '@/lib/blob-files'
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 
@@ -32,10 +32,10 @@ export async function POST(req: NextRequest) {
 
   let audioUrl: string | null = null
   try {
-    const blob = await put(`audio/${Date.now()}-${audioFile.name}`, audioFile, {
-      access: 'public', addRandomSuffix: true
-    })
-    audioUrl = blob.url
+    // Áudio ditado é voz do TD (13/09): privado, só pela rota autenticada —
+    // quem gravou e admin.
+    const stored = await putPrivateFile(`audio/${safeFileName(audioFile.name)}`, audioFile)
+    audioUrl = stored.href
   } catch { /* blob optional */ }
 
   const { rows } = await sql`

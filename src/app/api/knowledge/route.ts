@@ -1,5 +1,5 @@
 import { sql } from '@vercel/postgres'
-import { put } from '@vercel/blob'
+import { putPrivateFile, safeFileName } from '@/lib/blob-files'
 import { auth } from '@/auth'
 import { NextRequest, NextResponse } from 'next/server'
 import { validateVideoUpload, MAX_VIDEO_FILE_BYTES } from '@/lib/video-upload'
@@ -63,9 +63,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Arquivo muito grande — o limite é 25MB.' }, { status: 400 })
     }
 
-    const blob = await put(`knowledge/${hotel_id}/${Date.now()}-${file.name}`, file, {
-      access: 'public', addRandomSuffix: true,
-    })
+    // PDF e vídeo de fornecedor são privados (13/09): saem pela rota
+    // autenticada, nunca por URL aberta do armazenamento.
+    const stored = await putPrivateFile(`knowledge/${hotel_id}/${safeFileName(file.name)}`, file)
 
     const { rows: userRows } = await sql`SELECT name FROM tdg_users WHERE email = ${session.user.email} LIMIT 1`
     const authorName = (userRows[0]?.name as string | undefined) ?? session.user.email
@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
       INSERT INTO tdg_knowledge
         (hotel_id, type, title, url, duration_seconds, agreed_with_hotel, source_date, source_author)
       VALUES
-        (${hotel_id}, ${type}, ${title}, ${blob.url},
+        (${hotel_id}, ${type}, ${title}, ${stored.href},
          ${durationSeconds}, ${agreedWithHotel}, ${filmedAt}, ${type === 'video' ? authorName : null})
       RETURNING *`
     return NextResponse.json({ item: rows[0] })

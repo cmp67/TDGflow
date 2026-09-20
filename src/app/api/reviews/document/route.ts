@@ -1,5 +1,5 @@
 import { auth } from '@/auth'
-import { put } from '@vercel/blob'
+import { putPrivateFile, fileExtension } from '@/lib/blob-files'
 import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
@@ -33,11 +33,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Formato não aceito — envie PDF, Word ou imagem' }, { status: 400 })
   }
 
-  const upload = await put(
-    `reviews-docs/${session.user.email.replace('@', '_at_')}-${Date.now()}.${file.name.split('.').pop() ?? 'pdf'}`,
+  // Roteiro é privado (13/09) e o nome do arquivo não carrega mais o e-mail
+  // de quem enviou — o sufixo aleatório já evita colisão.
+  const stored = await putPrivateFile(
+    `reviews-docs/roteiro.${fileExtension(file.name)}`,
     file,
-    { access: 'public', addRandomSuffix: false }
   )
 
-  return NextResponse.json({ document_url: upload.url, document_name: file.name })
+  return NextResponse.json({ document_url: stored.href, document_name: file.name })
 }

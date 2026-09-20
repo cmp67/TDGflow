@@ -1,6 +1,6 @@
 import { sql } from '@vercel/postgres'
 import { auth } from '@/auth'
-import { put, del } from '@vercel/blob'
+import { putPrivateFile, deleteStoredFile, fileExtension } from '@/lib/blob-files'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAgencyId } from '@/lib/agency'
 
@@ -98,14 +98,15 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Contrato e acordo nunca em URL pública (13/09): o arquivo é privado e só
+  // sai pela rota autenticada (/api/files/...), que é o que fica no banco.
   let fileUrl: string | null = null
   if (file) {
-    const blob = await put(
-      `materials/${category}-${Date.now()}.${file.name.split('.').pop() ?? 'pdf'}`,
+    const stored = await putPrivateFile(
+      `materials/${category}.${fileExtension(file.name)}`,
       file,
-      { access: 'public', addRandomSuffix: false }
     )
-    fileUrl = blob.url
+    fileUrl = stored.href
   }
 
   await sql`ALTER TABLE tdg_materials ADD COLUMN IF NOT EXISTS agency_id UUID REFERENCES tdg_agencies(id)`
@@ -140,9 +141,7 @@ export async function DELETE(req: NextRequest) {
     DELETE FROM tdg_materials WHERE id = ${id} RETURNING file_url
   `
 
-  if (rows[0].file_url) {
-    await del(rows[0].file_url).catch(() => {}) // blob órfão não deve travar a exclusão do registro
-  }
+  await deleteStoredFile(rows[0].file_url) // arquivo órfão não trava a exclusão do registro
 
   return NextResponse.json({ ok: true })
 }

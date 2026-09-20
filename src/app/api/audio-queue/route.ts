@@ -5,6 +5,7 @@ import { auth } from '@/auth'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkAndDeductCredits, deductCredits, INSUFFICIENT_BALANCE, NO_AGENCY } from '@/lib/credits'
 import { getAgencyId } from '@/lib/agency'
+import { readStoredFile } from '@/lib/blob-files'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -93,9 +94,9 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // Fetch audio from Blob
-    const audioResp = await fetch(audioUrl)
-    const arrayBuffer = await arrayBuffer_(audioResp)
+    // Lê a gravação — caminho privado (13/09) direto do armazenamento, URL
+    // pública antiga ainda por HTTP até a migração.
+    const arrayBuffer = await readStoredFile(audioUrl)
     const audioBlob = new Blob([arrayBuffer])
     const fileName = audioUrl.split('/').pop() || 'audio.webm'
     const audioFile = new File([audioBlob], fileName)
@@ -152,7 +153,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ id, transcript, summary })
   } catch (e) {
     await sql`UPDATE tdg_audio_inputs SET status = 'pending' WHERE id = ${id}`
-    return NextResponse.json({ error: String(e) }, { status: 500 })
+    // Detalhe (inclusive caminho do arquivo) só no log — nunca pro cliente.
+    console.error('[audio-queue] falha ao transcrever', id, e)
+    return NextResponse.json({ error: 'Não foi possível processar o áudio agora. Tente de novo em instantes.' }, { status: 500 })
   }
 }
 
@@ -178,6 +181,3 @@ export async function PATCH(req: NextRequest) {
   return NextResponse.json({ ok: true })
 }
 
-async function arrayBuffer_(resp: Response): Promise<ArrayBuffer> {
-  return resp.arrayBuffer()
-}
