@@ -6,14 +6,15 @@ vi.mock('@vercel/blob', () => ({ get: vi.fn(), put: vi.fn(), del: vi.fn() }))
 vi.mock('@vercel/postgres', () => ({ sql: vi.fn() }))
 
 import { auth } from '@/auth'
-import { get, del } from '@vercel/blob'
+import { get, del, put } from '@vercel/blob'
 import { sql } from '@vercel/postgres'
 import { GET } from './route'
-import { hrefForPath, pathFromHref, readStoredFile, deleteStoredFile, safeFileName, fileExtension } from '@/lib/blob-files'
+import { hrefForPath, pathFromHref, readStoredFile, deleteStoredFile, safeFileName, fileExtension, putPrivateFile } from '@/lib/blob-files'
 
 const mockAuth = auth as unknown as ReturnType<typeof vi.fn>
 const mockGet = get as unknown as ReturnType<typeof vi.fn>
 const mockDel = del as unknown as ReturnType<typeof vi.fn>
+const mockPut = put as unknown as ReturnType<typeof vi.fn>
 const mockSql = sql as unknown as ReturnType<typeof vi.fn>
 
 function req(path: string) {
@@ -38,10 +39,14 @@ function dbAnswers(...answers: Array<Record<string, unknown>[]>) {
   for (const rows of answers) mockSql.mockResolvedValueOnce({ rows })
 }
 
+const PRIVATE_TOKEN = 'vercel_blob_rw_test_private'
+const PRIV = { access: 'private', token: PRIVATE_TOKEN }
+
 beforeEach(() => {
   mockAuth.mockReset()
   mockGet.mockReset()
   mockSql.mockReset()
+  process.env.BLOB_PRIVATE_READ_WRITE_TOKEN = PRIVATE_TOKEN
 })
 
 describe('GET /api/files/[...path]', () => {
@@ -58,7 +63,7 @@ describe('GET /api/files/[...path]', () => {
     mockGet.mockResolvedValueOnce(blobResult('text/markdown'))
     const res = await GET(req('partnership-content/ata.md'), params(['partnership-content', 'ata.md']))
     expect(res.status).toBe(200)
-    expect(mockGet).toHaveBeenCalledWith('partnership-content/ata.md', { access: 'private' })
+    expect(mockGet).toHaveBeenCalledWith('partnership-content/ata.md', PRIV)
     expect(res.headers.get('content-type')).toBe('text/markdown')
     expect(res.headers.get('cache-control')).toBe('private, no-store')
     expect(await res.text()).toBe('conteudo')
@@ -143,7 +148,7 @@ describe('quem pode ler cada pasta', () => {
     mockGet.mockResolvedValueOnce(blobResult('application/pdf'))
     const res = await GET(req('knowledge/relat%C3%B3rio%2050%25.pdf'), params(['knowledge', 'relatório 50%.pdf']))
     expect(res.status).toBe(200)
-    expect(mockGet).toHaveBeenCalledWith('knowledge/relatório 50%.pdf', { access: 'private' })
+    expect(mockGet).toHaveBeenCalledWith('knowledge/relatório 50%.pdf', PRIV)
   })
 })
 
@@ -164,7 +169,7 @@ describe('blob-files', () => {
     mockGet.mockResolvedValueOnce(blobResult('audio/webm', 'bytes'))
     const buf = await readStoredFile(hrefForPath('audio/gravacao-abc.webm'))
     expect(new TextDecoder().decode(buf)).toBe('bytes')
-    expect(mockGet).toHaveBeenCalledWith('audio/gravacao-abc.webm', { access: 'private' })
+    expect(mockGet).toHaveBeenCalledWith('audio/gravacao-abc.webm', PRIV)
   })
 
   it('safeFileName: tira caminho, ".." e caracteres que quebram a rota, mantém extensão', () => {
@@ -185,9 +190,9 @@ describe('blob-files', () => {
   it('deleteStoredFile apaga pelo caminho quando é href privado e pela URL quando é legado', async () => {
     mockDel.mockResolvedValue(undefined)
     await deleteStoredFile(hrefForPath('audio/gravacao-abc.webm'))
-    expect(mockDel).toHaveBeenLastCalledWith('audio/gravacao-abc.webm')
+    expect(mockDel).toHaveBeenLastCalledWith('audio/gravacao-abc.webm', { token: PRIVATE_TOKEN })
     await deleteStoredFile('https://x.public.blob.vercel-storage.com/audio/old.webm')
-    expect(mockDel).toHaveBeenLastCalledWith('https://x.public.blob.vercel-storage.com/audio/old.webm')
+    expect(mockDel).toHaveBeenLastCalledWith('https://x.public.blob.vercel-storage.com/audio/old.webm', undefined)
   })
 
   it('deleteStoredFile não trava a exclusão do registro, mas deixa a falha no log', async () => {
@@ -204,5 +209,42 @@ describe('blob-files', () => {
     expect(new TextDecoder().decode(buf)).toBe('legado')
     expect(mockGet).not.toHaveBeenCalled()
     fetchSpy.mockRestore()
+  })
+
+  it('deleteStoredFile usa o token da loja privada só pra caminho privado', async () => {
+    mockDel.mockReset(); mockDel.mockResolvedValue(undefined)
+    await deleteStoredFile(hrefForPath('audio/gravacao-abc.webm'))
+    expect(mockDel).toHaveBeenLastCalledWith('audio/gravacao-abc.webm', { token: PRIVATE_TOKEN })
+    await deleteStoredFile('https://x.public.blob.vercel-storage.com/audio/old.webm')
+    expect(mockDel).toHaveBeenLastCalledWith('https://x.public.blob.vercel-storage.com/audio/old.webm', undefined)
+  })
+})
+
+describe('sem loja privada configurada (achado 20/09: loja padrão é pública)', () => {
+  beforeEach(() => { delete process.env.BLOB_PRIVATE_READ_WRITE_TOKEN })
+
+  it('putPrivateFile não quebra o upload: cai pra público na loja padrão, com aviso', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    mockPut.mockResolvedValueOnce({ pathname: 'materials/contrato-abc.pdf', url: 'https://x.public.blob.vercel-storage.com/materials/contrato-abc.pdf' })
+    const stored = await putPrivateFile('materials/contrato.pdf', new Blob(['x']))
+    expect(mockPut).toHaveBeenCalledWith('materials/contrato.pdf', expect.anything(), { access: 'public', addRandomSuffix: true })
+    expect(stored.href).toBe('https://x.public.blob.vercel-storage.com/materials/contrato-abc.pdf')
+    expect(warn).toHaveBeenCalledTimes(1)
+    warn.mockRestore()
+  })
+
+  it('com token, grava privado na loja privada e devolve o href da rota', async () => {
+    process.env.BLOB_PRIVATE_READ_WRITE_TOKEN = PRIVATE_TOKEN
+    mockPut.mockResolvedValueOnce({ pathname: 'materials/contrato-abc.pdf', url: 'https://x.private.blob.vercel-storage.com/materials/contrato-abc.pdf' })
+    const stored = await putPrivateFile('materials/contrato.pdf', new Blob(['x']))
+    expect(mockPut).toHaveBeenCalledWith('materials/contrato.pdf', expect.anything(), { access: 'private', addRandomSuffix: true, token: PRIVATE_TOKEN })
+    expect(stored.href).toBe('/api/files/materials/contrato-abc.pdf')
+  })
+
+  it('rota /api/files responde 404 (nenhum arquivo privado existe sem a loja)', async () => {
+    mockAuth.mockResolvedValueOnce({ user: { email: 'a@example.com' } })
+    const res = await GET(req('partnership-content/ata.md'), params(['partnership-content', 'ata.md']))
+    expect(res.status).toBe(404)
+    expect(mockGet).not.toHaveBeenCalled()
   })
 })

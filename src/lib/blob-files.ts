@@ -19,6 +19,22 @@ import { put, del, get } from '@vercel/blob'
 
 export const FILES_ROUTE_PREFIX = '/api/files/'
 
+/* Achado 20/09 (migração): a loja `tdg-flow-db` é PÚBLICA e o Vercel recusa
+   `access: 'private'` nela ("Cannot use private access on a public store").
+   Arquivo privado precisa de uma segunda loja, criada privada, cujo token
+   fica em BLOB_PRIVATE_READ_WRITE_TOKEN. Sem esse token configurado, o
+   upload cai pra público na loja de sempre (com aviso no log) — pior ficar
+   público do que o upload de contrato quebrar pra 19 agências. */
+const PRIVATE_TOKEN_ENV = 'BLOB_PRIVATE_READ_WRITE_TOKEN'
+
+export function privateStoreToken(): string | null {
+  return (process.env[PRIVATE_TOKEN_ENV] ?? '').trim() || null
+}
+
+export function privateStoreConfigured(): boolean {
+  return privateStoreToken() !== null
+}
+
 export function hrefForPath(pathname: string): string {
   return FILES_ROUTE_PREFIX + pathname.split('/').map(encodeURIComponent).join('/')
 }
@@ -66,11 +82,14 @@ export async function putPrivateFile(
   body: Parameters<typeof put>[1],
   options: { contentType?: string } = {},
 ): Promise<StoredFile> {
-  const blob = await put(pathname, body, {
-    access: 'private',
-    addRandomSuffix: true,
-    ...(options.contentType ? { contentType: options.contentType } : {}),
-  })
+  const contentType = options.contentType ? { contentType: options.contentType } : {}
+  const token = privateStoreToken()
+  if (!token) {
+    console.warn(`[blob-files] ${PRIVATE_TOKEN_ENV} ausente — ${pathname} gravado PÚBLICO na loja padrão`)
+    const blob = await put(pathname, body, { access: 'public', addRandomSuffix: true, ...contentType })
+    return { pathname: blob.pathname, href: blob.url }
+  }
+  const blob = await put(pathname, body, { access: 'private', addRandomSuffix: true, token, ...contentType })
   return { pathname: blob.pathname, href: hrefForPath(blob.pathname) }
 }
 
@@ -80,12 +99,23 @@ export async function putPrivateFile(
    armazenamento segue legível por quem tiver o caminho. */
 export async function deleteStoredFile(hrefOrUrl: string | null): Promise<void> {
   if (!hrefOrUrl) return
-  const target = pathFromHref(hrefOrUrl) ?? hrefOrUrl
+  const pathname = pathFromHref(hrefOrUrl)
+  const target = pathname ?? hrefOrUrl
   try {
-    await del(target)
+    // Caminho privado vive na loja privada; URL pública, na loja padrão.
+    const token = pathname ? privateStoreToken() : null
+    await del(target, token ? { token } : undefined)
   } catch (err) {
     console.error('[blob-files] falha ao apagar arquivo, ficou órfão no armazenamento:', target, err)
   }
+}
+
+/* Leitura de arquivo privado, sempre na loja privada. Sem token configurado
+   não existe arquivo privado nenhum — devolve null (a rota responde 404). */
+export async function getPrivateFile(pathname: string): Promise<Awaited<ReturnType<typeof get>>> {
+  const token = privateStoreToken()
+  if (!token) return null
+  return get(pathname, { access: 'private', token })
 }
 
 /* Leitura server-side (fila de áudio → transcrição). Caminho privado lê
@@ -93,7 +123,7 @@ export async function deleteStoredFile(hrefOrUrl: string | null): Promise<void> 
 export async function readStoredFile(hrefOrUrl: string): Promise<ArrayBuffer> {
   const pathname = pathFromHref(hrefOrUrl)
   if (pathname) {
-    const result = await get(pathname, { access: 'private' })
+    const result = await getPrivateFile(pathname)
     if (!result || result.statusCode !== 200) {
       throw new Error(`Arquivo privado não encontrado: ${pathname}`)
     }

@@ -1,8 +1,7 @@
 import { sql } from '@vercel/postgres'
 import { auth } from '@/auth'
-import { get } from '@vercel/blob'
 import { NextRequest, NextResponse } from 'next/server'
-import { hrefForPath } from '@/lib/blob-files'
+import { hrefForPath, getPrivateFile } from '@/lib/blob-files'
 
 export const dynamic = 'force-dynamic'
 
@@ -79,7 +78,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ path
   }
 
   try {
-    const result = await get(pathname, { access: 'private' })
+    const result = await getPrivateFile(pathname)
     if (!result || result.statusCode !== 200) {
       return NextResponse.json({ error: 'Arquivo não encontrado' }, { status: 404 })
     }
