@@ -310,7 +310,7 @@ function LumisExplainer() {
         <div style={{ padding: '0 14px 14px', borderTop: '1px solid #D8EEF0' }}>
 
           <p style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-secondary)', lineHeight: 1.6, margin: '12px 0 12px', fontWeight: 300 }}>
-            Cada ação debita <strong style={{ fontWeight: 600 }}>Lumis</strong> de um saldo compartilhado por toda a agência. Acabou o saldo, é só esperar a cota renovar no próximo ciclo (todo dia 5) ou comprar top-up na hora.
+            Cada ação debita <strong style={{ fontWeight: 600 }}>Lumis</strong> de um saldo compartilhado por toda a agência. Acabou o saldo, é só esperar a cota renovar no próximo ciclo (todo dia 1, mês civil) ou comprar top-up na hora.
           </p>
 
           {/* Tabela de consumo */}
@@ -334,7 +334,7 @@ function LumisExplainer() {
               abaixo neste mesmo painel) */}
           <div style={{ padding: '10px 12px', background: '#FEF9EE', borderRadius: 8, border: '1px solid #F5E4BA' }}>
             <p style={{ fontSize: '0.75rem', color: '#7A4F10', lineHeight: 1.6, margin: 0, fontWeight: 300 }}>
-              O plano contratado pela TDG Flow é o <strong style={{ fontWeight: 600 }}>Growth</strong>, que contempla <strong style={{ fontWeight: 600 }}>500 lm/mês</strong> pra cada agência associada. O ciclo de cobrança renova todo dia 5. Precisou de mais? É só contratar top-up abaixo — essa cobrança (e os lumis comprados) fica exclusivamente com a sua agência. Acompanhe seu consumo logo abaixo.
+              O plano contratado pela TDG Flow é o <strong style={{ fontWeight: 600 }}>Growth</strong>, que contempla <strong style={{ fontWeight: 600 }}>500 lm/mês</strong> pra cada agência associada. O ciclo renova todo dia 1, do primeiro ao último dia do mês. Precisou de mais? É só contratar top-up abaixo — essa cobrança (e os lumis comprados) fica exclusivamente com a sua agência. Acompanhe seu consumo logo abaixo.
             </p>
           </div>
         </div>
