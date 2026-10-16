@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Mail, Sparkles, Tag, Lightbulb, FileText, Search,
   LogOut, MoreHorizontal, X, Users, BarChart2, MessageSquarePlus, CreditCard, Network, UserPlus, Globe, BookOpen, MessageCircle
-} from 'lucide-react'
+, HelpCircle } from 'lucide-react'
 import { LanguageProvider, useLanguage } from '@/contexts/LanguageContext'
 import { APP_VERSION } from '@/lib/version'
 import { type Lang, LANG_LABELS } from '@/lib/i18n'
@@ -51,6 +51,7 @@ const NAV_HINTS: Record<string, string> = {
   gestao:     'Usuários e permissões da agência',
   equipe:     'Convide e gerencie sua equipe',
   docs:       'Documentação e materiais de apoio',
+  faq:        'Como usar o Flow — perguntas, respostas e glossário; não achou, pergunte',
   wiki:       'Guias de uso do Flow e atas das reuniões da rede',
   destinos:   'Conhecimento prático por país — vistos, costumes, avisos',
   max:        'Dicas que o Max capturou pela rede via WhatsApp',
@@ -77,6 +78,7 @@ const NAV_HINTS: Record<string, string> = {
 const REFERENCE_ITEMS: NavItem[] = [
   { href: '/flow/docs',      icon: FileText, tkey: 'docs' },
   { href: '/flow/destinos',  icon: Globe,    tkey: 'destinos' },
+  { href: '/flow/faq',       icon: HelpCircle, tkey: 'faq' },
   { href: '/flow/wiki',      icon: BookOpen, tkey: 'wiki' },
   { href: '/flow/max',       icon: MessageCircle, tkey: 'max' },
   { href: '/flow/inbox',     icon: Mail,     tkey: 'inbox', soon: true },

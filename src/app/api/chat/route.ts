@@ -6,6 +6,8 @@ import { logUsage } from '@/lib/usage-log'
 import { checkAndDeductCredits, INSUFFICIENT_BALANCE, NO_AGENCY } from '@/lib/credits'
 import { getAgencyId } from '@/lib/agency'
 import { TOOL_DEFINITIONS, callMcpTool } from '@/lib/mcp-tools'
+import { getFaqItemBySlug, listFaqItems } from '@/lib/faq-db'
+import { faqIndexForPrompt } from '@/lib/faq'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -55,7 +57,15 @@ Quando o consultor descrever um perfil de cliente (ex: "casal, lua de mel, agost
 
 ---
 
-## Orientação sobre o sistema
+## Como usar o Flow ("Como faço")
+
+Respostas sobre COMO USAR o Flow vêm do "Como faço" (escrito pela administração). O que existe hoje (pergunta e slug):
+{{FAQ_INDEX}}
+
+- Se a dúvida do consultor casa com um item acima, chame get_faq_item com o slug, responda curto com base nele, e termine com o link: /flow/faq/<slug>
+- Se nenhum item cobre a dúvida, use só as orientações básicas abaixo; se nem elas cobrem, diga que ainda não está documentado e sugira registrar a pergunta em "Como faço" (menu Referência → "Não achei o que procurava"). Não invente passos, menus ou botões.
+
+## Orientação básica sobre o sistema
 
 Se o consultor perguntar como registrar uma visita, gravar áudio, ou usar qualquer funcionalidade:
 - Explique de forma simples e direta em PT-BR
@@ -97,6 +107,15 @@ Inclua esta seção ao recomendar hotéis num destino novo, ou quando o consulto
 const tools: Anthropic.Tool[] = [
   ...TOOL_DEFINITIONS.filter(t => t.name !== 'register_tip'),
   {
+    name: 'get_faq_item',
+    description: 'Lê a resposta completa de um item do "Como faço" (manual de uso do Flow escrito pela administração). Use SOMENTE com um slug que esteja na lista do system prompt.',
+    input_schema: {
+      type: 'object' as const,
+      properties: { slug: { type: 'string', description: 'Slug do item, exatamente como aparece na lista' } },
+      required: ['slug'],
+    },
+  },
+  {
     name: 'check_travel_requirements',
     description: 'Verifica requisitos de viagem para passaporte brasileiro: visto, CIVP (febre amarela), ETA e alertas de segurança. Usar sempre que um destino internacional for mencionado.',
     input_schema: {
@@ -113,6 +132,13 @@ const tools: Anthropic.Tool[] = [
 ]
 
 export async function processToolCall(toolName: string, toolInput: Record<string, unknown>) {
+  if (toolName === 'get_faq_item') {
+    const slug = typeof toolInput.slug === 'string' ? toolInput.slug : ''
+    const item = await getFaqItemBySlug(slug, false)
+    return item
+      ? { pergunta: item.pergunta, resposta_md: item.resposta_md, link: `/flow/faq/${item.slug}` }
+      : { error: 'Item não existe. Diga que ainda não está documentado.' }
+  }
   if (toolName === 'check_travel_requirements') {
     const { destination } = toolInput as { destination: string }
     return await checkTravelRequirements(destination)
@@ -128,6 +154,7 @@ export async function processToolCall(toolName: string, toolInput: Record<string
 // (nunca uma lista fixa de "possíveis" ações) — abordagem Tesla: zero
 // expectativa criada por uma ação que não está de fato acontecendo.
 const TOOL_STATUS_LABELS: Record<string, string> = {
+  get_faq_item: 'Consultando o Como faço...',
   search_tdg_suppliers: 'Buscando fornecedores que combinam com o perfil...',
   get_tdg_supplier_details: 'Consultando condições negociadas pela rede...',
   search_tdg_offers: 'Consultando ofertas vigentes...',
@@ -155,6 +182,11 @@ export async function POST(req: NextRequest) {
 
   const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
   const { messages } = await req.json()
+
+  // Índice do "Como faço" entra no prompt a cada pedido: barato (<100
+  // linhas) e faz o assistente saber SE existe resposta antes de tentar.
+  const faqItems = await listFaqItems(false).catch(() => [])
+  const systemPrompt = SYSTEM_PROMPT.replace('{{FAQ_INDEX}}', faqIndexForPrompt(faqItems))
 
   const anthropicMessages: Anthropic.MessageParam[] = messages.map(
     (m: { role: string; content: string }) => ({
@@ -188,7 +220,7 @@ export async function POST(req: NextRequest) {
           const messageStream = anthropic.messages.stream({
             model: 'claude-sonnet-4-6',
             max_tokens: 4096,
-            system: SYSTEM_PROMPT,
+            system: systemPrompt,
             tools,
             messages: anthropicMessages
           })
