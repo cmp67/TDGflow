@@ -273,3 +273,32 @@ describe('acervo privado por agência (migration 021)', () => {
     expect(res.status).toBe(400)
   })
 })
+
+describe('GET /api/hotels — client_approved_count (Aprovado por cliente, 16/10/2026)', () => {
+  const suffix = Date.now()
+  const hotelName = `__TDD Aprovado Cliente ${suffix}__`
+  let hotelId: string
+
+  beforeAll(async () => {
+    const { rows } = await sql`INSERT INTO tdg_hotels (name, entity_type) VALUES (${hotelName}, 'hotel') RETURNING id`
+    hotelId = rows[0].id
+    await sql`
+      INSERT INTO tdg_hotel_reviews (hotel_name, hotel_id, entity_type, agent_name, agency_name, status, visit_type, heads_up)
+      VALUES (${hotelName}, ${hotelId}, 'hotel', 'TDD', 'TDD', 'aprovado_cliente', 'client_feedback', 'cliente aprovou')
+    `
+  })
+
+  afterAll(async () => {
+    await sql`DELETE FROM tdg_hotel_reviews WHERE hotel_id = ${hotelId}`
+    await sql`DELETE FROM tdg_hotels WHERE id = ${hotelId}`
+  })
+
+  it('conta relatos de cliente separados de testado e de aguardando teste', async () => {
+    mockAuth.mockResolvedValueOnce(sessionFor('any@example.com'))
+    const body = await (await GET()).json()
+    const h = body.hotels.find((x: { name: string }) => x.name === hotelName)
+    expect(h.client_approved_count).toBe(1)
+    expect(h.tested_count).toBe(0)
+    expect(h.pending_lead_count).toBe(0)
+  })
+})

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect, useCallback } from 'react'
+import { supplierStatus, TRUST_LABELS } from '@/lib/supplier-status'
 import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -93,6 +94,7 @@ interface Hotel {
   gallery: { label: string; url: string }[]
   testedCount: number
   pendingLeadCount: number
+  clientApprovedCount: number
   canEdit: boolean
   benefits: HotelBenefit[]
   isPrivate: boolean
@@ -118,34 +120,9 @@ function benefitBadgeText(benefits: HotelBenefit[]): string | null {
   return 'Condições especiais TDG'
 }
 
-/* Status do fornecedor — antes uma bolinha discreta sem legenda em lugar
-   nenhum (achado da Carla: "mal dá pra ver e não tá escrito o significado").
-   Vira selo com ícone+texto, reaproveitando os mesmos símbolos e cores já
-   usados em "Na prática" (i-verified/dourado = confirmado, i-spark/coral =
-   a testar) — e some de vez quando não há nada a dizer, em vez de mostrar
-   uma terceira cor "neutra" que ninguém decoraria de qualquer forma. */
-function supplierStatus(hotel: Pick<Hotel, 'testedCount' | 'pendingLeadCount'>): {
-  variant: 'testado' | 'descoberto'
-  icon: string
-  label: string
-  color: string
-  bg: string
-  border: string
-} | null {
-  if (hotel.testedCount > 0) {
-    return {
-      variant: 'testado', icon: 'i-verified', label: 'Testado',
-      color: 'var(--tdgflow-gold-dim)', bg: 'var(--tdgflow-gold-subtle)', border: 'var(--tdgflow-gold-dim)',
-    }
-  }
-  if (hotel.pendingLeadCount > 0) {
-    return {
-      variant: 'descoberto', icon: 'i-spark', label: 'Aguardando teste',
-      color: 'var(--tdgflow-accent-warm)', bg: 'var(--tdgflow-accent-warm-subtle)', border: 'var(--tdgflow-accent-warm)',
-    }
-  }
-  return null
-}
+/* Status do fornecedor — selo com ícone+texto (ver src/lib/supplier-status.ts:
+   testado > aprovado por cliente > aguardando teste; some quando não há nada
+   a dizer). Função pura compartilhada, porte do Trip Flow 16/10/2026. */
 
 /* ── Filter definitions ─────────────────────────────────────────── */
 /* Fase 8b (02/08): catálogo cresceu de 5 hotéis próprios (Portugal/Maldivas)
@@ -229,6 +206,7 @@ interface HotelApiRow {
   gallery: { label: string; url: string }[] | null
   tested_count: number
   pending_lead_count: number
+  client_approved_count?: number
   can_edit: boolean
   benefits: HotelBenefit[] | null
   is_private: boolean
@@ -259,6 +237,7 @@ function mapHotelApiRow(row: HotelApiRow): Hotel {
     gallery: row.gallery ?? [],
     testedCount: row.tested_count ?? 0,
     pendingLeadCount: row.pending_lead_count ?? 0,
+    clientApprovedCount: row.client_approved_count ?? 0,
     canEdit: row.can_edit ?? false,
     benefits: row.benefits ?? [],
     isPrivate: row.is_private ?? false,
@@ -888,6 +867,7 @@ interface HotelReviewRow {
   overall_rating: number
   highlights: string[] | null
   client_profile: string | null
+  heads_up: string | null
   created_at: string
   is_own: boolean
   source: string | null
@@ -972,14 +952,23 @@ function EnrichClientProfilePrompt({ reviewId, onSaved }: { reviewId: string; on
 
 function HotelReviews({ hotelId, hotelName }: { hotelId: string; hotelName: string }) {
   const [reviews, setReviews] = useState<HotelReviewRow[]>([])
+  // Relatos de cliente (aprovado_cliente) — vendeu e o cliente aprovou, a
+  // rede não foi. Vêm separados porque o GET filtra por um status só.
+  const [clientReviews, setClientReviews] = useState<HotelReviewRow[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
     setLoading(true)
-    fetch(`/api/reviews?hotelId=${hotelId}`)
-      .then(res => res.json())
-      .then(data => { if (!cancelled) setReviews(data.reviews ?? []) })
+    Promise.all([
+      fetch(`/api/reviews?hotelId=${hotelId}`).then(res => res.json()),
+      fetch(`/api/reviews?hotelId=${hotelId}&status=aprovado_cliente`).then(res => res.json()),
+    ])
+      .then(([data, clientData]) => {
+        if (cancelled) return
+        setReviews(data.reviews ?? [])
+        setClientReviews(clientData.reviews ?? [])
+      })
       .catch(() => {})
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
@@ -987,6 +976,26 @@ function HotelReviews({ hotelId, hotelName }: { hotelId: string; hotelName: stri
 
   return (
     <div style={{ marginBottom: 20 }}>
+      {!loading && clientReviews.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <p style={{ fontSize: '0.5875rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--tdgflow-accent-info)', marginBottom: 8 }}>
+            O que clientes contaram
+          </p>
+          {clientReviews.map(r => (
+            <div key={r.id} style={{ padding: '12px 14px', borderRadius: 12, marginBottom: 8, border: '1px solid var(--tdgflow-accent-info)', background: 'var(--tdgflow-accent-info-subtle)' }}>
+              <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)' }}>
+                {r.agent_name} <span style={{ fontWeight: 400, color: 'var(--tdgflow-text-muted)' }}>· vendeu e o cliente aprovou</span>
+              </span>
+              {r.heads_up && (
+                <p style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-secondary)', lineHeight: 1.5, fontStyle: 'italic', margin: '6px 0 0' }}>
+                  &ldquo;{r.heads_up}&rdquo;
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
       <p style={{ fontSize: '0.5875rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)', marginBottom: 12 }}>
         O que a rede achou
       </p>
@@ -1410,7 +1419,7 @@ function HotelDetail({ hotel, onClose, onUpdated }: { hotel: Hotel; onClose: () 
           {/* Descoberto pela rede, ainda sem teste real — a review não é
               pública (status a_testar), mas o interesse já existe e merece
               aparecer aqui, não só escondido em "Na prática". */}
-          {hotel.testedCount === 0 && hotel.pendingLeadCount > 0 && (
+          {hotel.testedCount === 0 && hotel.clientApprovedCount === 0 && hotel.pendingLeadCount > 0 && (
             <div style={{
               display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 16,
               padding: '10px 14px', borderRadius: 12,
@@ -1726,6 +1735,7 @@ export default function HoteisView() {
   const [region, setRegion] = useState('Todos')
   const [activeProfiles, setActiveProfiles] = useState<Set<string>>(new Set())
   const [onlyPending, setOnlyPending] = useState(false)
+  const [onlyClientApproved, setOnlyClientApproved] = useState(false)
   const [selected, setSelected] = useState<Hotel | null>(null)
   const [hotels, setHotels] = useState<Hotel[]>([])
   const [loading, setLoading] = useState(true)
@@ -1774,11 +1784,12 @@ export default function HoteisView() {
       const matchRegion = region === 'Todos' || h.country === region
       const matchProfile = activeProfiles.size === 0 || [...activeProfiles].some(p => h.profiles.includes(p))
       const matchPending = !onlyPending || (h.testedCount === 0 && h.pendingLeadCount > 0)
-      return matchSearch && matchRegion && matchProfile && matchPending
+      const matchClient = !onlyClientApproved || (h.testedCount === 0 && h.clientApprovedCount > 0)
+      return matchSearch && matchRegion && matchProfile && matchPending && matchClient
     })
-  }, [hotels, search, region, activeProfiles, onlyPending])
+  }, [hotels, search, region, activeProfiles, onlyPending, onlyClientApproved])
 
-  const activeCount = (region !== 'Todos' ? 1 : 0) + activeProfiles.size + (onlyPending ? 1 : 0)
+  const activeCount = (region !== 'Todos' ? 1 : 0) + activeProfiles.size + (onlyPending ? 1 : 0) + (onlyClientApproved ? 1 : 0)
 
   function clearAll() {
     setRegion('Todos')
@@ -1821,10 +1832,26 @@ export default function HoteisView() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: '0.625rem', color: 'var(--tdgflow-gold-dim)' }}>
                 <svg style={{ width: 8, height: 8, stroke: 'var(--tdgflow-gold-dim)', strokeWidth: 1.8, fill: 'none' }}><use href="#i-verified" /></svg>
-                Testado pela rede
+                {TRUST_LABELS.testado}
               </span>
+              {/* Aprovado por cliente (16/10/2026): vendeu, o cliente aprovou, a rede não foi. */}
               <button
-                onClick={() => setOnlyPending(v => !v)}
+                onClick={() => { setOnlyClientApproved(v => !v); setOnlyPending(false) }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 3, fontSize: '0.625rem',
+                  color: 'var(--tdgflow-accent-info)', background: onlyClientApproved ? 'var(--tdgflow-accent-info-subtle)' : 'transparent',
+                  border: `1px solid ${onlyClientApproved ? 'var(--tdgflow-accent-info)' : 'transparent'}`,
+                  borderRadius: 999, padding: '2px 7px 2px 5px', margin: '-2px 0', cursor: 'pointer', transition: 'all 0.15s',
+                  fontWeight: onlyClientApproved ? 600 : 400,
+                }}
+                aria-pressed={onlyClientApproved}
+                title="Mostrar só fornecedores aprovados por cliente (a rede ainda não foi)"
+              >
+                <svg style={{ width: 8, height: 8, stroke: 'var(--tdgflow-accent-info)', strokeWidth: 1.8, fill: 'none' }}><use href="#i-client" /></svg>
+                {TRUST_LABELS.aprovado}
+              </button>
+              <button
+                onClick={() => { setOnlyPending(v => !v); setOnlyClientApproved(false) }}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 3, fontSize: '0.625rem',
                   color: 'var(--tdgflow-accent-warm)', background: onlyPending ? 'var(--tdgflow-accent-warm-subtle)' : 'transparent',
@@ -1836,7 +1863,7 @@ export default function HoteisView() {
                 title="Mostrar só fornecedores aguardando teste"
               >
                 <svg style={{ width: 8, height: 8, fill: 'var(--tdgflow-accent-warm)' }}><use href="#i-spark" /></svg>
-                Aguardando teste
+                {TRUST_LABELS.descoberto}
               </button>
             </div>
           </div>

@@ -22,6 +22,7 @@ export default function TdgIconSprite() {
         <symbol id="i-verified" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" /><path d="M8.3 12.3l2.4 2.4 4.6-5.2" /></symbol>
         <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21.5s7-6.4 7-12A7 7 0 0 0 5 9.5c0 5.6 7 12 7 12z" /><circle cx="12" cy="9.5" r="2.4" /></symbol>
         <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="15" rx="1.6" /><path d="M4 10h16M8 3.5v3.5M16 3.5v3.5" /></symbol>
+        <symbol id="i-client" viewBox="0 0 24 24"><path d="M12 20.2s-7.2-4.6-7.2-10A4.1 4.1 0 0 1 12 7.6a4.1 4.1 0 0 1 7.2 2.6c0 5.4-7.2 10-7.2 10z" /></symbol>
         <symbol id="i-percent" viewBox="0 0 24 24"><circle cx="7" cy="7.5" r="2.3" /><circle cx="17" cy="16.5" r="2.3" /><path d="M18 6L6 18" /></symbol>
         <symbol id="scene-hotel" viewBox="0 0 96 96"><path d="M20 78V38a28 28 0 0 1 56 0v40" /><path d="M20 78h56" /><path d="M40 78V54a8 8 0 0 1 16 0v24" /><path d="M30 46h6M30 58h6M60 46h6M60 58h6" /></symbol>
         <symbol id="scene-beach" viewBox="0 0 96 96"><path d="M14 66h68" /><path d="M48 66V32" /><path d="M48 32c-14 0-22 10-22 18h44c0-8-8-18-22-18z" /><path d="M48 66v14M40 80h16" /></symbol>

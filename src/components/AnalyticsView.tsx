@@ -83,6 +83,7 @@ const VISIT_TYPE_COLORS: Record<string, string> = {
   site_inspection:    '#7DD3FC',
   personal_stay:      '#86EFAC',
   commercial_meeting: '#C4B5FD',
+  client_feedback:    '#93C5FD',
 }
 
 type Period = 'month' | 'quarter' | 'year' | 'all'
@@ -302,6 +303,7 @@ export default function AnalyticsView() {
     site_inspection:    tr('type.site_inspection'),
     personal_stay:      tr('type.personal_stay'),
     commercial_meeting: tr('type.commercial_meeting'),
+    client_feedback:    tr('type.client_feedback'),
   }
 
   useEffect(() => {

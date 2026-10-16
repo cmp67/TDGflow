@@ -84,6 +84,7 @@ export const t: Record<Lang, Record<string, string>> = {
     'type.site_inspection':     'Site Inspection',
     'type.personal_stay':       'Personal Stay',
     'type.commercial_meeting':  'Commercial Meeting',
+    'type.client_feedback':     'Relato de cliente',
   },
 
   'en': {
@@ -156,6 +157,7 @@ export const t: Record<Lang, Record<string, string>> = {
     'type.site_inspection':     'Site Inspection',
     'type.personal_stay':       'Personal Stay',
     'type.commercial_meeting':  'Commercial Meeting',
+    'type.client_feedback':     'Client Feedback',
   },
 
   'es': {
@@ -228,5 +230,6 @@ export const t: Record<Lang, Record<string, string>> = {
     'type.site_inspection':     'Inspección de sitio',
     'type.personal_stay':       'Estadía personal',
     'type.commercial_meeting':  'Reunión comercial',
+    'type.client_feedback':     'Relato de cliente',
   },
 }

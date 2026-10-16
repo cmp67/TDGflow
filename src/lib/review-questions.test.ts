@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getQuestions, isLeadSubmission } from './review-questions'
+import { getQuestions, isLeadSubmission, isClientFeedback, reviewStatusFor, VISIT_TYPES } from './review-questions'
 
 describe('getQuestions', () => {
   it('pergunta o tipo de entidade antes de tudo, independente do resto', () => {
@@ -82,5 +82,53 @@ describe('isLeadSubmission', () => {
 
   it('site inspection não é lead', () => {
     expect(isLeadSubmission({ visit_type: 'site_inspection' })).toBe(false)
+  })
+})
+
+describe('relato de cliente (client_feedback) — "Aprovado por cliente", 16/10/2026', () => {
+  it('está entre os tipos de registro', () => {
+    expect(VISIT_TYPES).toContain('client_feedback')
+  })
+
+  it('pergunta nome, onde fica, quando e o que o cliente contou — nunca nota nem foto (ninguém da rede foi lá)', () => {
+    const qs = getQuestions({ entity_type: 'hotel', visit_type: 'client_feedback' })
+    const ids = qs.map(q => q.id)
+    expect(ids.slice(0, 2)).toEqual(['entity_type', 'visit_type'])
+    expect(ids).toContain('hotel_name')
+    expect(ids).toContain('country')
+    expect(ids).toContain('visit_date')
+    expect(ids).toContain('client_said')
+    expect(ids).not.toContain('overall_rating')
+    expect(ids).not.toContain('sentiment_map')
+    expect(ids).not.toContain('impressions')
+    expect(ids).not.toContain('photo')
+    expect(ids).not.toContain('hotel_names')
+    expect(qs.find(q => q.id === 'client_said')?.type).toBe('voice_text')
+  })
+
+  it('mesmo trilho pra fornecedor não-hotel', () => {
+    const ids = getQuestions({ entity_type: 'guide', visit_type: 'client_feedback' }).map(q => q.id)
+    expect(ids).toContain('client_said')
+    expect(ids).not.toContain('overall_rating')
+  })
+
+  it('reviewStatusFor: status sempre derivado do tipo, nunca do cliente', () => {
+    expect(reviewStatusFor('commercial_meeting')).toBe('a_testar')
+    expect(reviewStatusFor('client_feedback')).toBe('aprovado_cliente')
+    expect(reviewStatusFor('fam_trip')).toBe('published')
+    expect(reviewStatusFor('site_inspection')).toBe('published')
+    expect(reviewStatusFor('personal_stay')).toBe('published')
+    expect(reviewStatusFor(null)).toBe('published')
+    expect(reviewStatusFor(undefined)).toBe('published')
+  })
+
+  it('roteiro continua lead a testar mesmo sem visit_type', () => {
+    expect(reviewStatusFor(undefined, 'roteiro')).toBe('a_testar')
+  })
+
+  it('relato de cliente não é lead (isLeadSubmission) nem review testada', () => {
+    expect(isLeadSubmission({ visit_type: 'client_feedback' })).toBe(false)
+    expect(isClientFeedback({ visit_type: 'client_feedback' })).toBe(true)
+    expect(isClientFeedback({ visit_type: 'fam_trip' })).toBe(false)
   })
 })

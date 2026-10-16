@@ -9,8 +9,23 @@ export interface ReviewQuestion {
 export const ENTITY_TYPES = ['hotel', 'beach_club', 'transfer', 'guide', 'restaurant', 'roteiro', 'other'] as const
 export type EntityType = (typeof ENTITY_TYPES)[number]
 
-export const VISIT_TYPES = ['fam_trip', 'site_inspection', 'personal_stay', 'commercial_meeting'] as const
+export const VISIT_TYPES = ['fam_trip', 'site_inspection', 'personal_stay', 'commercial_meeting', 'client_feedback'] as const
 export type VisitType = (typeof VISIT_TYPES)[number]
+
+/* Status da review nasce do visit_type (e do entity_type, no caso do
+   roteiro), sempre no servidor — porte do Trip Flow, 16/10/2026:
+   - reunião comercial / roteiro -> 'a_testar' (Aguardando teste);
+   - relato de cliente -> 'aprovado_cliente' (Aprovado por cliente: vendeu,
+     o cliente voltou satisfeito, mas ninguém da rede foi lá);
+   - o resto (alguém da rede esteve lá) -> 'published' (Testado pela rede).
+   'needs_review' é à parte: dica do Max com dado incerto, nunca nasce aqui. */
+export const REVIEW_STATUSES = ['published', 'a_testar', 'aprovado_cliente', 'needs_review'] as const
+export type ReviewStatus = (typeof REVIEW_STATUSES)[number]
+export function reviewStatusFor(visitType: string | null | undefined, entityType?: string | null): ReviewStatus {
+  if (visitType === 'commercial_meeting' || entityType === 'roteiro') return 'a_testar'
+  if (visitType === 'client_feedback') return 'aprovado_cliente'
+  return 'published'
+}
 
 // entity_type e visit_type vêm primeiro em todo caminho — é o que decide se
 // o resto do questionário pede 1 nome (visita real) ou uma lista de nomes
@@ -27,6 +42,15 @@ const COMMERCIAL_MEETING_QUESTION: ReviewQuestion = {
   text: 'Por que isso chamou sua atenção? O que vale a pena testar?',
   type: 'voice_text',
   placeholder: 'O que você viu ou ouviu que merece atenção da rede...',
+}
+
+// Relato de cliente: ninguém da rede esteve lá, então nem nota nem foto —
+// só o que o cliente contou. É isso que vai pra ficha do fornecedor.
+const CLIENT_FEEDBACK_QUESTION: ReviewQuestion = {
+  id: 'client_said',
+  text: 'O que o cliente contou? Por que vale a pena a rede conhecer?',
+  type: 'voice_text',
+  placeholder: 'O que o cliente elogiou, o que surpreendeu, pra quem indicaria...',
 }
 
 const NAMES_LIST_QUESTION: ReviewQuestion = {
@@ -104,6 +128,10 @@ export function getQuestions(answers: Record<string, unknown>): ReviewQuestion[]
     return [ENTITY_QUESTION, VISIT_TYPE_QUESTION, COUNTRY_QUESTION, COMMERCIAL_MEETING_QUESTION, NAMES_LIST_QUESTION]
   }
 
+  if (visitType === 'client_feedback') {
+    return [ENTITY_QUESTION, VISIT_TYPE_QUESTION, NAME_QUESTION, COUNTRY_QUESTION, DATE_QUESTION, CLIENT_FEEDBACK_QUESTION]
+  }
+
   const stayQuestions = entityType === 'hotel' ? STAY_QUESTIONS : LIGHT_TIP_QUESTIONS
   return [ENTITY_QUESTION, VISIT_TYPE_QUESTION, NAME_QUESTION, COUNTRY_QUESTION, DATE_QUESTION, ...stayQuestions]
 }
@@ -111,4 +139,9 @@ export function getQuestions(answers: Record<string, unknown>): ReviewQuestion[]
 /** "Por testar" e Roteiro nascem como lead a testar, nunca como review publicado. */
 export function isLeadSubmission(answers: Record<string, unknown>): boolean {
   return answers.visit_type === 'commercial_meeting' || answers.entity_type === 'roteiro'
+}
+
+/** Relato de cliente nasce como "Aprovado por cliente" — nunca como testado pela rede. */
+export function isClientFeedback(answers: Record<string, unknown>): boolean {
+  return answers.visit_type === 'client_feedback'
 }

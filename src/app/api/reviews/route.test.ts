@@ -230,7 +230,7 @@ describe('PATCH /api/reviews action=edit — status needs_review (dica com dado 
 
   beforeAll(async () => {
     await sql`ALTER TABLE tdg_hotel_reviews DROP CONSTRAINT IF EXISTS tdg_hotel_reviews_status_check`
-    await sql`ALTER TABLE tdg_hotel_reviews ADD CONSTRAINT tdg_hotel_reviews_status_check CHECK (status = ANY (ARRAY['published', 'a_testar', 'needs_review']))`
+    await sql`ALTER TABLE tdg_hotel_reviews ADD CONSTRAINT tdg_hotel_reviews_status_check CHECK (status = ANY (ARRAY['published', 'a_testar', 'needs_review', 'aprovado_cliente']))`
 
     await sql`
       INSERT INTO tdg_users (name, email, agency_name, password_hash, role)
@@ -287,7 +287,7 @@ describe('PATCH /api/reviews action=edit — confirmar sem alterar o nome', () =
 
   beforeAll(async () => {
     await sql`ALTER TABLE tdg_hotel_reviews DROP CONSTRAINT IF EXISTS tdg_hotel_reviews_status_check`
-    await sql`ALTER TABLE tdg_hotel_reviews ADD CONSTRAINT tdg_hotel_reviews_status_check CHECK (status = ANY (ARRAY['published', 'a_testar', 'needs_review']))`
+    await sql`ALTER TABLE tdg_hotel_reviews ADD CONSTRAINT tdg_hotel_reviews_status_check CHECK (status = ANY (ARRAY['published', 'a_testar', 'needs_review', 'aprovado_cliente']))`
 
     await sql`
       INSERT INTO tdg_users (name, email, agency_name, password_hash, role)
@@ -363,5 +363,62 @@ describe('PATCH /api/reviews action=edit — corrigir hotel de review já public
 
     const { rows: hotelCheck } = await sql`SELECT id FROM tdg_hotels WHERE name = ${specificHotel}`
     expect(body.review.hotel_id).toBe(hotelCheck[0].id)
+  })
+})
+
+describe('POST /api/reviews — relato de cliente vira "Aprovado por cliente" (16/10/2026)', () => {
+  const suffix = Date.now()
+  const email = `__tdd_client_feedback_${suffix}__@example.com`
+  const hotelName = `__TDD Client Feedback Hotel ${suffix}__`
+  const reviewIds: string[] = []
+
+  beforeAll(async () => {
+    await sql`ALTER TABLE tdg_hotel_reviews DROP CONSTRAINT IF EXISTS tdg_hotel_reviews_status_check`
+    await sql`ALTER TABLE tdg_hotel_reviews ADD CONSTRAINT tdg_hotel_reviews_status_check CHECK (status = ANY (ARRAY['published', 'a_testar', 'needs_review', 'aprovado_cliente']))`
+    await sql`
+      INSERT INTO tdg_users (name, email, agency_name, password_hash, role)
+      VALUES ('TDD Client Feedback', ${email}, '__TDD_AGENCY__', 'x', 'agent')
+    `
+  })
+
+  afterAll(async () => {
+    if (reviewIds.length) await sql`DELETE FROM tdg_hotel_reviews WHERE id = ANY(${reviewIds})`
+    await sql`DELETE FROM tdg_users WHERE email = ${email}`
+    await sql`DELETE FROM tdg_hotels WHERE name = ${hotelName}`
+  })
+
+  it('nasce aprovado_cliente, sem nota, com o relato como heads_up e sem foto mesmo que venha', async () => {
+    mockAuth.mockResolvedValueOnce(sessionFor(email))
+    const res = await POST(postReq({
+      hotel_name: hotelName, entity_type: 'hotel', visit_type: 'client_feedback',
+      raw_answers: { client_said: 'Cliente voltou encantado com o atendimento e a vista da suíte.' },
+      photo_url: 'https://example.com/nao-deveria-entrar.jpg',
+    }))
+    const body = await res.json()
+    expect(res.status).toBe(200)
+    reviewIds.push(body.review.id)
+
+    const { rows } = await sql`SELECT status, overall_rating, heads_up, photo_url, hotel_id FROM tdg_hotel_reviews WHERE id = ${body.review.id}`
+    expect(rows[0].status).toBe('aprovado_cliente')
+    expect(rows[0].overall_rating).toBeNull()
+    expect(rows[0].heads_up).toContain('encantado')
+    expect(rows[0].photo_url).toBeNull()
+    expect(rows[0].hotel_id).toBeTruthy()
+  })
+
+  it('exige o que o cliente contou', async () => {
+    mockAuth.mockResolvedValueOnce(sessionFor(email))
+    const res = await POST(postReq({ hotel_name: hotelName, entity_type: 'hotel', visit_type: 'client_feedback', raw_answers: {} }))
+    expect(res.status).toBe(400)
+  })
+
+  it('GET ?status=aprovado_cliente lista só relatos de cliente', async () => {
+    mockAuth.mockResolvedValueOnce(sessionFor(email))
+    const res = await GET(getReq('status=aprovado_cliente'))
+    const body = await res.json()
+    expect(res.status).toBe(200)
+    const mine = body.reviews.find((r: { hotel_name: string }) => r.hotel_name === hotelName)
+    expect(mine).toBeTruthy()
+    expect(body.reviews.every((r: { status: string }) => r.status === 'aprovado_cliente')).toBe(true)
   })
 })

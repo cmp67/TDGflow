@@ -102,6 +102,7 @@ const VISIT_TYPE_LABELS: Record<string, string> = {
   site_inspection: 'Site Inspection',
   personal_stay: 'Hospedagem pessoal',
   commercial_meeting: 'Por testar',
+  client_feedback: 'Relato de cliente',
 }
 
 const ENTITY_TYPE_LABELS: Record<string, string> = {
@@ -495,9 +496,14 @@ function HotelCard({ review, onToggleFavorite, onViewHistory, onConfirmLead, onU
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   const isLead = review.status === 'a_testar'
+  // Relato de cliente (16/10/2026): vendeu, o cliente aprovou, a rede não
+  // foi — sem nota, sem foto, azul. Mesmo tratamento visual de lead (traço,
+  // citação principal), só muda cor e selo.
+  const isClient = review.status === 'aprovado_cliente'
+  const noPhotoArt = isLead || isClient
   const visitCount = Number(review.visit_count ?? 1)
   const avgRating = Number(review.avg_rating ?? review.overall_rating)
-  const accent = isLead ? 'var(--tdgflow-accent-warm)' : ratingAccent(Math.round(avgRating))
+  const accent = isLead ? 'var(--tdgflow-accent-warm)' : isClient ? 'var(--tdgflow-accent-info)' : ratingAccent(Math.round(avgRating))
   const sceneId = ENTITY_SCENE_ID[review.entity_type] ?? 'scene-hotel'
 
   function formatDate(iso: string | null) {
@@ -523,7 +529,7 @@ function HotelCard({ review, onToggleFavorite, onViewHistory, onConfirmLead, onU
       style={{
         background: 'var(--tdgflow-surface)',
         borderRadius: 16,
-        border: isHighlighted ? '1.5px solid var(--tdgflow-navy)' : isLead ? '1.5px dashed var(--tdgflow-border-light)' : '1px solid var(--tdgflow-border)',
+        border: isHighlighted ? '1.5px solid var(--tdgflow-navy)' : noPhotoArt ? '1.5px dashed var(--tdgflow-border-light)' : '1px solid var(--tdgflow-border)',
         boxShadow: isHighlighted ? '0 0 0 3px var(--tdgflow-navy-subtle)' : 'none',
         overflow: 'hidden',
         position: 'relative',
@@ -538,17 +544,17 @@ function HotelCard({ review, onToggleFavorite, onViewHistory, onConfirmLead, onU
           19/08: abrir a foto de cara escondia o review em si. Card já
           aberto → aí sim clicar na foto abre o carrossel. */}
       <div
-        onClick={review.photo_url && !isLead ? (expanded ? () => setGalleryIndex(0) : toggleExpanded) : undefined}
+        onClick={review.photo_url && !noPhotoArt ? (expanded ? () => setGalleryIndex(0) : toggleExpanded) : undefined}
         style={{
-          height: 128, position: 'relative', display: 'flex', alignItems: isLead || !review.photo_url ? 'center' : 'flex-end',
-          justifyContent: isLead || !review.photo_url ? 'center' : 'flex-start',
-          padding: isLead || !review.photo_url ? 0 : '10px 12px',
-          cursor: review.photo_url && !isLead ? 'pointer' : 'default',
-          background: review.photo_url && !isLead
+          height: 128, position: 'relative', display: 'flex', alignItems: noPhotoArt || !review.photo_url ? 'center' : 'flex-end',
+          justifyContent: noPhotoArt || !review.photo_url ? 'center' : 'flex-start',
+          padding: noPhotoArt || !review.photo_url ? 0 : '10px 12px',
+          cursor: review.photo_url && !noPhotoArt ? 'pointer' : 'default',
+          background: review.photo_url && !noPhotoArt
             ? `linear-gradient(0deg, rgba(20,12,6,0.6) 0%, rgba(20,12,6,0.02) 55%, transparent 75%), url(${review.photo_url}) center/cover`
             : 'var(--tdgflow-surface-high)',
         }}>
-        {isLead && (
+        {noPhotoArt && (
           <>
             <span style={{
               position: 'absolute', top: 10, left: 12,
@@ -556,20 +562,22 @@ function HotelCard({ review, onToggleFavorite, onViewHistory, onConfirmLead, onU
               fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
               color: accent,
             }}>
-              <svg style={{ width: 11, height: 11, fill: 'currentColor' }}><use href="#i-spark" /></svg>
-              Recém-descoberto
+              {isClient
+                ? <svg style={{ width: 11, height: 11, fill: 'none', stroke: 'currentColor', strokeWidth: 1.8 }}><use href="#i-client" /></svg>
+                : <svg style={{ width: 11, height: 11, fill: 'currentColor' }}><use href="#i-spark" /></svg>}
+              {isClient ? 'Aprovado por cliente' : 'Recém-descoberto'}
             </span>
             <svg style={{ width: 62, height: 62, stroke: accent, strokeWidth: 1.4, fill: 'none', strokeLinecap: 'round', strokeLinejoin: 'round' }}>
               <use href={`#${sceneId}`} />
             </svg>
           </>
         )}
-        {!isLead && !review.photo_url && (
+        {!noPhotoArt && !review.photo_url && (
           <svg style={{ width: 62, height: 62, stroke: 'var(--tdgflow-gold-dim, #8C6436)', strokeWidth: 1.4, fill: 'none', strokeLinecap: 'round', strokeLinejoin: 'round' }}>
             <use href={`#${sceneId}`} />
           </svg>
         )}
-        {!isLead && review.photo_url && (
+        {!noPhotoArt && review.photo_url && (
           <span style={{
             position: 'relative', zIndex: 1,
             display: 'inline-flex', alignItems: 'center', gap: 5,
@@ -624,9 +632,9 @@ function HotelCard({ review, onToggleFavorite, onViewHistory, onConfirmLead, onU
               {review.source === 'max_whatsapp' && <MaxSourceBadge />}
             </p>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              {!isLead && <SentimentBadge value={Math.round(avgRating)} />}
-              {!isLead && <span style={{ color: 'var(--tdgflow-border-light)' }}>·</span>}
-              {!isLead && (
+              {!noPhotoArt && <SentimentBadge value={Math.round(avgRating)} />}
+              {!noPhotoArt && <span style={{ color: 'var(--tdgflow-border-light)' }}>·</span>}
+              {!noPhotoArt && (
                 <span style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)' }}>
                   {visitCount} {visitCount === 1 ? 'visita' : 'visitas'}
                 </span>
@@ -661,7 +669,7 @@ function HotelCard({ review, onToggleFavorite, onViewHistory, onConfirmLead, onU
         {/* Lead — o "porquê" é o conteúdo principal, sempre visível (não
             escondido atrás de "Ver detalhes"), com CTA pra confirmar de
             perto. Sem isso, um lead vira um card fantasma sem nada legível. */}
-        {isLead && (
+        {noPhotoArt && (
           <>
             {review.heads_up && (
               <p style={{
@@ -2044,6 +2052,7 @@ export default function DicasView() {
 
   const [publishedReviews, setPublishedReviews] = useState<Review[]>([])
   const [leadReviews, setLeadReviews] = useState<Review[]>([])
+  const [clientReviews, setClientReviews] = useState<Review[]>([])
   const [loading, setLoading] = useState(true)
   const [showQuestionnaire, setShowQuestionnaire] = useState(!!prefillHotelName)
   const [showRecord, setShowRecord] = useState(false)
@@ -2062,14 +2071,17 @@ export default function DicasView() {
   const [showFilterSheet, setShowFilterSheet] = useState(false)
 
   const loadReviews = useCallback(async () => {
-    const [pubRes, leadRes] = await Promise.all([
+    const [pubRes, leadRes, cliRes] = await Promise.all([
       fetch('/api/reviews?status=published'),
       fetch('/api/reviews?status=a_testar'),
+      fetch('/api/reviews?status=aprovado_cliente'),
     ])
     const pubData = await pubRes.json()
     const leadData = await leadRes.json()
+    const cliData = await cliRes.json()
     setPublishedReviews(pubData.reviews ?? [])
     setLeadReviews(leadData.reviews ?? [])
+    setClientReviews(cliData.reviews ?? [])
     setLoading(false)
   }, [])
 
@@ -2080,6 +2092,7 @@ export default function DicasView() {
     const patch = (r: Review) => r.id === reviewId ? { ...r, is_favorite: !isFavorite } : r
     setPublishedReviews(prev => prev.map(patch))
     setLeadReviews(prev => prev.map(patch))
+    setClientReviews(prev => prev.map(patch))
     await fetch('/api/reviews', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -2087,7 +2100,7 @@ export default function DicasView() {
     })
   }
 
-  const allReviews = [...publishedReviews, ...leadReviews]
+  const allReviews = [...publishedReviews, ...leadReviews, ...clientReviews]
   const q = search.trim().toLowerCase()
   const countries = ['all', ...Array.from(new Set(allReviews.map(r => r.country).filter(Boolean))).sort()] as string[]
   const agencies = ['all', ...Array.from(new Set(allReviews.map(r => r.agency_name).filter(Boolean))).sort()] as string[]
@@ -2115,7 +2128,8 @@ export default function DicasView() {
 
   const filteredPublished = publishedReviews.filter(matches)
   const filteredLeads = leadReviews.filter(matches)
-  const hasResults = filteredPublished.length > 0 || filteredLeads.length > 0
+  const filteredClient = clientReviews.filter(matches)
+  const hasResults = filteredPublished.length > 0 || filteredLeads.length > 0 || filteredClient.length > 0
   // Contador do botão "Filtros" — só o que mora no sheet (tipo de fornecedor
   // fica sempre visível fora dele, favoritos tem o próprio toggle).
   const sheetActiveCount = [activeVisitType !== 'all', activeCountry !== 'all', activePeriod !== 'all', activeAgency !== 'all'].filter(Boolean).length
@@ -2176,6 +2190,12 @@ export default function DicasView() {
                   <p style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--tdgflow-accent-warm)', letterSpacing: '-0.02em', lineHeight: 1 }}>{leadReviews.length}</p>
                   <p style={{ fontSize: '0.55rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)', marginTop: 2 }}>a testar</p>
                 </div>
+                {clientReviews.length > 0 && (
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--tdgflow-accent-info)', letterSpacing: '-0.02em', lineHeight: 1 }}>{clientReviews.length}</p>
+                    <p style={{ fontSize: '0.55rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)', marginTop: 2 }}>por cliente</p>
+                  </div>
+                )}
               </div>
             )}
             <button
@@ -2469,6 +2489,38 @@ export default function DicasView() {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(252px, 1fr))', gap: 16 }}>
                   <AnimatePresence>
                     {filteredLeads.map(r => (
+                      <HotelCard
+                        key={r.id}
+                        review={r}
+                        onToggleFavorite={toggleFavorite}
+                        onViewHistory={setHistoryHotel}
+                        onConfirmLead={setConfirmingLead}
+                        onUpdated={loadReviews}
+                        highlightId={highlightReviewId}
+                      />
+                    ))}
+                  </AnimatePresence>
+                </div>
+              </div>
+            )}
+
+            {/* Aprovado por cliente — vendeu, o cliente aprovou, a rede não foi (16/10/2026) */}
+            {filteredClient.length > 0 && (
+              <div style={{ marginBottom: 36 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 14 }}>
+                  <h4 style={{
+                    display: 'flex', alignItems: 'center', gap: 6, margin: 0,
+                    fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase',
+                    color: 'var(--tdgflow-text-muted)',
+                  }}>
+                    <svg style={{ width: 12, height: 12, fill: 'none', stroke: 'var(--tdgflow-accent-info)', strokeWidth: 1.8 }}><use href="#i-client" /></svg>
+                    Aprovado por cliente
+                  </h4>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)' }}>O cliente aprovou — a rede ainda não foi</span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(252px, 1fr))', gap: 16 }}>
+                  <AnimatePresence>
+                    {filteredClient.map(r => (
                       <HotelCard
                         key={r.id}
                         review={r}

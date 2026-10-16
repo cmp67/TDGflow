@@ -6,6 +6,7 @@ import { logUsage } from '@/lib/usage-log'
 import { checkAndDeductCredits } from '@/lib/credits'
 import { getAgencyId } from '@/lib/agency'
 import { buildReviewExtractionPrompt } from '@/lib/review-extraction'
+import { reviewStatusFor } from '@/lib/review-questions'
 
 export const dynamic = 'force-dynamic'
 
@@ -41,7 +42,7 @@ export async function GET(req: NextRequest) {
     // visível na inbox do Max com aviso, editável só pelo autor. Ver PATCH
     // action=edit mais abaixo, que resolve o hotel_id de verdade e publica.
     await sql`ALTER TABLE tdg_hotel_reviews DROP CONSTRAINT IF EXISTS tdg_hotel_reviews_status_check`
-    await sql`ALTER TABLE tdg_hotel_reviews ADD CONSTRAINT tdg_hotel_reviews_status_check CHECK (status = ANY (ARRAY['published', 'a_testar', 'needs_review']))`
+    await sql`ALTER TABLE tdg_hotel_reviews ADD CONSTRAINT tdg_hotel_reviews_status_check CHECK (status = ANY (ARRAY['published', 'a_testar', 'needs_review', 'aprovado_cliente']))`
     const { rows } = await sql`
       SELECT r.*, (r.agent_id IS NOT NULL AND r.agent_id = ${agentId}) AS is_own
       FROM tdg_hotel_reviews r
@@ -131,20 +132,31 @@ export async function POST(req: NextRequest) {
     // testado direto na fila de confiança da rede. Roteiro entra no mesmo
     // grupo de "descoberta" que reunião comercial — documento recebido,
     // ninguém testou ainda.
-    const isLead = visit_type === 'commercial_meeting' || entity_type === 'roteiro'
-    const status = isLead ? 'a_testar' : 'published'
+    // Três saídas (porte do Trip Flow, 16/10/2026): reunião comercial /
+    // roteiro -> a_testar; relato de cliente -> aprovado_cliente; alguém da
+    // rede foi lá -> published.
+    const status = reviewStatusFor(visit_type, entity_type)
+    const isLead = status === 'a_testar'
+    const isClientFeedback = status === 'aprovado_cliente'
+    const wentThere = status === 'published'
 
-    // Reunião comercial nunca pergunta nota geral (não houve estadia) — só
-    // exige overall_rating fora do caso de lead.
-    if (!hotel_name || (!isLead && overall_rating == null)) {
+    // Reunião comercial e relato de cliente nunca perguntam nota geral (não
+    // houve estadia de quem registra) — só exige overall_rating quando alguém foi lá.
+    if (!hotel_name || (wentThere && overall_rating == null)) {
       return NextResponse.json({ error: 'hotel_name e overall_rating são obrigatórios' }, { status: 400 })
+    }
+    const answers = (raw_answers ?? {}) as Record<string, unknown>
+    const clientSaid = typeof answers.client_said === 'string' ? answers.client_said.trim() : ''
+    if (isClientFeedback && clientSaid.length < 3) {
+      return NextResponse.json({ error: 'Conte o que o cliente disse — é isso que vai pra ficha.' }, { status: 400 })
     }
 
     // Lead de reunião comercial nunca tem foto — ninguém foi lá pessoalmente
     // ainda, não há o que fotografar. Ignora silenciosamente se vier mesmo assim.
     // photo_urls (múltiplas, Fase de multi-foto) é a fonte de verdade quando
     // vem preenchida; photo_url singular segue aceito pra clientes antigos.
-    const finalPhotoUrls: string[] = isLead ? [] : (Array.isArray(photo_urls) ? photo_urls.filter(Boolean) : (photo_url ? [photo_url] : []))
+    // Só quem foi lá tem foto — lead e relato de cliente não têm o que fotografar.
+    const finalPhotoUrls: string[] = !wentThere ? [] : (Array.isArray(photo_urls) ? photo_urls.filter(Boolean) : (photo_url ? [photo_url] : []))
     const finalPhotoUrl = finalPhotoUrls[0] ?? null
 
     // Ensure country column exists (idempotent migration)
@@ -217,6 +229,11 @@ export async function POST(req: NextRequest) {
     let structured: { highlights?: string[]; client_profile?: string; must_experience?: string; heads_up?: string | null } = {}
     if (isLead) {
       structured = { heads_up: (raw_answers as Record<string, string>)?.why_it_matters ?? null }
+    } else if (isClientFeedback) {
+      // Relato de cliente: o que o cliente contou vai no mesmo lugar que o
+      // "porquê" do lead — a UI já mostra heads_up como citação principal.
+      // Sem IA nem Lumis: é uma resposta curta, não uma estadia pra extrair.
+      structured = { heads_up: clientSaid }
     } else {
       // AI extraction — check balance first; if insufficient, skip extraction but still save the review
       const agencyId = await getAgencyId(session.user?.email ?? '')
@@ -300,7 +317,7 @@ export async function POST(req: NextRequest) {
       VALUES (
         ${hotel_name}, ${hotelId}, ${finalEntityType}, ${country || null}, ${user.id}, ${user.name}, ${user.agency_name},
         ${visit_date || null}, ${visit_type || null},
-        ${overall_rating}, ${rooms_rating || null}, ${service_rating || null},
+        ${overall_rating ?? null}, ${rooms_rating || null}, ${service_rating || null},
         ${food_rating || null}, ${location_rating || null},
         ${JSON.stringify(structured.highlights ?? [])}, ${structured.client_profile ?? null},
         ${structured.must_experience ?? null}, ${structured.heads_up ?? null},

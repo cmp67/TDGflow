@@ -34,6 +34,7 @@ export interface HotelRow {
   gallery: { label: string; url: string }[]
   tested_count: number
   pending_lead_count: number
+  client_approved_count: number
   created_by: string | null
   can_edit: boolean
   benefits: { id: string; category: string; description: string; commission_pct: number | null }[]
@@ -72,6 +73,8 @@ export async function GET() {
            h.agency_id, (h.agency_id IS NOT NULL) AS is_private,
            COUNT(*) FILTER (WHERE r.status = 'published')::int AS tested_count,
            COUNT(*) FILTER (WHERE r.status = 'a_testar')::int AS pending_lead_count,
+           -- Aprovado por cliente (16/10/2026): vendeu e o cliente aprovou, a rede não foi.
+           COUNT(*) FILTER (WHERE r.status = 'aprovado_cliente')::int AS client_approved_count,
            COALESCE(
              (SELECT json_agg(json_build_object(
                 'id', b.id, 'category', b.category, 'description', b.description, 'commission_pct', b.commission_pct

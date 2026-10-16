@@ -1,5 +1,6 @@
 import { sql } from '@vercel/postgres'
 import { getOffers } from '@/lib/offers'
+import { reviewStatusFor } from '@/lib/review-questions'
 
 /* Ferramentas de busca/registro sobre a rede TDG — extraídas de
    src/app/api/mcp/route.ts (servidor MCP usado pelo agente MAX no GPT
@@ -75,7 +76,7 @@ export const TOOL_DEFINITIONS = [
         hotel_name: { type: 'string', description: 'Nome do hotel (busca parcial, ex: "Sagres", "Velaa")' },
         visit_type: {
           type: 'string',
-          enum: ['fam_trip', 'site_inspection', 'personal_stay', 'commercial_meeting'],
+          enum: ['fam_trip', 'site_inspection', 'personal_stay', 'commercial_meeting', 'client_feedback'],
           description: 'Tipo de visita',
         },
         limit: { type: 'number', description: 'Máximo de resultados (default: 10)' },
@@ -119,7 +120,7 @@ export const TOOL_DEFINITIONS = [
         agency_name: { type: 'string', description: 'Nome da agência' },
         visit_type: {
           type: 'string',
-          enum: ['fam_trip', 'site_inspection', 'personal_stay', 'commercial_meeting'],
+          enum: ['fam_trip', 'site_inspection', 'personal_stay', 'commercial_meeting', 'client_feedback'],
           description: 'Tipo de visita',
         },
         visit_date: { type: 'string', description: 'Data da visita (YYYY-MM-DD)' },
@@ -421,7 +422,7 @@ export async function registerTip(args: Record<string, unknown>) {
       ${(client_profile as string) ?? null},
       ${(must_experience as string) ?? null},
       ${(heads_up as string) ?? null},
-      'published',
+      ${reviewStatusFor(visit_type as string | undefined)},
       'max_whatsapp'
     )
     RETURNING id, hotel_name, agent_name, created_at
