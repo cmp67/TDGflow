@@ -18,8 +18,13 @@ o mesmo da TA Travel). Molde do agente em `agentes/tdg-flow/max/`, instância em
    `https://tdg-flow-carla-4643s-projects.vercel.app/api/whatsapp/uazapi?s=<UAZAPI_WEBHOOK_SECRET>`
    (o valor está em `.env.local`; é a única autenticação da URL, além do token da
    instância que a uazapi manda no corpo).
-4. Redeploy (qualquer deploy serve) para a função ler as variáveis.
-5. Teste: mandar "Max, o que a rede sabe do Txai?" no 1:1 e no grupo (marcando o
+4. (Opcional, mas é o que o Max tinha no GPT Maker) Bemgsy Central: no Central, em
+   Agentes MCP, copiar o *agent token* do agente do Max (tabela `mcp_agent_tokens`;
+   o mesmo que o GPT Maker usava no OAuth) → Vercel env `BEMGSY_CENTRAL_MCP_TOKEN`.
+   `BEMGSY_CENTRAL_MCP_URL` já está lá. Sem o token, o Max responde só com o Flow
+   (sem materiais/FAQs/fichas dos hotéis representados).
+5. Redeploy (qualquer deploy serve) para a função ler as variáveis.
+6. Teste: mandar "Max, o que a rede sabe do Txai?" no 1:1 e no grupo (marcando o
    número do Max). Em grupo sem marcar, ele fica calado.
 
 ## Regras que a rota aplica (`src/app/api/whatsapp/uazapi/route.ts`)

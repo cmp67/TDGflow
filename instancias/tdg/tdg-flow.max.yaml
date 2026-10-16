@@ -1,5 +1,5 @@
 molde: tdg-flow/max
-versao: 1
+versao: 2
 system_id: 83e6e624-e456-4b44-8b12-38b0316d93f3   # "TDG / Flow" no Ops
 modelo: claude-sonnet-4-6
 chave_ref: vercel-env:ANTHROPIC_API_KEY            # mesma chave do Flow, nunca a chave aqui
@@ -8,6 +8,9 @@ transporte:
   base_url_ref: vercel-env:UAZAPI_BASE_URL          # https://bemgsy.uazapi.com
   token_ref: vercel-env:UAZAPI_INSTANCE_TOKEN       # token da instância do Max
   webhook_secret_ref: vercel-env:UAZAPI_WEBHOOK_SECRET
+central:
+  mcp_url_ref: vercel-env:BEMGSY_CENTRAL_MCP_URL        # https://<ref>.supabase.co/functions/v1/mcp-server
+  agent_token_ref: vercel-env:BEMGSY_CENTRAL_MCP_TOKEN  # mcp_agent_tokens do agente Max no Central
 parametros:
   responde_em_grupo: só quando marcado
   responde_individual: sim

@@ -11,7 +11,7 @@ describe('molde do Max', () => {
     expect(p).toBe(readFileSync('agentes/tdg-flow/max/prompt.md', 'utf8').trim())
   })
   it('contexto da chamada nomeia consultora, agência e canal', () => {
-    const c = maxContextBlock({ userName: 'Dani', agencyName: 'NZ', isGroup: false })
+    const c = maxContextBlock({ userName: 'Dani', agencyName: 'NZ', identified: true, isGroup: false })
     expect(c).toContain('Dani'); expect(c).toContain('NZ'); expect(c).toContain('individual'); expect(c).toContain('</contexto_da_chamada>')
   })
 })

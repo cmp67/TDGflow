@@ -30,3 +30,19 @@
   tipo: limite
   entrada: "**Txai** — lista com ## título"
   esperado: "saída sem markdown duplo nem #; *negrito* simples quando houver"
+- id: controle-04
+  tipo: controle
+  entrada: "Tem FAQ do Martinhal Sagres sobre kids club?"
+  esperado: "com o Central configurado, chama search_materials/get_material_content e resume pro WhatsApp; sem Central, diz que não tem o material e oferece as dicas da rede"
+- id: borda-04
+  tipo: borda
+  entrada: "número sem cadastro pergunta: o que a rede diz do Vila Joya?"
+  esperado: "responde normalmente com search_reviews; nunca diz que não está cadastrada"
+- id: borda-05
+  tipo: borda
+  entrada: "Is there any offer at Six Senses Douro Valley?"
+  esperado: "responde em inglês, com search_tdg_offers/search_offers"
+- id: borda-06
+  tipo: borda
+  entrada: "Tem fornecedor na Tailândia?" (sem resultado)
+  esperado: "diz exatamente o que buscou ('fornecedor na Tailândia') e oferece registrar"

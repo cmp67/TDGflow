@@ -5,6 +5,7 @@ vi.mock('@/lib/max/identity', () => ({ findUserByPhone: vi.fn() }))
 vi.mock('@/lib/max/memory', () => ({ rememberInbound: vi.fn(), rememberOutbound: vi.fn(), recentTurns: vi.fn() }))
 vi.mock('@/lib/max/transport', async (orig) => ({ ...(await orig<typeof import('@/lib/max/transport')>()), sendWhatsAppText: vi.fn() }))
 vi.mock('@/lib/max/agent', () => ({ runMax: vi.fn(), MAX_MODEL: 'test' }))
+vi.mock('@/lib/max/central-mcp', () => ({ readCentralConfig: vi.fn().mockReturnValue(null), centralToolDefinitions: vi.fn().mockResolvedValue([]) }))
 vi.mock('@/lib/credits', () => ({ checkAndDeductCredits: vi.fn(), INSUFFICIENT_BALANCE: 'INSUFFICIENT_BALANCE', NO_AGENCY: 'NO_AGENCY' }))
 vi.mock('@/lib/agency', () => ({ getAgencyId: vi.fn().mockResolvedValue('ag1') }))
 vi.mock('@/lib/usage-log', () => ({ logUsage: vi.fn() }))
@@ -46,7 +47,7 @@ describe('POST /api/whatsapp/uazapi — Max dentro do Flow', () => {
     const res = await POST(req(payload()))
     expect(await res.json()).toEqual({ ok: true, sent: true })
     expect(checkAndDeductCredits).toHaveBeenCalledWith(expect.objectContaining({ agencyId: 'ag1', action: 'chat', userEmail: 'dani@example.com' }))
-    expect(runMax).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ user, isGroup: false, text: 'o que a rede sabe do Txai?' }))
+    expect(runMax).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ identity: { user }, isGroup: false, text: 'o que a rede sabe do Txai?' }))
     expect(sendWhatsAppText).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ chatId: '5551981477111@s.whatsapp.net', text: 'O Txai é ótimo, segundo a Dani.' }))
   })
 
@@ -64,12 +65,12 @@ describe('POST /api/whatsapp/uazapi — Max dentro do Flow', () => {
     expect(runMax).not.toHaveBeenCalled()
   })
 
-  it('número sem cadastro recebe orientação, sem IA nem Lumis', async () => {
+  it('número sem cadastro é atendido (nunca recusa), sem Lumis e sem identidade', async () => {
     m(findUserByPhone).mockResolvedValue(null)
     await POST(req(payload()))
     expect(checkAndDeductCredits).not.toHaveBeenCalled()
-    expect(runMax).not.toHaveBeenCalled()
-    expect(m(sendWhatsAppText).mock.calls[0][1].text).toContain('Não achei este número')
+    expect(runMax).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ identity: { user: null, senderName: null } }))
+    expect(m(sendWhatsAppText).mock.calls[0][1].text).toBe('O Txai é ótimo, segundo a Dani.')
   })
 
   it('sem Lumis: avisa e não chama a IA', async () => {

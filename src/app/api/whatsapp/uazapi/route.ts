@@ -6,6 +6,7 @@ import { readUazapiConfig, sendWhatsAppText } from '@/lib/max/transport'
 import { findUserByPhone } from '@/lib/max/identity'
 import { recentTurns, rememberInbound, rememberOutbound } from '@/lib/max/memory'
 import { runMax, MAX_MODEL } from '@/lib/max/agent'
+import { readCentralConfig, centralToolDefinitions } from '@/lib/max/central-mcp'
 import { checkAndDeductCredits, INSUFFICIENT_BALANCE, NO_AGENCY } from '@/lib/credits'
 import { getAgencyId } from '@/lib/agency'
 import { logUsage } from '@/lib/usage-log'
@@ -26,7 +27,6 @@ function same(a: string, b: string): boolean {
   return x.length === y.length && timingSafeEqual(x, y)
 }
 
-const SEM_CADASTRO = 'Oi! Não achei este número no TDG Flow. Pede pra quem administra a sua agência cadastrar o seu WhatsApp no seu perfil, que daí a gente conversa por aqui.'
 const SEM_LUMIS = 'Sua agência está sem Lumis neste ciclo. Dá pra comprar um pacote em Billing no Flow, ou esperar o dia 1.'
 const SEM_AGENCIA = 'Sua conta no Flow ainda não está ligada a uma agência — pede pro administrador ajustar, que daí eu consigo registrar as coisas no seu nome.'
 const FALHOU = 'Deu um problema aqui do meu lado. Tenta de novo em instantes?'
@@ -56,19 +56,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, sent: sent.ok })
   }
 
-  if (!user || !user.active) return reply(SEM_CADASTRO)
-
-  const agencyId = await getAgencyId(user.email)
-  const credit = await checkAndDeductCredits({ agencyId, action: 'chat', userEmail: user.email, isBemgsyAdmin: user.role === 'admin' })
-  if (!credit.ok) return reply(credit.reason === NO_AGENCY ? SEM_AGENCIA : credit.reason === INSUFFICIENT_BALANCE ? SEM_LUMIS : FALHOU)
+  // Número sem cadastro (ou conta inativa): atende do mesmo jeito, só não
+  // registra em nome de ninguém e não debita Lumis de agência nenhuma
+  // (decisão da Carla 11/09/2026: o Max nunca recusa por cadastro). Fica no
+  // usage log com o telefone pra Bemgsy enxergar o custo.
+  const identified = !!user && user.active
+  if (identified) {
+    const agencyId = await getAgencyId(user.email)
+    const credit = await checkAndDeductCredits({ agencyId, action: 'chat', userEmail: user.email, isBemgsyAdmin: user.role === 'admin' })
+    if (!credit.ok) return reply(credit.reason === NO_AGENCY ? SEM_AGENCIA : credit.reason === INSUFFICIENT_BALANCE ? SEM_LUMIS : FALHOU)
+  }
 
   try {
     const history = await recentTurns(inbound.chatId, inbound.senderPhone, inbound.isGroup)
     // a mensagem atual já está na memória — tira do histórico pra não duplicar
     const priorTurns = history.length && history[history.length - 1].role === 'user' && history[history.length - 1].content === text ? history.slice(0, -1) : history
     const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-    const result = await runMax(anthropic.messages, { user, isGroup: inbound.isGroup, text, history: priorTurns })
-    logUsage({ event_type: 'max_whatsapp', user_email: user.email, tokens_in: result.tokensIn, tokens_out: result.tokensOut, meta: { model: MAX_MODEL, tools: result.toolCalls, group: inbound.isGroup } })
+    const central = readCentralConfig(process.env)
+    const extraTools = await centralToolDefinitions(central)
+    const identity = identified ? { user } : { user: null, senderName: inbound.senderName }
+    const result = await runMax(anthropic.messages, { identity, isGroup: inbound.isGroup, text, history: priorTurns, extraTools, central })
+    logUsage({ event_type: 'max_whatsapp', user_email: identified ? user.email : `whatsapp:${inbound.senderPhone}`, tokens_in: result.tokensIn, tokens_out: result.tokensOut, meta: { model: MAX_MODEL, tools: result.toolCalls, group: inbound.isGroup, identified } })
     return reply(result.text, { tokensIn: result.tokensIn, tokensOut: result.tokensOut })
   } catch (err) {
     console.error('[max] agente falhou', { error: err instanceof Error ? err.message : String(err) })

@@ -3,6 +3,7 @@ import { TOOL_DEFINITIONS, callMcpTool } from '@/lib/mcp-tools'
 import { maxContextBlock, maxSystemPrompt } from '@/lib/max/prompt'
 import type { MaxTurn } from '@/lib/max/memory'
 import type { MaxUser } from '@/lib/max/identity'
+import { isCentralTool, callCentralTool, type CentralConfig } from '@/lib/max/central-mcp'
 
 export const MAX_MODEL = 'claude-sonnet-4-6'
 export const MAX_TOOL_ROUNDS = 6
@@ -11,11 +12,18 @@ const MAX_TOKENS = 1024
 type MessagesApi = { create: (params: Anthropic.MessageCreateParamsNonStreaming) => Promise<Anthropic.Message> }
 export type ToolCaller = (name: string, args: Record<string, unknown>) => Promise<unknown>
 
+/* Pessoa não identificada pelo telefone: atende do mesmo jeito (decisão da
+   Carla 11/09/2026 — nunca recusar por cadastro), só não registra em nome
+   de ninguém. */
+export type MaxIdentity = { user: MaxUser } | { user: null; senderName: string | null }
+
 export type MaxRunInput = {
-  user: MaxUser
+  identity: MaxIdentity
   isGroup: boolean
   text: string
   history: MaxTurn[]
+  extraTools?: Anthropic.Tool[]
+  central?: CentralConfig | null
 }
 export type MaxRunResult = { text: string; tokensIn: number; tokensOut: number; toolCalls: string[] }
 
@@ -32,16 +40,24 @@ export function toWhatsApp(text: string): string {
 
 /* register_tip sempre em nome de quem está falando (telefone verificado) —
    o modelo não escolhe agent_name/agency_name, nem que a mensagem peça. */
-export function bindToolsToUser(user: MaxUser, call: ToolCaller = callMcpTool): ToolCaller {
+export function bindToolsToUser(user: MaxUser | null, call: ToolCaller = callMcpTool, central: CentralConfig | null = null): ToolCaller {
   return (name, args) => {
-    if (name === 'register_tip') return call(name, { ...args, agent_name: user.name, agency_name: user.agency_name })
+    if (isCentralTool(name)) return central ? callCentralTool(central, name, args) : Promise.resolve({ error: 'Bemgsy Central não configurado' })
+    if (name === 'register_tip') {
+      if (!user) return Promise.resolve({ success: false, error: 'Não dá pra registrar sem saber quem está falando: o número não está cadastrado no Flow.' })
+      return call(name, { ...args, agent_name: user.name, agency_name: user.agency_name })
+    }
     return call(name, args)
   }
 }
 
-export async function runMax(messages: MessagesApi, input: MaxRunInput, call: ToolCaller = bindToolsToUser(input.user)): Promise<MaxRunResult> {
-  const system = `${maxSystemPrompt()}\n\n${maxContextBlock({ userName: input.user.name, agencyName: input.user.agency_name, isGroup: input.isGroup })}`
-  const tools = TOOL_DEFINITIONS as unknown as Anthropic.Tool[]
+export async function runMax(messages: MessagesApi, input: MaxRunInput, call: ToolCaller = bindToolsToUser(input.identity.user, callMcpTool, input.central ?? null)): Promise<MaxRunResult> {
+  const user = input.identity.user
+  const system = `${maxSystemPrompt()}\n\n${maxContextBlock({
+    userName: user?.name ?? ('senderName' in input.identity ? input.identity.senderName : null),
+    agencyName: user?.agency_name ?? null, identified: !!user, isGroup: input.isGroup,
+  })}`
+  const tools = [...(TOOL_DEFINITIONS as unknown as Anthropic.Tool[]).filter(t => user || t.name !== 'register_tip'), ...(input.extraTools ?? [])]
   const convo: Anthropic.MessageParam[] = [...input.history.map(t => ({ role: t.role, content: t.content })), { role: 'user', content: input.text }]
   let tokensIn = 0, tokensOut = 0
   const toolCalls: string[] = []

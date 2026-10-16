@@ -28,7 +28,7 @@ describe('runMax', () => {
       .mockResolvedValueOnce(msg([{ type: 'tool_use', id: 't1', name: 'search_reviews', input: { hotel_name: 'Txai' } } as Anthropic.ToolUseBlock], 'tool_use'))
       .mockResolvedValueOnce(msg([{ type: 'text', text: 'A **Dani** disse que o Txai é ótimo.', citations: null } as Anthropic.TextBlock], 'end_turn'))
     const call = vi.fn().mockResolvedValue({ total_reviews: 1 })
-    const r = await runMax({ create }, { user, isGroup: true, text: 'o que a rede sabe do Txai?', history: [{ role: 'user', content: 'oi' }, { role: 'assistant', content: 'Oi, Dani!' }] }, call)
+    const r = await runMax({ create }, { identity: { user }, isGroup: true, text: 'o que a rede sabe do Txai?', history: [{ role: 'user', content: 'oi' }, { role: 'assistant', content: 'Oi, Dani!' }] }, call)
     expect(r.text).toBe('A *Dani* disse que o Txai é ótimo.')
     expect(r.toolCalls).toEqual(['search_reviews'])
     expect(r.tokensIn).toBe(20)
@@ -45,7 +45,7 @@ describe('runMax', () => {
 
   it('para no limite de voltas e responde com o último texto', async () => {
     const create = vi.fn().mockResolvedValue(msg([{ type: 'text', text: 'buscando…', citations: null } as Anthropic.TextBlock, { type: 'tool_use', id: 't', name: 'search_reviews', input: {} } as Anthropic.ToolUseBlock], 'tool_use'))
-    const r = await runMax({ create }, { user, isGroup: false, text: 'x', history: [] }, vi.fn().mockResolvedValue({}))
+    const r = await runMax({ create }, { identity: { user }, isGroup: false, text: 'x', history: [] }, vi.fn().mockResolvedValue({}))
     expect(create).toHaveBeenCalledTimes(MAX_TOOL_ROUNDS + 1)
     expect(r.text).toBe('buscando…')
   })
@@ -54,8 +54,28 @@ describe('runMax', () => {
     const create = vi.fn()
       .mockResolvedValueOnce(msg([{ type: 'tool_use', id: 't1', name: 'get_review', input: {} } as Anthropic.ToolUseBlock], 'tool_use'))
       .mockResolvedValueOnce(msg([{ type: 'text', text: 'Não achei.', citations: null } as Anthropic.TextBlock], 'end_turn'))
-    const r = await runMax({ create }, { user, isGroup: false, text: 'x', history: [] }, vi.fn().mockRejectedValue(new Error('boom')))
+    const r = await runMax({ create }, { identity: { user }, isGroup: false, text: 'x', history: [] }, vi.fn().mockRejectedValue(new Error('boom')))
     expect(JSON.parse(create.mock.calls[1][0].messages[2].content[0].content)).toEqual({ error: 'boom' })
     expect(r.text).toBe('Não achei.')
+  })
+})
+
+describe('runMax — pessoa não identificada e ferramentas do Central', () => {
+  it('sem cadastro: register_tip some das ferramentas, contexto diz pra nunca recusar', async () => {
+    const create = vi.fn().mockResolvedValueOnce(msg([{ type: 'text', text: 'Oi!', citations: null } as Anthropic.TextBlock], 'end_turn'))
+    await runMax({ create }, { identity: { user: null, senderName: 'Bia' }, isGroup: false, text: 'oi', history: [] }, vi.fn())
+    const p = create.mock.calls[0][0]
+    expect(p.tools.map((t: { name: string }) => t.name)).not.toContain('register_tip')
+    expect(p.system).toContain('NUNCA diga que não está cadastrada')
+    expect(p.system).toContain('Bia')
+  })
+  it('ferramentas extras do Central entram na lista e são roteadas pro Central', async () => {
+    const create = vi.fn().mockResolvedValueOnce(msg([{ type: 'text', text: 'ok', citations: null } as Anthropic.TextBlock], 'end_turn'))
+    const extra = [{ name: 'search_materials', description: 'm', input_schema: { type: 'object' as const, properties: {} } }]
+    await runMax({ create }, { identity: { user }, isGroup: false, text: 'x', history: [], extraTools: extra }, vi.fn())
+    expect(create.mock.calls[0][0].tools.map((t: { name: string }) => t.name)).toContain('search_materials')
+    const call = vi.fn().mockResolvedValue({})
+    await bindToolsToUser(user, call, null)('search_materials', { query: 'kids' })
+    expect(call).not.toHaveBeenCalled()
   })
 })
