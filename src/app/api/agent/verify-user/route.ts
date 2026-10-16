@@ -1,6 +1,7 @@
 import { sql } from '@vercel/postgres'
 import { NextRequest, NextResponse } from 'next/server'
 import { isAuthorMatch } from '@/lib/author-match'
+import { brPhoneVariants } from '@/lib/max/identity'
 
 export const dynamic = 'force-dynamic'
 
@@ -43,37 +44,9 @@ async function logRequest(rawQuery: string) {
   `
 }
 
-// Celular BR chega do WhatsApp às vezes sem o 9 depois do DDD (achado
-// 11/09: Dani Filippozzi chega como 555181477111, cadastrada como
-// 5551981477111). Mesmo número, dois formatos — devolve os dois pra
-// busca casar em qualquer sentido. Fora do padrão BR, só o próprio número.
-// Só ganha o 9 quem já era celular no formato antigo (começava com 6-9) —
-// fixo (2-5) nunca, senão casaria com o celular de outra pessoa.
-function brPhoneVariants(phoneNorm: string): [string, string] {
-  const isBr = phoneNorm.startsWith('55')
-  if (isBr && phoneNorm.length === 12 && /[6-9]/.test(phoneNorm[4])) {
-    return [phoneNorm, `${phoneNorm.slice(0, 4)}9${phoneNorm.slice(4)}`]
-  }
-  if (isBr && phoneNorm.length === 13 && phoneNorm[4] === '9') {
-    return [phoneNorm, `${phoneNorm.slice(0, 4)}${phoneNorm.slice(5)}`]
-  }
-  return [phoneNorm, phoneNorm]
-}
+// brPhoneVariants (celular BR com/sem o 9) agora vive em src/lib/max/identity.ts —
+// o Max dentro do Flow usa a mesma regra.
 
-// Achado 11/09: o modelo do Max não enxerga o telefone do contato — mandou
-// phone=0 num 1:1 real. O GPT Maker injeta `contact_phone` como variável de
-// SISTEMA (não passa pelo modelo), então ela manda na identidade:
-// - 1:1: contact_phone é o número de quem fala → identidade confiável.
-// - grupo: contact_phone é o ID do grupo "<número do criador>-<timestamp>" →
-//   só prova que é grupo; NUNCA vira identidade (senão todo membro vira o
-//   criador). A identidade volta a ser o telefone/nome que o modelo lê da
-//   mensagem, com o fallback por nome liberado.
-// O "grupo vs. individual" também sai da mão do modelo quando há sinal do
-// sistema — ele não consegue mais abrir o fallback por nome num 1:1.
-// Sem contact_phone (intenção antiga), comportamento anterior intacto.
-// Formato real: número completo com DDI (10+ dígitos) + timestamp unix de
-// 10 dígitos. Estrito de propósito — um número hifenizado de 1:1
-// ("96398-9538") não pode virar "grupo" e abrir o fallback por nome.
 const GROUP_JID = /^\d{10,15}-\d{10}$/
 // Segundo sinal, também de sistema: chat_id de grupo é "<canal hex>-<número
 // do criador>-<timestamp>" (1:1 é "<canal hex>-<número>"). Rede de segurança

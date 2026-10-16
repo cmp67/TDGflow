@@ -1,0 +1,20 @@
+molde: tdg-flow/max
+versao: 1
+system_id: 83e6e624-e456-4b44-8b12-38b0316d93f3   # "TDG / Flow" no Ops
+modelo: claude-sonnet-4-6
+chave_ref: vercel-env:ANTHROPIC_API_KEY            # mesma chave do Flow, nunca a chave aqui
+transporte:
+  provedor: uazapi
+  base_url_ref: vercel-env:UAZAPI_BASE_URL          # https://bemgsy.uazapi.com
+  token_ref: vercel-env:UAZAPI_INSTANCE_TOKEN       # token da instância do Max
+  webhook_secret_ref: vercel-env:UAZAPI_WEBHOOK_SECRET
+parametros:
+  responde_em_grupo: só quando marcado
+  responde_individual: sim
+  memoria_mensagens: 12
+  memoria_horas: 48
+lumis_por_acao:
+  chat: 9
+orcamento:
+  lumis_por_execucao_max: 9
+  voltas_de_ferramenta_max: 6

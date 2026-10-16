@@ -4,7 +4,7 @@ export type EventType =
   | 'chat'
   | 'transcription'
   | 'travel_docs'
-  | 'review_extraction'
+  | 'review_extraction' | 'max_whatsapp'
 
 interface LogParams {
   event_type: EventType
