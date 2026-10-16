@@ -6,16 +6,20 @@
    - Aprovado por cliente (azul): a consultora vendeu, o cliente voltou
      satisfeito, mas ninguém da rede foi. É feedback, não inspeção.
    - Aguardando teste (coral): conhecido em feira, reunião ou indicação.
-   Precedência num lugar só: testado > aprovado > descoberto. Sem nada a
-   dizer, o card fica sem selo — nunca uma cor "neutra" que ninguém decoraria. */
+   Precedência num lugar só: fechado > reforma > testado > aprovado >
+   descoberto. Hotel testado que fechou continua fechado. Sem nada a dizer,
+   o card fica sem selo — nunca uma cor "neutra" que ninguém decoraria. */
+
+import { OPERATIONAL_STATUS_SHORT, type OperationalStatus } from '@/lib/supplier-operational'
 
 export type SupplierStatusInput = {
   testedCount: number
   pendingLeadCount: number
   clientApprovedCount?: number
+  operationalStatus?: OperationalStatus | null
 }
 
-export type SupplierStatusVariant = 'testado' | 'aprovado' | 'descoberto'
+export type SupplierStatusVariant = 'fechado' | 'reforma' | 'testado' | 'aprovado' | 'descoberto'
 
 export type SupplierStatusBadge = {
   variant: SupplierStatusVariant
@@ -33,6 +37,14 @@ export const TRUST_LABELS = {
 } as const
 
 const BADGES: Record<SupplierStatusVariant, SupplierStatusBadge> = {
+  fechado: {
+    variant: 'fechado', icon: '', label: OPERATIONAL_STATUS_SHORT.fechado,
+    color: 'var(--tdgflow-text-secondary)', bg: 'var(--tdgflow-surface-high)', border: 'var(--tdgflow-border)',
+  },
+  reforma: {
+    variant: 'reforma', icon: 'i-calendar', label: OPERATIONAL_STATUS_SHORT.reforma,
+    color: 'var(--tdgflow-accent-warm)', bg: 'var(--tdgflow-accent-warm-subtle)', border: 'var(--tdgflow-accent-warm)',
+  },
   testado: {
     variant: 'testado', icon: 'i-verified', label: TRUST_LABELS.testado,
     color: 'var(--tdgflow-gold-dim)', bg: 'var(--tdgflow-gold-subtle)', border: 'var(--tdgflow-gold-dim)',
@@ -48,6 +60,8 @@ const BADGES: Record<SupplierStatusVariant, SupplierStatusBadge> = {
 }
 
 export function supplierStatus(hotel: SupplierStatusInput): SupplierStatusBadge | null {
+  if (hotel.operationalStatus === 'fechado') return BADGES.fechado
+  if (hotel.operationalStatus === 'reforma') return BADGES.reforma
   if (hotel.testedCount > 0) return BADGES.testado
   if ((hotel.clientApprovedCount ?? 0) > 0) return BADGES.aprovado
   if (hotel.pendingLeadCount > 0) return BADGES.descoberto

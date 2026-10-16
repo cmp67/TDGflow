@@ -31,3 +31,22 @@ describe('supplierStatus — três selos de confiança (porte do Trip Flow, 16/1
     expect(supplierStatus({ testedCount: 0, pendingLeadCount: 1 })?.variant).toBe('descoberto')
   })
 })
+
+describe('supplierStatus — estado operacional vence os selos de confiança', () => {
+  it('fechado vence testado', () => {
+    const s = supplierStatus({ testedCount: 5, clientApprovedCount: 1, pendingLeadCount: 0, operationalStatus: 'fechado' })
+    expect(s?.variant).toBe('fechado')
+    expect(s?.label).toBe('Fechado')
+  })
+
+  it('reforma vence testado, e tem ícone de calendário', () => {
+    const s = supplierStatus({ testedCount: 5, pendingLeadCount: 0, operationalStatus: 'reforma' })
+    expect(s?.variant).toBe('reforma')
+    expect(s?.icon).toBe('i-calendar')
+  })
+
+  it('ativo não muda nada', () => {
+    expect(supplierStatus({ testedCount: 1, pendingLeadCount: 0, operationalStatus: 'ativo' })?.variant).toBe('testado')
+    expect(supplierStatus({ testedCount: 0, pendingLeadCount: 0, operationalStatus: 'ativo' })).toBeNull()
+  })
+})

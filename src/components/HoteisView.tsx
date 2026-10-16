@@ -2,6 +2,8 @@
 
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import { supplierStatus, TRUST_LABELS } from '@/lib/supplier-status'
+import SupplierSituation from '@/components/SupplierSituation'
+import type { OperationalStatus } from '@/lib/supplier-operational'
 import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -95,6 +97,11 @@ interface Hotel {
   testedCount: number
   pendingLeadCount: number
   clientApprovedCount: number
+  isBlacklisted: boolean
+  blacklistReason: string | null
+  operationalStatus: OperationalStatus
+  operationalNote: string | null
+  reopeningExpected: string | null
   canEdit: boolean
   benefits: HotelBenefit[]
   isPrivate: boolean
@@ -207,6 +214,11 @@ interface HotelApiRow {
   tested_count: number
   pending_lead_count: number
   client_approved_count?: number
+  is_blacklisted?: boolean
+  blacklist_reason?: string | null
+  operational_status?: OperationalStatus | null
+  operational_note?: string | null
+  reopening_expected?: string | null
   can_edit: boolean
   benefits: HotelBenefit[] | null
   is_private: boolean
@@ -238,6 +250,11 @@ function mapHotelApiRow(row: HotelApiRow): Hotel {
     testedCount: row.tested_count ?? 0,
     pendingLeadCount: row.pending_lead_count ?? 0,
     clientApprovedCount: row.client_approved_count ?? 0,
+    isBlacklisted: row.is_blacklisted ?? false,
+    blacklistReason: row.blacklist_reason ?? null,
+    operationalStatus: row.operational_status ?? 'ativo',
+    operationalNote: row.operational_note ?? null,
+    reopeningExpected: row.reopening_expected ?? null,
     canEdit: row.can_edit ?? false,
     benefits: row.benefits ?? [],
     isPrivate: row.is_private ?? false,
@@ -307,7 +324,18 @@ function HotelCard({ hotel, onClick }: { hotel: Hotel; onClick: () => void }) {
             {benefitText}
           </span>
         )}
-        {status && (
+        {hotel.isBlacklisted ? (
+          <span style={{
+            position: 'absolute', top: 8, right: 8,
+            display: 'inline-flex', alignItems: 'center', gap: 4,
+            padding: '3px 8px', borderRadius: 999,
+            background: 'rgba(220,38,38,0.95)', backdropFilter: 'blur(4px)',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
+            fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.02em', color: '#fff',
+          }}>
+            ⛔ Blacklist
+          </span>
+        ) : status && (
           <span style={{
             position: 'absolute', top: 8, right: 8,
             display: 'inline-flex', alignItems: 'center', gap: 4,
@@ -316,9 +344,11 @@ function HotelCard({ hotel, onClick }: { hotel: Hotel; onClick: () => void }) {
             border: `1px solid ${status.border}`, boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
             fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.02em', color: status.color,
           }}>
-            <svg style={{ width: 9, height: 9, fill: status.icon === 'i-verified' ? 'none' : status.color, stroke: status.color, strokeWidth: 1.8 }}>
-              <use href={`#${status.icon}`} />
-            </svg>
+            {status.icon && (
+              <svg style={{ width: 9, height: 9, fill: status.icon === 'i-verified' || status.icon === 'i-client' || status.icon === 'i-calendar' ? 'none' : status.color, stroke: status.color, strokeWidth: 1.8 }}>
+                <use href={`#${status.icon}`} />
+              </svg>
+            )}
             {status.label}
           </span>
         )}
@@ -1416,6 +1446,12 @@ function HotelDetail({ hotel, onClose, onUpdated }: { hotel: Hotel; onClose: () 
 
           <BenefitsSection hotelId={hotel.id} initialBenefits={hotel.benefits} />
 
+          <SupplierSituation
+            hotelId={hotel.id}
+            value={{ isBlacklisted: hotel.isBlacklisted, blacklistReason: hotel.blacklistReason, operationalStatus: hotel.operationalStatus, operationalNote: hotel.operationalNote, reopeningExpected: hotel.reopeningExpected }}
+            onChange={next => onUpdated({ ...hotel, ...next })}
+          />
+
           {/* Descoberto pela rede, ainda sem teste real — a review não é
               pública (status a_testar), mas o interesse já existe e merece
               aparecer aqui, não só escondido em "Na prática". */}
@@ -1736,6 +1772,9 @@ export default function HoteisView() {
   const [activeProfiles, setActiveProfiles] = useState<Set<string>>(new Set())
   const [onlyPending, setOnlyPending] = useState(false)
   const [onlyClientApproved, setOnlyClientApproved] = useState(false)
+  // Fechado definitivamente sai do catálogo por FILTRO (nunca apagado) — o
+  // chip "Fechados" mostra só eles. Em reforma continua na lista, com selo.
+  const [onlyClosed, setOnlyClosed] = useState(false)
   const [selected, setSelected] = useState<Hotel | null>(null)
   const [hotels, setHotels] = useState<Hotel[]>([])
   const [loading, setLoading] = useState(true)
@@ -1785,17 +1824,20 @@ export default function HoteisView() {
       const matchProfile = activeProfiles.size === 0 || [...activeProfiles].some(p => h.profiles.includes(p))
       const matchPending = !onlyPending || (h.testedCount === 0 && h.pendingLeadCount > 0)
       const matchClient = !onlyClientApproved || (h.testedCount === 0 && h.clientApprovedCount > 0)
-      return matchSearch && matchRegion && matchProfile && matchPending && matchClient
+      const matchClosed = onlyClosed ? h.operationalStatus === 'fechado' : h.operationalStatus !== 'fechado'
+      return matchSearch && matchRegion && matchProfile && matchPending && matchClient && matchClosed
     })
-  }, [hotels, search, region, activeProfiles, onlyPending, onlyClientApproved])
+  }, [hotels, search, region, activeProfiles, onlyPending, onlyClientApproved, onlyClosed])
 
-  const activeCount = (region !== 'Todos' ? 1 : 0) + activeProfiles.size + (onlyPending ? 1 : 0) + (onlyClientApproved ? 1 : 0)
+  const activeCount = (region !== 'Todos' ? 1 : 0) + activeProfiles.size + (onlyPending ? 1 : 0) + (onlyClientApproved ? 1 : 0) + (onlyClosed ? 1 : 0)
 
   function clearAll() {
     setRegion('Todos')
     setActiveProfiles(new Set())
     setSearch('')
     setOnlyPending(false)
+    setOnlyClientApproved(false)
+    setOnlyClosed(false)
   }
 
   return (
@@ -1865,6 +1907,22 @@ export default function HoteisView() {
                 <svg style={{ width: 8, height: 8, fill: 'var(--tdgflow-accent-warm)' }}><use href="#i-spark" /></svg>
                 {TRUST_LABELS.descoberto}
               </button>
+              {hotels.some(h => h.operationalStatus === 'fechado') && (
+                <button
+                  onClick={() => setOnlyClosed(v => !v)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 3, fontSize: '0.625rem',
+                    color: 'var(--tdgflow-text-secondary)', background: onlyClosed ? 'var(--tdgflow-surface-high)' : 'transparent',
+                    border: `1px solid ${onlyClosed ? 'var(--tdgflow-border)' : 'transparent'}`,
+                    borderRadius: 999, padding: '2px 7px', margin: '-2px 0', cursor: 'pointer', transition: 'all 0.15s',
+                    fontWeight: onlyClosed ? 600 : 400,
+                  }}
+                  aria-pressed={onlyClosed}
+                  title="Mostrar só fornecedores fechados definitivamente"
+                >
+                  Fechados ({hotels.filter(h => h.operationalStatus === 'fechado').length})
+                </button>
+              )}
             </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>

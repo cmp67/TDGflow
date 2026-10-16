@@ -3,6 +3,7 @@ import { auth } from '@/auth'
 import { logAudit } from '@/lib/audit'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAgencyId } from '@/lib/agency'
+import { parseOperational, todayIso, OPERATIONAL_STATUS_LABELS } from '@/lib/supplier-operational'
 
 export const dynamic = 'force-dynamic'
 
@@ -35,6 +36,11 @@ export interface HotelRow {
   tested_count: number
   pending_lead_count: number
   client_approved_count: number
+  is_blacklisted: boolean
+  blacklist_reason: string | null
+  operational_status: 'ativo' | 'reforma' | 'fechado'
+  operational_note: string | null
+  reopening_expected: string | null
   created_by: string | null
   can_edit: boolean
   benefits: { id: string; category: string; description: string; commission_pct: number | null }[]
@@ -70,6 +76,8 @@ export async function GET() {
     SELECT h.id, h.name, h.entity_type, h.location, h.country, h.region, h.description,
            h.contact_email, h.contact_phone, h.website_url, h.currency, h.group_name,
            h.image_url, h.dot_color, h.tags, h.profiles, h.gallery, h.created_by,
+           h.is_blacklisted, h.blacklist_reason, h.operational_status, h.operational_note,
+           h.reopening_expected::text AS reopening_expected,
            h.agency_id, (h.agency_id IS NOT NULL) AS is_private,
            COUNT(*) FILTER (WHERE r.status = 'published')::int AS tested_count,
            COUNT(*) FILTER (WHERE r.status = 'a_testar')::int AS pending_lead_count,
@@ -110,8 +118,15 @@ export async function PATCH(req: NextRequest) {
   const session = await auth()
   if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { id, fields } = await req.json()
+  const body = await req.json()
+  const { id, fields } = body
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
+
+  // Blacklist e estado operacional (porte do Trip Flow, 16/10/2026) não são
+  // edição do cadastro — são marcas sobre o fornecedor que qualquer pessoa
+  // logada da rede pode dar, com motivo obrigatório e trilha de auditoria.
+  if ('is_blacklisted' in body) return patchBlacklist(id, body, session.user.email, session.user.name ?? undefined)
+  if ('operational_status' in body) return patchOperational(id, body, session.user.email, session.user.name ?? undefined)
 
   await sql`ALTER TABLE tdg_hotels ADD COLUMN IF NOT EXISTS created_by TEXT`
 
@@ -146,6 +161,49 @@ export async function PATCH(req: NextRequest) {
     changedByName: session.user.name,
   })
 
+  return NextResponse.json({ hotel: rows[0] })
+}
+
+async function patchBlacklist(id: string, body: Record<string, unknown>, email: string, name?: string) {
+  const flag = body.is_blacklisted === true
+  const reason = typeof body.blacklist_reason === 'string' ? body.blacklist_reason.trim() : ''
+  if (flag && !reason) {
+    return NextResponse.json({ error: 'Motivo obrigatório para marcar como blacklist.' }, { status: 400 })
+  }
+  if (reason.length > 500) return NextResponse.json({ error: 'Motivo com mais de 500 caracteres' }, { status: 400 })
+  const { rows } = await sql`
+    UPDATE tdg_hotels SET is_blacklisted = ${flag}, blacklist_reason = ${flag ? reason : null}
+    WHERE id = ${id}
+    RETURNING id, name, is_blacklisted, blacklist_reason
+  `
+  if (!rows.length) return NextResponse.json({ error: 'Fornecedor não encontrado' }, { status: 404 })
+  await logAudit({
+    entityType: 'hotel', entityId: id, action: 'update',
+    summary: flag ? `marcou "${rows[0].name}" como blacklist: ${reason}` : `tirou "${rows[0].name}" da blacklist`,
+    changedBy: email, changedByName: name,
+  })
+  return NextResponse.json({ hotel: rows[0] })
+}
+
+async function patchOperational(id: string, body: Record<string, unknown>, email: string, name?: string) {
+  const parsed = parseOperational(body, todayIso())
+  if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 })
+  const f = parsed.fields
+  const { rows } = await sql`
+    UPDATE tdg_hotels
+       SET operational_status = ${f.operational_status},
+           operational_note = ${f.operational_note},
+           reopening_expected = ${f.reopening_expected}
+     WHERE id = ${id}
+    RETURNING id, name, operational_status, operational_note, reopening_expected::text AS reopening_expected
+  `
+  if (!rows.length) return NextResponse.json({ error: 'Fornecedor não encontrado' }, { status: 404 })
+  const detail = [f.reopening_expected ? `reabertura prevista ${f.reopening_expected}` : null, f.operational_note].filter(Boolean).join(' — ')
+  await logAudit({
+    entityType: 'hotel', entityId: id, action: 'update',
+    summary: `marcou "${rows[0].name}" como ${OPERATIONAL_STATUS_LABELS[f.operational_status]}${detail ? `: ${detail}` : ''}`,
+    changedBy: email, changedByName: name,
+  })
   return NextResponse.json({ hotel: rows[0] })
 }
 

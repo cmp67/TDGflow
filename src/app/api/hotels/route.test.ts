@@ -4,7 +4,7 @@ import { sql } from '@vercel/postgres'
 vi.mock('@/auth', () => ({ auth: vi.fn() }))
 
 import { auth } from '@/auth'
-import { GET, POST } from './route'
+import { GET, POST, PATCH } from './route'
 
 const mockAuth = auth as unknown as ReturnType<typeof vi.fn>
 
@@ -300,5 +300,93 @@ describe('GET /api/hotels — client_approved_count (Aprovado por cliente, 16/10
     expect(h.client_approved_count).toBe(1)
     expect(h.tested_count).toBe(0)
     expect(h.pending_lead_count).toBe(0)
+  })
+})
+
+function patchReq(body: unknown) {
+  return new Request('http://localhost/api/hotels', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  }) as unknown as Parameters<typeof PATCH>[0]
+}
+
+describe('PATCH /api/hotels — blacklist e estado operacional (porte do Trip Flow, 16/10/2026)', () => {
+  const suffix = Date.now()
+  const hotelName = `__TDD Blacklist Hotel ${suffix}__`
+  const email = `__tdd_blacklist_${suffix}__@example.com`
+  let hotelId: string
+
+  beforeAll(async () => {
+    // Fornecedor criado por OUTRA pessoa: marcar situação/blacklist não é
+    // editar o cadastro — qualquer pessoa logada pode, com motivo e auditoria.
+    const { rows } = await sql`INSERT INTO tdg_hotels (name, entity_type, created_by) VALUES (${hotelName}, 'hotel', 'outra@example.com') RETURNING id`
+    hotelId = rows[0].id
+    await sql`INSERT INTO tdg_users (name, email, agency_name, password_hash, role) VALUES ('TDD Blacklist', ${email}, '__TDD_AGENCY__', 'x', 'agent')`
+  })
+
+  afterAll(async () => {
+    await sql`DELETE FROM tdg_audit_log WHERE entity_id = ${hotelId}`
+    await sql`DELETE FROM tdg_users WHERE email = ${email}`
+    await sql`DELETE FROM tdg_hotels WHERE id = ${hotelId}`
+  })
+
+  const find = async () => {
+    mockAuth.mockResolvedValueOnce(sessionFor(email))
+    const body = await (await GET()).json()
+    return body.hotels.find((h: { id: string }) => h.id === hotelId)
+  }
+
+  it('blacklist sem motivo é recusada', async () => {
+    mockAuth.mockResolvedValueOnce(sessionFor(email))
+    const res = await PATCH(patchReq({ id: hotelId, is_blacklisted: true, blacklist_reason: '  ' }))
+    expect(res.status).toBe(400)
+  })
+
+  it('qualquer pessoa logada marca blacklist com motivo; GET devolve e desmarcar limpa o motivo', async () => {
+    mockAuth.mockResolvedValueOnce(sessionFor(email))
+    const res = await PATCH(patchReq({ id: hotelId, is_blacklisted: true, blacklist_reason: 'Não pagou comissão de 3 agências' }))
+    expect(res.status).toBe(200)
+    let h = await find()
+    expect(h.is_blacklisted).toBe(true)
+    expect(h.blacklist_reason).toContain('comissão')
+
+    mockAuth.mockResolvedValueOnce(sessionFor(email))
+    await PATCH(patchReq({ id: hotelId, is_blacklisted: false }))
+    h = await find()
+    expect(h.is_blacklisted).toBe(false)
+    expect(h.blacklist_reason).toBeNull()
+  })
+
+  it('reforma exige data futura; fechado exige motivo; ativo limpa tudo', async () => {
+    mockAuth.mockResolvedValueOnce(sessionFor(email))
+    expect((await PATCH(patchReq({ id: hotelId, operational_status: 'reforma' }))).status).toBe(400)
+
+    mockAuth.mockResolvedValueOnce(sessionFor(email))
+    expect((await PATCH(patchReq({ id: hotelId, operational_status: 'reforma', reopening_expected: '2099-01-15', operational_note: 'reforma do spa' }))).status).toBe(200)
+    let h = await find()
+    expect(h.operational_status).toBe('reforma')
+    expect(h.reopening_expected).toBe('2099-01-15')
+
+    mockAuth.mockResolvedValueOnce(sessionFor(email))
+    expect((await PATCH(patchReq({ id: hotelId, operational_status: 'fechado' }))).status).toBe(400)
+
+    mockAuth.mockResolvedValueOnce(sessionFor(email))
+    expect((await PATCH(patchReq({ id: hotelId, operational_status: 'fechado', operational_note: 'Vendido para outra bandeira' }))).status).toBe(200)
+    h = await find()
+    expect(h.operational_status).toBe('fechado')
+    expect(h.reopening_expected).toBeNull()
+
+    mockAuth.mockResolvedValueOnce(sessionFor(email))
+    expect((await PATCH(patchReq({ id: hotelId, operational_status: 'ativo' }))).status).toBe(200)
+    h = await find()
+    expect(h.operational_status).toBe('ativo')
+    expect(h.operational_note).toBeNull()
+  })
+
+  it('edição de cadastro (fields) continua restrita a quem cadastrou', async () => {
+    mockAuth.mockResolvedValueOnce(sessionFor(email))
+    const res = await PATCH(patchReq({ id: hotelId, fields: { name: 'Nome Novo' } }))
+    expect(res.status).toBe(403)
   })
 })
