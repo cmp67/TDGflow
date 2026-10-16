@@ -8,6 +8,7 @@ import { Search, Phone, Users, MessageCircle, CheckCircle2, Loader2, Plus, X, Al
 import { useToast } from '@/contexts/ToastContext'
 import CopyLinkButton from '@/components/CopyLinkButton'
 import ContactEditForm from '@/components/ContactEditForm'
+import { CONTACT_CATEGORIES, PERSON_CATEGORIES as PERSON_CATEGORY_LIST, SOURCE_KINDS, SOURCE_KIND_LABELS, type SourceKind } from '@/lib/contacts'
 
 /* ── Types ──────────────────────────────────────────────────────── */
 interface NetworkContact {
@@ -23,31 +24,20 @@ interface NetworkContact {
   source_author: string
   source_date: string
   notes: string
+  added_by?: string | null
+  added_by_email?: string | null
+  created_at?: string
+  source_kind?: SourceKind | null
+  source_detail?: string | null
 }
 
 /* ── Category config ────────────────────────────────────────────── */
 const CATEGORIES: { key: string; label: string; color: string; bg: string }[] = [
   { key: 'all',        label: 'Todos',      color: 'var(--tdgflow-text-primary)', bg: 'var(--tdgflow-surface-high)' },
-  { key: 'hotel',      label: 'Hotel',      color: '#005F63', bg: '#E0F4F5' },
-  { key: 'guia',       label: 'Guia / DMC', color: '#0369a1', bg: '#e0f2fe' },
-  { key: 'operadora',  label: 'Operadora',  color: '#6d28d9', bg: '#ede9fe' },
-  { key: 'transfer',   label: 'Transfer',   color: '#b45309', bg: '#fef3c7' },
-  { key: 'aérea',      label: 'Aérea',      color: '#0e7490', bg: '#cffafe' },
-  { key: 'serviço',    label: 'Serviço',    color: '#047857', bg: '#d1fae5' },
-  { key: 'hospedagem', label: 'Hospedagem', color: '#15803d', bg: '#dcfce7' },
-  { key: 'fornecedor', label: 'Fornecedor', color: '#475569', bg: '#f1f5f9' },
-  { key: 'jurídico',   label: 'Jurídico',   color: '#b91c1c', bg: '#fee2e2' },
-  { key: 'tradução',   label: 'Tradução',   color: '#92400e', bg: '#fef3c7' },
-  { key: 'médico',     label: 'Médico',     color: '#9d174d', bg: '#fce7f3' },
+  ...CONTACT_CATEGORIES,
 ]
 
-// Categorias que uma pessoa avulsa pode escolher ao se cadastrar. "Hotel/
-// transfer/hospedagem/fornecedor" só existem quando o contato vem vinculado
-// a um fornecedor (categoria automática, nunca escolhida manualmente) —
-// achado do arquiteto: não deixar duplicar o que entity_type já tipifica.
-const PERSON_CATEGORIES = CATEGORIES.filter(c =>
-  !['all', 'hotel', 'transfer', 'hospedagem', 'fornecedor'].includes(c.key)
-)
+const PERSON_CATEGORIES = PERSON_CATEGORY_LIST
 
 function getCat(key: string) {
   return CATEGORIES.find(c => c.key === key) ?? CATEGORIES[CATEGORIES.length - 1]
@@ -253,6 +243,13 @@ function ContactCard({ contact, copiedId, onCopy, highlightId, onChanged }: {
         )}
       </div>
 
+      {!contact.source_author && contact.added_by && (
+        <p style={{ fontSize: '0.625rem', color: 'var(--tdgflow-text-muted)', letterSpacing: '0.04em', marginBottom: 6 }}>
+          registrado por <strong style={{ color: 'var(--tdgflow-text-primary)', fontWeight: 600 }}>{contact.added_by}</strong>
+          {contact.created_at && <span style={{ opacity: 0.7 }}> · {formatDate(contact.created_at.slice(0, 10))}</span>}
+          {contact.source_kind && <span> · {SOURCE_KIND_LABELS[contact.source_kind]}{contact.source_detail ? `: ${contact.source_detail}` : ''}</span>}
+        </p>
+      )}
       {(contact.source_author || contact.context_trigger) && (
         <div style={{
           background: 'var(--tdgflow-bg)', borderRadius: 7,
@@ -320,6 +317,8 @@ function AddPersonForm({ onSaved, onClose }: { onSaved: () => void; onClose: () 
   const [whatsapp, setWhatsapp] = useState('')
   const [email, setEmail] = useState('')
   const [notes, setNotes] = useState('')
+  const [sourceKind, setSourceKind] = useState<SourceKind | ''>('')
+  const [sourceDetail, setSourceDetail] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
@@ -372,6 +371,7 @@ function AddPersonForm({ onSaved, onClose }: { onSaved: () => void; onClose: () 
         name: name.trim(), surname: surname.trim(), category,
         organization: organization.trim() || null,
         whatsapp: whatsapp.trim() || null, email: email.trim() || null, notes: notes.trim() || null,
+        source_kind: sourceKind || null, source_detail: sourceDetail.trim() || null,
       }),
     })
     if (!res.ok) {
@@ -486,6 +486,13 @@ function AddPersonForm({ onSaved, onClose }: { onSaved: () => void; onClose: () 
             {PERSON_CATEGORIES.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
           </select>
           <input className="input" placeholder="Organização (opcional — ex: escritório, empresa)" value={organization} onChange={e => setOrganization(e.target.value)} style={{ fontSize: '0.8125rem' }} />
+          <div style={{ display: 'flex', gap: 8 }}>
+            <select className="input" value={sourceKind} onChange={e => setSourceKind(e.target.value as SourceKind | '')} style={{ fontSize: '0.8125rem', flex: 1 }}>
+              <option value="">De onde veio o contato?</option>
+              {SOURCE_KINDS.map(k => <option key={k} value={k}>{SOURCE_KIND_LABELS[k]}</option>)}
+            </select>
+            <input className="input" placeholder="Detalhe (ex: ILTM Cannes 2026)" value={sourceDetail} onChange={e => setSourceDetail(e.target.value)} style={{ fontSize: '0.8125rem', flex: 1 }} maxLength={200} />
+          </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <input className="input" placeholder="WhatsApp" value={whatsapp} onChange={e => setWhatsapp(e.target.value)} style={{ fontSize: '0.8125rem', flex: 1 }} />
             <input className="input" placeholder="E-mail" value={email} onChange={e => setEmail(e.target.value)} style={{ fontSize: '0.8125rem', flex: 1 }} />

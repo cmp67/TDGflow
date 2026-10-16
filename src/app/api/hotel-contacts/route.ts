@@ -1,6 +1,7 @@
 import { sql } from '@vercel/postgres'
 import { auth } from '@/auth'
 import { NextRequest, NextResponse } from 'next/server'
+import { CATEGORY_TO_ENTITY, ENTITY_TO_CATEGORY, parseSource } from '@/lib/contacts'
 
 export const dynamic = 'force-dynamic'
 
@@ -42,7 +43,7 @@ export async function GET(req: NextRequest) {
 
   if (hotelId) {
     const { rows } = await sql`
-      SELECT id, hotel_id, added_by, name, surname, title, email, whatsapp, notes, category, organization, created_at
+      SELECT id, hotel_id, added_by, name, surname, title, email, whatsapp, notes, category, organization, created_at, added_by_email, source_kind, source_detail
       FROM tdg_hotel_contacts
       WHERE hotel_id = ${hotelId}
       ORDER BY created_at DESC
@@ -55,7 +56,7 @@ export async function GET(req: NextRequest) {
     SELECT
       id, hotel_id, added_by, name, surname, title, email, whatsapp, notes,
       source_author, source_date::text AS source_date, category, context_trigger,
-      organization, created_at
+      organization, created_at, added_by_email, source_kind, source_detail
     FROM tdg_hotel_contacts
     ORDER BY source_date ASC NULLS LAST, created_at DESC
   `
@@ -82,14 +83,38 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ contacts, total: rows.length, counts })
 }
 
+/* Fornecedor automático (16/10/2026): pessoa que chega com organização e
+   categoria de fornecedor de viagem (DMC, guia, hospedagem...) ganha o card
+   do fornecedor — acha pelo nome (sem acento/caixa) ou cria, compartilhado
+   com a rede, com created_by de quem cadastrou. Caso real: cartão da Tekser
+   (DMC) lido pela câmera virou só pessoa, sem card. */
+async function findOrCreateSupplier(organization: string, entityType: string, email: string): Promise<{ id: string; name: string; created: boolean }> {
+  const name = organization.trim().replace(/\s+/g, ' ')
+  const { rows: found } = await sql`SELECT id, name FROM tdg_hotels WHERE lower(trim(name)) = lower(${name}) AND agency_id IS NULL ORDER BY (entity_type = ${entityType}) DESC LIMIT 1`
+  if (found[0]) return { id: found[0].id as string, name: found[0].name as string, created: false }
+  const { rows } = await sql`
+    INSERT INTO tdg_hotels (name, entity_type, created_by) VALUES (${name}, ${entityType}, ${email})
+    ON CONFLICT (lower(trim(name)), entity_type) WHERE agency_id IS NULL DO NOTHING
+    RETURNING id, name`
+  if (rows[0]) return { id: rows[0].id as string, name: rows[0].name as string, created: true }
+  const { rows: raced } = await sql`SELECT id, name FROM tdg_hotels WHERE lower(trim(name)) = lower(${name}) AND agency_id IS NULL LIMIT 1`
+  return { id: raced[0].id as string, name: raced[0].name as string, created: false }
+}
+
+async function categoryForHotel(hotelId: string): Promise<{ name: string | null; category: string }> {
+  const { rows } = await sql`SELECT name, entity_type FROM tdg_hotels WHERE id = ${hotelId}`
+  return { name: (rows[0]?.name as string | undefined) ?? null, category: ENTITY_TO_CATEGORY[(rows[0]?.entity_type as string) ?? 'hotel'] ?? 'hotel' }
+}
+
 export async function POST(req: NextRequest) {
   const session = await auth()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   await ensureTable()
 
   const body = await req.json()
-  const { hotelId, name, surname, title, email, whatsapp, notes, category, organization } = body
+  const { name, surname, title, email, whatsapp, notes, category, organization } = body
+  let hotelId: string | null = body.hotelId ?? null
 
   if (!name || !surname) {
     return NextResponse.json({ error: 'name and surname required' }, { status: 400 })
@@ -97,28 +122,37 @@ export async function POST(req: NextRequest) {
   if (!hotelId && !category) {
     return NextResponse.json({ error: 'category is required for a contact without hotelId' }, { status: 400 })
   }
+  const source = parseSource(body)
+  if (!source.ok) return NextResponse.json({ error: source.error }, { status: 400 })
 
   const addedBy = session.user?.name ?? 'Agente'
 
-  // Vinculado a um fornecedor: categoria default 'hotel', organization vem
-  // do nome do fornecedor (snapshot — é o que aparece como subtítulo na
-  // lente Contatos). Sem fornecedor: quem cadastra escolhe a categoria e
-  // pode informar a própria organização (ex: nome do escritório).
-  let finalOrganization = organization ?? null
+  // Vinculado a um fornecedor: categoria vem do tipo do fornecedor e a
+  // organization é snapshot do nome dele (subtítulo na lente Contatos).
+  // Sem fornecedor mas com organização de fornecedor de viagem: cria/acha
+  // o card e vincula. Senão: pessoa avulsa com a categoria escolhida.
+  let finalOrganization: string | null = organization ?? null
+  let finalCategory: string = category ?? 'hotel'
+  let supplierCreated = false
   if (hotelId) {
-    const { rows: hotelRows } = await sql`SELECT name FROM tdg_hotels WHERE id = ${hotelId}`
-    finalOrganization = hotelRows[0]?.name ?? finalOrganization
+    const h = await categoryForHotel(hotelId)
+    finalOrganization = h.name ?? finalOrganization
+    finalCategory = h.category
+  } else if (organization && CATEGORY_TO_ENTITY[category]) {
+    const supplier = await findOrCreateSupplier(organization, CATEGORY_TO_ENTITY[category], session.user.email)
+    hotelId = supplier.id
+    finalOrganization = supplier.name
+    supplierCreated = supplier.created
   }
-  const finalCategory = category ?? 'hotel'
 
   const { rows } = await sql`
     INSERT INTO tdg_hotel_contacts
-      (hotel_id, added_by, name, surname, title, email, whatsapp, notes, category, organization)
-    VALUES (${hotelId ?? null}, ${addedBy}, ${name}, ${surname}, ${title ?? null}, ${email ?? null}, ${whatsapp ?? null}, ${notes ?? null}, ${finalCategory}, ${finalOrganization})
+      (hotel_id, added_by, added_by_email, name, surname, title, email, whatsapp, notes, category, organization, source_kind, source_detail)
+    VALUES (${hotelId}, ${addedBy}, ${session.user.email}, ${name}, ${surname}, ${title ?? null}, ${email ?? null}, ${whatsapp ?? null}, ${notes ?? null}, ${finalCategory}, ${finalOrganization}, ${source.source_kind}, ${source.source_detail})
     RETURNING *
   `
 
-  return NextResponse.json({ contact: rows[0] })
+  return NextResponse.json({ contact: rows[0], supplier_created: supplierCreated })
 }
 
 /* Editar contato — aberto a qualquer TD logado, não só quem cadastrou.
@@ -143,17 +177,22 @@ export async function PATCH(req: NextRequest) {
   // hotelId, organização vira snapshot do nome do fornecedor; sem, é o que
   // o TD digitou (permite corrigir um vínculo errado, ex. contato de "Vila
   // Oyá" preso em "Vila Joya" por nome parecido na importação do WhatsApp).
+  const source = parseSource(body)
+  if (!source.ok) return NextResponse.json({ error: source.error }, { status: 400 })
   let finalOrganization = organization ?? null
+  let finalCategory = category ?? null
   if (hotelId) {
-    const { rows: hotelRows } = await sql`SELECT name FROM tdg_hotels WHERE id = ${hotelId}`
-    finalOrganization = hotelRows[0]?.name ?? finalOrganization
+    const h = await categoryForHotel(hotelId)
+    finalOrganization = h.name ?? finalOrganization
+    finalCategory = h.category
   }
 
   const { rows } = await sql`
     UPDATE tdg_hotel_contacts
     SET hotel_id = ${hotelId ?? null}, name = ${name}, surname = ${surname}, title = ${title ?? null},
         email = ${email ?? null}, whatsapp = ${whatsapp ?? null}, notes = ${notes ?? null},
-        category = ${category ?? null}, organization = ${finalOrganization}
+        category = ${finalCategory}, organization = ${finalOrganization},
+        source_kind = COALESCE(${source.source_kind}, source_kind), source_detail = COALESCE(${source.source_detail}, source_detail)
     WHERE id = ${id}
     RETURNING *
   `

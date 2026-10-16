@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useCallback } from 'react'
 import { supplierStatus, TRUST_LABELS } from '@/lib/supplier-status'
 import SupplierSituation from '@/components/SupplierSituation'
 import type { OperationalStatus } from '@/lib/supplier-operational'
+import { SOURCE_KINDS, SOURCE_KIND_LABELS } from '@/lib/contacts'
 import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -394,7 +395,7 @@ type AddMode = 'choose' | 'manual' | 'scan'
 
 function AddContactForm({ hotelId, onSaved }: { hotelId: string; onSaved: (c: HotelContact) => void }) {
   const [mode, setMode] = useState<AddMode>('choose')
-  const [form, setForm] = useState({ name: '', surname: '', title: '', email: '', whatsapp: '', notes: '' })
+  const [form, setForm] = useState({ name: '', surname: '', title: '', email: '', whatsapp: '', notes: '', source_kind: '', source_detail: '' })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -419,14 +420,15 @@ function AddContactForm({ hotelId, onSaved }: { hotelId: string; onSaved: (c: Ho
       const res = await fetch('/api/scan-card', { method: 'POST', body: fd })
       const data = await res.json()
       if (data.card) {
-        setForm({
+        setForm(f => ({
+          ...f,
           name:     data.card.name     ?? '',
           surname:  data.card.surname  ?? '',
           title:    data.card.title    ?? '',
           email:    data.card.email    ?? '',
           whatsapp: data.card.whatsapp ?? '',
           notes:    [data.card.company, data.card.notes].filter(Boolean).join(' · '),
-        })
+        }))
         setScanDone(true)
         setMode('manual') // show form pre-filled
       } else {
@@ -448,12 +450,12 @@ function AddContactForm({ hotelId, onSaved }: { hotelId: string; onSaved: (c: Ho
       const res = await fetch('/api/hotel-contacts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hotelId, ...form }),
+        body: JSON.stringify({ hotelId, ...form, source_kind: form.source_kind || null, source_detail: form.source_detail || null }),
       })
       const data = await res.json()
       if (data.contact) {
         onSaved(data.contact)
-        setForm({ name: '', surname: '', title: '', email: '', whatsapp: '', notes: '' })
+        setForm({ name: '', surname: '', title: '', email: '', whatsapp: '', notes: '', source_kind: '', source_detail: '' })
         setScanPreview(null)
         setScanDone(false)
         setMode('choose')
@@ -600,6 +602,13 @@ function AddContactForm({ hotelId, onSaved }: { hotelId: string; onSaved: (c: Ho
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
             <input className="input" placeholder="Email" type="email" style={{ fontSize: '0.8125rem', padding: '8px 12px' }} value={form.email} onChange={e => setField('email', e.target.value)} />
             <input className="input" placeholder="WhatsApp" style={{ fontSize: '0.8125rem', padding: '8px 12px' }} value={form.whatsapp} onChange={e => setField('whatsapp', e.target.value)} />
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+            <select className="input" style={{ fontSize: '0.8125rem', padding: '8px 12px', flex: 1 }} value={form.source_kind} onChange={e => setField('source_kind', e.target.value)}>
+              <option value="">De onde veio o contato?</option>
+              {SOURCE_KINDS.map(k => <option key={k} value={k}>{SOURCE_KIND_LABELS[k]}</option>)}
+            </select>
+            <input className="input" placeholder="Detalhe (ex: ILTM 2026)" style={{ fontSize: '0.8125rem', padding: '8px 12px', flex: 1 }} value={form.source_detail} onChange={e => setField('source_detail', e.target.value)} maxLength={200} />
           </div>
           <input className="input" placeholder="Notas (empresa, como conheceu…)" style={{ fontSize: '0.8125rem', padding: '8px 12px', marginBottom: 10 }} value={form.notes} onChange={e => setField('notes', e.target.value)} />
           <button

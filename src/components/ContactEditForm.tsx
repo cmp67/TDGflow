@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react'
 import HotelPickerInline from '@/components/HotelPickerInline'
+import { PERSON_CATEGORIES, SOURCE_KINDS, SOURCE_KIND_LABELS, type SourceKind } from '@/lib/contacts'
 
 export interface EditableContact {
   id: string
@@ -14,20 +15,10 @@ export interface EditableContact {
   whatsapp?: string | null
   email?: string | null
   notes?: string | null
+  source_kind?: string | null
+  source_detail?: string | null
 }
 
-const PERSON_CATEGORIES = [
-  { key: 'guia',       label: 'Guia / DMC' },
-  { key: 'operadora',  label: 'Operadora' },
-  { key: 'transfer',   label: 'Transfer' },
-  { key: 'aérea',      label: 'Aérea' },
-  { key: 'serviço',    label: 'Serviço' },
-  { key: 'hospedagem', label: 'Hospedagem' },
-  { key: 'fornecedor', label: 'Fornecedor' },
-  { key: 'jurídico',   label: 'Jurídico' },
-  { key: 'tradução',   label: 'Tradução' },
-  { key: 'médico',     label: 'Médico' },
-]
 
 /* Formulário de edição de contato — compartilhado entre a lente Contatos
    (ContatosLensView) e a ficha do fornecedor (HoteisView), pra não duplicar.
@@ -48,6 +39,8 @@ export default function ContactEditForm({ contact, onSaved, onCancel }: {
   const [whatsapp, setWhatsapp] = useState(contact.whatsapp ?? '')
   const [email, setEmail] = useState(contact.email ?? '')
   const [notes, setNotes] = useState(contact.notes ?? '')
+  const [sourceKind, setSourceKind] = useState<SourceKind | ''>((contact.source_kind as SourceKind | null) ?? '')
+  const [sourceDetail, setSourceDetail] = useState(contact.source_detail ?? '')
   const [hotelId, setHotelId] = useState(contact.hotel_id)
   const [hotelName, setHotelName] = useState<string | null>(contact.hotel_id ? (contact.organization ?? null) : null)
   const [submitting, setSubmitting] = useState(false)
@@ -76,6 +69,7 @@ export default function ContactEditForm({ contact, onSaved, onCancel }: {
         category: categoryIsAutomatic ? 'hotel' : category,
         organization: categoryIsAutomatic ? (hotelName ?? (organization.trim() || null)) : (organization.trim() || null),
         whatsapp: whatsapp.trim() || null, email: email.trim() || null, notes: notes.trim() || null,
+        source_kind: sourceKind || null, source_detail: sourceDetail.trim() || null,
       }),
     })
     if (!res.ok) {
@@ -106,6 +100,13 @@ export default function ContactEditForm({ contact, onSaved, onCancel }: {
       <div style={{ display: 'flex', gap: 8 }}>
         <input className="input" placeholder="WhatsApp" value={whatsapp} onChange={e => setWhatsapp(e.target.value)} style={{ fontSize: '0.8125rem', flex: 1 }} />
         <input className="input" placeholder="E-mail" value={email} onChange={e => setEmail(e.target.value)} style={{ fontSize: '0.8125rem', flex: 1 }} />
+      </div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <select className="input" value={sourceKind} onChange={e => setSourceKind(e.target.value as SourceKind | '')} style={{ fontSize: '0.8125rem', flex: 1 }}>
+          <option value="">De onde veio o contato?</option>
+          {SOURCE_KINDS.map(k => <option key={k} value={k}>{SOURCE_KIND_LABELS[k]}</option>)}
+        </select>
+        <input className="input" placeholder="Detalhe (ex: ILTM Cannes 2026)" value={sourceDetail} onChange={e => setSourceDetail(e.target.value)} style={{ fontSize: '0.8125rem', flex: 1 }} maxLength={200} />
       </div>
       <textarea className="input" placeholder="Notas" value={notes} onChange={e => setNotes(e.target.value)} rows={2} style={{ fontSize: '0.8125rem', resize: 'vertical' }} />
       {error && (

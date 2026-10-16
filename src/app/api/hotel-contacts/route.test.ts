@@ -119,3 +119,54 @@ describe('Contact Hub — contatos com ou sem fornecedor vinculado', () => {
     expect(delRes.status).toBe(200)
   })
 })
+
+describe('contato → fornecedor automático + fonte (16/10/2026)', () => {
+  const suffix = Date.now()
+  const email = `tdd-contact-supplier-${suffix}@example.com`
+  const org = `__TDD Tekser DMC ${suffix}__`
+  const ids: string[] = []
+  const supplierIds: string[] = []
+
+  afterAll(async () => {
+    if (ids.length) await sql`DELETE FROM tdg_hotel_contacts WHERE id = ANY(${ids})`
+    if (supplierIds.length) await sql`DELETE FROM tdg_hotels WHERE id = ANY(${supplierIds})`
+    await sql`DELETE FROM tdg_hotels WHERE name = ${org}`
+  })
+
+  it('DMC com organização cria o card do fornecedor (tipo dmc) e vincula; segundo contato reaproveita', async () => {
+    mockAuth.mockResolvedValueOnce(sessionFor(email))
+    const res = await POST(postReq({ name: 'Duygu', surname: 'Argin', category: 'dmc', organization: org, source_kind: 'feira', source_detail: 'ILTM 2026' }))
+    const body = await res.json()
+    expect(res.status).toBe(200)
+    ids.push(body.contact.id)
+    expect(body.supplier_created).toBe(true)
+    expect(body.contact.hotel_id).toBeTruthy()
+    expect(body.contact.category).toBe('dmc')
+    expect(body.contact.added_by_email).toBe(email)
+    expect(body.contact.source_kind).toBe('feira')
+    supplierIds.push(body.contact.hotel_id)
+    const { rows } = await sql`SELECT entity_type, created_by FROM tdg_hotels WHERE id = ${body.contact.hotel_id}`
+    expect(rows[0]).toEqual({ entity_type: 'dmc', created_by: email })
+
+    mockAuth.mockResolvedValueOnce(sessionFor(email))
+    const res2 = await POST(postReq({ name: 'Nilay', surname: 'Firil', category: 'dmc', organization: org.toUpperCase() }))
+    const body2 = await res2.json()
+    ids.push(body2.contact.id)
+    expect(body2.supplier_created).toBe(false)
+    expect(body2.contact.hotel_id).toBe(body.contact.hotel_id)
+  })
+
+  it('aérea com organização continua pessoa avulsa, sem card', async () => {
+    mockAuth.mockResolvedValueOnce(sessionFor(email))
+    const res = await POST(postReq({ name: 'Ana', surname: 'Aérea', category: 'aérea', organization: `__TDD Cia Aérea ${suffix}__` }))
+    const body = await res.json()
+    ids.push(body.contact.id)
+    expect(body.contact.hotel_id).toBeNull()
+    expect(body.supplier_created).toBe(false)
+  })
+
+  it('fonte inválida é recusada', async () => {
+    mockAuth.mockResolvedValueOnce(sessionFor(email))
+    expect((await POST(postReq({ name: 'X', surname: 'Y', category: 'guia', source_kind: 'linkedin' }))).status).toBe(400)
+  })
+})
