@@ -25,7 +25,7 @@ export const TOOL_DEFINITIONS = [
         country: { type: 'string', description: 'País (ex: Portugal, Itália) ou continente/região ampla (ex: Europa, Caribe, África, Ásia) — continente expande automaticamente pra vários países reais do catálogo' },
         entity_type: {
           type: 'string',
-          enum: ['hotel', 'beach_club', 'transfer', 'guide', 'restaurant', 'other'],
+          enum: ['hotel', 'beach_club', 'transfer', 'guide', 'restaurant', 'dmc', 'other'],
           description: 'Tipo de fornecedor',
         },
         profiles: {

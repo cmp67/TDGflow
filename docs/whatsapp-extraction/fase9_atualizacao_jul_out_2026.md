@@ -34,7 +34,8 @@ Fila do admin (Billing → Rede TDG) passa a ter **1.156 reviews + 730 conhecime
 
 ## Achados e decisões na execução
 
-- **`dmc` não existe como `entity_type` de review** (CHECK de `tdg_hotel_reviews`) nem tem rótulo na UI (`ENTITY_TYPE_LABELS` em HoteisView/DicasView), embora `tdg_hotels` aceite. Os 23 fornecedores classificados pelos agentes como DMC/operadora entraram como `other` (fornecedor e review). Quando "tipos de serviço" entrar no produto (decisão de 16/10: adiado), vale criar o tipo DMC e reclassificar — os nomes e o conhecimento com tag `dmc-operadoras` permitem achar.
+- **Atualização 16/10 (v7.208): DMC virou tipo de verdade** (migration 029, rótulo, ícone, questionário, MCP) e os 23 fornecedores + 29 reviews foram reclassificados de `other` pra `dmc`. Texto original abaixo mantido como histórico.
+- **`dmc` não existia como `entity_type` de review** (CHECK de `tdg_hotel_reviews`) nem tem rótulo na UI (`ENTITY_TYPE_LABELS` em HoteisView/DicasView), embora `tdg_hotels` aceite. Os 23 fornecedores classificados pelos agentes como DMC/operadora entraram como `other` (fornecedor e review). Quando "tipos de serviço" entrar no produto (decisão de 16/10: adiado), vale criar o tipo DMC e reclassificar — os nomes e o conhecimento com tag `dmc-operadoras` permitem achar.
 - Uma review (Sumerville) voltou com JSON inválido da IA e entrou sem `highlights`; reprocessada em seguida.
 - Comparação Andaz × Four Seasons Papagayo (01/10) entrou como conhecimento com aviso, não como review: o autor revelou ser texto da Meta AI.
 - Suíte de testes: 375/378 — as 3 falhas são pré-existentes em `api/offers` (ofertas do Bemgsy Central), já falhavam antes desta fase.

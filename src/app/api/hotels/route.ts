@@ -7,7 +7,7 @@ import { parseOperational, todayIso, OPERATIONAL_STATUS_LABELS } from '@/lib/sup
 
 export const dynamic = 'force-dynamic'
 
-const ENTITY_TYPES = ['hotel', 'beach_club', 'transfer', 'guide', 'restaurant', 'other'] as const
+const ENTITY_TYPES = ['hotel', 'beach_club', 'transfer', 'guide', 'restaurant', 'dmc', 'other'] as const
 type EntityType = (typeof ENTITY_TYPES)[number]
 
 async function isAdmin(email: string): Promise<boolean> {

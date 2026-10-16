@@ -6,7 +6,7 @@ export interface ReviewQuestion {
   options?: string[]
 }
 
-export const ENTITY_TYPES = ['hotel', 'beach_club', 'transfer', 'guide', 'restaurant', 'roteiro', 'other'] as const
+export const ENTITY_TYPES = ['hotel', 'beach_club', 'transfer', 'guide', 'restaurant', 'dmc', 'roteiro', 'other'] as const
 export type EntityType = (typeof ENTITY_TYPES)[number]
 
 export const VISIT_TYPES = ['fam_trip', 'site_inspection', 'personal_stay', 'commercial_meeting', 'client_feedback'] as const

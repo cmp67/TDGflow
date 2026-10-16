@@ -226,7 +226,7 @@ interface HotelApiRow {
 
 const ENTITY_TYPE_LABELS: Record<string, string> = {
   hotel: 'Hotel', beach_club: 'Beach Club', transfer: 'Transfer',
-  guide: 'Guia', restaurant: 'Restaurante', other: 'Outro',
+  guide: 'Guia', restaurant: 'Restaurante', dmc: 'DMC', other: 'Outro',
 }
 
 function mapHotelApiRow(row: HotelApiRow): Hotel {

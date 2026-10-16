@@ -79,7 +79,7 @@ export async function GET(req: Request) {
       ) THEN
         ALTER TABLE tdg_hotel_reviews
           ADD CONSTRAINT tdg_hotel_reviews_entity_type_check
-          CHECK (entity_type IN ('hotel', 'beach_club', 'transfer', 'guide', 'restaurant', 'other'));
+          CHECK (entity_type IN ('hotel', 'beach_club', 'transfer', 'guide', 'restaurant', 'dmc', 'other'));
       END IF;
     END $$
   `
@@ -168,7 +168,7 @@ export async function GET(req: Request) {
       ) THEN
         ALTER TABLE tdg_hotels
           ADD CONSTRAINT tdg_hotels_entity_type_check
-          CHECK (entity_type IN ('hotel', 'beach_club', 'transfer', 'guide', 'restaurant', 'other'));
+          CHECK (entity_type IN ('hotel', 'beach_club', 'transfer', 'guide', 'restaurant', 'dmc', 'other'));
       END IF;
     END $$
   `

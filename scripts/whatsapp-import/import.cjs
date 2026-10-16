@@ -163,7 +163,7 @@ Retorne APENAS um JSON válido com esta estrutura (só estas chaves):
   try {
     await client.sql`BEGIN`
     for (const [k, h] of toCreate) {
-      const { rows } = await client.sql`INSERT INTO tdg_hotels (name, entity_type, location, country, origin, is_partner) VALUES (${h.name}, ${h.entity_type === 'dmc' ? 'other' : h.entity_type}, ${loc(h.city, h.country)}, ${h.country}, 'whatsapp_import', false) RETURNING id`
+      const { rows } = await client.sql`INSERT INTO tdg_hotels (name, entity_type, location, country, origin, is_partner) VALUES (${h.name}, ${h.entity_type}, ${loc(h.city, h.country)}, ${h.country}, 'whatsapp_import', false) RETURNING id`
       created.set(k, rows[0].id)
     }
     for (const c of newContacts) {
@@ -186,9 +186,8 @@ Retorne APENAS um JSON válido com esta estrutura (só estas chaves):
     while (queue.length) {
       const r = queue.shift()
       const hotelId = resolveHotel(r.hotel_name)?.id ?? created.get(norm(r.hotel_name)) ?? null
-      // tdg_hotel_reviews não aceita 'dmc' (CHECK só tem hotel/beach_club/transfer/guide/restaurant/roteiro/other);
-      // e a UI (ENTITY_TYPE_LABELS) não tem rótulo pra 'dmc' — fornecedor e review entram como 'other'.
-      const reviewEntity = r.entity_type === 'dmc' ? 'other' : r.entity_type
+      // 'dmc' é tipo de verdade desde v7.208 (migration 029) — entra como veio.
+      const reviewEntity = r.entity_type
       const ex = await extract(r)
       await sql`INSERT INTO tdg_hotel_reviews (hotel_name, hotel_id, agent_name, agency_name, visit_type, entity_type, country, raw_answers, highlights, client_profile, heads_up, status, source_author, source_date, import_approval, photo_url, source)
         VALUES (${r.hotel_name.trim()}, ${hotelId}, ${r.author}, ${r.author}, ${null}, ${reviewEntity}, ${r.country_literal || null}, ${JSON.stringify({ impressions: r.text })}, ${ex.highlights ? JSON.stringify(ex.highlights) : null}, ${ex.client_profile}, ${ex.heads_up}, 'published', ${r.author}, ${r.date}, 'pending', ${null}, 'whatsapp_import')`

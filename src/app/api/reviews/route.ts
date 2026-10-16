@@ -189,7 +189,7 @@ export async function POST(req: NextRequest) {
     await sql`ALTER TABLE tdg_hotel_reviews DROP CONSTRAINT IF EXISTS tdg_hotel_reviews_entity_type_check`
     await sql`
       ALTER TABLE tdg_hotel_reviews ADD CONSTRAINT tdg_hotel_reviews_entity_type_check
-        CHECK (entity_type = ANY (ARRAY['hotel', 'beach_club', 'transfer', 'guide', 'restaurant', 'roteiro', 'other']))
+        CHECK (entity_type = ANY (ARRAY['hotel', 'beach_club', 'transfer', 'guide', 'restaurant', 'dmc', 'roteiro', 'other']))
     `
 
     // hotel_id — Fase 1 da reorganização de caixinhas (ver migration 012):

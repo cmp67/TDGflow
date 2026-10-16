@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getQuestions, isLeadSubmission, isClientFeedback, reviewStatusFor, VISIT_TYPES } from './review-questions'
+import { getQuestions, isLeadSubmission, isClientFeedback, reviewStatusFor, VISIT_TYPES, ENTITY_TYPES } from './review-questions'
 
 describe('getQuestions', () => {
   it('pergunta o tipo de entidade antes de tudo, independente do resto', () => {
@@ -130,5 +130,14 @@ describe('relato de cliente (client_feedback) — "Aprovado por cliente", 16/10/
     expect(isLeadSubmission({ visit_type: 'client_feedback' })).toBe(false)
     expect(isClientFeedback({ visit_type: 'client_feedback' })).toBe(true)
     expect(isClientFeedback({ visit_type: 'fam_trip' })).toBe(false)
+  })
+})
+
+describe('DMC como tipo de fornecedor (16/10/2026)', () => {
+  it('está entre os tipos e segue o trilho leve (sem mapa de sentimento)', () => {
+    expect(ENTITY_TYPES).toContain('dmc')
+    const ids = getQuestions({ entity_type: 'dmc', visit_type: 'fam_trip' }).map(q => q.id)
+    expect(ids).toContain('overall_rating')
+    expect(ids).not.toContain('sentiment_map')
   })
 })

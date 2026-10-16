@@ -111,6 +111,7 @@ const ENTITY_TYPE_LABELS: Record<string, string> = {
   transfer: 'Transfer',
   guide: 'Guia',
   restaurant: 'Restaurante',
+  dmc: 'DMC',
   roteiro: 'Roteiro',
   other: 'Outro',
 }
