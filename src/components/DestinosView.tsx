@@ -8,6 +8,7 @@ import TdgIconSprite from '@/components/TdgIconSprite'
 import PendingConfirmationQueue from '@/components/PendingConfirmationQueue'
 import TagInput from '@/components/TagInput'
 import { useDebounce } from '@/hooks/useDebounce'
+import { revisarEmPadrao, type KnowledgeType } from '@/lib/knowledge'
 import {
   KnowledgeTip, SearchResults, EMPTY_RESULTS, ResultGroup,
   TipCard, HotelResultRow, ReviewResultRow, ContactResultRow, OfferResultRow,
@@ -19,28 +20,48 @@ import {
    fornecedor (fato, alerta, blacklist etc.) — mesmo destino final
    (tdg_destination_knowledge), mas nasce já publicado, sem passar pela
    fila de confirmação (ver POST /api/knowledge-tips). */
-function NewNoteModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
-  const [title, setTitle] = useState('')
-  const [content, setContent] = useState('')
-  const [country, setCountry] = useState('')
-  const [tags, setTags] = useState<string[]>([])
+const TYPE_OPTIONS: { value: KnowledgeType; label: string; hint: string }[] = [
+  { value: 'note', label: 'Dica', hint: 'Prática do dia a dia: onde comer, como reservar, o que evitar' },
+  { value: 'fact', label: 'Fato', hint: 'Regra ou dado objetivo: visto, taxa, comissão, lei' },
+  { value: 'aviso', label: 'Aviso', hint: 'Muda rápido: greve, obra, golpe, fechamento — revisão em 6 meses' },
+  { value: 'link', label: 'Link', hint: 'Um endereço útil, com uma linha de contexto' },
+  { value: 'roteiro', label: 'Roteiro de referência', hint: 'Itinerário que serviu de base — revisão em 24 meses' },
+]
+
+function NoteModal({ initial, onClose, onSaved }: { initial: KnowledgeTip | null; onClose: () => void; onSaved: () => void }) {
+  const [type, setType] = useState<KnowledgeType>((initial?.type as KnowledgeType) ?? 'note')
+  const [title, setTitle] = useState(initial?.title ?? '')
+  const [content, setContent] = useState(initial?.content ?? '')
+  const [url, setUrl] = useState(initial?.url ?? '')
+  const [country, setCountry] = useState(initial?.country ?? '')
+  const [region, setRegion] = useState(initial?.region ?? '')
+  const [tags, setTags] = useState<string[]>(initial?.tags ?? [])
+  const [testado, setTestado] = useState<boolean | null>(initial?.testado ?? null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const revisarEm = revisarEmPadrao(type)
 
   async function submit() {
-    if (!title.trim()) { setError('Título é obrigatório'); return }
+    if (title.trim().length < 3) { setError('Título é obrigatório'); return }
     setSaving(true)
     setError(null)
-    const res = await fetch('/api/knowledge-tips', {
-      method: 'POST',
+    const payload = { type, title: title.trim(), content: content.trim() || null, url: url.trim() || null, country: country.trim() || null, region: region.trim() || null, tags, testado, versao: initial?.versao }
+    const res = await fetch(initial ? `/api/knowledge-tips/${initial.id}` : '/api/knowledge-tips', {
+      method: initial ? 'PATCH' : 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: title.trim(), content: content.trim() || null, country: country.trim() || null, tags }),
+      body: JSON.stringify(payload),
     })
     setSaving(false)
-    if (!res.ok) { setError('Não deu pra salvar — tenta de novo.'); return }
-    onCreated()
+    if (!res.ok) { const d = await res.json().catch(() => ({})); setError(d.error ?? 'Não deu pra salvar — tenta de novo.'); return }
+    onSaved()
     onClose()
   }
+
+  const radio = (value: boolean | null, label: string) => (
+    <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.75rem', color: 'var(--tdgflow-text-secondary)', cursor: 'pointer' }}>
+      <input type="radio" name="testado" checked={testado === value} onChange={() => setTestado(value)} /> {label}
+    </label>
+  )
 
   return (
     <div
@@ -49,21 +70,39 @@ function NewNoteModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
     >
       <div
         onClick={e => e.stopPropagation()}
-        style={{ background: 'var(--tdgflow-surface)', borderRadius: 14, padding: 20, width: '100%', maxWidth: 440, display: 'flex', flexDirection: 'column', gap: 10 }}
+        style={{ background: 'var(--tdgflow-surface)', borderRadius: 14, padding: 20, width: '100%', maxWidth: 480, maxHeight: '92vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <p style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)' }}>Registrar nota</p>
+          <p style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)' }}>{initial ? 'Editar' : 'Registrar nota'}</p>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tdgflow-text-muted)', padding: 4 }}>
             <X size={16} />
           </button>
         </div>
         <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-muted)', marginTop: -4 }}>
-          Tudo que não é review de fornecedor — fato, alerta, blacklist, dica prática.
+          Tudo que não é review de fornecedor. Fica com seu nome e data; editar guarda a versão anterior.
         </p>
-        <input className="input" placeholder="Título" value={title} onChange={e => setTitle(e.target.value)} style={{ fontSize: '0.8125rem' }} autoFocus />
-        <textarea className="input" placeholder="Conteúdo" value={content} onChange={e => setContent(e.target.value)} rows={4} style={{ fontSize: '0.8125rem', resize: 'vertical' }} />
-        <input className="input" placeholder="País (opcional)" value={country} onChange={e => setCountry(e.target.value)} style={{ fontSize: '0.8125rem' }} />
+        <select className="input" value={type} onChange={e => setType(e.target.value as KnowledgeType)} style={{ fontSize: '0.8125rem' }}>
+          {TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+        <p style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)', marginTop: -6 }}>{TYPE_OPTIONS.find(o => o.value === type)?.hint} · revisar até {revisarEm.split('-').reverse().join('/')}</p>
+        <input className="input" placeholder="Título" value={title} onChange={e => setTitle(e.target.value)} style={{ fontSize: '0.8125rem' }} autoFocus maxLength={160} />
+        <textarea className="input" placeholder={type === 'link' ? 'Uma linha de contexto (opcional)' : 'Conteúdo'} value={content} onChange={e => setContent(e.target.value)} rows={4} style={{ fontSize: '0.8125rem', resize: 'vertical' }} />
+        {(type === 'link' || url) && (
+          <input className="input" placeholder="https://..." value={url} onChange={e => setUrl(e.target.value)} style={{ fontSize: '0.8125rem' }} />
+        )}
+        {type !== 'link' && !url && (
+          <button type="button" onClick={() => setUrl('https://')} style={{ alignSelf: 'flex-start', fontSize: '0.6875rem', color: 'var(--tdgflow-navy)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginTop: -4 }}>+ adicionar link</button>
+        )}
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input className="input" placeholder="País (opcional)" value={country} onChange={e => setCountry(e.target.value)} style={{ fontSize: '0.8125rem', flex: 1 }} />
+          <input className="input" placeholder="Cidade/região (opcional)" value={region} onChange={e => setRegion(e.target.value)} style={{ fontSize: '0.8125rem', flex: 1 }} />
+        </div>
         <TagInput value={tags} onChange={setTags} />
+        <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', padding: '4px 0' }}>
+          {radio(true, 'Testado pela rede')}
+          {radio(false, 'Indicação, a testar')}
+          {radio(null, 'Não se aplica')}
+        </div>
         {error && <span style={{ fontSize: '0.75rem', color: '#dc2626' }}>{error}</span>}
         <button
           onClick={submit}
@@ -72,7 +111,7 @@ function NewNoteModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
           style={{ fontSize: '0.8125rem', padding: '9px 14px', marginTop: 4 }}
         >
           {saving ? <Loader2 size={13} className="animate-spin" /> : null}
-          Registrar
+          {initial ? 'Salvar' : 'Registrar'}
         </button>
       </div>
     </div>
@@ -100,6 +139,7 @@ export default function DestinosView() {
   const [search, setSearch] = useState('')
   const [currentUserName, setCurrentUserName] = useState<string | null>(null)
   const [showNoteModal, setShowNoteModal] = useState(false)
+  const [editing, setEditing] = useState<KnowledgeTip | null>(null)
   const [topTags, setTopTags] = useState<{ tag: string; count: number }[]>([])
   const debouncedSearch = useDebounce(search, 300).trim()
   const isSearching = debouncedSearch.length > 0
@@ -129,6 +169,13 @@ export default function DestinosView() {
     load(controller.signal)
     return () => controller.abort()
   }, [load])
+
+  async function archive(tip: KnowledgeTip) {
+    if (!window.confirm(`Arquivar "${tip.title}"? Nada é apagado — sai da lista e da busca.`)) return
+    const res = await fetch(`/api/knowledge-tips/${tip.id}/arquivar`, { method: 'POST' })
+    if (!res.ok) { const d = await res.json().catch(() => ({})); window.alert(d.error ?? 'Não deu pra arquivar.'); return }
+    load(new AbortController().signal)
+  }
 
   useEffect(() => {
     fetch('/api/context').then(r => r.json()).then(ctx => setCurrentUserName(ctx.agent_name ?? null)).catch(() => {})
@@ -266,7 +313,7 @@ export default function DestinosView() {
             <ResultGroup title="Conhecimento" total={results.knowledge.total}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 8 }}>
                 <AnimatePresence mode="popLayout">
-                  {results.knowledge.items.map(tip => <TipCard key={tip.id} tip={tip} highlightId={highlightTipId} currentUserName={currentUserName} onActed={() => load(new AbortController().signal)} />)}
+                  {results.knowledge.items.map(tip => <TipCard key={tip.id} tip={tip} highlightId={highlightTipId} currentUserName={currentUserName} onActed={() => load(new AbortController().signal)} onEdit={setEditing} onArchive={archive} />)}
                 </AnimatePresence>
               </div>
             </ResultGroup>
@@ -288,7 +335,7 @@ export default function DestinosView() {
         {!loading && !isSearching && tips.length > 0 && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 10 }}>
             <AnimatePresence mode="popLayout">
-              {tips.map(tip => <TipCard key={tip.id} tip={tip} highlightId={highlightTipId} currentUserName={currentUserName} onActed={() => load(new AbortController().signal)} />)}
+              {tips.map(tip => <TipCard key={tip.id} tip={tip} highlightId={highlightTipId} currentUserName={currentUserName} onActed={() => load(new AbortController().signal)} onEdit={setEditing} onArchive={archive} />)}
             </AnimatePresence>
           </div>
         )}
@@ -300,11 +347,8 @@ export default function DestinosView() {
         )}
       </div>
 
-      {showNoteModal && (
-        <NewNoteModal
-          onClose={() => setShowNoteModal(false)}
-          onCreated={() => load(new AbortController().signal)}
-        />
+      {(showNoteModal || editing) && (
+        <NoteModal initial={editing} onClose={() => { setShowNoteModal(false); setEditing(null) }} onSaved={() => load(new AbortController().signal)} />
       )}
     </div>
   )

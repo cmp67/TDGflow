@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
               k.content, k.country, k.tags, k.type AS knowledge_type,
               k.source_author, k.source_date::text AS source_date, k.created_at
        FROM tdg_destination_knowledge k
-       WHERE k.import_approval = 'pending' ${searchClauseKnowledge}
+       WHERE k.import_approval = 'pending' AND k.status = 'publicado' ${searchClauseKnowledge}
        ORDER BY k.source_date DESC NULLS LAST`,
       searchParam
     ),

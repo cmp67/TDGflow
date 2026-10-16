@@ -44,8 +44,10 @@ export async function GET(req: NextRequest) {
   const [knowledgeRows, hotelRows, reviewRows, contactRows, offerRows] = await Promise.all([
     sql`
       SELECT id, title, content, country, tags, source_author, source_date::text AS source_date,
-             import_approval
+             import_approval, type, url, region, testado, revisar_em::text AS revisar_em,
+             (revisar_em < current_date) AS vencido, versao, updated_by
       FROM tdg_destination_knowledge
+      WHERE status = 'publicado'
       ORDER BY source_date DESC NULLS LAST, created_at DESC
     `,
     sql`

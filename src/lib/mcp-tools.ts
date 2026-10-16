@@ -1,6 +1,8 @@
 import { sql } from '@vercel/postgres'
 import { getOffers } from '@/lib/offers'
 import { reviewStatusFor } from '@/lib/review-questions'
+import { searchKnowledge } from '@/lib/knowledge-db'
+import { KNOWLEDGE_TYPE_LABELS, type KnowledgeType } from '@/lib/knowledge'
 
 /* Ferramentas de busca/registro sobre a rede TDG — extraídas de
    src/app/api/mcp/route.ts (servidor MCP usado pelo agente MAX no GPT
@@ -105,6 +107,20 @@ export const TOOL_DEFINITIONS = [
         hotel_name: { type: 'string', description: 'Nome do hotel' },
       },
       required: ['hotel_name'],
+    },
+  },
+  {
+    name: 'search_knowledge',
+    description:
+      'Consultar o TDG Knowledge Base: conhecimento da rede por destino (fatos, dicas, avisos, links e roteiros de referência — vistos, taxas, operadoras, golpes, época boa de ir). Use para "o que a rede sabe de Kyoto?", "tem aviso pro Marrocos?", "regra de visto pro Vietnã". Cada item traz quem escreveu, quando, se foi testado pela rede ou é indicação a testar, e se pode estar desatualizado — cite isso na resposta.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        query: { type: 'string', description: 'Destino, cidade, país ou tema (ex: "Kyoto", "Japão", "visto", "comissão")' },
+        type: { type: 'string', enum: ['fact', 'note', 'link', 'aviso', 'roteiro'], description: 'Filtrar por tipo (opcional)' },
+        limit: { type: 'number', description: 'Máximo de resultados (default: 10)' },
+      },
+      required: ['query'],
     },
   },
   {
@@ -439,7 +455,34 @@ export async function callMcpTool(name: string, args: Record<string, unknown>) {
     case 'search_reviews':          return searchReviews(args)
     case 'get_review':              return getReview(args)
     case 'list_hotel_tips':         return listHotelTips(args)
+    case 'search_knowledge':        return searchKnowledgeTool(args)
     case 'register_tip':            return registerTip(args)
     default:                        return { error: `Tool not found: ${name}` }
+  }
+}
+
+/* ── search_knowledge ────────────────────────────────────────────────── */
+export async function searchKnowledgeTool(args: Record<string, unknown>) {
+  const query = typeof args.query === 'string' ? args.query.trim() : ''
+  if (!query) return { error: 'query obrigatória' }
+  const type = typeof args.type === 'string' && args.type in KNOWLEDGE_TYPE_LABELS ? (args.type as KnowledgeType) : undefined
+  const items = await searchKnowledge(query, type, typeof args.limit === 'number' ? args.limit : 10)
+  return {
+    total: items.length,
+    items: items.map(k => ({
+      id: k.id,
+      tipo: KNOWLEDGE_TYPE_LABELS[k.type],
+      titulo: k.title,
+      conteudo: k.content,
+      link: k.url,
+      destino: [k.country, k.region].filter(Boolean).join(' · ') || null,
+      tags: k.tags,
+      autor: k.source_author,
+      data: k.source_date,
+      testado: k.testado === true ? 'testado pela rede' : k.testado === false ? 'indicação, aguardando teste' : 'não informado',
+      pode_estar_desatualizado: k.vencido,
+      aguardando_confirmacao_do_autor: k.import_approval === 'pending',
+      abrir_em: `/flow/destinos?tipId=${k.id}`,
+    })),
   }
 }

@@ -81,10 +81,32 @@ function ClaimAuthorPrompt({ sourceAuthor, currentUserName, onClaimed }: {
 export interface KnowledgeTip {
   id: string
   title: string
-  content: string
+  content: string | null
   source_author: string
   source_date: string
   import_approval?: string | null
+  // Evolução 16/10/2026 (peças do Acervo do Trip): tipo com intenção,
+  // testado/a testar, prazo de revisão, versão, link, destino e tags.
+  type?: string
+  url?: string | null
+  country?: string | null
+  region?: string | null
+  tags?: string[]
+  testado?: boolean | null
+  revisar_em?: string | null
+  vencido?: boolean
+  versao?: number
+  updated_by?: string | null
+}
+
+const TIP_TYPE_LABELS: Record<string, string> = { fact: 'Fato', note: 'Dica', link: 'Link', aviso: 'Aviso', roteiro: 'Roteiro' }
+
+function TipBadge({ children, color, bg }: { children: React.ReactNode; color: string; bg: string }) {
+  return (
+    <span style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '2px 7px', borderRadius: 999, color, background: bg, whiteSpace: 'nowrap' }}>
+      {children}
+    </span>
+  )
 }
 
 export interface HotelResult {
@@ -213,11 +235,13 @@ function ExpiringBadge({ days }: { days: number }) {
 // disse isso — confirma?", que a pessoa podia nem associar à nota
 // específica). Quando é do autor logado (isAuthorMatch), vira QueueCard de
 // verdade — aprovar/editar/excluir ali mesmo, sem precisar caçar em outro lugar.
-export function TipCard({ tip, highlightId, currentUserName, onActed }: {
+export function TipCard({ tip, highlightId, currentUserName, onActed, onEdit, onArchive }: {
   tip: KnowledgeTip
   highlightId?: string | null
   currentUserName?: string | null
   onActed?: () => void
+  onEdit?: (tip: KnowledgeTip) => void
+  onArchive?: (tip: KnowledgeTip) => void
 }) {
   const isHighlighted = !!highlightId && tip.id === highlightId
   const [expanded, setExpanded] = useState(isHighlighted)
@@ -245,7 +269,8 @@ export function TipCard({ tip, highlightId, currentUserName, onActed }: {
     )
   }
 
-  const isAlert = /⚠️|NÃO|exige|proibido|impede|risco|atenção|jurídico|greve/i.test(tip.content ?? '')
+  const isAlert = tip.type === 'aviso' || /⚠️|NÃO|exige|proibido|impede|risco|atenção|jurídico|greve/i.test(tip.content ?? '')
+  const canArchive = !!onArchive && (isAuthorMatch(tip.source_author, currentUserName) || claimedName !== null)
 
   return (
     <motion.div
@@ -281,6 +306,16 @@ export function TipCard({ tip, highlightId, currentUserName, onActed }: {
             </p>
             {tip.import_approval === 'pending' && <PendingBadge />}
           </div>
+          {(tip.type || tip.testado != null || tip.vencido) && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 6 }}>
+              {tip.type && tip.type !== 'note' && tip.type !== 'fact' && (
+                <TipBadge color={tip.type === 'aviso' ? '#B91C1C' : 'var(--tdgflow-navy-dim)'} bg={tip.type === 'aviso' ? '#FEF2F2' : 'var(--tdgflow-navy-subtle)'}>{TIP_TYPE_LABELS[tip.type] ?? tip.type}</TipBadge>
+              )}
+              {tip.testado === true && <TipBadge color="var(--tdgflow-gold-dim)" bg="var(--tdgflow-gold-subtle)">Testado pela rede</TipBadge>}
+              {tip.testado === false && <TipBadge color="var(--tdgflow-accent-warm)" bg="var(--tdgflow-accent-warm-subtle)">Aguardando teste</TipBadge>}
+              {tip.vencido && <TipBadge color="var(--tdgflow-text-secondary)" bg="var(--tdgflow-surface-high)">Pode estar desatualizado</TipBadge>}
+            </div>
+          )}
           <p style={{
             fontSize: '0.75rem', color: '#2d4a52', lineHeight: 1.5,
             display: expanded ? 'block' : '-webkit-box',
@@ -290,6 +325,16 @@ export function TipCard({ tip, highlightId, currentUserName, onActed }: {
           }}>
             {tip.content}
           </p>
+          {tip.url && expanded && (
+            <a href={tip.url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ display: 'inline-block', marginTop: 6, fontSize: '0.75rem', color: 'var(--tdgflow-navy)', wordBreak: 'break-all' }}>
+              {tip.url}
+            </a>
+          )}
+          {expanded && (tip.country || tip.region) && (
+            <p style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)', marginTop: 6 }}>
+              {[tip.country, tip.region].filter(Boolean).join(' · ')}
+            </p>
+          )}
         </div>
       </div>
       <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
@@ -300,7 +345,20 @@ export function TipCard({ tip, highlightId, currentUserName, onActed }: {
             {tip.source_date && <span style={{ opacity: 0.7 }}> · {formatDate(tip.source_date)}</span>}
           </span>
         </div>
-        <CopyLinkButton path={`/flow/destinos?tipId=${tip.id}`} label={`Dica: ${tip.title}`} size={12} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {onEdit && (
+            <button onClick={e => { e.stopPropagation(); onEdit(tip) }} title={tip.versao && tip.versao > 1 ? `versão ${tip.versao}${tip.updated_by ? ` · ${tip.updated_by}` : ''}` : 'Editar'}
+              style={{ fontSize: '0.625rem', color: 'var(--tdgflow-navy)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+              Editar{tip.versao && tip.versao > 1 ? ` · v${tip.versao}` : ''}
+            </button>
+          )}
+          {canArchive && (
+            <button onClick={e => { e.stopPropagation(); onArchive?.(tip) }} style={{ fontSize: '0.625rem', color: 'var(--tdgflow-text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+              Arquivar
+            </button>
+          )}
+          <CopyLinkButton path={`/flow/destinos?tipId=${tip.id}`} label={`Dica: ${tip.title}`} size={12} />
+        </div>
       </div>
       {tip.import_approval === 'pending' && !isMinePending && (
         <ClaimAuthorPrompt sourceAuthor={tip.source_author} currentUserName={currentUserName} onClaimed={setClaimedName} />
