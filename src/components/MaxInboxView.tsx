@@ -18,6 +18,8 @@ interface MaxReview {
   created_at: string
   status: string
   is_own: boolean
+  source?: string | null
+  import_approval?: string | null
 }
 
 // Accent-insensitive pra Super Busca — filtra marcas de acento (faixa
@@ -122,15 +124,23 @@ export default function MaxInboxView() {
   const [items, setItems] = useState<MaxReview[] | null>(null)
   const [loadError, setLoadError] = useState('')
   const [query, setQuery] = useState('')
+  // Duas origens (18/10/2026, achado da Carla: "a última menção ao Max foi
+  // 16/09? onde foram parar as importações?"): o que o Max capturou ao vivo
+  // (max_whatsapp) e o que a importação do grupo trouxe (whatsapp_import).
+  const [origin, setOrigin] = useState<'todas' | 'max_whatsapp' | 'whatsapp_import'>('todas')
 
   useEffect(() => {
     (async () => {
-      const res = await fetch('/api/reviews?source=max_whatsapp')
-      const data = await res.json()
-      if (res.ok) {
-        setItems(data.reviews)
+      const [live, imported] = await Promise.all([
+        fetch('/api/reviews?source=max_whatsapp').then(r => r.json()),
+        fetch('/api/reviews?source=whatsapp_import').then(r => r.json()),
+      ])
+      if (live.reviews || imported.reviews) {
+        const all = [...(live.reviews ?? []), ...(imported.reviews ?? [])] as MaxReview[]
+        all.sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''))
+        setItems(all)
       } else {
-        setLoadError(data.error ?? 'Erro ao carregar.')
+        setLoadError(live.error ?? imported.error ?? 'Erro ao carregar.')
       }
     })()
   }, [])
@@ -140,7 +150,7 @@ export default function MaxInboxView() {
   }
 
   const q = foldForSearch(query.trim())
-  const filtered = (items ?? []).filter(r =>
+  const filtered = (items ?? []).filter(r => (origin === 'todas' || r.source === origin)).filter(r =>
     !q ||
     foldForSearch(r.hotel_name).includes(q) ||
     foldForSearch(r.agent_name ?? '').includes(q) ||
@@ -158,8 +168,13 @@ export default function MaxInboxView() {
           Max — dicas via WhatsApp
         </h1>
         <p className="text-sm mt-1" style={{ color: 'var(--tdgflow-text-muted)' }}>
-          Toda dica que o Max registrou a partir de uma conversa de WhatsApp, mais recente primeiro.
+          O que o Max registrou ao vivo e o que a importação do grupo trouxe (com o nome de quem falou), mais recente primeiro.
         </p>
+        <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
+          {([['todas', `Tudo (${(items ?? []).length})`], ['max_whatsapp', `Max ao vivo (${(items ?? []).filter(r => r.source === 'max_whatsapp').length})`], ['whatsapp_import', `Importado do grupo (${(items ?? []).filter(r => r.source === 'whatsapp_import').length})`]] as const).map(([k, label]) => (
+            <button key={k} onClick={() => setOrigin(k)} style={{ fontSize: '0.6875rem', fontWeight: 600, padding: '4px 10px', borderRadius: 999, cursor: 'pointer', border: origin === k ? 'none' : '1px solid var(--tdgflow-border)', background: origin === k ? 'var(--tdgflow-gold)' : 'var(--tdgflow-surface)', color: origin === k ? 'var(--tdgflow-navy-dim)' : 'var(--tdgflow-text-secondary)' }}>{label}</button>
+          ))}
+        </div>
       </div>
 
       <div className="relative mb-5">

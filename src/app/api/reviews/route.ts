@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
       FROM tdg_hotel_reviews r
       WHERE r.source = ${source}
       ORDER BY r.created_at DESC
-      LIMIT 100
+      LIMIT 500
     `
     reviewRows = rows
   } else if (hotelId) {
