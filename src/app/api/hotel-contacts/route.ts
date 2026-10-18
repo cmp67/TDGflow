@@ -1,7 +1,8 @@
 import { sql } from '@vercel/postgres'
 import { auth } from '@/auth'
 import { NextRequest, NextResponse } from 'next/server'
-import { CATEGORY_TO_ENTITY, ENTITY_TO_CATEGORY, parseSource } from '@/lib/contacts'
+import { CATEGORY_TO_ENTITY, ENTITY_TO_CATEGORY, parseSource, SOURCE_KIND_LABELS } from '@/lib/contacts'
+import { proposeEnrichmentInBackground } from '@/lib/enrichment'
 
 export const dynamic = 'force-dynamic'
 
@@ -101,6 +102,17 @@ async function findOrCreateSupplier(organization: string, entityType: string, em
   return { id: raced[0].id as string, name: raced[0].name as string, created: false }
 }
 
+async function createDiscoveryLead(hotelId: string, hotelName: string, entityType: string, email: string, name: string, sourceKind: string | null, sourceDetail: string | null): Promise<void> {
+  const { rows } = await sql`SELECT id, agency_name, agency_id FROM tdg_users WHERE email = ${email} LIMIT 1`
+  const u = rows[0]
+  if (!u) return
+  const where = sourceKind ? ` (${SOURCE_KIND_LABELS[sourceKind as keyof typeof SOURCE_KIND_LABELS] ?? sourceKind}${sourceDetail ? `: ${sourceDetail}` : ''})` : ''
+  const why = `Contato registrado por ${name}${where}. Ninguém da rede testou ainda.`
+  await sql`
+    INSERT INTO tdg_hotel_reviews (hotel_name, hotel_id, entity_type, agent_id, agent_name, agency_name, agency_id, visit_type, status, heads_up, raw_answers, source)
+    VALUES (${hotelName}, ${hotelId}, ${entityType === 'dmc' || entityType === 'other' ? entityType : entityType}, ${u.id}, ${name}, ${(u.agency_name as string) ?? name}, ${(u.agency_id as string | null) ?? null}, 'commercial_meeting', 'a_testar', ${why}, ${JSON.stringify({ why_it_matters: why })}, 'contact')`
+}
+
 async function categoryForHotel(hotelId: string): Promise<{ name: string | null; category: string }> {
   const { rows } = await sql`SELECT name, entity_type FROM tdg_hotels WHERE id = ${hotelId}`
   return { name: (rows[0]?.name as string | undefined) ?? null, category: ENTITY_TO_CATEGORY[(rows[0]?.entity_type as string) ?? 'hotel'] ?? 'hotel' }
@@ -143,6 +155,16 @@ export async function POST(req: NextRequest) {
     hotelId = supplier.id
     finalOrganization = supplier.name
     supplierCreated = supplier.created
+    if (supplier.created) {
+      // Card recém-nascido: busca foto/endereço/site como proposta pendente (18/10/2026).
+      proposeEnrichmentInBackground(supplier.id)
+      // E nasce organizado no modelo da rede: um contato vindo de feira,
+      // indicação ou reunião é uma DESCOBERTA ("Aguardando teste", selo coral),
+      // em nome de quem cadastrou, com o botão "Registrar teste real" à mão.
+      // Pergunta da Carla 18/10: "qual é a lógica de registro? Testado? Onde
+      // está o review?" — antes o card ficava sem selo nenhum.
+      await createDiscoveryLead(supplier.id, supplier.name, CATEGORY_TO_ENTITY[category], session.user.email, addedBy, source.source_kind, source.source_detail)
+    }
   }
 
   const { rows } = await sql`

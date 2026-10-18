@@ -7,6 +7,7 @@ import { checkAndDeductCredits } from '@/lib/credits'
 import { getAgencyId } from '@/lib/agency'
 import { buildReviewExtractionPrompt } from '@/lib/review-extraction'
 import { reviewStatusFor } from '@/lib/review-questions'
+import { proposeEnrichmentInBackground } from '@/lib/enrichment'
 
 export const dynamic = 'force-dynamic'
 
@@ -299,6 +300,7 @@ export async function POST(req: NextRequest) {
         `
         if (createdHotel[0]) {
           hotelId = createdHotel[0].id as string
+          proposeEnrichmentInBackground(hotelId) // foto/endereço/site como proposta pendente (18/10/2026)
         } else {
           // Corrida: outra requisição criou o mesmo fornecedor entre o SELECT e o INSERT.
           const { rows: racedHotel } = await sql`

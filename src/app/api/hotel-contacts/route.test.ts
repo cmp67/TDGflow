@@ -127,9 +127,14 @@ describe('contato → fornecedor automático + fonte (16/10/2026)', () => {
   const ids: string[] = []
   const supplierIds: string[] = []
 
+  beforeAll(async () => {
+    await sql`INSERT INTO tdg_users (name, email, agency_name, password_hash, role) VALUES ('TDD Tester', ${email}, '__TDD_AGENCY__', 'x', 'agent')`
+  })
+
   afterAll(async () => {
+    await sql`DELETE FROM tdg_users WHERE email = ${email}`
     if (ids.length) await sql`DELETE FROM tdg_hotel_contacts WHERE id = ANY(${ids})`
-    if (supplierIds.length) await sql`DELETE FROM tdg_hotels WHERE id = ANY(${supplierIds})`
+    if (supplierIds.length) { await sql`DELETE FROM tdg_hotel_reviews WHERE hotel_id = ANY(${supplierIds})`; await sql`DELETE FROM tdg_hotels WHERE id = ANY(${supplierIds})` }
     await sql`DELETE FROM tdg_hotels WHERE name = ${org}`
   })
 
@@ -147,6 +152,11 @@ describe('contato → fornecedor automático + fonte (16/10/2026)', () => {
     supplierIds.push(body.contact.hotel_id)
     const { rows } = await sql`SELECT entity_type, created_by FROM tdg_hotels WHERE id = ${body.contact.hotel_id}`
     expect(rows[0]).toEqual({ entity_type: 'dmc', created_by: email })
+    // card nasce como descoberta ("Aguardando teste") em nome de quem cadastrou, com a fonte
+    const { rows: leads } = await sql`SELECT status, visit_type, heads_up, source FROM tdg_hotel_reviews WHERE hotel_id = ${body.contact.hotel_id}`
+    expect(leads).toHaveLength(1)
+    expect(leads[0]).toMatchObject({ status: 'a_testar', visit_type: 'commercial_meeting', source: 'contact' })
+    expect(leads[0].heads_up).toContain('Feira: ILTM 2026')
 
     mockAuth.mockResolvedValueOnce(sessionFor(email))
     const res2 = await POST(postReq({ name: 'Nilay', surname: 'Firil', category: 'dmc', organization: org.toUpperCase() }))

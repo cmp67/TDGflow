@@ -41,6 +41,8 @@ export interface HotelRow {
   operational_status: 'ativo' | 'reforma' | 'fechado'
   operational_note: string | null
   reopening_expected: string | null
+  enrichment_status: string | null
+  enrichment: Record<string, unknown> | null
   created_by: string | null
   can_edit: boolean
   benefits: { id: string; category: string; description: string; commission_pct: number | null }[]
@@ -77,7 +79,7 @@ export async function GET() {
            h.contact_email, h.contact_phone, h.website_url, h.currency, h.group_name,
            h.image_url, h.dot_color, h.tags, h.profiles, h.gallery, h.created_by,
            h.is_blacklisted, h.blacklist_reason, h.operational_status, h.operational_note,
-           h.reopening_expected::text AS reopening_expected,
+           h.reopening_expected::text AS reopening_expected, h.enrichment_status, h.enrichment,
            h.agency_id, (h.agency_id IS NOT NULL) AS is_private,
            COUNT(*) FILTER (WHERE r.status = 'published')::int AS tested_count,
            COUNT(*) FILTER (WHERE r.status = 'a_testar')::int AS pending_lead_count,

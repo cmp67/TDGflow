@@ -3,6 +3,9 @@
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import { supplierStatus, TRUST_LABELS } from '@/lib/supplier-status'
 import SupplierSituation from '@/components/SupplierSituation'
+import SupplierEnrichment from '@/components/SupplierEnrichment'
+import type { PlaceProposal } from '@/lib/places'
+import type { EnrichmentStatus } from '@/lib/enrichment'
 import type { OperationalStatus } from '@/lib/supplier-operational'
 import { SOURCE_KINDS, SOURCE_KIND_LABELS } from '@/lib/contacts'
 import { ownWordsLead } from '@/lib/review-words'
@@ -104,6 +107,8 @@ interface Hotel {
   operationalStatus: OperationalStatus
   operationalNote: string | null
   reopeningExpected: string | null
+  enrichmentStatus: EnrichmentStatus | null
+  enrichment: PlaceProposal | null
   canEdit: boolean
   benefits: HotelBenefit[]
   isPrivate: boolean
@@ -221,6 +226,8 @@ interface HotelApiRow {
   operational_status?: OperationalStatus | null
   operational_note?: string | null
   reopening_expected?: string | null
+  enrichment_status?: EnrichmentStatus | null
+  enrichment?: PlaceProposal | null
   can_edit: boolean
   benefits: HotelBenefit[] | null
   is_private: boolean
@@ -257,6 +264,8 @@ function mapHotelApiRow(row: HotelApiRow): Hotel {
     operationalStatus: row.operational_status ?? 'ativo',
     operationalNote: row.operational_note ?? null,
     reopeningExpected: row.reopening_expected ?? null,
+    enrichmentStatus: row.enrichment_status ?? null,
+    enrichment: row.enrichment ?? null,
     canEdit: row.can_edit ?? false,
     benefits: row.benefits ?? [],
     isPrivate: row.is_private ?? false,
@@ -1461,6 +1470,12 @@ function HotelDetail({ hotel, onClose, onUpdated }: { hotel: Hotel; onClose: () 
           )}
 
           <BenefitsSection hotelId={hotel.id} initialBenefits={hotel.benefits} />
+
+          <SupplierEnrichment
+            hotelId={hotel.id}
+            state={{ status: hotel.enrichmentStatus, proposal: hotel.enrichment, canReview: hotel.canEdit, current: { image_url: hotel.image_url, location: hotel.location, website_url: hotel.website_url, contact_phone: hotel.contact_phone, country: hotel.country } }}
+            onChanged={() => fetch('/api/hotels').then(r => r.json()).then(d => { const row = (d.hotels as HotelApiRow[]).find(h => h.id === hotel.id); if (row) onUpdated(mapHotelApiRow(row)) }).catch(() => {})}
+          />
 
           <SupplierSituation
             hotelId={hotel.id}
