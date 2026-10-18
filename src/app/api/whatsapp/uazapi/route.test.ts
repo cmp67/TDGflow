@@ -18,7 +18,7 @@ import { runMax } from '@/lib/max/agent'
 import { checkAndDeductCredits } from '@/lib/credits'
 
 const m = (f: unknown) => f as ReturnType<typeof vi.fn>
-const user = { id: 'u1', name: 'Dani', email: 'dani@example.com', agency_name: 'NZ', role: 'agent', active: true }
+const user = { id: 'u1', name: 'Dani', email: 'dani@example.com', agency_name: 'NZ', agency_id: null, role: 'agent', active: true }
 const payload = (over: Record<string, unknown> = {}) => ({ EventType: 'messages', owner: '5511999990000@s.whatsapp.net', token: 'inst-token', message: { messageid: 'M1', chatid: '5551981477111@s.whatsapp.net', sender: '5551981477111@s.whatsapp.net', fromMe: false, isGroup: false, text: 'o que a rede sabe do Txai?', ...over } })
 const req = (body: unknown, s = 'segredo') => new NextRequest(`http://localhost/api/whatsapp/uazapi?s=${s}`, { method: 'POST', body: JSON.stringify(body), headers: { 'content-type': 'application/json' } })
 

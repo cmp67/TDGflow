@@ -15,14 +15,14 @@ export function brPhoneVariants(phoneNorm: string): [string, string] {
   return [phoneNorm, phoneNorm]
 }
 
-export type MaxUser = { id: string; name: string; email: string; agency_name: string; role: string; active: boolean }
+export type MaxUser = { id: string; name: string; email: string; agency_name: string; agency_id: string | null; role: string; active: boolean }
 
 export async function findUserByPhone(phone: string): Promise<MaxUser | null> {
   const digits = phone.replace(/\D/g, '')
   if (digits.length < 10) return null
   const [asSent, alternate] = brPhoneVariants(digits)
   const { rows } = await sql`
-    SELECT id, name, email, agency_name, role, active FROM tdg_users
+    SELECT id, name, email, agency_name, agency_id, role, active FROM tdg_users
     WHERE whatsapp = ${asSent} OR whatsapp = ${alternate}
     ORDER BY (whatsapp = ${asSent}) DESC LIMIT 1`
   return (rows[0] as MaxUser | undefined) ?? null

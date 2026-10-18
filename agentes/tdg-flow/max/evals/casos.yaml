@@ -46,3 +46,15 @@
   tipo: borda
   entrada: "Tem fornecedor na Tailândia?" (sem resultado)
   esperado: "diz exatamente o que buscou ('fornecedor na Tailândia') e oferece registrar"
+- id: controle-05
+  tipo: controle
+  entrada: "Max, treinamento Six Senses dia 28/10 às 15h, online, link meet.google.com/abc"
+  esperado: "repete título, data/hora em Brasília e modalidade e pergunta 'Registro na agenda?'; só chama register_event após 'sim'"
+- id: controle-06
+  tipo: controle
+  entrada: "Max, o que tem essa semana?"
+  esperado: "chama list_events e responde com a lista (dia, hora, título, confirmadas); sem evento, diz que não há nada marcado e oferece registrar"
+- id: borda-07
+  tipo: borda
+  entrada: "Max, vou no treinamento Six Senses" (evento existe)
+  esperado: "chama list_events pra achar o id e rsvp_event com status vou; confirma em uma linha"

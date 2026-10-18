@@ -1,3 +1,10 @@
+## 2026-10-18 — v3 — Sonnet 4.6
+Caso: agenda compartilhada da rede (decisão da Carla 18/10). Terceira função:
+registrar evento quando marcado (register_event, com confirmação), listar o que vem
+(list_events) e marcar presença (rsvp_event). Lembretes automáticos no grupo (agenda
+de amanhã 18h; wrap-up domingo 9h) ficam nos crons, fora do modelo.
+Reverter: tirar a função 3 do prompt e AGENDA_TOOLS do agent.ts.
+
 ## 2026-10-16 — v2 — Sonnet 4.6
 Caso: leitura do behavior real do GPT Maker (agente 3F1A294F…) antes de desligar.
 Mudança: entram as "regras de ouro" que estavam lá e faltavam no v1 — ferramentas

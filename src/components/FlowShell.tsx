@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Mail, Sparkles, Tag, Lightbulb, FileText, Search,
   LogOut, MoreHorizontal, X, Users, BarChart2, MessageSquarePlus, CreditCard, Network, UserPlus, Globe, BookOpen, MessageCircle
-, HelpCircle } from 'lucide-react'
+, HelpCircle , CalendarDays } from 'lucide-react'
 import { LanguageProvider, useLanguage } from '@/contexts/LanguageContext'
 import { APP_VERSION } from '@/lib/version'
 import { type Lang, LANG_LABELS } from '@/lib/i18n'
@@ -30,11 +30,16 @@ interface NavGroup {
   items: NavItem[]
 }
 
+// Agenda da rede (18/10/2026) lança junto com o Max na uazapi — até lá fica
+// atrás de NEXT_PUBLIC_AGENDA_ENABLED=1 (decisão da Carla: "tudo junto").
+const AGENDA_ENABLED = process.env.NEXT_PUBLIC_AGENDA_ENABLED === '1'
+
 const PRIMARY_NAV: NavItem[] = [
   { href: '/flow/chat',    icon: Sparkles,  tkey: 'assistente' },
   { href: '/flow/ofertas', icon: Tag,       tkey: 'ofertas' },
   { href: '/flow/dicas',   icon: Lightbulb, tkey: 'dicas' },
   { href: '/flow/rede',    icon: Network,   tkey: 'rede' },
+  ...(AGENDA_ENABLED ? [{ href: '/flow/agenda', icon: CalendarDays, tkey: 'agenda' } as NavItem] : []),
 ]
 
 // Dica de uma linha por item — autoexplicação antes do clique (achado da
@@ -46,6 +51,7 @@ const NAV_HINTS: Record<string, string> = {
   ofertas:    'Promoções ativas da rede, ordenadas por comissão e prazo',
   dicas:      'Avaliações reais de fornecedores, por quem visitou de verdade',
   rede:       'Fornecedores parceiros e contatos da rede — reps, DMCs, pessoas',
+  agenda:     'Treinamentos, feiras, webinars e prazos da rede — anote, convide, confirme presença',
   analytics:  'Seu desempenho e o da rede',
   agencia:    'Seu perfil e dados da agência',
   gestao:     'Usuários e permissões da agência',

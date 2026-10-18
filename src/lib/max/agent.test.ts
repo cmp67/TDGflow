@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import type Anthropic from '@anthropic-ai/sdk'
 import { runMax, toWhatsApp, bindToolsToUser, MAX_TOOL_ROUNDS } from './agent'
 
-const user = { id: 'u1', name: 'Dani Filippozzi', email: 'dani@example.com', agency_name: 'NZ Viagens', role: 'agent', active: true }
+const user = { id: 'u1', name: 'Dani Filippozzi', email: 'dani@example.com', agency_name: 'NZ Viagens', agency_id: null, role: 'agent', active: true }
 const msg = (content: Anthropic.ContentBlock[], stop: Anthropic.Message['stop_reason']): Anthropic.Message =>
   ({ id: 'm', type: 'message', role: 'assistant', model: 'x', content, stop_reason: stop, stop_sequence: null, usage: { input_tokens: 10, output_tokens: 5 } } as unknown as Anthropic.Message)
 
@@ -77,5 +77,17 @@ describe('runMax — pessoa não identificada e ferramentas do Central', () => {
     const call = vi.fn().mockResolvedValue({})
     await bindToolsToUser(user, call, null)('search_materials', { query: 'kids' })
     expect(call).not.toHaveBeenCalled()
+  })
+})
+
+describe('ferramentas de agenda no Max', () => {
+  it('identificada vê list_events, register_event e rsvp_event; não identificada só list_events', async () => {
+    const create = vi.fn().mockResolvedValue(msg([{ type: 'text', text: 'ok', citations: null } as Anthropic.TextBlock], 'end_turn'))
+    await runMax({ create }, { identity: { user }, isGroup: false, text: 'x', history: [] }, vi.fn())
+    const names = create.mock.calls[0][0].tools.map((t: { name: string }) => t.name)
+    expect(names).toEqual(expect.arrayContaining(['list_events', 'register_event', 'rsvp_event']))
+    await runMax({ create }, { identity: { user: null, senderName: null }, isGroup: false, text: 'x', history: [] }, vi.fn())
+    const anon = create.mock.calls[1][0].tools.map((t: { name: string }) => t.name)
+    expect(anon).toContain('list_events'); expect(anon).not.toContain('register_event')
   })
 })

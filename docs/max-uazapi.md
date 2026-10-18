@@ -27,6 +27,20 @@ o mesmo da TA Travel). Molde do agente em `agentes/tdg-flow/max/`, instância em
 6. Teste: mandar "Max, o que a rede sabe do Txai?" no 1:1 e no grupo (marcando o
    número do Max). Em grupo sem marcar, ele fica calado.
 
+## Postagens automáticas no grupo (agenda)
+
+- `NEXT_PUBLIC_AGENDA_ENABLED=1` (Vercel env + redeploy): liga o item Agenda no menu
+  e a tela `/flow/agenda`. Até lá a rota mostra "em breve".
+- `MAX_GROUP_JID` (Vercel env): JID do grupo da TDG (`...@g.us`), obtido com
+  `POST /group/list` na instância. Sem ele, os crons respondem `sent: false` e não
+  postam.
+- `/api/cron/max-agenda-amanha` — todo dia 18h de Brasília: eventos de amanhã;
+  dia sem evento = silêncio.
+- `/api/cron/max-wrapup-semanal` — domingo 9h de Brasília: agenda de segunda a
+  domingo + o que a rede registrou (mesmo conteúdo do digest semanal por e-mail).
+- Eventos nascem na tela Agenda (`/flow/agenda`) ou pelo Max ("Max, treinamento X
+  dia 28/10 às 15h").
+
 ## Regras que a rota aplica (`src/app/api/whatsapp/uazapi/route.ts`)
 
 - Segredo da URL + token da instância; payload nunca é logado.

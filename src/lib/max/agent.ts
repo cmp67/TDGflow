@@ -4,6 +4,7 @@ import { maxContextBlock, maxSystemPrompt } from '@/lib/max/prompt'
 import type { MaxTurn } from '@/lib/max/memory'
 import type { MaxUser } from '@/lib/max/identity'
 import { isCentralTool, callCentralTool, type CentralConfig } from '@/lib/max/central-mcp'
+import { AGENDA_TOOLS, isAgendaTool, callAgendaTool } from '@/lib/max/agenda-tools'
 
 export const MAX_MODEL = 'claude-sonnet-4-6'
 export const MAX_TOOL_ROUNDS = 6
@@ -42,6 +43,7 @@ export function toWhatsApp(text: string): string {
    o modelo não escolhe agent_name/agency_name, nem que a mensagem peça. */
 export function bindToolsToUser(user: MaxUser | null, call: ToolCaller = callMcpTool, central: CentralConfig | null = null): ToolCaller {
   return (name, args) => {
+    if (isAgendaTool(name)) return callAgendaTool(user, name, args)
     if (isCentralTool(name)) return central ? callCentralTool(central, name, args) : Promise.resolve({ error: 'Bemgsy Central não configurado' })
     if (name === 'register_tip') {
       if (!user) return Promise.resolve({ success: false, error: 'Não dá pra registrar sem saber quem está falando: o número não está cadastrado no Flow.' })
@@ -57,7 +59,7 @@ export async function runMax(messages: MessagesApi, input: MaxRunInput, call: To
     userName: user?.name ?? ('senderName' in input.identity ? input.identity.senderName : null),
     agencyName: user?.agency_name ?? null, identified: !!user, isGroup: input.isGroup,
   })}`
-  const tools = [...(TOOL_DEFINITIONS as unknown as Anthropic.Tool[]).filter(t => user || t.name !== 'register_tip'), ...(input.extraTools ?? [])]
+  const tools = [...(TOOL_DEFINITIONS as unknown as Anthropic.Tool[]).filter(t => user || t.name !== 'register_tip'), ...AGENDA_TOOLS.filter(t => user || t.name === 'list_events'), ...(input.extraTools ?? [])]
   const convo: Anthropic.MessageParam[] = [...input.history.map(t => ({ role: t.role, content: t.content })), { role: 'user', content: input.text }]
   let tokensIn = 0, tokensOut = 0
   const toolCalls: string[] = []
