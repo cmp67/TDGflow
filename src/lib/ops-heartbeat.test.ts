@@ -200,6 +200,17 @@ describe('collectLumisSnapshot', () => {
     await sql`UPDATE tdg_central_pool SET balance = balance - 25 WHERE period = ${period}`
   })
 
+  it('agência __TDD sobrando de teste interrompido nunca entra na cota (achado 17/10)', async () => {
+    const before = await collectLumisSnapshot()
+    const { rows } = await sql`INSERT INTO tdg_agencies (name, cnpj) VALUES ('__TDD_SOBRA_HB__', ${`99.000.000/${suffix}-00`}) RETURNING id`
+    try {
+      const after = await collectLumisSnapshot()
+      expect(after.incluidos).toBe(before.incluidos)
+    } finally {
+      await sql`DELETE FROM tdg_agencies WHERE id = ${rows[0].id}`
+    }
+  })
+
   it('todos os campos são inteiros não negativos (contrato do Ops: ge=0)', async () => {
     const snap = await collectLumisSnapshot()
     for (const key of ['incluidos', 'extras', 'consumidos'] as const) {

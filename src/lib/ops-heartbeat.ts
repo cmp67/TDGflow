@@ -62,7 +62,9 @@ export async function checkDatabase(): Promise<{ ok: boolean; latencyMs: number 
 
 // ── Foto de Lumis do ciclo ───────────────────────────────────────────────────
 // Mês civil UTC, igual a getCurrentPeriod() em credits.ts. Só agências
-// `active = true AND is_test = false`, como getAgencyBreakdown().
+// `active = true AND is_test = false`, como getAgencyBreakdown() — e nunca
+// as `__TDD…` que um teste interrompido deixa pra trás (achado 17/10: o Ops
+// contava 25 agências em vez das 19 do contrato).
 //   incluidos  = SUM(quota) das linhas de tdg_agency_cycles do período; agência
 //                ainda sem linha conta POOL_CONFIG.quotaPerAgency (é o que a
 //                linha receberia ao ser criada — ensureCycleRow).
@@ -87,13 +89,13 @@ export async function collectLumisSnapshot(): Promise<LumisSnapshot> {
       FROM tdg_agencies a
       LEFT JOIN tdg_agency_cycles c
         ON c.agency_id = a.id AND c.period = ${period}::date
-      WHERE a.active = true AND a.is_test = false
+      WHERE a.active = true AND a.is_test = false AND a.name NOT LIKE '\\_\\_TDD%'
     `,
     sql`
       SELECT COALESCE(SUM(ABS(l.amount)), 0)::bigint AS total
       FROM tdg_credits_ledger l
       JOIN tdg_agencies a ON a.id = l.agency_id
-      WHERE a.active = true AND a.is_test = false
+      WHERE a.active = true AND a.is_test = false AND a.name NOT LIKE '\\_\\_TDD%'
         AND l.amount < 0
         AND l.action_type <> 'pool_return'
         AND l.created_at >= ${period}::date
