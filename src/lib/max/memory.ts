@@ -45,3 +45,9 @@ export async function rememberInstanceLid(lid: string): Promise<void> {
   await sql`INSERT INTO tdg_max_state (key, value) VALUES ('instance_lid', ${lid})
             ON CONFLICT (key) DO UPDATE SET value = ${lid}, updated_at = now()`
 }
+
+/* A mensagem citada num reply foi enviada pelo Max? */
+export async function isMaxOutbound(messageId: string): Promise<boolean> {
+  const { rows } = await sql`SELECT 1 FROM tdg_max_messages WHERE message_id = ${messageId} AND direction = 'out' LIMIT 1`
+  return rows.length > 0
+}

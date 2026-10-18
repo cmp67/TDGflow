@@ -20,6 +20,8 @@ export interface MaxInbound {
   readonly text: string
   readonly mentioned: boolean             // em grupo: o Max foi marcado? (sem o LID; a rota refaz com isMentioned + LID conhecido)
   readonly mentionedJids: readonly string[]
+  readonly quotedId: string | null        // id da mensagem respondida (reply), se houver
+  readonly quotedAuthor: string | null    // JID de quem escreveu a mensagem respondida
   readonly at: Date
 }
 
@@ -78,6 +80,17 @@ export function stripMention(text: string, ownerPhone: string | null, ownerLid: 
   return t.replace(/\s+/g, ' ').trim()
 }
 
+/* Responder (reply) a uma mensagem do Max é falar com ele — sem ler mais nada
+   do grupo (18/10/2026: a rede não quer escuta ativa; o Max só fala quando é
+   chamado, e reply é chamar). Vale se o autor citado é o próprio Max (número
+   ou LID) ou se o id citado está entre as mensagens que o Max enviou. */
+export function isReplyToMax(q: { quotedId: string | null; quotedAuthor: string | null }, ownerPhone: string | null, ownerLid: string | null, quotedIsMaxOutbound: boolean): boolean {
+  if (!q.quotedId && !q.quotedAuthor) return false
+  if (quotedIsMaxOutbound) return true
+  const who = q.quotedAuthor ? digitsOfJid(q.quotedAuthor) : null
+  return !!who && (who === ownerPhone || who === ownerLid)
+}
+
 /* O LID da própria instância aparece nas mensagens que o Max MANDA (fromMe)
    como sender_lid. A rota aprende dali e guarda; env UAZAPI_INSTANCE_LID vale
    como fallback manual. */
@@ -110,6 +123,8 @@ export function parseUazapiWebhook(payload: unknown): MaxInbound | null {
   const ctx = isRecord(content.contextInfo) ? content.contextInfo : {}
   const mentionedRaw = (Array.isArray(m.mentionedJid) ? m.mentionedJid : Array.isArray(ctx.mentionedJid) ? ctx.mentionedJid : []) as unknown[]
   const mentionedJids = mentionedRaw.filter((x): x is string => typeof x === 'string')
+  const quotedId = str(m.quoted) || str(m.replyid) || str(ctx.stanzaId) || null
+  const quotedAuthor = str(ctx.participant) || null
   return {
     instanceToken: str(payload.token),
     ownerPhone,
@@ -124,6 +139,8 @@ export function parseUazapiWebhook(payload: unknown): MaxInbound | null {
     text,
     mentioned: !isGroup || isMentioned(text, ownerPhone, mentionedJids),
     mentionedJids,
+    quotedId,
+    quotedAuthor,
     at: instant(m.messageTimestamp),
   }
 }

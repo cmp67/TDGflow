@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NextRequest } from 'next/server'
 
 vi.mock('@/lib/max/identity', () => ({ findUserByPhone: vi.fn() }))
-vi.mock('@/lib/max/memory', () => ({ rememberInbound: vi.fn(), rememberOutbound: vi.fn(), recentTurns: vi.fn(), rememberInstanceLid: vi.fn(), knownInstanceLid: vi.fn().mockResolvedValue(null) }))
+vi.mock('@/lib/max/memory', () => ({ rememberInbound: vi.fn(), rememberOutbound: vi.fn(), recentTurns: vi.fn(), rememberInstanceLid: vi.fn(), knownInstanceLid: vi.fn().mockResolvedValue(null), isMaxOutbound: vi.fn().mockResolvedValue(false) }))
 vi.mock('@/lib/max/transport', async (orig) => ({ ...(await orig<typeof import('@/lib/max/transport')>()), sendWhatsAppText: vi.fn() }))
 vi.mock('@/lib/max/agent', () => ({ runMax: vi.fn(), MAX_MODEL: 'test' }))
 vi.mock('@/lib/max/central-mcp', () => ({ readCentralConfig: vi.fn().mockReturnValue(null), centralToolDefinitions: vi.fn().mockResolvedValue([]) }))
@@ -12,7 +12,7 @@ vi.mock('@/lib/usage-log', () => ({ logUsage: vi.fn() }))
 
 import { POST } from './route'
 import { findUserByPhone } from '@/lib/max/identity'
-import { rememberInbound, recentTurns, rememberInstanceLid, knownInstanceLid } from '@/lib/max/memory'
+import { rememberInbound, recentTurns, rememberInstanceLid, knownInstanceLid, isMaxOutbound } from '@/lib/max/memory'
 import { sendWhatsAppText } from '@/lib/max/transport'
 import { runMax } from '@/lib/max/agent'
 import { checkAndDeductCredits } from '@/lib/credits'
@@ -122,5 +122,20 @@ describe('menção por toque com LID da instância (18/10/2026)', () => {
     expect(rememberInstanceLid).toHaveBeenCalledWith(LID)
     await POST(req(payload(g)))
     expect(runMax).toHaveBeenCalled()
+  })
+})
+
+describe('reply ao Max no grupo (18/10/2026)', () => {
+  const g = { chatid: '120363412251837385@g.us', isGroup: true, sender: '5551981477111@s.whatsapp.net', text: 'sim' }
+  it('responder a uma mensagem enviada pelo Max conta como chamada', async () => {
+    m(isMaxOutbound).mockResolvedValueOnce(true)
+    await POST(req(payload({ ...g, content: { contextInfo: { stanzaId: 'OUT1', participant: '999@lid' } } })))
+    expect(isMaxOutbound).toHaveBeenCalledWith('OUT1')
+    expect(runMax).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ isGroup: true, text: 'sim' }))
+  })
+  it('responder a mensagem de outra pessoa continua ignorado', async () => {
+    m(isMaxOutbound).mockResolvedValueOnce(false)
+    expect(await (await POST(req(payload({ ...g, content: { contextInfo: { stanzaId: 'OTHER', participant: '5522@s.whatsapp.net' } } })))).json()).toEqual({ ok: true, ignored: 'grupo sem menção' })
+    expect(runMax).not.toHaveBeenCalled()
   })
 })

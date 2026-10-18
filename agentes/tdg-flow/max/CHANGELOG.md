@@ -1,3 +1,8 @@
+## 2026-10-18 — v3.2 — Sonnet 4.6
+Caso: a rede não quer escuta ativa (Carla, 18/10). O Max só fala quando chamado:
+@Max por toque (incluindo LID da instância), "Max," no início, ou reply a uma mensagem
+dele (novo: Carol reclamou que reply não funcionava). Wrap-up passa a domingo 21h.
+
 ## 2026-10-18 — v3.1 — Sonnet 4.6
 Caso: crítica da rede ("a IA melhora/edita o que a gente disse"). register_tip ganha
 original_text obrigatório (palavras da pessoa, gravadas sem edição em raw_answers);
@@ -8,7 +13,7 @@ primeiro e rotula o resumo da IA. Reverter: tornar original_text opcional.
 Caso: agenda compartilhada da rede (decisão da Carla 18/10). Terceira função:
 registrar evento quando marcado (register_event, com confirmação), listar o que vem
 (list_events) e marcar presença (rsvp_event). Lembretes automáticos no grupo (agenda
-de amanhã 18h; wrap-up domingo 9h) ficam nos crons, fora do modelo.
+de amanhã 18h; wrap-up domingo 21h) ficam nos crons, fora do modelo.
 Reverter: tirar a função 3 do prompt e AGENDA_TOOLS do agent.ts.
 
 ## 2026-10-16 — v2 — Sonnet 4.6

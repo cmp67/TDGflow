@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseUazapiWebhook, isMentioned, stripMention, phoneOfJid, learnInstanceLid } from './webhook'
+import { parseUazapiWebhook, isMentioned, stripMention, phoneOfJid, learnInstanceLid, isReplyToMax } from './webhook'
 
 const base = { EventType: 'messages', owner: '5511999990000@s.whatsapp.net', token: 'tok', message: { id: 'ABC', messageid: 'ABC', chatid: '5511888887777@s.whatsapp.net', sender: '5511888887777@s.whatsapp.net', senderName: 'Dani', fromMe: false, isGroup: false, text: 'oi max', messageTimestamp: 1760600000 } }
 
@@ -108,5 +108,25 @@ describe('menção por toque com o LID da instância', () => {
     expect(learnInstanceLid({ EventType: 'messages', owner: '5511999990000@s.whatsapp.net', message: { fromMe: true, sender: '5511999990000@s.whatsapp.net', sender_lid: `${LID}@lid`, text: 'oi' } })).toBe(LID)
     expect(learnInstanceLid({ EventType: 'messages', message: { fromMe: false, sender_lid: `${LID}@lid` } })).toBeNull()
     expect(learnInstanceLid({ EventType: 'messages', message: { fromMe: true } })).toBeNull()
+  })
+})
+
+/* Reply ao Max (18/10/2026, queixa da Carol): responder a uma mensagem do Max
+   sem marcar é falar com ele. O parser expõe o id e o autor da citada. */
+describe('resposta (reply) a uma mensagem do Max', () => {
+  const g = { ...base, message: { ...base.message, chatid: '120363412251837385@g.us', isGroup: true, sender: '5551981477111@s.whatsapp.net', text: 'sim' } }
+  it('expõe quotedId (quoted ou contextInfo.stanzaId) e quotedAuthor (contextInfo.participant)', () => {
+    const a = parseUazapiWebhook({ ...g, message: { ...g.message, quoted: 'MAXMSG1' } })!
+    expect(a.quotedId).toBe('MAXMSG1')
+    const b = parseUazapiWebhook({ ...g, message: { ...g.message, content: { contextInfo: { stanzaId: 'MAXMSG2', participant: '123456789012345@lid' } } } })!
+    expect(b.quotedId).toBe('MAXMSG2'); expect(b.quotedAuthor).toBe('123456789012345@lid')
+    expect(parseUazapiWebhook(g)!.quotedId).toBeNull()
+  })
+  it('isReplyToMax: autor citado é o Max (número ou LID) ou o id está entre as mensagens do Max', () => {
+    expect(isReplyToMax({ quotedId: 'X', quotedAuthor: '5511999990000@s.whatsapp.net' }, '5511999990000', null, false)).toBe(true)
+    expect(isReplyToMax({ quotedId: 'X', quotedAuthor: '123456789012345@lid' }, '5511999990000', '123456789012345', false)).toBe(true)
+    expect(isReplyToMax({ quotedId: 'X', quotedAuthor: '5522@s.whatsapp.net' }, '5511999990000', '123456789012345', true)).toBe(true)
+    expect(isReplyToMax({ quotedId: 'X', quotedAuthor: '5522@s.whatsapp.net' }, '5511999990000', '123456789012345', false)).toBe(false)
+    expect(isReplyToMax({ quotedId: null, quotedAuthor: null }, '5511999990000', null, true)).toBe(false)
   })
 })

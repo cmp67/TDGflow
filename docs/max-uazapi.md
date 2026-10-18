@@ -36,7 +36,7 @@ o mesmo da TA Travel). Molde do agente em `agentes/tdg-flow/max/`, instância em
   postam.
 - `/api/cron/max-agenda-amanha` — todo dia 18h de Brasília: eventos de amanhã;
   dia sem evento = silêncio.
-- `/api/cron/max-wrapup-semanal` — domingo 9h de Brasília: agenda de segunda a
+- `/api/cron/max-wrapup-semanal` — domingo 21h de Brasília (00:00 UTC de segunda): agenda de segunda a
   domingo + o que a rede registrou (mesmo conteúdo do digest semanal por e-mail).
 - Eventos nascem na tela Agenda (`/flow/agenda`) ou pelo Max ("Max, treinamento X
   dia 28/10 às 15h").
@@ -46,7 +46,7 @@ o mesmo da TA Travel). Molde do agente em `agentes/tdg-flow/max/`, instância em
 - Segredo da URL + token da instância; payload nunca é logado.
 - Ignora eco (`fromMe`), evento sem texto e mensagem duplicada (`message_id` único
   em `tdg_max_messages`).
-- Grupo: só responde quando marcado (`@número`, `@max` ou "Max," no início).
+- Grupo: só responde quando chamado — `@Max` por toque, "Max," no início, ou **responder (reply) a uma mensagem do Max**. Nunca lê o resto do grupo (decisão da Carla 18/10: a rede não quer escuta ativa).
 - Identidade: telefone do remetente em `tdg_users.whatsapp` (com/sem o 9). O
   WhatsApp pode mandar o remetente como LID (`<15 dígitos>@lid`, 18/10/2026): o
   parser prefere `sender_pn` (JID PN resolvido pela uazapi) e só aceita

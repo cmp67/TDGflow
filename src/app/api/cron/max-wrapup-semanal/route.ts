@@ -6,7 +6,8 @@ import { weeklyWrapupMessage, postToGroup } from '@/lib/max/broadcast'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-/* Wrap-up de domingo no grupo — 9h de Brasília (12:00 UTC, vercel.json):
+/* Wrap-up de domingo no grupo — 21h de Brasília (00:00 UTC de segunda,
+   vercel.json; decisão da Carla 18/10/2026). todayBr() ainda é domingo:
    agenda de segunda a domingo + o que a rede registrou nos últimos 7 dias
    (mesmo buildWeeklyDigest do e-mail semanal). Sempre posta, mesmo sem
    evento — é o ritual da semana. */
