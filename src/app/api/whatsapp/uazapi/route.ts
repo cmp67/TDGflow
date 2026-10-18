@@ -44,9 +44,14 @@ export async function POST(req: NextRequest) {
   if (!same(inbound.instanceToken, config.instanceToken)) return NextResponse.json({ error: 'instância desconhecida' }, { status: 401 })
   if (inbound.isGroup && !inbound.mentioned) return NextResponse.json({ ok: true, ignored: 'grupo sem menção' })
 
-  const user = await findUserByPhone(inbound.senderPhone)
+  const user = inbound.senderPhone ? await findUserByPhone(inbound.senderPhone) : null
+  if (!user) {
+    // Diagnóstico sem PII (18/10/2026, caso "número não registrado"): só o
+    // tipo do JID e se a uazapi mandou sender_pn — nunca número nem LID.
+    console.info('[max] remetente não identificado', { group: inbound.isGroup, jidKind: inbound.jidKind, hasSenderPn: inbound.hasSenderPn })
+  }
   const text = stripMention(inbound.text, inbound.ownerPhone)
-  const fresh = await rememberInbound({ messageId: inbound.messageId, chatId: inbound.chatId, isGroup: inbound.isGroup, senderPhone: inbound.senderPhone, userId: user?.id ?? null, content: text })
+  const fresh = await rememberInbound({ messageId: inbound.messageId, chatId: inbound.chatId, isGroup: inbound.isGroup, senderPhone: inbound.senderPhone, senderJid: inbound.senderJid, userId: user?.id ?? null, content: text })
   if (!fresh) return NextResponse.json({ ok: true, ignored: 'duplicada' })
 
   const reply = async (body: string, tokens = { tokensIn: 0, tokensOut: 0 }) => {
@@ -68,7 +73,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const history = await recentTurns(inbound.chatId, inbound.senderPhone, inbound.isGroup)
+    const history = await recentTurns(inbound.chatId, inbound.senderJid, inbound.isGroup)
     // a mensagem atual já está na memória — tira do histórico pra não duplicar
     const priorTurns = history.length && history[history.length - 1].role === 'user' && history[history.length - 1].content === text ? history.slice(0, -1) : history
     const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -76,7 +81,7 @@ export async function POST(req: NextRequest) {
     const extraTools = await centralToolDefinitions(central)
     const identity = identified ? { user } : { user: null, senderName: inbound.senderName }
     const result = await runMax(anthropic.messages, { identity, isGroup: inbound.isGroup, text, history: priorTurns, extraTools, central })
-    logUsage({ event_type: 'max_whatsapp', user_email: identified ? user.email : `whatsapp:${inbound.senderPhone}`, tokens_in: result.tokensIn, tokens_out: result.tokensOut, meta: { model: MAX_MODEL, tools: result.toolCalls, group: inbound.isGroup, identified } })
+    logUsage({ event_type: 'max_whatsapp', user_email: identified ? user.email : `whatsapp:${inbound.jidKind}`, tokens_in: result.tokensIn, tokens_out: result.tokensOut, meta: { model: MAX_MODEL, tools: result.toolCalls, group: inbound.isGroup, identified } })
     return reply(result.text, { tokensIn: result.tokensIn, tokensOut: result.tokensOut })
   } catch (err) {
     console.error('[max] agente falhou', { error: err instanceof Error ? err.message : String(err) })

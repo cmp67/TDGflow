@@ -33,8 +33,17 @@ o mesmo da TA Travel). Molde do agente em `agentes/tdg-flow/max/`, instância em
 - Ignora eco (`fromMe`), evento sem texto e mensagem duplicada (`message_id` único
   em `tdg_max_messages`).
 - Grupo: só responde quando marcado (`@número`, `@max` ou "Max," no início).
-- Identidade: telefone do remetente em `tdg_users.whatsapp` (com/sem o 9). Sem
-  cadastro: orienta a pedir ao admin da agência, sem gastar IA.
+- Identidade: telefone do remetente em `tdg_users.whatsapp` (com/sem o 9). O
+  WhatsApp pode mandar o remetente como LID (`<15 dígitos>@lid`, 18/10/2026): o
+  parser prefere `sender_pn` (JID PN resolvido pela uazapi) e só aceita
+  `@s.whatsapp.net` como telefone — dígitos de LID nunca viram telefone. Sem
+  `sender_pn`, a pessoa é atendida como não identificada (sem registro em nome
+  dela), e a rota loga só `{group, jidKind, hasSenderPn}`, nunca o número.
+- Limitação: com LID, a menção por toque (`mentionedJid`) traz o LID do Max e o
+  `/instance/status` não expõe esse LID; a detecção usa o texto ("@Max …" em
+  qualquer posição, ou "Max," no início), que é como o WhatsApp renderiza a menção.
+- Sem cadastro: atende normalmente (decisão da Carla 11/09), sem Lumis, sem
+  register_tip.
 - Lumis: 9 por mensagem (ação `chat`) debitados ANTES da IA; sem saldo, avisa.
 - Memória: últimas 12 trocas do chat em 48 h; em grupo só as da mesma pessoa com o Max.
 - `register_tip` sai sempre em nome de quem fala; o modelo não escolhe autor.

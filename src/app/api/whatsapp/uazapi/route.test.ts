@@ -70,6 +70,7 @@ describe('POST /api/whatsapp/uazapi — Max dentro do Flow', () => {
     await POST(req(payload()))
     expect(checkAndDeductCredits).not.toHaveBeenCalled()
     expect(runMax).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ identity: { user: null, senderName: null } }))
+    expect(m(rememberInbound).mock.calls[0][0]).toMatchObject({ senderPhone: '5551981477111', senderJid: '5551981477111@s.whatsapp.net' })
     expect(m(sendWhatsAppText).mock.calls[0][1].text).toBe('O Txai é ótimo, segundo a Dani.')
   })
 
@@ -85,5 +86,22 @@ describe('POST /api/whatsapp/uazapi — Max dentro do Flow', () => {
     const res = await POST(req(payload()))
     expect(res.status).toBe(200)
     expect(m(sendWhatsAppText).mock.calls[0][1].text).toContain('Tenta de novo')
+  })
+})
+
+describe('LID (18/10/2026)', () => {
+  it('remetente @lid com sender_pn é identificado pelo telefone real; resposta vai pro chatid como veio', async () => {
+    const res = await POST(req(payload({ chatid: '123456789012345@lid', sender: '123456789012345@lid', sender_pn: '5551981477111@s.whatsapp.net' })))
+    expect(res.status).toBe(200)
+    expect(findUserByPhone).toHaveBeenCalledWith('5551981477111')
+    expect(m(sendWhatsAppText).mock.calls[0][1].chatId).toBe('123456789012345@lid')
+  })
+  it('remetente @lid sem sender_pn: não consulta telefone, atende como não identificado', async () => {
+    const info = vi.spyOn(console, 'info').mockImplementation(() => {})
+    await POST(req(payload({ chatid: '120363412251837385@g.us', isGroup: true, sender: '123456789012345@lid', text: 'Max, quem sou eu?' })))
+    expect(findUserByPhone).not.toHaveBeenCalled()
+    expect(runMax).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ identity: { user: null, senderName: null } }))
+    expect(info).toHaveBeenCalledWith('[max] remetente não identificado', { group: true, jidKind: 'lid', hasSenderPn: false })
+    info.mockRestore()
   })
 })
