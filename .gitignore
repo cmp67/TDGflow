@@ -40,3 +40,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .env*.local
+
+# pesquisa (deep-research), fora do repo
+research_notes/
+reports/
