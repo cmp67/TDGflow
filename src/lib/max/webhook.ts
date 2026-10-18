@@ -18,7 +18,8 @@ export interface MaxInbound {
   readonly senderName: string | null
   readonly isGroup: boolean
   readonly text: string
-  readonly mentioned: boolean             // em grupo: o Max foi marcado?
+  readonly mentioned: boolean             // em grupo: o Max foi marcado? (sem o LID; a rota refaz com isMentioned + LID conhecido)
+  readonly mentionedJids: readonly string[]
   readonly at: Date
 }
 
@@ -57,20 +58,35 @@ function instant(v: unknown): Date {
    toque, com isoladores U+2068/U+2069 em volta do nome), ou "Max,"/"max:" no
    início. Limitação conhecida: com LID, mentionedJid traz o LID do Max e o
    /instance/status não expõe esse LID — por isso a checagem pelo texto. */
-export function isMentioned(text: string, ownerPhone: string | null, mentionedJids: string[]): boolean {
+export function isMentioned(text: string, ownerPhone: string | null, mentionedJids: string[], ownerLid: string | null = null): boolean {
   if (ownerPhone && mentionedJids.some(j => digitsOfJid(j) === ownerPhone)) return true
   if (ownerPhone && text.includes(`@${ownerPhone}`)) return true
+  // Com LID (18/10/2026): mentionedJid traz "<lid>@lid" e o texto bruto "@<lid>".
+  if (ownerLid && mentionedJids.some(j => digitsOfJid(j) === ownerLid)) return true
+  if (ownerLid && text.includes(`@${ownerLid}`)) return true
   return /@\u2068?max\b/i.test(text) || /^\s*@?max\b/i.test(text) || /\bmax[,:!?]\s/i.test(text.slice(0, 40))
 }
 
 /* Tira a menção do texto antes de mandar pro modelo. */
-export function stripMention(text: string, ownerPhone: string | null): string {
+export function stripMention(text: string, ownerPhone: string | null, ownerLid: string | null = null): string {
   let t = text
   if (ownerPhone) t = t.replace(new RegExp(`@${ownerPhone}\\b`, 'g'), ' ')
+  if (ownerLid) t = t.replace(new RegExp(`@${ownerLid}\\b`, 'g'), ' ')
   t = t.replace(/@\u2068[^\u2069]*\u2069/g, ' ')          // menção por toque: @⁨Max TDG FLOW⁩
-  t = t.replace(/@max(\s+tdg\s+flow)?\b/gi, ' ')           // menção digitada
+  t = t.replace(/@max(\s+tdg\s*flow)?\b/gi, ' ')           // menção digitada
   t = t.replace(/^\s*@?max\b[,:!]?\s*/i, '')
   return t.replace(/\s+/g, ' ').trim()
+}
+
+/* O LID da própria instância aparece nas mensagens que o Max MANDA (fromMe)
+   como sender_lid. A rota aprende dali e guarda; env UAZAPI_INSTANCE_LID vale
+   como fallback manual. */
+export function learnInstanceLid(payload: unknown): string | null {
+  if (!isRecord(payload) || !isRecord(payload.message)) return null
+  const m = payload.message
+  if (m.fromMe !== true) return null
+  const lid = str(m.sender_lid)
+  return lid.endsWith('@lid') ? digitsOfJid(lid) : null
 }
 
 export function parseUazapiWebhook(payload: unknown): MaxInbound | null {
@@ -107,6 +123,7 @@ export function parseUazapiWebhook(payload: unknown): MaxInbound | null {
     isGroup,
     text,
     mentioned: !isGroup || isMentioned(text, ownerPhone, mentionedJids),
+    mentionedJids,
     at: instant(m.messageTimestamp),
   }
 }

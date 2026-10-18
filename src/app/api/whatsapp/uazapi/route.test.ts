@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NextRequest } from 'next/server'
 
 vi.mock('@/lib/max/identity', () => ({ findUserByPhone: vi.fn() }))
-vi.mock('@/lib/max/memory', () => ({ rememberInbound: vi.fn(), rememberOutbound: vi.fn(), recentTurns: vi.fn() }))
+vi.mock('@/lib/max/memory', () => ({ rememberInbound: vi.fn(), rememberOutbound: vi.fn(), recentTurns: vi.fn(), rememberInstanceLid: vi.fn(), knownInstanceLid: vi.fn().mockResolvedValue(null) }))
 vi.mock('@/lib/max/transport', async (orig) => ({ ...(await orig<typeof import('@/lib/max/transport')>()), sendWhatsAppText: vi.fn() }))
 vi.mock('@/lib/max/agent', () => ({ runMax: vi.fn(), MAX_MODEL: 'test' }))
 vi.mock('@/lib/max/central-mcp', () => ({ readCentralConfig: vi.fn().mockReturnValue(null), centralToolDefinitions: vi.fn().mockResolvedValue([]) }))
@@ -12,7 +12,7 @@ vi.mock('@/lib/usage-log', () => ({ logUsage: vi.fn() }))
 
 import { POST } from './route'
 import { findUserByPhone } from '@/lib/max/identity'
-import { rememberInbound, recentTurns } from '@/lib/max/memory'
+import { rememberInbound, recentTurns, rememberInstanceLid, knownInstanceLid } from '@/lib/max/memory'
 import { sendWhatsAppText } from '@/lib/max/transport'
 import { runMax } from '@/lib/max/agent'
 import { checkAndDeductCredits } from '@/lib/credits'
@@ -103,5 +103,24 @@ describe('LID (18/10/2026)', () => {
     expect(runMax).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ identity: { user: null, senderName: null } }))
     expect(info).toHaveBeenCalledWith('[max] remetente não identificado', { group: true, jidKind: 'lid', hasSenderPn: false })
     info.mockRestore()
+  })
+})
+
+describe('menção por toque com LID da instância (18/10/2026)', () => {
+  const LID = '123456789012345'
+  const g = { chatid: '120363412251837385@g.us', isGroup: true, sender: '5551981477111@s.whatsapp.net', text: `@${LID} quem sou eu?`, content: { contextInfo: { mentionedJid: [`${LID}@lid`] } } }
+  it('com UAZAPI_INSTANCE_LID, a menção pelo LID responde e o texto chega limpo', async () => {
+    m(knownInstanceLid).mockResolvedValueOnce(LID) // a lib lê UAZAPI_INSTANCE_LID; aqui está mockada
+    await POST(req(payload(g)))
+    expect(runMax).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ isGroup: true, text: 'quem sou eu?' }))
+  })
+  it('sem LID conhecido, aprende com a mensagem fromMe do próprio Max e passa a responder', async () => {
+    m(rememberInstanceLid).mockResolvedValue(undefined)
+    m(knownInstanceLid).mockResolvedValueOnce(null).mockResolvedValueOnce(LID)
+    const eco = await POST(req({ ...payload({ fromMe: true, sender_lid: `${LID}@lid`, text: 'resposta do max' }) }))
+    expect(await eco.json()).toEqual({ ok: true, ignored: 'eco', learned: 'lid' })
+    expect(rememberInstanceLid).toHaveBeenCalledWith(LID)
+    await POST(req(payload(g)))
+    expect(runMax).toHaveBeenCalled()
   })
 })

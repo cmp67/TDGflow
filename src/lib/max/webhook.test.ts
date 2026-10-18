@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseUazapiWebhook, isMentioned, stripMention, phoneOfJid } from './webhook'
+import { parseUazapiWebhook, isMentioned, stripMention, phoneOfJid, learnInstanceLid } from './webhook'
 
 const base = { EventType: 'messages', owner: '5511999990000@s.whatsapp.net', token: 'tok', message: { id: 'ABC', messageid: 'ABC', chatid: '5511888887777@s.whatsapp.net', sender: '5511888887777@s.whatsapp.net', senderName: 'Dani', fromMe: false, isGroup: false, text: 'oi max', messageTimestamp: 1760600000 } }
 
@@ -83,5 +83,30 @@ describe('phoneOfJid', () => {
     expect(phoneOfJid('123456789012345@lid')).toBeNull()
     expect(phoneOfJid('120363412251837385@g.us')).toBeNull()
     expect(phoneOfJid('')).toBeNull()
+  })
+})
+
+/* Menção por toque com LID (18/10/2026, teste no grupo pequeno): o texto bruto
+   de "@Max TDGflow pergunta" chega como "@<lid> pergunta" e mentionedJid traz
+   "<lid>@lid" — o LID do Max, não o número da instância. */
+describe('menção por toque com o LID da instância', () => {
+  const g = { ...base, message: { ...base.message, chatid: '120363412251837385@g.us', isGroup: true, sender: '5551981477111@s.whatsapp.net' } }
+  const LID = '123456789012345'
+  it('isMentioned aceita o LID em mentionedJid e no texto, quando o LID é conhecido', () => {
+    expect(isMentioned(`@${LID} quem sou eu?`, '5511999990000', [`${LID}@lid`], LID)).toBe(true)
+    expect(isMentioned('quem sou eu?', '5511999990000', [`${LID}@lid`], LID)).toBe(true)
+    expect(isMentioned(`@${LID} quem sou eu?`, '5511999990000', [`${LID}@lid`], null)).toBe(false)
+    expect(isMentioned('@999 oi', '5511999990000', ['999@lid'], LID)).toBe(false)
+  })
+  it('o parser expõe mentionedJids pra rota decidir com o LID conhecido; stripMention tira "@<lid>"', () => {
+    const m = parseUazapiWebhook({ ...g, message: { ...g.message, text: `@${LID} quem sou eu?`, content: { contextInfo: { mentionedJid: [`${LID}@lid`] } } } })!
+    expect(m.mentionedJids).toEqual([`${LID}@lid`])
+    expect(m.mentioned).toBe(false)
+    expect(stripMention(`@${LID} quem sou eu?`, '5511999990000', LID)).toBe('quem sou eu?')
+  })
+  it('aprende o LID da instância pelas mensagens que o próprio Max manda (fromMe + sender_lid)', () => {
+    expect(learnInstanceLid({ EventType: 'messages', owner: '5511999990000@s.whatsapp.net', message: { fromMe: true, sender: '5511999990000@s.whatsapp.net', sender_lid: `${LID}@lid`, text: 'oi' } })).toBe(LID)
+    expect(learnInstanceLid({ EventType: 'messages', message: { fromMe: false, sender_lid: `${LID}@lid` } })).toBeNull()
+    expect(learnInstanceLid({ EventType: 'messages', message: { fromMe: true } })).toBeNull()
   })
 })

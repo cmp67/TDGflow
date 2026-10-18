@@ -32,3 +32,16 @@ export async function recentTurns(chatId: string, senderJid: string, isGroup: bo
   )
   return rows.reverse().map(r => ({ role: r.direction === 'in' ? 'user' : 'assistant', content: r.content as string }))
 }
+
+/* LID da instância: env manual vence; senão o aprendido das mensagens fromMe. */
+export async function knownInstanceLid(env: Record<string, string | undefined> = process.env): Promise<string | null> {
+  const manual = (env.UAZAPI_INSTANCE_LID ?? '').replace(/\D/g, '')
+  if (manual) return manual
+  const { rows } = await sql`SELECT value FROM tdg_max_state WHERE key = 'instance_lid'`
+  return (rows[0]?.value as string | undefined) ?? null
+}
+
+export async function rememberInstanceLid(lid: string): Promise<void> {
+  await sql`INSERT INTO tdg_max_state (key, value) VALUES ('instance_lid', ${lid})
+            ON CONFLICT (key) DO UPDATE SET value = ${lid}, updated_at = now()`
+}

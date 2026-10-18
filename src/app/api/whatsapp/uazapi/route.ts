@@ -1,10 +1,10 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextRequest, NextResponse } from 'next/server'
 import { timingSafeEqual } from 'node:crypto'
-import { parseUazapiWebhook, stripMention } from '@/lib/max/webhook'
+import { parseUazapiWebhook, stripMention, isMentioned, learnInstanceLid } from '@/lib/max/webhook'
 import { readUazapiConfig, sendWhatsAppText } from '@/lib/max/transport'
 import { findUserByPhone } from '@/lib/max/identity'
-import { recentTurns, rememberInbound, rememberOutbound } from '@/lib/max/memory'
+import { recentTurns, rememberInbound, rememberOutbound, knownInstanceLid, rememberInstanceLid } from '@/lib/max/memory'
 import { runMax, MAX_MODEL } from '@/lib/max/agent'
 import { readCentralConfig, centralToolDefinitions } from '@/lib/max/central-mcp'
 import { checkAndDeductCredits, INSUFFICIENT_BALANCE, NO_AGENCY } from '@/lib/credits'
@@ -39,10 +39,20 @@ export async function POST(req: NextRequest) {
   const config = readUazapiConfig(process.env)
   if (!config) return NextResponse.json({ error: 'uazapi não configurada' }, { status: 503 })
 
-  const inbound = parseUazapiWebhook(await req.json().catch(() => null))
+  const payload = await req.json().catch(() => null)
+  // Eco do próprio Max: antes de ignorar, aprende o LID da instância (é assim
+  // que a menção por toque "@<lid>" passa a ser reconhecida — 18/10/2026).
+  const learnedLid = learnInstanceLid(payload)
+  if (learnedLid) {
+    const tokenOk = typeof payload === 'object' && payload !== null && same(String((payload as Record<string, unknown>).token ?? ''), config.instanceToken)
+    if (tokenOk && (await knownInstanceLid()) !== learnedLid) await rememberInstanceLid(learnedLid)
+    return NextResponse.json({ ok: true, ignored: 'eco', learned: 'lid' })
+  }
+  const inbound = parseUazapiWebhook(payload)
   if (!inbound) return NextResponse.json({ ok: true, ignored: 'sem mensagem de texto' })
   if (!same(inbound.instanceToken, config.instanceToken)) return NextResponse.json({ error: 'instância desconhecida' }, { status: 401 })
-  if (inbound.isGroup && !inbound.mentioned) return NextResponse.json({ ok: true, ignored: 'grupo sem menção' })
+  const instanceLid = inbound.isGroup ? await knownInstanceLid() : null
+  if (inbound.isGroup && !isMentioned(inbound.text, inbound.ownerPhone, [...inbound.mentionedJids], instanceLid)) return NextResponse.json({ ok: true, ignored: 'grupo sem menção' })
 
   const user = inbound.senderPhone ? await findUserByPhone(inbound.senderPhone) : null
   if (!user) {
@@ -50,7 +60,7 @@ export async function POST(req: NextRequest) {
     // tipo do JID e se a uazapi mandou sender_pn — nunca número nem LID.
     console.info('[max] remetente não identificado', { group: inbound.isGroup, jidKind: inbound.jidKind, hasSenderPn: inbound.hasSenderPn })
   }
-  const text = stripMention(inbound.text, inbound.ownerPhone)
+  const text = stripMention(inbound.text, inbound.ownerPhone, instanceLid)
   const fresh = await rememberInbound({ messageId: inbound.messageId, chatId: inbound.chatId, isGroup: inbound.isGroup, senderPhone: inbound.senderPhone, senderJid: inbound.senderJid, userId: user?.id ?? null, content: text })
   if (!fresh) return NextResponse.json({ ok: true, ignored: 'duplicada' })
 

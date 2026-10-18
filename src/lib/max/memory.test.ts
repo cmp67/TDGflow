@@ -1,6 +1,6 @@
 import { describe, it, expect, afterAll } from 'vitest'
 import { sql } from '@vercel/postgres'
-import { rememberInbound, rememberOutbound, recentTurns } from './memory'
+import { rememberInbound, rememberOutbound, recentTurns, knownInstanceLid } from './memory'
 
 const suffix = Date.now()
 const chat = `__tdd_chat_${suffix}@g.us`
@@ -18,5 +18,11 @@ describe('memória do Max', () => {
     const all = await recentTurns(chat, '222222222222222@lid', false)
     expect(await recentTurns(chat, '222222222222222@lid', true)).toEqual([{ role: 'assistant', content: 'Oi!' }, { role: 'user', content: 'outra pessoa' }])
     expect(all).toHaveLength(3)
+  })
+})
+
+describe('LID da instância', () => {
+  it('env manual vence (só dígitos)', async () => {
+    expect(await knownInstanceLid({ UAZAPI_INSTANCE_LID: '1234-5678@lid' })).toBe('12345678')
   })
 })

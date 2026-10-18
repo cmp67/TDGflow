@@ -53,9 +53,12 @@ o mesmo da TA Travel). Molde do agente em `agentes/tdg-flow/max/`, instância em
   `@s.whatsapp.net` como telefone — dígitos de LID nunca viram telefone. Sem
   `sender_pn`, a pessoa é atendida como não identificada (sem registro em nome
   dela), e a rota loga só `{group, jidKind, hasSenderPn}`, nunca o número.
-- Limitação: com LID, a menção por toque (`mentionedJid`) traz o LID do Max e o
-  `/instance/status` não expõe esse LID; a detecção usa o texto ("@Max …" em
-  qualquer posição, ou "Max," no início), que é como o WhatsApp renderiza a menção.
+- Menção por toque com LID (v7.218): o texto bruto chega "@<lid> pergunta" e o
+  `mentionedJid` traz "<lid>@lid" — o LID do Max, não o número. O `/instance/status`
+  não expõe esse LID, então a rota o **aprende sozinha** das mensagens que o próprio
+  Max envia (`fromMe` + `sender_lid`, guardado em `tdg_max_state`). Fallback manual:
+  env `UAZAPI_INSTANCE_LID`. Na primeira vez, basta o Max ter respondido uma vez
+  (ex.: no privado) para a menção por toque passar a funcionar no grupo.
 - Sem cadastro: atende normalmente (decisão da Carla 11/09), sem Lumis, sem
   register_tip.
 - Lumis: 9 por mensagem (ação `chat`) debitados ANTES da IA; sem saldo, avisa.
