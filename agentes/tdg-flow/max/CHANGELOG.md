@@ -1,3 +1,9 @@
+## 2026-10-18 — v3.1 — Sonnet 4.6
+Caso: crítica da rede ("a IA melhora/edita o que a gente disse"). register_tip ganha
+original_text obrigatório (palavras da pessoa, gravadas sem edição em raw_answers);
+highlights viram opcionais e só trechos copiados. O card do Flow mostra as palavras
+primeiro e rotula o resumo da IA. Reverter: tornar original_text opcional.
+
 ## 2026-10-18 — v3 — Sonnet 4.6
 Caso: agenda compartilhada da rede (decisão da Carla 18/10). Terceira função:
 registrar evento quando marcado (register_event, com confirmação), listar o que vem

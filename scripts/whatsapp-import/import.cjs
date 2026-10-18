@@ -140,7 +140,7 @@ const contacts = prep(input.contacts, 'contacts'), knowledge = prep(input.knowle
     const wantHeads = r.sentiment === 'negative' || r.sentiment === 'mixed'
     const prompt = `Você é um assistente especializado em turismo de luxo. O texto abaixo é um relato real de uma travel advisor num grupo de WhatsApp sobre "${r.hotel_name}" (${r.entity_type}). Extraia informações estruturadas.
 
-Tom do relato: ${label}. CRÍTICO: preserve o tom e o sentimento original — nunca transforme crítica em elogio, nunca "positive" um comentário negativo, nunca invente o que não está escrito. Se o relato é curto, devolva poucos itens curtos; nunca encha com generalidades.
+Tom do relato: ${label}. CRÍTICO: preserve o tom e o sentimento original — nunca transforme crítica em elogio, nunca "positive" um comentário negativo, nunca invente o que não está escrito. REGRA DE PALAVRAS: copie trechos literais do relato (a rede não quer o que disse "melhorado"); nunca reescreva nem acrescente adjetivo. Se o relato é curto, devolva poucos itens curtos; nunca encha com generalidades.
 
 Relato:
 ${r.text}

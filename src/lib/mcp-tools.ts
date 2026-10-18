@@ -141,10 +141,11 @@ export const TOOL_DEFINITIONS = [
         },
         visit_date: { type: 'string', description: 'Data da visita (YYYY-MM-DD)' },
         overall_rating: { type: 'number', description: 'Avaliação geral de 1 a 5' },
+        original_text: { type: 'string', description: 'O que a pessoa disse, nas palavras dela, SEM reescrever nem resumir — é o que a rede vai ler no card' },
         highlights: {
           type: 'array',
           items: { type: 'string' },
-          description: 'Lista de pontos de destaque (3-5 bullets)',
+          description: 'Opcional: 1 a 4 trechos literais do que a pessoa disse (copiados, nunca reescritos)',
         },
         client_profile: { type: 'string', description: 'Perfil ideal de cliente para este hotel' },
         must_experience: { type: 'string', description: 'Experiência que nenhum hóspede deve perder' },
@@ -363,8 +364,15 @@ export async function registerTip(args: Record<string, unknown>) {
   const {
     hotel_name, country, agent_name, agency_name,
     visit_type, visit_date, overall_rating,
-    highlights = [], client_profile, must_experience, heads_up,
+    highlights = [], client_profile, must_experience, heads_up, original_text,
   } = args as Record<string, unknown>
+  // As palavras da pessoa, sem edição, vão pra raw_answers.impressions — é o
+  // que o card mostra primeiro (crítica da rede, 18/10/2026). Sem texto
+  // original, o registro não é aceito: destaques inventados não são relato.
+  const originalText = typeof original_text === 'string' ? original_text.trim() : ''
+  if (originalText.length < 5) {
+    return { success: false, error: 'original_text obrigatório: o que a pessoa disse, nas palavras dela' }
+  }
 
   // Marca de origem — pra distinguir na UI (ex: inbox do Max) o que veio
   // via WhatsApp/register_tip do que foi registrado direto no app.
@@ -423,7 +431,7 @@ export async function registerTip(args: Record<string, unknown>) {
   const { rows } = await sql`
     INSERT INTO tdg_hotel_reviews
       (hotel_name, hotel_id, country, agent_id, agent_name, agency_name, visit_date, visit_type,
-       overall_rating, highlights, client_profile, must_experience, heads_up, status, source)
+       overall_rating, highlights, client_profile, must_experience, heads_up, status, source, raw_answers)
     VALUES (
       ${trimmedName},
       ${hotelId},
@@ -439,7 +447,8 @@ export async function registerTip(args: Record<string, unknown>) {
       ${(must_experience as string) ?? null},
       ${(heads_up as string) ?? null},
       ${reviewStatusFor(visit_type as string | undefined)},
-      'max_whatsapp'
+      'max_whatsapp',
+      ${JSON.stringify({ impressions: originalText })}
     )
     RETURNING id, hotel_name, agent_name, created_at
   `

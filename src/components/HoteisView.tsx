@@ -5,6 +5,7 @@ import { supplierStatus, TRUST_LABELS } from '@/lib/supplier-status'
 import SupplierSituation from '@/components/SupplierSituation'
 import type { OperationalStatus } from '@/lib/supplier-operational'
 import { SOURCE_KINDS, SOURCE_KIND_LABELS } from '@/lib/contacts'
+import { ownWordsLead } from '@/lib/review-words'
 import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -907,6 +908,7 @@ interface HotelReviewRow {
   highlights: string[] | null
   client_profile: string | null
   heads_up: string | null
+  raw_answers?: Record<string, string> | null
   created_at: string
   is_own: boolean
   source: string | null
@@ -1072,7 +1074,12 @@ function HotelReviews({ hotelId, hotelName }: { hotelId: string; hotelName: stri
               {r.overall_rating > 0 ? `+${r.overall_rating}` : r.overall_rating}
             </span>
           </div>
-          {r.highlights && r.highlights.length > 0 && (
+          {/* Palavras de quem registrou primeiro; o resumo da IA só se não houver texto original. */}
+          {ownWordsLead(r.raw_answers) ? (
+            <p style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-primary)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+              &ldquo;{ownWordsLead(r.raw_answers)}&rdquo;
+            </p>
+          ) : r.highlights && r.highlights.length > 0 && (
             <p style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-secondary)', lineHeight: 1.5 }}>
               {r.highlights[0]}
             </p>

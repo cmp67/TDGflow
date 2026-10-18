@@ -39,3 +39,12 @@ describe('buildReviewExtractionPrompt — bug do sentimento invertido (28/07)', 
     expect(prompt).toContain('visita NEUTRA')
   })
 })
+
+describe('regra de palavras (18/10/2026 — a rede não quer o que disse editado)', () => {
+  it('o prompt manda copiar trechos literais e proíbe reescrever ou acrescentar', () => {
+    const p = buildReviewExtractionPrompt({ impressions: 'quarto pequeno' }, 2)
+    expect(p).toContain('copie trechos literais')
+    expect(p).toContain('Nunca reescreva')
+    expect(p).toContain('trechos literais das respostas')
+  })
+})

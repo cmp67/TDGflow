@@ -13,16 +13,17 @@ export function buildReviewExtractionPrompt(rawAnswers: Record<string, string>, 
   const sentimentLabel = overallRating < 0 ? 'NEGATIVA' : overallRating > 0 ? 'POSITIVA' : 'NEUTRA'
 
   const outputSchemaLines = [
-    '  "highlights": ["array de 3 a 5 pontos mais relevantes — específicos, úteis para outros agentes decidirem se recomendam ou não"],',
-    `  "client_profile": "perfil ideal em 1-2 frases — quem deve se beneficiar disso?"${hasMustExperience || hasHeadsUp ? ',' : ''}`,
+    '  "highlights": ["1 a 4 trechos literais das respostas (frases ou pedaços de frase copiados), os mais úteis pra outra agente decidir"],',
+    `  "client_profile": "o perfil de cliente nas palavras da pessoa, copiado da resposta correspondente"${hasMustExperience || hasHeadsUp ? ',' : ''}`,
   ]
-  if (hasMustExperience) outputSchemaLines.push(`  "must_experience": "UMA experiência obrigatória, baseada na resposta do advisor abaixo"${hasHeadsUp ? ',' : ''}`)
-  if (hasHeadsUp) outputSchemaLines.push('  "heads_up": "ressalva ou informação importante, baseada na resposta do advisor abaixo"')
+  if (hasMustExperience) outputSchemaLines.push(`  "must_experience": "a experiência obrigatória, copiada da resposta do advisor"${hasHeadsUp ? ',' : ''}`)
+  if (hasHeadsUp) outputSchemaLines.push('  "heads_up": "a ressalva, copiada da resposta do advisor"')
 
   return `Você é um assistente especializado em turismo de luxo. Com base nas respostas do travel advisor abaixo sobre uma visita, extraia as informações estruturadas.
 
 Avaliação geral do advisor: ${overallRating} (escala -5 a +5) — visita ${sentimentLabel}.
 CRÍTICO: preserve o tom e o sentimento original das respostas abaixo. Se a visita foi ${sentimentLabel.toLowerCase()}, o texto extraído precisa refletir isso com igual precisão — nunca transforme uma crítica em elogio, nunca "positive" um comentário negativo. O objetivo é informar outros agentes com honestidade, não vender a experiência.
+REGRA DE PALAVRAS (a rede não quer o que disse "melhorado"): copie trechos literais das respostas, no vocabulário da própria pessoa, só cortando pra caber. Nunca reescreva, nunca parafraseie em tom de marketing, nunca acrescente adjetivo, informação ou conclusão que não esteja escrita. Se não há trecho pra um campo, omita o campo.
 
 Respostas do advisor:
 ${Object.entries(rawAnswers).map(([k, v]) => `${k}: ${v}`).join('\n')}

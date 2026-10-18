@@ -14,6 +14,7 @@ import { sounds } from '@/lib/sounds'
 import { useToast } from '@/contexts/ToastContext'
 import { getQuestions, isLeadSubmission } from '@/lib/review-questions'
 import TdgIconSprite, { ENTITY_SCENE_ID } from '@/components/TdgIconSprite'
+import { ownWords, firstName } from '@/lib/review-words'
 import ResponsiveSheet from '@/components/ResponsiveSheet'
 import CopyLinkButton from '@/components/CopyLinkButton'
 import AudioRecord from '@/components/AudioRecord'
@@ -56,6 +57,7 @@ interface Review {
   client_profile: string | null
   must_experience: string | null
   heads_up: string | null
+  raw_answers?: Record<string, string> | null
   status: string
   photo_url: string | null
   photo_urls: string[] | null
@@ -722,9 +724,24 @@ function HotelCard({ review, onToggleFavorite, onViewHistory, onConfirmLead, onU
           </>
         )}
 
-        {/* Highlights */}
+        {/* Nas palavras de quem registrou — conteúdo principal, nunca editado
+            (crítica da rede, 18/10/2026: a IA "melhorava" o que a pessoa disse).
+            O resumo automático fica abaixo, rotulado como tal. */}
+        {!noPhotoArt && ownWords(review.raw_answers).length > 0 && (
+          <div style={{ marginBottom: 12, padding: '10px 12px', borderRadius: 10, background: 'var(--tdgflow-surface-high)', borderLeft: `2px solid ${accent}` }}>
+            <p style={{ fontSize: '0.5625rem', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)', marginBottom: 6 }}>Nas palavras de {firstName(review.agent_name)}</p>
+            {(expanded ? ownWords(review.raw_answers) : ownWords(review.raw_answers).slice(0, 1)).map(w => (
+              <p key={w.key} style={{ fontSize: '0.8125rem', color: 'var(--tdgflow-text-primary)', lineHeight: 1.55, whiteSpace: 'pre-wrap', marginBottom: 6 }}>
+                {ownWords(review.raw_answers).length > 1 && <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--tdgflow-text-muted)' }}>{w.label}: </span>}{w.text}
+              </p>
+            ))}
+          </div>
+        )}
+
+        {/* Resumo automático (IA) — secundário, rotulado */}
         {!isLead && review.highlights?.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 12 }}>
+            {ownWords(review.raw_answers).length > 0 && <p style={{ fontSize: '0.5625rem', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--tdgflow-text-muted)' }}>Resumo automático</p>}
             {(expanded ? review.highlights : review.highlights.slice(0, 3)).map((h, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
                 <div style={{ width: 3, height: 3, borderRadius: '50%', background: accent, marginTop: 7, flexShrink: 0, opacity: 0.7 }} />
@@ -1983,6 +2000,11 @@ function HistoryDrawer({ hotelName, onClose, onToggleFavorite }: {
                 </div>
               </div>
 
+              {ownWords(r.raw_answers).length > 0 && (
+                <p style={{ fontSize: '0.75rem', color: 'var(--tdgflow-text-primary)', lineHeight: 1.5, marginBottom: 6, whiteSpace: 'pre-wrap' }}>
+                  &ldquo;{ownWords(r.raw_answers)[0].text}&rdquo;
+                </p>
+              )}
               {r.highlights?.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   {r.highlights.map((h, i) => (

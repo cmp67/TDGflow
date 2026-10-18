@@ -153,6 +153,7 @@ describe('MCP register_tip — agency_name validado contra tdg_agencies (achado 
         agent_name: agentName,
         agency_name: agencyName.toUpperCase(),
         overall_rating: 5,
+        original_text: 'Fiquei lá em agosto, adorei o serviço',
       },
     }))
     const body = await res.json()
@@ -162,5 +163,34 @@ describe('MCP register_tip — agency_name validado contra tdg_agencies (achado 
 
     const { rows } = await sql`SELECT agency_name, agent_id FROM tdg_hotel_reviews WHERE id = ${result.review.id}`
     expect(rows[0].agency_name).toBe(agencyName)
+  })
+})
+
+describe('MCP register_tip — palavras da pessoa sem edição (18/10/2026)', () => {
+  const agencyName = `__TDD MCP Words ${Date.now()}__`
+  const agentEmail = `tdd-mcp-words-${Date.now()}@example.com`
+  const hotelName = `__TDD Words Hotel ${Date.now()}__`
+  let agencyId: string
+  const reviewIds: string[] = []
+  beforeAll(async () => {
+    agencyId = (await sql`INSERT INTO tdg_agencies (name, cnpj) VALUES (${agencyName}, ${`__TDD_CNPJ_WORDS_${Date.now()}__`}) RETURNING id`).rows[0].id as string
+    await sql`INSERT INTO tdg_users (name, email, agency_name, agency_id, password_hash, role) VALUES ('TDD Words', ${agentEmail}, ${agencyName}, ${agencyId}, 'x', 'agent')`
+  })
+  afterAll(async () => {
+    if (reviewIds.length) await sql`DELETE FROM tdg_hotel_reviews WHERE id = ANY(${reviewIds})`
+    await sql`DELETE FROM tdg_hotels WHERE lower(trim(name)) = lower(${hotelName})`
+    await sql`DELETE FROM tdg_users WHERE email = ${agentEmail}`
+    await sql`DELETE FROM tdg_agencies WHERE id = ${agencyId}`
+  })
+  it('sem original_text recusa; com ele, grava literalmente em raw_answers.impressions', async () => {
+    const semTexto = await POST(rpcReq('tools/call', { name: 'register_tip', arguments: { hotel_name: hotelName, agent_name: 'TDD Words', agency_name: agencyName, highlights: ['ótimo'] } }))
+    expect(JSON.parse((await semTexto.json()).result.content[0].text).error).toContain('original_text')
+    const texto = 'Fiquei em setembro, serviço impecável mas o café da manhã é fraco kkk'
+    const res = await POST(rpcReq('tools/call', { name: 'register_tip', arguments: { hotel_name: hotelName, agent_name: 'TDD Words', agency_name: agencyName, original_text: texto } }))
+    const result = JSON.parse((await res.json()).result.content[0].text)
+    expect(result.success).toBe(true)
+    reviewIds.push(result.review.id)
+    const { rows } = await sql`SELECT raw_answers FROM tdg_hotel_reviews WHERE id = ${result.review.id}`
+    expect(rows[0].raw_answers).toEqual({ impressions: texto })
   })
 })
