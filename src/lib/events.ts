@@ -40,6 +40,8 @@ export type EventRow = EventFields & {
   rsvp_vou: number
   rsvp_talvez: number
   my_rsvp: RsvpStatus | null
+  invited?: boolean
+  invite_count?: number
   can_edit: boolean
 }
 
@@ -124,4 +126,56 @@ export function eventLine(e: Pick<EventRow, 'title' | 'type' | 'starts_at' | 'al
 export function agendaMessage(title: string, events: Parameters<typeof eventLine>[0][], empty: string | null): string | null {
   if (events.length === 0) return empty
   return `*${title}*\n\n${events.map(eventLine).join('\n')}`
+}
+
+/* ── Agenda pessoal (18/10/2026, paridade com a Agenda do Time do GUEST):
+   links Google/Outlook e arquivo .ics (Apple, Outlook desktop, qualquer app). */
+type CalEvent = Pick<EventFields, 'title' | 'starts_at' | 'ends_at' | 'all_day' | 'location' | 'link' | 'description' | 'modality'> & { id: string }
+
+function utcStamp(iso: string): string { return new Date(iso).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '') }
+function dayStamp(iso: string): string { return brDay(iso).replace(/-/g, '') }
+function nextDay(iso: string): string { const d = new Date(`${brDay(iso)}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + 1); return d.toISOString().slice(0, 10).replace(/-/g, '') }
+function endIso(e: CalEvent): string { return e.ends_at ?? new Date(new Date(e.starts_at).getTime() + 60 * 60 * 1000).toISOString() }
+function calDetails(e: CalEvent, appUrl: string): string {
+  return [e.description, e.link ? `Link: ${e.link}` : null, `No TDG Flow: ${appUrl}/flow/agenda?event=${e.id}`].filter(Boolean).join('\n\n')
+}
+function calWhere(e: CalEvent): string { return e.modality === 'online' ? (e.link ?? 'Online') : (e.location ?? '') }
+
+export function googleCalendarUrl(e: CalEvent, appUrl: string): string {
+  const dates = e.all_day ? `${dayStamp(e.starts_at)}/${nextDay(e.ends_at ?? e.starts_at)}` : `${utcStamp(e.starts_at)}/${utcStamp(endIso(e))}`
+  const p = new URLSearchParams({ action: 'TEMPLATE', text: e.title, dates, details: calDetails(e, appUrl), location: calWhere(e), ctz: TZ })
+  return `https://calendar.google.com/calendar/render?${p.toString()}`
+}
+
+export function outlookCalendarUrl(e: CalEvent, appUrl: string): string {
+  const p = new URLSearchParams({ path: '/calendar/action/compose', rru: 'addevent', subject: e.title, startdt: e.starts_at, enddt: endIso(e), body: calDetails(e, appUrl), location: calWhere(e), allday: e.all_day ? 'true' : 'false' })
+  return `https://outlook.live.com/calendar/0/deeplink/compose?${p.toString()}`
+}
+
+const icsEscape = (s: string) => s.replace(/\\/g, '\\\\').replace(/;/g, '\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n')
+
+export function buildIcs(e: CalEvent, appUrl: string, now = new Date()): string {
+  const lines = [
+    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Bemgsy//TDG Flow Agenda//PT-BR', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
+    'BEGIN:VEVENT',
+    `UID:${e.id}@tdg-flow`,
+    `DTSTAMP:${utcStamp(now.toISOString())}`,
+    ...(e.all_day ? [`DTSTART;VALUE=DATE:${dayStamp(e.starts_at)}`, `DTEND;VALUE=DATE:${nextDay(e.ends_at ?? e.starts_at)}`] : [`DTSTART:${utcStamp(e.starts_at)}`, `DTEND:${utcStamp(endIso(e))}`]),
+    `SUMMARY:${icsEscape(e.title)}`,
+    `DESCRIPTION:${icsEscape(calDetails(e, appUrl))}`,
+    ...(calWhere(e) ? [`LOCATION:${icsEscape(calWhere(e))}`] : []),
+    ...(e.link ? [`URL:${e.link}`] : []),
+    'END:VEVENT', 'END:VCALENDAR',
+  ]
+  return lines.join('\r\n') + '\r\n'
+}
+
+/* Texto do convite (WhatsApp e assunto/corpo do e-mail). */
+export function inviteText(e: Pick<EventRow, 'id' | 'title' | 'type' | 'starts_at' | 'all_day' | 'modality' | 'location' | 'link'>, inviterName: string, appUrl: string): string {
+  return [
+    `*${inviterName}* te convidou para:`,
+    eventLine({ ...e, rsvp_vou: 0 }),
+    '',
+    `Confirme sua presença e adicione à sua agenda: ${appUrl}/flow/agenda?event=${e.id}`,
+  ].join('\n')
 }

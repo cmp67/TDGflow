@@ -1,10 +1,12 @@
 import { auth } from '@/auth'
 import { NextRequest, NextResponse } from 'next/server'
 import { parseEvent } from '@/lib/events'
-import { createEvent, listEvents, viewerFromSession } from '@/lib/events-db'
+import { createEvent, listEvents, viewerFromSession, inviteUsers } from '@/lib/events-db'
+import { notifyInvitees } from '@/lib/event-notify'
 import { logAudit } from '@/lib/audit'
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 60
 
 /* GET ?from=AAAA-MM-DD&to=AAAA-MM-DD — eventos da rede + da própria agência. */
 export async function GET(req: NextRequest) {
@@ -31,5 +33,9 @@ export async function POST(req: NextRequest) {
   if (!viewer) return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 })
   const event = await createEvent(parsed.fields, { email: viewer.email, name: viewer.name, agencyId: viewer.agencyId })
   await logAudit({ entityType: 'event', entityId: event.id, action: 'create', summary: `criou evento "${event.title}"`, changedBy: viewer.email, changedByName: session.user.name ?? undefined })
-  return NextResponse.json({ event }, { status: 201 })
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  const invitees = Array.isArray(body.invitees) ? (body.invitees as unknown[]).filter((x): x is string => typeof x === 'string' && UUID_RE.test(x)) : []
+  const fresh = invitees.length ? await inviteUsers(event.id, invitees, viewer.email) : []
+  const notified = fresh.length ? await notifyInvitees(event, fresh, viewer.name) : { email: 0, whatsapp: 0 }
+  return NextResponse.json({ event, invited: fresh.length, notified }, { status: 201 })
 }

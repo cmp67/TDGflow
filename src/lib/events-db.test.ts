@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { sql } from '@vercel/postgres'
-import { createEvent, listEvents, updateEvent, cancelEvent, setRsvp, listRsvps, networkEventsOnDays, addDays } from './events-db'
+import { createEvent, listEvents, updateEvent, cancelEvent, setRsvp, listRsvps, networkEventsOnDays, addDays, inviteUsers, markNotified, listInvitees } from './events-db'
 import type { EventFields } from './events'
 
 const suffix = Date.now()
@@ -54,5 +54,20 @@ describe('agenda da rede — banco', () => {
     expect(day.some(e => e.id === rede.id)).toBe(true)
     expect(day.some(e => e.id === priv.id)).toBe(false)
     expect((await networkEventsOnDays('2027-03-11', '2027-03-12')).some(e => e.id === rede.id)).toBe(false)
+  })
+})
+
+describe('convites', () => {
+  it('convida uma vez só (reconvite não reaparece), lista com presença; pessoa da rede aparece na lista', async () => {
+    const ev = await createEvent({ ...base, title: `__TDD Convite ${suffix}` }, { email: userA.email, name: 'A', agencyId })
+    ids.push(ev.id)
+    const first = await inviteUsers(ev.id, [userB.id, userB.id], userA.email)
+    expect(first.map(p => p.id)).toEqual([userB.id])
+    expect(await inviteUsers(ev.id, [userB.id], userA.email)).toEqual([])
+    await markNotified(ev.id, userB.id, 'email')
+    await setRsvp(ev.id, userB.id, 'vou')
+    expect(await listInvitees(ev.id)).toEqual([{ user_id: userB.id, name: 'TDD Agenda B', agency_name: 'TDD', rsvp: 'vou', email_sent: true, whatsapp_sent: false }])
+    const list = await listEvents({ id: userB.id, email: userB.email, agencyId: null, isAdmin: false, name: 'B' }, { from: '2027-03-01', to: '2027-04-01' })
+    expect(list.find(e => e.id === ev.id)).toMatchObject({ invited: true, invite_count: 1 })
   })
 })

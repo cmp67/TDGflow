@@ -16,7 +16,9 @@ const COLS = (viewerId: string | null) => `
   e.cancelled_at::text AS cancelled_at,
   (SELECT count(*)::int FROM tdg_event_rsvps r WHERE r.event_id = e.id AND r.status = 'vou') AS rsvp_vou,
   (SELECT count(*)::int FROM tdg_event_rsvps r WHERE r.event_id = e.id AND r.status = 'talvez') AS rsvp_talvez,
-  ${viewerId ? `(SELECT status FROM tdg_event_rsvps r WHERE r.event_id = e.id AND r.user_id = '${viewerId}')` : 'NULL'} AS my_rsvp`
+  ${viewerId ? `(SELECT status FROM tdg_event_rsvps r WHERE r.event_id = e.id AND r.user_id = '${viewerId}')` : 'NULL'} AS my_rsvp,
+  ${viewerId ? `EXISTS (SELECT 1 FROM tdg_event_invites i WHERE i.event_id = e.id AND i.user_id = '${viewerId}')` : 'false'} AS invited,
+  (SELECT count(*)::int FROM tdg_event_invites i WHERE i.event_id = e.id) AS invite_count`
 
 /* O que a pessoa vê: eventos da rede + os da própria agência. */
 const VISIBLE = (agencyId: string | null) => agencyId ? `(e.visibility = 'rede' OR e.agency_id = '${agencyId}')` : `e.visibility = 'rede'`
@@ -100,3 +102,47 @@ export function addDays(day: string, n: number): string {
   const d = new Date(`${day}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10)
 }
 export function todayBr(now = new Date()): string { return brDay(now) }
+
+/* ── Convites ─────────────────────────────────────────────────────── */
+export type Person = { id: string; name: string; agency_name: string | null; agency_id: string | null; email: string; whatsapp: string | null }
+
+/* Pessoas da rede pra convidar: usuárias ativas das agências reais (sem teste, sem __TDD) e admins. */
+export async function listNetworkPeople(): Promise<Omit<Person, 'email' | 'whatsapp'>[]> {
+  const { rows } = await sql`
+    SELECT u.id, u.name, coalesce(a.name, u.agency_name) AS agency_name, u.agency_id
+    FROM tdg_users u LEFT JOIN tdg_agencies a ON a.id = u.agency_id
+    WHERE u.active AND u.email NOT ILIKE '%example.com' AND coalesce(u.name, '') NOT ILIKE '\\_\\_TDD%'
+      AND (u.role = 'admin' OR (a.active AND NOT a.is_test AND a.name NOT LIKE '\\_\\_TDD%'))
+    ORDER BY agency_name NULLS FIRST, u.name`
+  return rows as Omit<Person, 'email' | 'whatsapp'>[]
+}
+
+/* Grava os convites; devolve só quem foi convidado AGORA (pra não reenviar aviso). */
+export async function inviteUsers(eventId: string, userIds: string[], invitedBy: string): Promise<Person[]> {
+  const ids = Array.from(new Set(userIds)).slice(0, 200)
+  if (!ids.length) return []
+  const { rows } = await sql.query(
+    `WITH ins AS (
+       INSERT INTO tdg_event_invites (event_id, user_id, invited_by)
+       SELECT $1, u.id, $3 FROM tdg_users u WHERE u.id = ANY($2) AND u.active
+       ON CONFLICT (event_id, user_id) DO NOTHING
+       RETURNING user_id)
+     SELECT u.id, u.name, u.agency_name, u.agency_id, u.email, u.whatsapp FROM ins JOIN tdg_users u ON u.id = ins.user_id`,
+    [eventId, ids, invitedBy],
+  )
+  return rows as Person[]
+}
+
+export async function markNotified(eventId: string, userId: string, channel: 'email' | 'whatsapp'): Promise<void> {
+  if (channel === 'email') await sql`UPDATE tdg_event_invites SET notified_email_at = now() WHERE event_id = ${eventId} AND user_id = ${userId}`
+  else await sql`UPDATE tdg_event_invites SET notified_whatsapp_at = now() WHERE event_id = ${eventId} AND user_id = ${userId}`
+}
+
+export async function listInvitees(eventId: string): Promise<{ user_id: string; name: string; agency_name: string | null; rsvp: RsvpStatus | null; email_sent: boolean; whatsapp_sent: boolean }[]> {
+  const { rows } = await sql`
+    SELECT i.user_id, u.name, u.agency_name, r.status AS rsvp, (i.notified_email_at IS NOT NULL) AS email_sent, (i.notified_whatsapp_at IS NOT NULL) AS whatsapp_sent
+    FROM tdg_event_invites i JOIN tdg_users u ON u.id = i.user_id
+    LEFT JOIN tdg_event_rsvps r ON r.event_id = i.event_id AND r.user_id = i.user_id
+    WHERE i.event_id = ${eventId} ORDER BY u.name`
+  return rows as { user_id: string; name: string; agency_name: string | null; rsvp: RsvpStatus | null; email_sent: boolean; whatsapp_sent: boolean }[]
+}

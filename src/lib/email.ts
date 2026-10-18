@@ -489,3 +489,23 @@ export async function sendDailyDigestEmail(to: string, digest: DailyDigest, insi
 
   await sendEmail(to, `TDG Flow — relatório diário, ${dateLabel}`, html)
 }
+
+/* Convite da Agenda da rede (18/10/2026). */
+export async function sendEventInviteEmail(to: string, input: { inviterName: string; title: string; when: string; where: string | null; link: string | null; description: string | null; eventUrl: string; googleUrl: string; icsUrl: string }): Promise<string | null> {
+  const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const html = `
+  <div style="font-family: -apple-system, Segoe UI, Roboto, sans-serif; max-width: 520px; margin: 0 auto; color: #1A2B4C;">
+    <p style="font-size: 13px; color: #6b7280; margin: 0 0 4px;">TDG Flow · Agenda da rede</p>
+    <h1 style="font-size: 20px; margin: 0 0 12px;">${esc(input.inviterName)} te convidou</h1>
+    <div style="border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+      <p style="font-size: 17px; font-weight: 600; margin: 0 0 6px;">${esc(input.title)}</p>
+      <p style="font-size: 14px; margin: 0 0 4px;">${esc(input.when)}</p>
+      ${input.where ? `<p style="font-size: 14px; color: #4b5563; margin: 0 0 4px;">${esc(input.where)}</p>` : ''}
+      ${input.link ? `<p style="font-size: 14px; margin: 0 0 4px;"><a href="${input.link}" style="color: #1A2B4C;">${esc(input.link)}</a></p>` : ''}
+      ${input.description ? `<p style="font-size: 14px; color: #4b5563; white-space: pre-wrap; margin: 8px 0 0;">${esc(input.description)}</p>` : ''}
+    </div>
+    <p style="margin: 0 0 16px;"><a href="${input.eventUrl}" style="display: inline-block; background: #C9A84C; color: #1A2B4C; padding: 10px 18px; border-radius: 999px; text-decoration: none; font-weight: 600;">Confirmar presença</a></p>
+    <p style="font-size: 13px; color: #6b7280;">Adicionar à sua agenda: <a href="${input.googleUrl}" style="color: #1A2B4C;">Google</a> · <a href="${input.icsUrl}" style="color: #1A2B4C;">Apple / Outlook (.ics)</a></p>
+  </div>`
+  return sendEmail(to, `Convite: ${input.title} — ${input.when}`, html)
+}
