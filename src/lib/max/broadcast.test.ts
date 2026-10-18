@@ -11,12 +11,12 @@ describe('mensagens do Max no grupo', () => {
     expect(t).toContain('qua 28/10 · 15:00 — *Treinamento Six Senses* (online) · 2 confirmadas')
   })
   it('wrap-up: agenda da semana + resumo do digest; sem digest e sem evento ainda posta', () => {
-    const d = { reviewCount: 3, reviewsByAgency: [{ agency_name: 'Team Travel', count: 2 }], recentReviews: [{ hotel_name: 'Txai', agent_name: 'x', agency_name: 'y', country: null, source: null }], openDiscoveries: 1, activeOfferHotels: ['Six Senses Douro'], expiringOfferHotels: [], networkInsight: { type: 'consensus' as const, hotel_name: 'Vila Joya', agencyCount: 3, reviewCount: 4 } }
+    const d = { reviewCount: 3, reviewsByAgency: [{ agency_name: 'Team Travel', count: 2 }], recentReviews: [{ hotel_name: 'Txai', agent_name: 'x', agency_name: 'y', country: null, source: null }], openDiscoveries: 1, importedCount: 0, activeOfferHotels: ['Six Senses Douro'], expiringOfferHotels: [], networkInsight: { type: 'consensus' as const, hotel_name: 'Vila Joya', agencyCount: 3, reviewCount: 4 } }
     const t = weeklyWrapupMessage({ weekStart: '2026-10-26T12:00:00-03:00', weekEnd: '2026-11-01T12:00:00-03:00', events: [ev], digest: d })
     expect(t).toContain('*Wrap-up da semana — TDG Flow*')
     expect(t).toContain('Agenda de 26/10 a 01/11')
     expect(t).toContain('3 dicas registradas — Team Travel (2)')
-    expect(t).toContain('Consenso: *Vila Joya*')
+    expect(t).toContain('Consenso: *Vila Joya* tem relatos de 3 consultoras')
     expect(t).toContain('Ofertas ativas: Six Senses Douro')
     expect(t).not.toContain('**')
     const empty = weeklyWrapupMessage({ weekStart: '2026-10-26T12:00:00-03:00', weekEnd: '2026-11-01T12:00:00-03:00', events: [], digest: null })

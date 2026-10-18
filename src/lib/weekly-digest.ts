@@ -27,6 +27,7 @@ export interface WeeklyDigest {
   recentReviews: { hotel_name: string; agent_name: string; agency_name: string; country: string | null; source: string | null }[]
   updatedReviews: { hotel_name: string; agent_name: string; agency_name: string }[]
   openDiscoveries: number
+  importedCount: number
   featuredReview: { hotel_name: string; country: string | null; agent_name: string; photo_url: string | null; heads_up: string | null; overall_rating: number | null } | null
   networkInsight:
     | { type: 'consensus'; hotel_name: string; agencyCount: number; reviewCount: number }
@@ -78,6 +79,8 @@ export async function buildWeeklyDigest(): Promise<WeeklyDigest> {
     SELECT hotel_name, agent_name, agency_name, country, status, overall_rating, photo_url, heads_up, created_at, source
     FROM tdg_hotel_reviews
     WHERE created_at >= ${periodStart.toISOString()}
+      AND import_approval IS NULL  -- 18/10/2026: importação do WhatsApp não é "registrado esta semana"
+      AND lower(coalesce(agency_name, '')) <> 'bemgsy'
       AND agency_name IS DISTINCT FROM 'TDD' AND agent_name IS DISTINCT FROM 'TDD'
       AND agency_name NOT ILIKE '\_\_TDD\_%' ESCAPE '\'
     ORDER BY created_at DESC
@@ -97,6 +100,7 @@ export async function buildWeeklyDigest(): Promise<WeeklyDigest> {
     WHERE updated_at >= ${periodStart.toISOString()}
       AND created_at < ${periodStart.toISOString()}
       AND status = 'published'
+      AND import_approval IS NULL
       AND agency_name IS DISTINCT FROM 'TDD' AND agent_name IS DISTINCT FROM 'TDD'
       AND agency_name NOT ILIKE '\_\_TDD\_%' ESCAPE '\'
     ORDER BY updated_at DESC
@@ -176,6 +180,12 @@ export async function buildWeeklyDigest(): Promise<WeeklyDigest> {
     }
   }
 
+  // Importação do WhatsApp na janela — contada à parte, nunca como "registrado esta semana".
+  const { rows: importedRows } = await sql`
+    SELECT count(*)::int AS n FROM tdg_hotel_reviews
+    WHERE created_at >= ${periodStart.toISOString()} AND import_approval IS NOT NULL
+  `
+
   const { rows: guides } = await sql`
     SELECT title FROM tdg_wiki_pages
     WHERE category = 'guia' AND updated_at >= ${periodStart.toISOString()}
@@ -222,6 +232,7 @@ export async function buildWeeklyDigest(): Promise<WeeklyDigest> {
       hotel_name: r.hotel_name as string, agent_name: r.agent_name as string, agency_name: r.agency_name as string,
     })),
     openDiscoveries: discoveries.length,
+    importedCount: Number(importedRows[0]?.n ?? 0),
     featuredReview: featuredCandidate ? {
       hotel_name: featuredCandidate.hotel_name as string, country: featuredCandidate.country as string | null,
       agent_name: featuredCandidate.agent_name as string, photo_url: featuredCandidate.photo_url as string | null,

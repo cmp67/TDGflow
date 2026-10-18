@@ -12,7 +12,7 @@ export function tomorrowMessage(events: Ev[], tomorrowDay: string): string | nul
   return agendaMessage(`Agenda de amanhã, ${d}/${m}/${y}`, events, null)
 }
 
-export function weeklyWrapupMessage(input: { weekStart: string; weekEnd: string; events: Ev[]; digest: Pick<WeeklyDigest, 'reviewCount' | 'reviewsByAgency' | 'recentReviews' | 'openDiscoveries' | 'activeOfferHotels' | 'expiringOfferHotels' | 'networkInsight'> | null }): string {
+export function weeklyWrapupMessage(input: { weekStart: string; weekEnd: string; events: Ev[]; digest: Pick<WeeklyDigest, 'reviewCount' | 'reviewsByAgency' | 'recentReviews' | 'openDiscoveries' | 'importedCount' | 'activeOfferHotels' | 'expiringOfferHotels' | 'networkInsight'> | null }): string {
   const lines: string[] = [`*Wrap-up da semana — TDG Flow*`]
   const agenda = agendaMessage(`Agenda de ${brDate(input.weekStart)} a ${brDate(input.weekEnd)}`, input.events, null)
   lines.push(agenda ?? '*Agenda da semana*\nNada marcado ainda. Anote no Flow ou me marque com a data.')
@@ -27,8 +27,9 @@ export function weeklyWrapupMessage(input: { weekStart: string; weekEnd: string;
     } else {
       parts.push('Nenhuma dica nova esta semana — quem viajou, me marca que eu registro.')
     }
+    if ((d.importedCount ?? 0) > 0) parts.push(`${d.importedCount} relatos antigos do grupo entraram no Flow com o nome de quem falou — confirme os seus em Na prática`)
     if (d.openDiscoveries > 0) parts.push(`${d.openDiscoveries} fornecedor${d.openDiscoveries > 1 ? 'es' : ''} aguardando teste`)
-    if (d.networkInsight?.type === 'consensus') parts.push(`Consenso: *${d.networkInsight.hotel_name}* avaliado por ${d.networkInsight.agencyCount} agências`)
+    if (d.networkInsight?.type === 'consensus') parts.push(`Consenso: *${d.networkInsight.hotel_name}* tem relatos de ${d.networkInsight.agencyCount} consultoras`)
     if (d.expiringOfferHotels.length) parts.push(`Ofertas vencendo: ${d.expiringOfferHotels.slice(0, 4).join(', ')}`)
     else if (d.activeOfferHotels.length) parts.push(`Ofertas ativas: ${d.activeOfferHotels.slice(0, 4).join(', ')}`)
     lines.push(`*Na prática, esta semana*\n${parts.map(p => `- ${p}`).join('\n')}`)
