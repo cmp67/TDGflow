@@ -160,8 +160,9 @@ function emailSection(title: string, bodyHtml: string, isFirst = false): string 
 // outra seção, mesma tipografia, mesma cor, sem card/fundo próprio.
 function usageTipSectionBody(): string {
   const steps = [
-    'Manda um <strong style="color: ' + BRAND.navy + ';">áudio curto pro Max</strong> — 30 a 60 segundos, direto ao ponto — contando o que achou do fornecedor.',
-    'Ele <strong style="color: ' + BRAND.navy + ';">estrutura tudo sozinho</strong> — nota, destaques, ressalvas — sem você digitar nada.',
+    // Max ainda não transcreve áudio (Carla, 19/10/2026): a dica é texto.
+    'No grupo, <strong style="color: ' + BRAND.navy + ';">marque o @Max</strong> e escreva em poucas linhas o que achou do fornecedor.',
+    'Ele <strong style="color: ' + BRAND.navy + ';">registra no Flow em seu nome</strong>, com as suas palavras, sem você abrir nada.',
     'Mais tarde, abre o TDG Flow no celular pra <strong style="color: ' + BRAND.navy + ';">conferir o que ele registrou</strong> em seu nome, ajusta se precisar — e aproveita pra <strong style="color: ' + BRAND.navy + ';">anexar as fotos que já estão no seu celular</strong>, direto da viagem — antes de aprovar pra rede toda ver.',
   ]
   const stepRows = steps.map((text, i) => `
@@ -188,7 +189,7 @@ function usageTipSectionBody(): string {
     <p style="font-size: 13.5px; line-height: 1.6; color: ${BRAND.textSecondary}; margin: 0 0 12px;">Aquela espera no embarque ou no transfer de saída é a hora certa pra registrar — a experiência ainda está fresca, e você já tem tempo livre mesmo.</p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${stepRows}</table>
     <div style="border-left: 3px solid ${BRAND.gold}; background: ${BRAND.bg}; border-radius: 0 8px 8px 0; padding: 12px 16px; margin: 4px 0 14px;">
-      <p style="font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: ${BRAND.textMuted}; margin: 0 0 6px;">Script de bolso — o que falar no áudio</p>
+      <p style="font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: ${BRAND.textMuted}; margin: 0 0 6px;">Script de bolso — o que escrever pro Max</p>
       <p style="font-size: 12.5px; line-height: 1.7; color: ${BRAND.textSecondary}; margin: 0;">${scriptText}</p>
     </div>
     <p style="font-size: 13.5px; line-height: 1.6; color: ${BRAND.textSecondary}; margin: 0 0 14px;">E já que é no celular que isso acontece: dá pra <strong style="color: ${BRAND.navy};">instalar o TDG Flow como aplicativo</strong> — pensado assim de propósito, pra usar on the go, sem abrir navegador nem digitar endereço.</p>
