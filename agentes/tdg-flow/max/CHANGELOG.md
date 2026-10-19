@@ -1,3 +1,9 @@
+## 2026-10-19 — v3.4 — Sonnet 4.6
+Caso: Carla errou o endereço da Festa 5 anos e o Max respondeu que não sabia editar.
+Ganha update_event (edição parcial, só o que muda) e cancel_event, com confirmação
+antes e a mesma regra da Agenda: só quem criou ou admin. Reverter: tirar as duas
+ferramentas de AGENDA_TOOLS e o parágrafo do prompt.
+
 ## 2026-10-19 — v3.3 — Sonnet 4.6
 Caso: Carla pediu no grupo de teste "registrar na próxima quinta a festa de 5 anos do
 TDG"; o Max propôs 22/05/2025 (não sabia a data de hoje) e o "sim" dela foi ignorado
