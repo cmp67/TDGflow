@@ -208,15 +208,35 @@ export async function sendWeeklyDigestEmail(
 ): Promise<string | null> {
   const sections: string[] = []
 
-  sections.push(emailSection(
-    'Essa semana na rede',
-    `<div style="border-left: 3px solid ${BRAND.gold}; background: ${BRAND.bg}; border-radius: 0 8px 8px 0; padding: 14px 18px;">
-      <p style="font-size: 15px; line-height: 1.6; color: ${BRAND.textSecondary}; margin: 0;">
-        <strong style="color: ${BRAND.navy}; font-size: 17px;">${digest.reviewCount}</strong> avaliaç${digest.reviewCount === 1 ? 'ão registrada' : 'ões registradas'} por ${digest.reviewsByAgency.length} agência${digest.reviewsByAgency.length === 1 ? '' : 's'}${digest.openDiscoveries > 0 ? `, e <strong style="color: ${BRAND.navy};">${digest.openDiscoveries}</strong> descoberta${digest.openDiscoveries === 1 ? '' : 's'} nova${digest.openDiscoveries === 1 ? '' : 's'} esperando alguém confirmar de perto` : ''}.
-      </p>
-    </div>`,
-    true
-  ))
+  // Wrap-up é só o que aconteceu de bom (Carla, 19/10/2026): número da
+  // semana só quando há registro; seção vazia não aparece, nunca "nenhuma".
+  if (digest.reviewCount > 0) {
+    sections.push(emailSection(
+      'Essa semana na rede',
+      `<div style="border-left: 3px solid ${BRAND.gold}; background: ${BRAND.bg}; border-radius: 0 8px 8px 0; padding: 14px 18px;">
+        <p style="font-size: 15px; line-height: 1.6; color: ${BRAND.textSecondary}; margin: 0;">
+          <strong style="color: ${BRAND.navy}; font-size: 17px;">${digest.reviewCount}</strong> avaliaç${digest.reviewCount === 1 ? 'ão registrada' : 'ões registradas'} por ${digest.reviewsByAgency.length} agência${digest.reviewsByAgency.length === 1 ? '' : 's'}${digest.openDiscoveries > 0 ? `, e <strong style="color: ${BRAND.navy};">${digest.openDiscoveries}</strong> descoberta${digest.openDiscoveries === 1 ? '' : 's'} nova${digest.openDiscoveries === 1 ? '' : 's'} esperando alguém confirmar de perto` : ''}.
+        </p>
+      </div>`,
+      true
+    ))
+  }
+
+  if (digest.importedCount > 0) {
+    sections.push(emailSection(
+      'A memória do grupo agora está no Flow',
+      `<p style="font-size: 14px; line-height: 1.6; color: ${BRAND.textSecondary}; margin: 0 0 10px;"><strong style="color: ${BRAND.navy};">${digest.importedCount}</strong> relatos de hotéis e fornecedores que a rede compartilhou no grupo entraram no Flow, cada um com o nome de quem falou e nas palavras de quem falou. Se algum é seu, confirme em Na prática → "Você disse isso — confirma?".</p>
+      <a href="${APP_URL}/flow/dicas" style="display: inline-block; background: ${BRAND.gold}; color: ${BRAND.navyDim}; font-size: 13px; font-weight: 700; padding: 8px 20px; border-radius: 999px; text-decoration: none;">Ver e confirmar os meus</a>`
+    ))
+  }
+
+  if (digest.upcomingEvents.length > 0) {
+    const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\*/g, '')
+    sections.push(emailSection(
+      'Agenda da semana',
+      digest.upcomingEvents.map(e => `<p style="font-size: 14px; line-height: 1.5; color: ${BRAND.textSecondary}; margin: 0 0 6px;"><a href="${APP_URL}/flow/agenda?event=${e.id}" style="color: ${BRAND.navy}; text-decoration: none;">${esc(e.line)}</a></p>`).join('')
+    ))
+  }
 
   if (digest.recentReviews.length > 0) {
     // Selo sutil pra dica capturada pelo Max via WhatsApp — pedido da

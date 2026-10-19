@@ -9,8 +9,8 @@ export const maxDuration = 60
 /* Wrap-up de domingo no grupo — 21h de Brasília (00:00 UTC de segunda,
    vercel.json; decisão da Carla 18/10/2026). todayBr() ainda é domingo:
    agenda de segunda a domingo + o que a rede registrou nos últimos 7 dias
-   (mesmo buildWeeklyDigest do e-mail semanal). Sempre posta, mesmo sem
-   evento — é o ritual da semana. */
+   (mesmo buildWeeklyDigest do e-mail semanal). Só o que tem de bom; semana
+   sem novidade = silêncio (Carla, 19/10/2026). */
 export async function GET(req: NextRequest) {
   if ((req.headers.get('authorization') ?? '') !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -22,6 +22,7 @@ export async function GET(req: NextRequest) {
     buildWeeklyDigest().catch(err => { console.warn('[max] digest indisponível no wrap-up', { error: err instanceof Error ? err.message : String(err) }); return null }),
   ])
   const text = weeklyWrapupMessage({ weekStart: `${weekStart}T12:00:00-03:00`, weekEnd: `${addDays(today, 7)}T12:00:00-03:00`, events, digest })
+  if (!text) return NextResponse.json({ sent: false, reason: 'semana sem novidade — silêncio' })
   const r = await postToGroup(text)
   if (!r.ok) console.warn('[max] wrap-up não postado', { error: r.error })
   return NextResponse.json({ sent: r.ok, week: [weekStart, addDays(today, 7)], events: events.length, ...(r.ok ? {} : { reason: r.error }) })

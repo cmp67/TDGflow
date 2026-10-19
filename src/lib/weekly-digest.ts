@@ -28,6 +28,7 @@ export interface WeeklyDigest {
   updatedReviews: { hotel_name: string; agent_name: string; agency_name: string }[]
   openDiscoveries: number
   importedCount: number
+  upcomingEvents: { id: string; line: string }[]
   featuredReview: { hotel_name: string; country: string | null; agent_name: string; photo_url: string | null; heads_up: string | null; overall_rating: number | null } | null
   networkInsight:
     | { type: 'consensus'; hotel_name: string; agencyCount: number; reviewCount: number }
@@ -186,6 +187,13 @@ export async function buildWeeklyDigest(): Promise<WeeklyDigest> {
     WHERE created_at >= ${periodStart.toISOString()} AND import_approval IS NOT NULL
   `
 
+  // Agenda da semana que vem (eventos da rede) — 19/10/2026: wrap-up é o
+  // que tem de bom acontecendo, e a agenda é parte disso.
+  const { networkEventsOnDays, todayBr, addDays } = await import('@/lib/events-db')
+  const { eventLine } = await import('@/lib/events')
+  const todayDay = todayBr(periodEnd)
+  const upcoming = await networkEventsOnDays(addDays(todayDay, 1), addDays(todayDay, 8)).catch(() => [])
+
   const { rows: guides } = await sql`
     SELECT title FROM tdg_wiki_pages
     WHERE category = 'guia' AND updated_at >= ${periodStart.toISOString()}
@@ -233,6 +241,7 @@ export async function buildWeeklyDigest(): Promise<WeeklyDigest> {
     })),
     openDiscoveries: discoveries.length,
     importedCount: Number(importedRows[0]?.n ?? 0),
+    upcomingEvents: upcoming.map(e => ({ id: e.id, line: eventLine({ ...e, link: null }) })),
     featuredReview: featuredCandidate ? {
       hotel_name: featuredCandidate.hotel_name as string, country: featuredCandidate.country as string | null,
       agent_name: featuredCandidate.agent_name as string, photo_url: featuredCandidate.photo_url as string | null,

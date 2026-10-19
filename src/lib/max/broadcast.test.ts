@@ -12,15 +12,17 @@ describe('mensagens do Max no grupo', () => {
   })
   it('wrap-up: agenda da semana + resumo do digest; sem digest e sem evento ainda posta', () => {
     const d = { reviewCount: 3, reviewsByAgency: [{ agency_name: 'Team Travel', count: 2 }], recentReviews: [{ hotel_name: 'Txai', agent_name: 'x', agency_name: 'y', country: null, source: null }], openDiscoveries: 1, importedCount: 0, activeOfferHotels: ['Six Senses Douro'], expiringOfferHotels: [], networkInsight: { type: 'consensus' as const, hotel_name: 'Vila Joya', agencyCount: 3, reviewCount: 4 } }
-    const t = weeklyWrapupMessage({ weekStart: '2026-10-26T12:00:00-03:00', weekEnd: '2026-11-01T12:00:00-03:00', events: [ev], digest: d })
+    const t = weeklyWrapupMessage({ weekStart: '2026-10-26T12:00:00-03:00', weekEnd: '2026-11-01T12:00:00-03:00', events: [ev], digest: d })!
     expect(t).toContain('*Wrap-up da semana — TDG Flow*')
+    expect(t).not.toMatch(/nenhum|nada marcado/i)
     expect(t).toContain('Agenda de 26/10 a 01/11')
-    expect(t).toContain('3 dicas registradas — Team Travel (2)')
+    expect(t).toContain('3 relatos novos: *Txai* (x)')
     expect(t).toContain('Consenso: *Vila Joya* tem relatos de 3 consultoras')
     expect(t).toContain('Ofertas ativas: Six Senses Douro')
     expect(t).not.toContain('**')
-    const empty = weeklyWrapupMessage({ weekStart: '2026-10-26T12:00:00-03:00', weekEnd: '2026-11-01T12:00:00-03:00', events: [], digest: null })
-    expect(empty).toContain('Nada marcado ainda')
+    expect(weeklyWrapupMessage({ weekStart: '2026-10-26T12:00:00-03:00', weekEnd: '2026-11-01T12:00:00-03:00', events: [], digest: null })).toBeNull()
+    const quiet = weeklyWrapupMessage({ weekStart: '2026-10-26T12:00:00-03:00', weekEnd: '2026-11-01T12:00:00-03:00', events: [], digest: { ...d, reviewCount: 0, recentReviews: [], openDiscoveries: 0, networkInsight: null, activeOfferHotels: [], importedCount: 0 } })
+    expect(quiet).toBeNull()
   })
   it('postToGroup falha sem uazapi ou sem JID do grupo, sem lançar', async () => {
     expect(await postToGroup('x', {})).toEqual({ ok: false, error: 'uazapi não configurada' })
