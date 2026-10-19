@@ -8,6 +8,7 @@
 // cliente. RESEND_API_KEY ainda não configurada nesta sessão — ver aviso no
 // log se chamado antes disso.
 
+import { MAX_HOW_TO } from '@/lib/max/how-to'
 import { BR_TZ, toBrDate } from '@/lib/tz'
 import type { WeeklyDigest } from '@/lib/weekly-digest'
 import type { DailyDigest } from '@/lib/daily-digest'
@@ -351,6 +352,9 @@ export async function sendWeeklyDigestEmail(
 
   // Fixa, toda edição, sempre por último entre as seções (logo antes do
   // CTA) — é convite pra ação, faz sentido fechar o corpo de conteúdo.
+  // Fale com o Max — fixo (Carla, 19/10/2026): grupo, individual e agenda.
+  sections.push(emailSection('Fale com o Max', MAX_HOW_TO.map(i => `<p style="font-size: 13.5px; line-height: 1.6; color: ${BRAND.textSecondary}; margin: 0 0 10px;"><strong style="color: ${BRAND.navy};">${i.title}.</strong> ${i.text}</p>`).join('')))
+
   sections.push(emailSection('Dica de uso da semana', usageTipSectionBody()))
 
   const approvalBanner = approveUrl ? `

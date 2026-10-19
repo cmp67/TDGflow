@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import type { WeeklyDigest } from '@/lib/weekly-digest'
+import { MAX_HOW_TO } from '@/lib/max/how-to'
 
 /* Wrap-up em imagem pro grupo (Carla, 19/10/2026): "folhetim digital com a
    cara do e-mail". Este módulo decide O QUE entra (só o que é bom, seção
@@ -11,6 +12,7 @@ export type CardSection =
   | { kind: 'featured'; hotel: string; place: string; by: string; quote: string | null; photo: string | null; rating: number | null }
   | { kind: 'agenda'; lines: string[] }
   | { kind: 'news'; titles: string[] }
+  | { kind: 'max'; lines: string[] }
 
 export type CardModel = { issue: number; sections: CardSection[] }
 
@@ -30,7 +32,9 @@ export function wrapupCardModel(d: DigestSlice): CardModel | null {
   if (f) sections.push({ kind: 'featured', hotel: f.hotel_name, place: f.country ?? '', by: f.agent_name, quote: f.heads_up, photo: f.photo_url, rating: f.overall_rating })
   if (d.upcomingEvents.length) sections.push({ kind: 'agenda', lines: d.upcomingEvents.slice(0, MAX_AGENDA).map(e => e.line.replace(/\*/g, '')) })
   if (d.changelog.length) sections.push({ kind: 'news', titles: d.changelog.slice(0, MAX_NEWS).map(c => c.title) })
-  return sections.length ? { issue: d.issueNumber, sections } : null
+  if (!sections.length) return null
+  // Fale com o Max — fixo no fim (Carla, 19/10/2026)
+  return { issue: d.issueNumber, sections: [...sections, { kind: 'max', lines: MAX_HOW_TO.map(i => i.short) }] }
 }
 
 /* Satori precisa de altura fixa: soma o que cada seção ocupa no desenho. */
@@ -41,10 +45,11 @@ export function cardHeight(m: CardModel): number {
       : s.kind === 'people' ? s.rows.length * 100
       : s.kind === 'featured' ? (s.photo ? 430 : 0) + 110 + (s.quote ? 160 : 0)
       : s.kind === 'agenda' ? s.lines.length * 70
+      : s.kind === 'max' ? s.lines.length * 80
       : s.titles.length * LINE
     return h + SECTION_GAP + TITLE + inner
   }, 0)
-  return Math.max(1080, Math.min(3200, HEADER + body + FOOTER))
+  return Math.max(1080, Math.min(3800, HEADER + body + FOOTER))
 }
 
 /* Link assinado: a uazapi baixa a imagem por URL pública, então o endereço

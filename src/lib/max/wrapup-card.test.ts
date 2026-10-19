@@ -15,7 +15,7 @@ const base = {
 describe('cartão do wrap-up (imagem pro grupo, 19/10/2026)', () => {
   it('só traz seções com conteúdo bom, na ordem do e-mail', () => {
     const m = wrapupCardModel(base)
-    expect(m.sections.map(s => s.kind)).toEqual(['stats', 'people', 'featured', 'agenda', 'news'])
+    expect(m.sections.map(s => s.kind)).toEqual(['stats', 'people', 'featured', 'agenda', 'news', 'max'])
     expect(m.issue).toBe(10)
   })
   it('semana sem nada bom vira null (silêncio)', () => {

@@ -3,6 +3,7 @@ import { networkEventsOnDays, todayBr, addDays } from '@/lib/events-db'
 import { buildWeeklyDigest } from '@/lib/weekly-digest'
 import { weeklyWrapupMessage, postToGroup, postImageToGroup } from '@/lib/max/broadcast'
 import { wrapupCardModel, signCard } from '@/lib/max/wrapup-card'
+import { maxHowToWhatsApp } from '@/lib/max/how-to'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -13,7 +14,7 @@ export const maxDuration = 60
    (mesmo buildWeeklyDigest do e-mail semanal). Só o que tem de bom; semana
    sem novidade = silêncio (Carla, 19/10/2026). */
 const APP_URL = 'https://traveldesignersgroup.com.br'
-const CAPTION = '*Wrap-up da semana — TDG Flow*\nTudo no Flow: traveldesignersgroup.com.br/flow · Pra falar comigo, comece com "Max," ou me marque.'
+const CAPTION = `*Wrap-up da semana — TDG Flow*\n\n${maxHowToWhatsApp()}\n\nTudo no Flow: traveldesignersgroup.com.br/flow`
 
 export async function GET(req: NextRequest) {
   if ((req.headers.get('authorization') ?? '') !== `Bearer ${process.env.CRON_SECRET}`) {

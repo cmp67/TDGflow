@@ -56,10 +56,10 @@ function Section({ s, first }: { s: CardSection; first: boolean }) {
       </div>
     )
   }
-  const lines = s.kind === 'agenda' ? s.lines : s.titles
+  const lines = s.kind === 'news' ? s.titles : s.lines
   return (
     <div style={wrap}>
-      <Title>{s.kind === 'agenda' ? 'Agenda da semana' : 'Novidades no Flow e no Max'}</Title>
+      <Title>{s.kind === 'agenda' ? 'Agenda da semana' : s.kind === 'max' ? 'Fale com o Max' : 'Novidades no Flow e no Max'}</Title>
       {lines.map((l, i) => (
         <div key={i} style={{ display: 'flex', alignItems: 'flex-start', marginBottom: s.kind === 'agenda' ? 22 : 14 }}>
           <div style={{ display: 'flex', width: 12, height: 12, borderRadius: 6, background: C.gold, marginTop: 15, marginRight: 20, flexShrink: 0 }} />

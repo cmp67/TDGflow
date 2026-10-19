@@ -4,6 +4,7 @@
 import { readUazapiConfig, sendWhatsAppText, sendWhatsAppImage } from '@/lib/max/transport'
 import { agendaMessage, brDate, type EventRow } from '@/lib/events'
 import type { WeeklyDigest } from '@/lib/weekly-digest'
+import { maxHowToWhatsApp } from '@/lib/max/how-to'
 
 type Ev = Parameters<typeof agendaMessage>[1][number]
 
@@ -35,7 +36,7 @@ export function weeklyWrapupMessage(input: { weekStart: string; weekEnd: string;
     if (news.length) blocks.push(`*Novidades no Flow e no Max*\n${news.map(c => `- ${c.title}`).join('\n')}`)
   }
   if (!blocks.length) return null
-  return [`*Wrap-up da semana — TDG Flow*`, ...blocks, 'Agenda e dicas no Flow: /flow/agenda · /flow/dicas'].join('\n\n')
+  return [`*Wrap-up da semana — TDG Flow*`, ...blocks, maxHowToWhatsApp(), 'Agenda e dicas no Flow: /flow/agenda · /flow/dicas'].join('\n\n')
 }
 
 export async function postToGroup(text: string, env: Record<string, string | undefined> = process.env): Promise<{ ok: true; messageId: string } | { ok: false; error: string }> {
