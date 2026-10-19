@@ -30,3 +30,26 @@ export async function sendWhatsAppText(
     return { ok: false, error: err instanceof Error ? err.message : String(err) }
   }
 }
+
+/* Imagem com legenda (wrap-up em arte, 19/10/2026): POST /send/media. A
+   uazapi baixa o arquivo pela URL — por isso a URL da arte é assinada. */
+export async function sendWhatsAppImage(
+  config: UazapiConfig,
+  input: { chatId: string; imageUrl: string; caption: string; dedupeKey: string },
+  fetchImpl: typeof fetch = fetch,
+): Promise<{ ok: true; messageId: string } | { ok: false; error: string }> {
+  try {
+    const res = await fetchImpl(`${config.baseUrl}/send/media`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', token: config.instanceToken },
+      body: JSON.stringify({ number: input.chatId, type: 'image', file: input.imageUrl, text: input.caption, track_source: 'tdg-flow-max', track_id: input.dedupeKey }),
+      signal: AbortSignal.timeout(45000),
+    })
+    const json = await res.json().catch(() => ({})) as Record<string, unknown>
+    if (!res.ok) return { ok: false, error: `uazapi ${res.status}: ${typeof json.error === 'string' ? json.error : res.statusText}` }
+    const id = typeof json.messageid === 'string' ? json.messageid : ''
+    return id ? { ok: true, messageId: id } : { ok: false, error: 'uazapi respondeu sem messageid' }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) }
+  }
+}

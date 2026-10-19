@@ -1,7 +1,7 @@
 /* Postagens do Max no grupo sem ser marcado (decisão da Carla 18/10/2026):
    agenda de amanhã (diária, só quando há evento) e wrap-up de domingo
    (agenda da semana + o que a rede registrou). Grupo = MAX_GROUP_JID. */
-import { readUazapiConfig, sendWhatsAppText } from '@/lib/max/transport'
+import { readUazapiConfig, sendWhatsAppText, sendWhatsAppImage } from '@/lib/max/transport'
 import { agendaMessage, brDate, type EventRow } from '@/lib/events'
 import type { WeeklyDigest } from '@/lib/weekly-digest'
 
@@ -44,6 +44,15 @@ export async function postToGroup(text: string, env: Record<string, string | und
   if (!config) return { ok: false, error: 'uazapi não configurada' }
   if (!groupJid) return { ok: false, error: 'MAX_GROUP_JID não configurado' }
   return sendWhatsAppText(config, { chatId: groupJid, text, dedupeKey: `max-broadcast:${Date.now()}` })
+}
+
+/* Arte do wrap-up no grupo; quem chama decide o fallback em texto. */
+export async function postImageToGroup(imageUrl: string, caption: string, env: Record<string, string | undefined> = process.env): Promise<{ ok: true; messageId: string } | { ok: false; error: string }> {
+  const config = readUazapiConfig(env)
+  const groupJid = (env.MAX_GROUP_JID ?? '').trim()
+  if (!config) return { ok: false, error: 'uazapi não configurada' }
+  if (!groupJid) return { ok: false, error: 'MAX_GROUP_JID não configurado' }
+  return sendWhatsAppImage(config, { chatId: groupJid, imageUrl, caption, dedupeKey: `max-wrapup-card:${Date.now()}` })
 }
 
 export type { EventRow }

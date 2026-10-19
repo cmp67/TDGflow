@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { networkEventsOnDays, todayBr, addDays } from '@/lib/events-db'
 import { buildWeeklyDigest } from '@/lib/weekly-digest'
-import { weeklyWrapupMessage, postToGroup } from '@/lib/max/broadcast'
+import { weeklyWrapupMessage, postToGroup, postImageToGroup } from '@/lib/max/broadcast'
+import { wrapupCardModel, signCard } from '@/lib/max/wrapup-card'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -11,6 +12,9 @@ export const maxDuration = 60
    agenda de segunda a domingo + o que a rede registrou nos últimos 7 dias
    (mesmo buildWeeklyDigest do e-mail semanal). Só o que tem de bom; semana
    sem novidade = silêncio (Carla, 19/10/2026). */
+const APP_URL = 'https://traveldesignersgroup.com.br'
+const CAPTION = '*Wrap-up da semana — TDG Flow*\nTudo no Flow: traveldesignersgroup.com.br/flow · Pra falar comigo, comece com "Max," ou me marque.'
+
 export async function GET(req: NextRequest) {
   if ((req.headers.get('authorization') ?? '') !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -23,7 +27,17 @@ export async function GET(req: NextRequest) {
   ])
   const text = weeklyWrapupMessage({ weekStart: `${weekStart}T12:00:00-03:00`, weekEnd: `${addDays(today, 7)}T12:00:00-03:00`, events, digest })
   if (!text) return NextResponse.json({ sent: false, reason: 'semana sem novidade — silêncio' })
-  const r = await postToGroup(text)
+  // Arte com a cara do e-mail (Carla, 19/10/2026); se a imagem falhar, vai o texto.
+  const secret = (process.env.WRAPUP_CARD_SECRET ?? process.env.CRON_SECRET ?? '').trim()
+  let r: Awaited<ReturnType<typeof postToGroup>> = { ok: false, error: 'sem arte' }
+  let format = 'texto'
+  if (digest && wrapupCardModel(digest) && secret) {
+    const cardUrl = `${APP_URL}/api/wrapup/card?d=${today}&t=${signCard(today, secret)}`
+    r = await postImageToGroup(cardUrl, CAPTION)
+    if (r.ok) format = 'arte'
+    else console.warn('[max] arte do wrap-up falhou, indo em texto', { error: r.error })
+  }
+  if (!r.ok) r = await postToGroup(text)
   if (!r.ok) console.warn('[max] wrap-up não postado', { error: r.error })
-  return NextResponse.json({ sent: r.ok, week: [weekStart, addDays(today, 7)], events: events.length, ...(r.ok ? {} : { reason: r.error }) })
+  return NextResponse.json({ sent: r.ok, format, week: [weekStart, addDays(today, 7)], events: events.length, ...(r.ok ? {} : { reason: r.error }) })
 }
