@@ -23,6 +23,8 @@ describe('mensagens do Max no grupo', () => {
     expect(weeklyWrapupMessage({ weekStart: '2026-10-26T12:00:00-03:00', weekEnd: '2026-11-01T12:00:00-03:00', events: [], digest: null })).toBeNull()
     const quiet = weeklyWrapupMessage({ weekStart: '2026-10-26T12:00:00-03:00', weekEnd: '2026-11-01T12:00:00-03:00', events: [], digest: { ...d, reviewCount: 0, recentReviews: [], openDiscoveries: 0, networkInsight: null, activeOfferHotels: [], importedCount: 0 } })
     expect(quiet).toBeNull()
+    const news = weeklyWrapupMessage({ weekStart: '2026-10-26T12:00:00-03:00', weekEnd: '2026-11-01T12:00:00-03:00', events: [], digest: { ...d, reviewCount: 0, recentReviews: [], openDiscoveries: 0, networkInsight: null, activeOfferHotels: [], importedCount: 0, changelog: [{ title: 'Agenda da rede', description: null }] } })!
+    expect(news).toContain('*Novidades no Flow e no Max*\n- Agenda da rede')
   })
   it('postToGroup falha sem uazapi ou sem JID do grupo, sem lançar', async () => {
     expect(await postToGroup('x', {})).toEqual({ ok: false, error: 'uazapi não configurada' })

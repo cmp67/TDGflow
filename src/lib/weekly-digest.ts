@@ -151,6 +151,9 @@ export async function buildWeeklyDigest(): Promise<WeeklyDigest> {
       AND agency_name NOT ILIKE '\_\_TDD\_%' ESCAPE '\'
     GROUP BY hotel_name
     HAVING COUNT(DISTINCT agency_name) >= 3
+      -- Só é notícia se o consenso ganhou relato novo desde o último envio
+      -- (Carla, 19/10/2026: o Txai já tinha saído em várias edições).
+      AND MAX(created_at) FILTER (WHERE import_approval IS NULL) >= ${periodStart.toISOString()}
     ORDER BY agency_count DESC, review_count DESC
     LIMIT 1
   `
@@ -166,6 +169,7 @@ export async function buildWeeklyDigest(): Promise<WeeklyDigest> {
       SELECT hotel_name, agent_name, view_count
       FROM tdg_hotel_reviews
       WHERE status = 'published' AND view_count > 0
+        AND created_at >= ${periodStart.toISOString()} AND import_approval IS NULL
         AND agency_name IS DISTINCT FROM 'TDD' AND agent_name IS DISTINCT FROM 'TDD'
         AND agency_name NOT ILIKE '\_\_TDD\_%' ESCAPE '\'
       ORDER BY view_count DESC

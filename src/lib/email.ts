@@ -322,7 +322,7 @@ export async function sendWeeklyDigestEmail(
           </span>
         </td>
       </tr>`).join('')
-    sections.push(emailSection('Novidades no Flow', `<table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table>`))
+    sections.push(emailSection('Novidades no Flow e no Max', `<table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table>`))
   }
 
   {

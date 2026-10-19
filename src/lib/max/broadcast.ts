@@ -14,7 +14,7 @@ export function tomorrowMessage(events: Ev[], tomorrowDay: string): string | nul
 
 /* Wrap-up: só o que aconteceu de bom (Carla, 19/10/2026). Seção sem
    conteúdo não aparece — nunca "nenhuma dica", "nada marcado". */
-export function weeklyWrapupMessage(input: { weekStart: string; weekEnd: string; events: Ev[]; digest: Pick<WeeklyDigest, 'reviewCount' | 'reviewsByAgency' | 'recentReviews' | 'openDiscoveries' | 'importedCount' | 'activeOfferHotels' | 'expiringOfferHotels' | 'networkInsight'> | null }): string | null {
+export function weeklyWrapupMessage(input: { weekStart: string; weekEnd: string; events: Ev[]; digest: Pick<WeeklyDigest, 'reviewCount' | 'reviewsByAgency' | 'recentReviews' | 'openDiscoveries' | 'importedCount' | 'activeOfferHotels' | 'expiringOfferHotels' | 'networkInsight'> & { changelog?: WeeklyDigest['changelog'] } | null }): string | null {
   const blocks: string[] = []
   const agenda = agendaMessage(`Agenda de ${brDate(input.weekStart)} a ${brDate(input.weekEnd)}`, input.events, null)
   if (agenda) blocks.push(agenda)
@@ -31,6 +31,8 @@ export function weeklyWrapupMessage(input: { weekStart: string; weekEnd: string;
     if (d.expiringOfferHotels.length) parts.push(`Ofertas vencendo: ${d.expiringOfferHotels.slice(0, 4).join(', ')}`)
     else if (d.activeOfferHotels.length) parts.push(`Ofertas ativas: ${d.activeOfferHotels.slice(0, 4).join(', ')}`)
     if (parts.length) blocks.push(`*Na prática, esta semana*\n${parts.map(p => `- ${p}`).join('\n')}`)
+    const news = (d.changelog ?? []).slice(0, 6)
+    if (news.length) blocks.push(`*Novidades no Flow e no Max*\n${news.map(c => `- ${c.title}`).join('\n')}`)
   }
   if (!blocks.length) return null
   return [`*Wrap-up da semana — TDG Flow*`, ...blocks, 'Agenda e dicas no Flow: /flow/agenda · /flow/dicas'].join('\n\n')
