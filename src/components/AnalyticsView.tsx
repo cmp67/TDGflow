@@ -1,5 +1,6 @@
 'use client'
 
+import { BR_TZ, monthDate } from '@/lib/tz'
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLanguage } from '@/contexts/LanguageContext'
@@ -180,7 +181,7 @@ function TrendChart({ data, color = 'var(--tdgflow-navy)' }: { data: MonthStat[]
       {data.map((d, i) => {
         const barH = Math.max((d.reviews / max) * height, 3)
         const [y, m] = d.month.split('-')
-        const label = new Date(Number(y), Number(m) - 1).toLocaleDateString('pt-BR', { month: 'short' })
+        const label = monthDate(Number(y), Number(m)).toLocaleDateString('pt-BR', { timeZone: BR_TZ, month: 'short' })
         return (
           <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
             <motion.div

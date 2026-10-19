@@ -1,3 +1,10 @@
+## 2026-10-19 — v3.5 — Sonnet 4.6
+Caso: "próxima quinta" virou "quinta, 23/10/2026" (23/10 é sexta) e o "sim" a "Você vai?"
+registrou a festa de novo. Contexto ganha calendário dos próximos 21 dias já resolvido
+em São Paulo (o modelo lê, não calcula). register_event não cria evento com mesmo
+título até 36h de distância de um já ativo. Fuso do Flow travado em America/Sao_Paulo
+por teste (src/lib/tz.test.ts). Reverter: tirar maxCalendar do contexto e findSameEvent.
+
 ## 2026-10-19 — v3.4 — Sonnet 4.6
 Caso: Carla errou o endereço da Festa 5 anos e o Max respondeu que não sabia editar.
 Ganha update_event (edição parcial, só o que muda) e cancel_event, com confirmação

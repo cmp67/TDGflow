@@ -1,5 +1,6 @@
 'use client'
 
+import { BR_TZ } from '@/lib/tz'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -77,7 +78,7 @@ function CategoryIcon({ categoryKey, size = 12 }: { categoryKey: string; size?: 
 function formatDate(dateStr: string) {
   if (!dateStr) return ''
   const d = new Date(dateStr)
-  return d.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })
+  return d.toLocaleDateString('pt-BR', { timeZone: BR_TZ, month: 'short', year: 'numeric' })
 }
 
 function formatPhone(phone: string) {

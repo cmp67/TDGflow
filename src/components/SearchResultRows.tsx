@@ -1,5 +1,6 @@
 'use client'
 
+import { BR_TZ } from '@/lib/tz'
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
@@ -175,7 +176,7 @@ export const EMPTY_RESULTS: SearchResults = {
 export function formatDate(dateStr: string) {
   if (!dateStr) return ''
   const d = new Date(dateStr)
-  return d.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })
+  return d.toLocaleDateString('pt-BR', { timeZone: BR_TZ, month: 'short', year: 'numeric' })
 }
 
 /* Selo cinza — mesma convenção da fila de confirmação (Fase 6): conteúdo

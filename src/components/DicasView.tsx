@@ -1,5 +1,6 @@
 'use client'
 
+import { BR_TZ, toBrDate } from '@/lib/tz'
 import { originDateLabel } from '@/lib/review-origin'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
@@ -1928,7 +1929,7 @@ function HistoryDrawer({ hotelName, onClose, onToggleFavorite }: {
 
   function formatDate(iso: string | null) {
     if (!iso) return '—'
-    return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
+    return toBrDate(iso).toLocaleDateString('pt-BR', { timeZone: BR_TZ, day: '2-digit', month: 'short', year: 'numeric' })
   }
 
   return (

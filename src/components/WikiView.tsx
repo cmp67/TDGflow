@@ -1,5 +1,6 @@
 'use client'
 
+import { BR_TZ, toBrDate } from '@/lib/tz'
 import { useEffect, useState } from 'react'
 import { Loader, BookOpen, FileText, Search } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
@@ -29,7 +30,7 @@ function categoryRank(cat: string) {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
+  return toBrDate(iso).toLocaleDateString('pt-BR', { timeZone: BR_TZ, day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 export default function WikiView() {

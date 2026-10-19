@@ -1,5 +1,6 @@
 'use client'
 
+import { BR_TZ, toBrDate } from '@/lib/tz'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Loader, MessageCircle, Search, Star, ArrowRight, AlertTriangle } from 'lucide-react'
@@ -41,7 +42,7 @@ function relativeTime(iso: string): string {
   if (hours < 24) return `há ${hours}h`
   const days = Math.floor(hours / 24)
   if (days < 7) return `há ${days}d`
-  return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+  return toBrDate(iso).toLocaleDateString('pt-BR', { timeZone: BR_TZ, day: '2-digit', month: 'short' })
 }
 
 // Dica capturada pelo Max com dado incerto (ex: nome de hotel que saiu

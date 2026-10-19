@@ -1,5 +1,6 @@
 'use client'
 
+import { BR_TZ, toBrDate } from '@/lib/tz'
 import React, { useState, useEffect } from 'react'
 import {
   Database, HardDrive,
@@ -417,7 +418,7 @@ function TabMyUsage() {
           <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--tdgflow-border-subtle)', background: 'var(--tdgflow-bg)', display: 'flex', alignItems: 'center', gap: 6 }}>
             <IconCoins size={12} style={{ color: 'var(--tdgflow-navy)' }} />
             <p style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--tdgflow-text-faint)', margin: 0, flex: 1 }}>
-              Cota mensal — {new Date(quota.period + 'T12:00:00').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+              Cota mensal — {toBrDate(quota.period + 'T12:00:00').toLocaleDateString('pt-BR', { timeZone: BR_TZ, month: 'long', year: 'numeric' })}
             </p>
           </div>
 
@@ -534,14 +535,14 @@ function TabMyUsage() {
               const h = Math.max(3, Math.round((d.credits / sparkMax) * 32))
               const isLast = i === recentDays.length - 1
               return (
-                <div key={d.day} title={`${new Date(d.day).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}: ${d.credits} lm`}
+                <div key={d.day} title={`${toBrDate(d.day).toLocaleDateString('pt-BR', { timeZone: BR_TZ, day: '2-digit', month: 'short' })}: ${d.credits} lm`}
                   style={{ flex: 1, height: h, borderRadius: 3, background: isLast ? 'var(--tdgflow-navy)' : 'var(--tdgflow-border-light)', transition: 'height 0.3s var(--tdgflow-ease-smooth)' }} />
               )
             })}
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5 }}>
             <span style={{ fontSize: '0.5rem', color: 'var(--tdgflow-text-faint)' }}>
-              {recentDays[0] ? new Date(recentDays[0].day).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) : ''}
+              {recentDays[0] ? toBrDate(recentDays[0].day).toLocaleDateString('pt-BR', { timeZone: BR_TZ, day: '2-digit', month: 'short' }) : ''}
             </span>
             <span style={{ fontSize: '0.5rem', color: 'var(--tdgflow-navy)', fontWeight: 700 }}>hoje</span>
           </div>
@@ -890,7 +891,7 @@ function GuestRequestsPanel() {
                 {r.agencyName}
               </p>
               <p style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-faint)', margin: '2px 0 0' }}>
-                {r.requestedByName} · {new Date(r.requestedAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                {r.requestedByName} · {toBrDate(r.requestedAt).toLocaleDateString('pt-BR', { timeZone: BR_TZ, day: '2-digit', month: 'short' })}
               </p>
             </div>
             <button
@@ -1104,7 +1105,7 @@ function TabNetwork() {
                       <div key={i} style={{ marginBottom: i < purchases.length - 1 ? 7 : 0 }}>
                         <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--tdgflow-text-primary)', margin: 0 }}>+{numFmt(p.amount)} lm</p>
                         <p style={{ fontSize: '0.5625rem', color: 'var(--tdgflow-text-faint)', margin: '1px 0 0' }}>
-                          {p.meta?.tier} · {new Date(p.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                          {p.meta?.tier} · {toBrDate(p.created_at).toLocaleDateString('pt-BR', { timeZone: BR_TZ, day: '2-digit', month: 'short' })}
                         </p>
                       </div>
                     ))}

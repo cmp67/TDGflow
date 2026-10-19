@@ -1,5 +1,6 @@
 'use client'
 
+import { BR_TZ, toBrDate } from '@/lib/tz'
 import { useEffect, useState } from 'react'
 import { BookUser, ScanLine, Wallet, MessageCircle, Loader2, CheckCircle2, Clock3, Send, Mail } from 'lucide-react'
 import Skeleton from '@/components/ui/Skeleton'
@@ -44,7 +45,7 @@ const FEATURES = [
 
 function formatDateTime(iso: string | null) {
   if (!iso) return null
-  return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
+  return toBrDate(iso).toLocaleDateString('pt-BR', { timeZone: BR_TZ, day: '2-digit', month: 'long', year: 'numeric' })
 }
 
 export default function GuestActivationCard({ userRole }: Props) {

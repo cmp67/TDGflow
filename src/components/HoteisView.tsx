@@ -1,5 +1,6 @@
 'use client'
 
+import { BR_TZ, toBrDate } from '@/lib/tz'
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import { supplierStatus, TRUST_LABELS } from '@/lib/supplier-status'
 import SupplierSituation from '@/components/SupplierSituation'
@@ -655,7 +656,7 @@ interface KnowledgeVideo {
 
 function fmtVideoDate(iso: string | null) {
   if (!iso) return null
-  return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
+  return toBrDate(iso).toLocaleDateString('pt-BR', { timeZone: BR_TZ, day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 function AddVideoForm({ hotelId, onSaved, onCancel }: {
@@ -924,7 +925,7 @@ interface HotelReviewRow {
 }
 
 function fmtMonthYear(d: string) {
-  return new Date(d).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })
+  return toBrDate(d).toLocaleDateString('pt-BR', { timeZone: BR_TZ, month: 'short', year: 'numeric' })
 }
 
 // Achado da Carla, 26/08: card sem visit_date (TD não informou quando
@@ -1134,7 +1135,7 @@ interface AuditEntry {
 }
 
 function formatAuditDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
+  return toBrDate(dateStr).toLocaleDateString('pt-BR', { timeZone: BR_TZ, day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 function AddBenefitForm({ hotelId, onSaved, onClose }: { hotelId: string; onSaved: (b: HotelBenefit) => void; onClose: () => void }) {

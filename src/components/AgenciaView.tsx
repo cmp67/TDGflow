@@ -1,5 +1,6 @@
 'use client'
 
+import { BR_TZ, toBrDate } from '@/lib/tz'
 import { useState } from 'react'
 import { Save, Loader, Eye, EyeOff, CheckCircle } from 'lucide-react'
 import UserAvatar from '@/components/UserAvatar'
@@ -57,7 +58,7 @@ function formatWhatsappDisplay(digits: string): string {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })
+  return toBrDate(iso).toLocaleDateString('pt-BR', { timeZone: BR_TZ, month: 'short', year: 'numeric' })
 }
 
 export default function AgenciaView({ user, members }: Props) {

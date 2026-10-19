@@ -3,6 +3,8 @@
    a pessoa falou no WhatsApp. Sem nenhum dos dois → dia do registro no Flow.
    Datas só-dia (YYYY-MM-DD) são lidas ao meio-dia UTC pra não voltar um dia
    no fuso de Brasília. */
+import { BR_TZ } from '@/lib/tz'
+
 export interface ReviewOriginFields {
   visit_date: string | null
   source?: string | null
@@ -10,7 +12,6 @@ export interface ReviewOriginFields {
   created_at: string
 }
 
-const TZ = 'America/Sao_Paulo'
 
 function asDate(iso: string): Date {
   return /^\d{4}-\d{2}-\d{2}$/.test(iso) ? new Date(`${iso}T12:00:00Z`) : new Date(iso)
@@ -20,8 +21,8 @@ function fmt(iso: string, withDay: boolean): string {
   const d = asDate(iso)
   if (Number.isNaN(d.getTime())) return ''
   const opts: Intl.DateTimeFormatOptions = withDay
-    ? { day: 'numeric', month: 'short', year: 'numeric', timeZone: TZ }
-    : { month: 'short', year: 'numeric', timeZone: TZ }
+    ? { day: 'numeric', month: 'short', year: 'numeric', timeZone: BR_TZ }
+    : { month: 'short', year: 'numeric', timeZone: BR_TZ }
   return d.toLocaleDateString('pt-BR', opts).replace(/ de /g, ' ')
 }
 

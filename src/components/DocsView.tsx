@@ -1,5 +1,6 @@
 'use client'
 
+import { BR_TZ, toBrDate } from '@/lib/tz'
 import { useState, useRef, useCallback } from 'react'
 import { Search, Loader2, ShieldCheck, ShieldAlert, ShieldX, Syringe, AlertTriangle, X, ChevronRight, ExternalLink } from 'lucide-react'
 import InsufficientBalanceModal from './InsufficientBalanceModal'
@@ -245,7 +246,7 @@ function ResultCard({ result, onClose }: { result: TravelRequirements; onClose: 
                   <>
                     <span style={{ fontSize: '0.5625rem', color: '#B8CDD2' }}>·</span>
                     <span style={{ fontSize: '0.5625rem', color: 'var(--tdgflow-text-faint)' }}>
-                      Aviso de {new Date(result.security_updated_at).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}
+                      Aviso de {toBrDate(result.security_updated_at).toLocaleDateString('pt-BR', { timeZone: BR_TZ, month: 'short', year: 'numeric' })}
                     </span>
                   </>
                 )}
@@ -343,7 +344,7 @@ function ResultCard({ result, onClose }: { result: TravelRequirements; onClose: 
             </div>
             {result.fetched_at && (
               <span style={{ fontSize: '0.6rem', color: 'var(--tdgflow-text-faint)', whiteSpace: 'nowrap' }}>
-                Atualizado {new Date(result.fetched_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                Atualizado {toBrDate(result.fetched_at).toLocaleString('pt-BR', { timeZone: BR_TZ, day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
               </span>
             )}
           </div>

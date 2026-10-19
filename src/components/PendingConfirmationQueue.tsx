@@ -1,5 +1,6 @@
 'use client'
 
+import { BR_TZ, toBrDate } from '@/lib/tz'
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CheckCircle2, Pencil, Trash2, Loader2, Search, ShieldQuestion } from 'lucide-react'
@@ -32,7 +33,7 @@ export interface PendingItem {
 
 function formatDate(dateStr: string) {
   if (!dateStr) return ''
-  return new Date(dateStr).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
+  return toBrDate(dateStr).toLocaleDateString('pt-BR', { timeZone: BR_TZ, day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 function EditFields({ item, onChange }: { item: PendingItem; onChange: (fields: Record<string, unknown>) => void }) {

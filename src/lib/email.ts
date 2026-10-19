@@ -8,6 +8,7 @@
 // cliente. RESEND_API_KEY ainda não configurada nesta sessão — ver aviso no
 // log se chamado antes disso.
 
+import { BR_TZ, toBrDate } from '@/lib/tz'
 import type { WeeklyDigest } from '@/lib/weekly-digest'
 import type { DailyDigest } from '@/lib/daily-digest'
 
@@ -450,7 +451,7 @@ export async function sendWeeklyDigestEmail(
 // Operacional, só pra Carla — mesmos tokens de marca do Weekly Wrap-up mas
 // layout mais denso (não é peça editorial pra rede, é painel de operação).
 export async function sendDailyDigestEmail(to: string, digest: DailyDigest, insights: string[]): Promise<void> {
-  const dateLabel = new Date(digest.periodEnd).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })
+  const dateLabel = toBrDate(digest.periodEnd).toLocaleDateString('pt-BR', { timeZone: BR_TZ, day: '2-digit', month: 'long' })
 
   const reviewRows = digest.newReviews.slice(0, 10).map(r => `
     <tr><td style="padding: 6px 0; font-size: 13px; color: ${BRAND.textSecondary};">

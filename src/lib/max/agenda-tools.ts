@@ -4,7 +4,7 @@
    identidade pelo telefone — saem em nome de quem fala. */
 import type Anthropic from '@anthropic-ai/sdk'
 import { parseEvent, EVENT_TYPES, RSVP_STATUSES, eventLine, type RsvpStatus } from '@/lib/events'
-import { createEvent, networkEventsOnDays, setRsvp, todayBr, addDays, getEvent, updateEvent, cancelEvent, type Viewer } from '@/lib/events-db'
+import { createEvent, networkEventsOnDays, setRsvp, todayBr, addDays, getEvent, updateEvent, cancelEvent, findSameEvent, type Viewer } from '@/lib/events-db'
 import type { EventRow } from '@/lib/events'
 import type { MaxUser } from '@/lib/max/identity'
 
@@ -85,6 +85,8 @@ export async function callAgendaTool(user: MaxUser | null, name: string, args: R
   if (name === 'register_event') {
     const parsed = parseEvent({ ...args, visibility: 'rede' })
     if (!parsed.ok) return { success: false, error: parsed.error }
+    const same = await findSameEvent(parsed.fields.title, parsed.fields.starts_at)
+    if (same) return { success: true, ja_estava_na_agenda: true, nao_registrei_de_novo: true, event: { id: same.id, quando: eventLine(same) }, abrir_em: '/flow/agenda' }
     const event = await createEvent(parsed.fields, { email: user.email, name: user.name, agencyId: user.agency_id ?? null }, 'max')
     return { success: true, event: { id: event.id, quando: eventLine(event) }, abrir_em: '/flow/agenda' }
   }

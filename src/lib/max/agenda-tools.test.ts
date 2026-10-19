@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-vi.mock('@/lib/events-db', async (orig) => ({ ...(await orig<typeof import('@/lib/events-db')>()), getEvent: vi.fn(), updateEvent: vi.fn(), cancelEvent: vi.fn() }))
+vi.mock('@/lib/events-db', async (orig) => ({ ...(await orig<typeof import('@/lib/events-db')>()), getEvent: vi.fn(), updateEvent: vi.fn(), cancelEvent: vi.fn(), findSameEvent: vi.fn(), createEvent: vi.fn() }))
 
 import { callAgendaTool, mergeEventEdit, AGENDA_TOOLS } from './agenda-tools'
-import { getEvent, updateEvent, cancelEvent } from '@/lib/events-db'
+import { getEvent, updateEvent, cancelEvent, findSameEvent, createEvent } from '@/lib/events-db'
 
 const m = <T,>(f: T) => f as unknown as ReturnType<typeof vi.fn>
 const user = { id: 'u1', name: 'Carla', email: 'c@x', agency_name: 'TDG', agency_id: 'a1', role: 'user', active: true }
@@ -40,5 +40,11 @@ describe('Max edita e cancela evento (Carla errou o endereço, 19/10/2026)', () 
   })
   it('sem identidade não edita', async () => {
     expect(await callAgendaTool(null, 'update_event', { event_id: 'e1' })).toMatchObject({ success: false })
+  })
+  it('register_event não cria de novo o que já está na agenda', async () => {
+    m(findSameEvent).mockResolvedValue(ev)
+    const r = await callAgendaTool(user, 'register_event', { title: 'Festa de 5 anos do TDG', starts_at: '2026-10-22 19:00' }) as Record<string, unknown>
+    expect(r).toMatchObject({ success: true, ja_estava_na_agenda: true })
+    expect(createEvent).not.toHaveBeenCalled()
   })
 })

@@ -1,5 +1,6 @@
 'use client'
 
+import { BR_TZ } from '@/lib/tz'
 import { useState, useEffect, useCallback } from 'react'
 import { Mic, Clock, CheckCircle, Loader, FileText, Play, X, ChevronDown, ChevronUp, Pencil, Check, AlertCircle } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -111,8 +112,8 @@ export default function AudioQueue({ onClose, onCreateRegister }: Props) {
 
   function formatDate(iso: string) {
     const d = new Date(iso)
-    return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) +
-      ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+    return d.toLocaleDateString('pt-BR', { timeZone: BR_TZ, day: '2-digit', month: '2-digit' }) +
+      ' ' + d.toLocaleTimeString('pt-BR', { timeZone: BR_TZ, hour: '2-digit', minute: '2-digit' })
   }
 
   const pendingCount = items.filter(i => i.status === 'pending').length

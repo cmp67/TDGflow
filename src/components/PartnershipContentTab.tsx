@@ -1,5 +1,6 @@
 'use client'
 
+import { BR_TZ, toBrDate } from '@/lib/tz'
 import { useState, useEffect, useCallback } from 'react'
 import {
   FileText, Link2, Video, Megaphone, Trash2, Plus, X, Loader2, ExternalLink, AlertCircle,
@@ -36,7 +37,7 @@ function ContentIcon({ c }: { c: PartnershipContent }) {
 }
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  return toBrDate(iso).toLocaleDateString('pt-BR', { timeZone: BR_TZ, day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
 export default function PartnershipContentTab() {

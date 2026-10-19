@@ -146,3 +146,19 @@ export async function listInvitees(eventId: string): Promise<{ user_id: string; 
     WHERE i.event_id = ${eventId} ORDER BY u.name`
   return rows as { user_id: string; name: string; agency_name: string | null; rsvp: RsvpStatus | null; email_sent: boolean; whatsapp_sent: boolean }[]
 }
+
+/* Mesmo evento já na agenda? Título igual (sem caixa/acentos/espaços) e
+   começo até 36h de distância. O Max registrou a festa duas vezes ao ouvir
+   "sim" pra outra pergunta (19/10/2026). */
+export async function findSameEvent(title: string, startsAtIso: string): Promise<EventRow | null> {
+  const { rows } = await sql.query(
+    `SELECT ${COLS(null)} FROM tdg_events e
+      WHERE e.cancelled_at IS NULL
+        AND regexp_replace(lower(translate(e.title, 'áàâãäéèêëíìîïóòôõöúùûüç', 'aaaaaeeeeiiiiooooouuuuc')), '[^a-z0-9]', '', 'g')
+          = regexp_replace(lower(translate($1, 'áàâãäéèêëíìîïóòôõöúùûüç', 'aaaaaeeeeiiiiooooouuuuc')), '[^a-z0-9]', '', 'g')
+        AND abs(extract(epoch FROM (e.starts_at - $2::timestamptz))) <= 36 * 3600
+      ORDER BY e.created_at LIMIT 1`,
+    [title, startsAtIso],
+  )
+  return rows[0] ? (rows[0] as EventRow) : null
+}

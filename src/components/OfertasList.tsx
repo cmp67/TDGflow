@@ -1,5 +1,6 @@
 'use client'
 
+import { BR_TZ, toBrDate } from '@/lib/tz'
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -28,7 +29,7 @@ interface Offer {
 
 function formatCuratedDate(dateStr: string | null): string {
   if (!dateStr) return ''
-  return new Date(dateStr).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
+  return toBrDate(dateStr).toLocaleDateString('pt-BR', { timeZone: BR_TZ, day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 /* Selo de origem — combinado com Adriano: fonte precisa ficar visível, com
@@ -79,7 +80,7 @@ function matchesSearch(offer: Offer, query: string): boolean {
 function formatValidity(validUntil: string | null): string {
   if (!validUntil) return ''
   const d = new Date(validUntil)
-  return `Até ${d.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}`
+  return `Até ${d.toLocaleDateString('pt-BR', { timeZone: BR_TZ, month: 'short', year: 'numeric' })}`
 }
 
 export default function OfertasList() {

@@ -1,5 +1,6 @@
 'use client'
 
+import { BR_TZ, toBrDate } from '@/lib/tz'
 import { useEffect, useState } from 'react'
 import { Loader, CircleCheck, CircleDashed, CircleOff, CircleAlert } from 'lucide-react'
 
@@ -25,7 +26,7 @@ const STATUS_META: Record<SubscriptionStatus, { label: string; badge: string; ic
 
 function fmtDate(iso: string | null) {
   if (!iso) return '—'
-  return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
+  return toBrDate(iso).toLocaleDateString('pt-BR', { timeZone: BR_TZ, day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 function fmtAmount(n: number | null) {
