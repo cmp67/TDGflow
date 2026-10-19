@@ -1,5 +1,6 @@
 'use client'
 
+import { originDateLabel } from '@/lib/review-origin'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -68,6 +69,7 @@ interface Review {
   is_favorite: boolean
   is_own?: boolean
   source?: string | null
+  source_date?: string | null
   view_count?: number
   favorite_count?: number
   visit_count?: number
@@ -509,11 +511,6 @@ function HotelCard({ review, onToggleFavorite, onViewHistory, onConfirmLead, onU
   const accent = isLead ? 'var(--tdgflow-accent-warm)' : isClient ? 'var(--tdgflow-accent-info)' : ratingAccent(Math.round(avgRating))
   const sceneId = ENTITY_SCENE_ID[review.entity_type] ?? 'scene-hotel'
 
-  function formatDate(iso: string | null) {
-    if (!iso) return null
-    return new Date(iso).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })
-  }
-
   function toggleExpanded() {
     setExpanded(e => {
       if (!e) fetch('/api/reviews', {
@@ -868,12 +865,9 @@ function HotelCard({ review, onToggleFavorite, onViewHistory, onConfirmLead, onU
           <span style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)' }}>
             {review.agent_name}
           </span>
-          {review.visit_date && (
-            <>
-              <span style={{ color: 'var(--tdgflow-border)', fontSize: '0.6875rem' }}>·</span>
-              <span style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)' }}>{formatDate(review.visit_date)}</span>
-            </>
-          )}
+          {/* Data de origem — todo card diz de quando é (Carla, 19/10/2026) */}
+          <span style={{ color: 'var(--tdgflow-border)', fontSize: '0.6875rem' }}>·</span>
+          <span style={{ fontSize: '0.6875rem', color: 'var(--tdgflow-text-muted)' }}>{originDateLabel(review)}</span>
         </div>
       </div>
 
