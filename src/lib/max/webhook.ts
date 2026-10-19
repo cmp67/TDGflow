@@ -144,3 +144,25 @@ export function parseUazapiWebhook(payload: unknown): MaxInbound | null {
     at: instant(m.messageTimestamp),
   }
 }
+
+/* Resposta curta à pergunta do Max no grupo (19/10/2026): ele pede
+   confirmação ("Registro na agenda?") e a pessoa responde só "sim" — sem
+   marcar. Não é escuta ativa: vale só pra quem o Max acabou de perguntar,
+   só por 10 minutos, só se a última mensagem do Max terminou em pergunta, e
+   só pra resposta curta de confirmação/recusa. */
+const SHORT_ANSWER = /^(sim|s|ok|okay|pode|pode sim|pode registrar|pode criar|confirmo|confirma|confirmado|isso|isso mesmo|perfeito|claro|beleza|fechado|manda|registra|n[aã]o|nao|cancela|deixa|esquece)\b/i
+
+export function isShortAnswer(text: string): boolean {
+  const t = text.trim().replace(/^[^\p{L}]+/u, '')
+  return t.length > 0 && t.length <= 40 && SHORT_ANSWER.test(t)
+}
+
+export type ThreadRow = { direction: string; sender_jid: string | null; content: string; created_at: string }
+
+/* rows: as duas mensagens mais recentes do chat registradas, da mais nova pra mais velha. */
+export function awaitsAnswerFrom(rows: ThreadRow[], senderJid: string, now = new Date(), minutes = 10): boolean {
+  const [last, before] = rows
+  if (!last || last.direction !== 'out' || !last.content.trim().endsWith('?')) return false
+  if (now.getTime() - new Date(last.created_at).getTime() > minutes * 60_000) return false
+  return !!before && before.direction === 'in' && before.sender_jid === senderJid
+}

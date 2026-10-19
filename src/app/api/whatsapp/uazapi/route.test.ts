@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NextRequest } from 'next/server'
 
 vi.mock('@/lib/max/identity', () => ({ findUserByPhone: vi.fn() }))
-vi.mock('@/lib/max/memory', () => ({ rememberInbound: vi.fn(), rememberOutbound: vi.fn(), recentTurns: vi.fn(), rememberInstanceLid: vi.fn(), knownInstanceLid: vi.fn().mockResolvedValue(null), isMaxOutbound: vi.fn().mockResolvedValue(false) }))
+vi.mock('@/lib/max/memory', () => ({ rememberInbound: vi.fn(), rememberOutbound: vi.fn(), recentTurns: vi.fn(), rememberInstanceLid: vi.fn(), knownInstanceLid: vi.fn().mockResolvedValue(null), isMaxOutbound: vi.fn().mockResolvedValue(false), lastThreadRows: vi.fn().mockResolvedValue([]) }))
 vi.mock('@/lib/max/transport', async (orig) => ({ ...(await orig<typeof import('@/lib/max/transport')>()), sendWhatsAppText: vi.fn() }))
 vi.mock('@/lib/max/agent', () => ({ runMax: vi.fn(), MAX_MODEL: 'test' }))
 vi.mock('@/lib/max/central-mcp', () => ({ readCentralConfig: vi.fn().mockReturnValue(null), centralToolDefinitions: vi.fn().mockResolvedValue([]) }))
@@ -12,7 +12,7 @@ vi.mock('@/lib/usage-log', () => ({ logUsage: vi.fn() }))
 
 import { POST } from './route'
 import { findUserByPhone } from '@/lib/max/identity'
-import { rememberInbound, recentTurns, rememberInstanceLid, knownInstanceLid, isMaxOutbound } from '@/lib/max/memory'
+import { rememberInbound, recentTurns, rememberInstanceLid, knownInstanceLid, isMaxOutbound, lastThreadRows } from '@/lib/max/memory'
 import { sendWhatsAppText } from '@/lib/max/transport'
 import { runMax } from '@/lib/max/agent'
 import { checkAndDeductCredits } from '@/lib/credits'
@@ -136,6 +136,24 @@ describe('reply ao Max no grupo (18/10/2026)', () => {
   it('responder a mensagem de outra pessoa continua ignorado', async () => {
     m(isMaxOutbound).mockResolvedValueOnce(false)
     expect(await (await POST(req(payload({ ...g, content: { contextInfo: { stanzaId: 'OTHER', participant: '5522@s.whatsapp.net' } } })))).json()).toEqual({ ok: true, ignored: 'grupo sem menção' })
+    expect(runMax).not.toHaveBeenCalled()
+  })
+})
+
+describe('"sim" sem marcar, logo depois da pergunta do Max (19/10/2026)', () => {
+  const g = { chatid: '120363412251837385@g.us', isGroup: true, sender: '5551981477111@s.whatsapp.net', text: 'sim' }
+  const recent = (jid: string) => [
+    { direction: 'out', sender_jid: null, content: 'Registro na agenda?', created_at: new Date().toISOString() },
+    { direction: 'in', sender_jid: jid, content: 'registra a festa', created_at: new Date().toISOString() },
+  ]
+  it('quem o Max acabou de perguntar responde "sim" e ele age', async () => {
+    m(lastThreadRows).mockResolvedValueOnce(recent('5551981477111@s.whatsapp.net'))
+    await POST(req(payload(g)))
+    expect(runMax).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ isGroup: true, text: 'sim' }))
+  })
+  it('"sim" de outra pessoa continua ignorado', async () => {
+    m(lastThreadRows).mockResolvedValueOnce(recent('5599999999999@s.whatsapp.net'))
+    expect(await (await POST(req(payload(g)))).json()).toEqual({ ok: true, ignored: 'grupo sem menção' })
     expect(runMax).not.toHaveBeenCalled()
   })
 })

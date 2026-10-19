@@ -14,4 +14,8 @@ describe('molde do Max', () => {
     const c = maxContextBlock({ userName: 'Dani', agencyName: 'NZ', identified: true, isGroup: false })
     expect(c).toContain('Dani'); expect(c).toContain('NZ'); expect(c).toContain('individual'); expect(c).toContain('</contexto_da_chamada>')
   })
+  it('contexto traz a data de hoje em Brasília (Max propôs 2025 pra "próxima quinta", 19/10/2026)', () => {
+    const c = maxContextBlock({ userName: 'Carla', agencyName: 'TDG', identified: true, isGroup: true, now: new Date('2026-10-19T13:00:00Z') })
+    expect(c).toContain('Hoje é segunda-feira, 19/10/2026')
+  })
 })

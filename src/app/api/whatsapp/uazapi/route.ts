@@ -1,10 +1,10 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextRequest, NextResponse } from 'next/server'
 import { timingSafeEqual } from 'node:crypto'
-import { parseUazapiWebhook, stripMention, isMentioned, learnInstanceLid, isReplyToMax } from '@/lib/max/webhook'
+import { parseUazapiWebhook, stripMention, isMentioned, learnInstanceLid, isReplyToMax, isShortAnswer, awaitsAnswerFrom } from '@/lib/max/webhook'
 import { readUazapiConfig, sendWhatsAppText } from '@/lib/max/transport'
 import { findUserByPhone } from '@/lib/max/identity'
-import { recentTurns, rememberInbound, rememberOutbound, knownInstanceLid, rememberInstanceLid, isMaxOutbound } from '@/lib/max/memory'
+import { recentTurns, rememberInbound, rememberOutbound, knownInstanceLid, rememberInstanceLid, isMaxOutbound, lastThreadRows } from '@/lib/max/memory'
 import { runMax, MAX_MODEL } from '@/lib/max/agent'
 import { readCentralConfig, centralToolDefinitions } from '@/lib/max/central-mcp'
 import { checkAndDeductCredits, INSUFFICIENT_BALANCE, NO_AGENCY } from '@/lib/credits'
@@ -54,7 +54,10 @@ export async function POST(req: NextRequest) {
   const instanceLid = inbound.isGroup ? await knownInstanceLid() : null
   if (inbound.isGroup && !isMentioned(inbound.text, inbound.ownerPhone, [...inbound.mentionedJids], instanceLid)) {
     const quotedIsMax = inbound.quotedId ? await isMaxOutbound(inbound.quotedId) : false
-    if (!isReplyToMax(inbound, inbound.ownerPhone, instanceLid, quotedIsMax)) return NextResponse.json({ ok: true, ignored: 'grupo sem menção' })
+    // "sim" à pergunta que o Max acabou de fazer a essa pessoa também é chamar (19/10/2026)
+    const answering = !isReplyToMax(inbound, inbound.ownerPhone, instanceLid, quotedIsMax)
+      && isShortAnswer(inbound.text) && awaitsAnswerFrom(await lastThreadRows(inbound.chatId), inbound.senderJid)
+    if (!answering && !isReplyToMax(inbound, inbound.ownerPhone, instanceLid, quotedIsMax)) return NextResponse.json({ ok: true, ignored: 'grupo sem menção' })
   }
 
   const user = inbound.senderPhone ? await findUserByPhone(inbound.senderPhone) : null

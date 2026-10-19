@@ -1,3 +1,11 @@
+## 2026-10-19 — v3.3 — Sonnet 4.6
+Caso: Carla pediu no grupo de teste "registrar na próxima quinta a festa de 5 anos do
+TDG"; o Max propôs 22/05/2025 (não sabia a data de hoje) e o "sim" dela foi ignorado
+(não marcava o Max). Contexto da chamada passa a trazer a data/hora de Brasília. No
+grupo, resposta curta ("sim", "pode", "não") à pergunta que o Max acabou de fazer à
+mesma pessoa, em até 10 minutos, conta como chamada. "Convide o grupo todo" = evento
+com visibilidade rede. Reverter: tirar todayLine e o ramo `answering` da rota.
+
 ## 2026-10-18 — v3.2 — Sonnet 4.6
 Caso: a rede não quer escuta ativa (Carla, 18/10). O Max só fala quando chamado:
 @Max por toque (incluindo LID da instância), "Max," no início, ou reply a uma mensagem

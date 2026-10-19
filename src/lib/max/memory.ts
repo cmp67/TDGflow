@@ -1,4 +1,5 @@
 import { sql } from '@vercel/postgres'
+import type { ThreadRow } from './webhook'
 
 export type MaxTurn = { role: 'user' | 'assistant'; content: string }
 
@@ -50,4 +51,10 @@ export async function rememberInstanceLid(lid: string): Promise<void> {
 export async function isMaxOutbound(messageId: string): Promise<boolean> {
   const { rows } = await sql`SELECT 1 FROM tdg_max_messages WHERE message_id = ${messageId} AND direction = 'out' LIMIT 1`
   return rows.length > 0
+}
+
+/* As duas mensagens mais recentes do chat (pra saber se o Max espera resposta de alguém). */
+export async function lastThreadRows(chatId: string): Promise<ThreadRow[]> {
+  const { rows } = await sql`SELECT direction, sender_jid, content, created_at::text AS created_at FROM tdg_max_messages WHERE chat_id = ${chatId} ORDER BY created_at DESC LIMIT 2`
+  return rows as ThreadRow[]
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseUazapiWebhook, isMentioned, stripMention, phoneOfJid, learnInstanceLid, isReplyToMax } from './webhook'
+import { parseUazapiWebhook, isMentioned, stripMention, phoneOfJid, learnInstanceLid, isReplyToMax, isShortAnswer, awaitsAnswerFrom } from './webhook'
 
 const base = { EventType: 'messages', owner: '5511999990000@s.whatsapp.net', token: 'tok', message: { id: 'ABC', messageid: 'ABC', chatid: '5511888887777@s.whatsapp.net', sender: '5511888887777@s.whatsapp.net', senderName: 'Dani', fromMe: false, isGroup: false, text: 'oi max', messageTimestamp: 1760600000 } }
 
@@ -128,5 +128,22 @@ describe('resposta (reply) a uma mensagem do Max', () => {
     expect(isReplyToMax({ quotedId: 'X', quotedAuthor: '5522@s.whatsapp.net' }, '5511999990000', '123456789012345', true)).toBe(true)
     expect(isReplyToMax({ quotedId: 'X', quotedAuthor: '5522@s.whatsapp.net' }, '5511999990000', '123456789012345', false)).toBe(false)
     expect(isReplyToMax({ quotedId: null, quotedAuthor: null }, '5511999990000', null, true)).toBe(false)
+  })
+})
+
+describe('resposta curta à pergunta do Max no grupo ("sim" depois de "Registro na agenda?")', () => {
+  const now = new Date('2026-10-19T13:00:00Z')
+  const ask = { direction: 'out', sender_jid: null, content: 'Registro na agenda?', created_at: '2026-10-19T12:56:00Z' }
+  const mine = { direction: 'in', sender_jid: 'a@lid', content: 'registra a festa', created_at: '2026-10-19T12:55:50Z' }
+  it('reconhece respostas curtas de confirmação ou recusa', () => {
+    for (const t of ['sim', 'Sim!', 'pode', 'ok', 'confirmo', 'pode registrar', 'isso', 'não', 'nao, cancela']) expect(isShortAnswer(t)).toBe(true)
+    for (const t of ['sim, e você viu o jogo ontem? foi incrível demais, gente', 'bom dia pessoal', '']) expect(isShortAnswer(t)).toBe(false)
+  })
+  it('só vale pra quem o Max acabou de perguntar, dentro de 10 minutos', () => {
+    expect(awaitsAnswerFrom([ask, mine], 'a@lid', now)).toBe(true)
+    expect(awaitsAnswerFrom([ask, mine], 'b@lid', now)).toBe(false)
+    expect(awaitsAnswerFrom([{ ...ask, content: 'Registrado!' }, mine], 'a@lid', now)).toBe(false)
+    expect(awaitsAnswerFrom([{ ...ask, created_at: '2026-10-19T12:40:00Z' }, mine], 'a@lid', now)).toBe(false)
+    expect(awaitsAnswerFrom([], 'a@lid', now)).toBe(false)
   })
 })
