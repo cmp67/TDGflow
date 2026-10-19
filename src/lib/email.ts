@@ -8,6 +8,7 @@
 // cliente. RESEND_API_KEY ainda não configurada nesta sessão — ver aviso no
 // log se chamado antes disso.
 
+import { allowedPhotoUrl, croppedPhotoUrl } from '@/lib/photo-proxy'
 import { MAX_HOW_TO } from '@/lib/max/how-to'
 import { BR_TZ, toBrDate } from '@/lib/tz'
 import type { WeeklyDigest } from '@/lib/weekly-digest'
@@ -281,7 +282,7 @@ export async function sendWeeklyDigestEmail(
   if (digest.featuredReview) {
     const f = digest.featuredReview
     const photo = f.photo_url
-      ? `<img src="${f.photo_url}" alt="${f.hotel_name}" width="536" style="width: 100%; max-width: 536px; height: auto; border-radius: 10px; display: block; margin: 0 0 14px;" />`
+      ? `<img src="${allowedPhotoUrl(f.photo_url) ? croppedPhotoUrl(APP_URL, f.photo_url) : f.photo_url}" alt="${f.hotel_name}" width="536" style="width: 100%; max-width: 536px; height: auto; border-radius: 10px; display: block; margin: 0 0 14px;" />`
       : ''
     const stars = f.overall_rating != null
       ? `<span style="color: ${BRAND.gold}; font-size: 13px; font-weight: 700;">★ ${f.overall_rating}</span>`
