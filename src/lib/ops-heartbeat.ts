@@ -30,6 +30,7 @@ export type HeartbeatPayload = {
   db_ok:      boolean
   latency_ms: number
   lumis?:     LumisSnapshot
+  componentes?: { nome: string; ok: boolean; detalhe?: string }[]
 }
 
 export type SendResult =
@@ -127,15 +128,19 @@ export function buildHeartbeatPayload(input: {
   latencyMs: number
   version:   string
   lumis:     LumisSnapshot | null
+  componentes?: { nome: string; ok: boolean; detalhe?: string }[]
 }): HeartbeatPayload {
-  const status: HeartbeatStatus = !input.dbOk ? 'down' : input.lumis ? 'ok' : 'degraded'
+  const componentes = input.componentes ?? []
+  const pecaFalhou = componentes.some(c => !c.ok)
+  const status: HeartbeatStatus = !input.dbOk ? 'down' : input.lumis && !pecaFalhou ? 'ok' : 'degraded'
   const base = {
     status,
     version:    input.version,
     db_ok:      input.dbOk,
     latency_ms: clampInt(input.latencyMs),
   }
-  return input.lumis ? { ...base, lumis: input.lumis } : base
+  const withLumis = input.lumis ? { ...base, lumis: input.lumis } : base
+  return componentes.length ? { ...withLumis, componentes } : withLumis
 }
 
 // ── Envio ────────────────────────────────────────────────────────────────────

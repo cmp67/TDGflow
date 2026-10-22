@@ -9,6 +9,12 @@ vi.mock('@/lib/ops-heartbeat', () => ({
   sendHeartbeat: vi.fn(),
 }))
 
+vi.mock('@/lib/max/health', () => ({
+  instanceConnected: vi.fn(async () => ({ ok: true })),
+  failuresLast15m: vi.fn(async () => 0),
+  maxComponents: vi.fn(() => []),
+}))
+
 import {
   readOpsConfig, checkDatabase, collectLumisSnapshot, buildHeartbeatPayload, sendHeartbeat,
 } from '@/lib/ops-heartbeat'
@@ -60,7 +66,7 @@ describe('GET /api/cron/ops-heartbeat', () => {
     mockConfig.mockReturnValue(CONFIG)
     const res = await GET(req('Bearer cron-secret'))
     expect(res.status).toBe(200)
-    expect(mockBuild).toHaveBeenCalledWith({ dbOk: true, latencyMs: 12, version: APP_VERSION, lumis: LUMIS })
+    expect(mockBuild).toHaveBeenCalledWith({ dbOk: true, latencyMs: 12, version: APP_VERSION, lumis: LUMIS, componentes: [] })
     expect(mockSend).toHaveBeenCalledWith({ status: 'ok', version: APP_VERSION }, CONFIG)
     expect(await res.json()).toEqual({ status: 'ok', sent: true, httpStatus: 200 })
   })
@@ -70,7 +76,7 @@ describe('GET /api/cron/ops-heartbeat', () => {
     mockDb.mockResolvedValue({ ok: false, latencyMs: 5000 })
     await GET(req('Bearer cron-secret'))
     expect(mockLumis).not.toHaveBeenCalled()
-    expect(mockBuild).toHaveBeenCalledWith({ dbOk: false, latencyMs: 5000, version: APP_VERSION, lumis: null })
+    expect(mockBuild).toHaveBeenCalledWith({ dbOk: false, latencyMs: 5000, version: APP_VERSION, lumis: null, componentes: [] })
   })
 
   it('snapshot de lumis falhou: segue com lumis null (degraded), nunca derruba a rota', async () => {

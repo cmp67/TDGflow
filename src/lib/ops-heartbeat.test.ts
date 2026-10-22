@@ -33,6 +33,17 @@ describe('readOpsConfig', () => {
 describe('buildHeartbeatPayload', () => {
   const lumis = { ciclo_inicio: '2026-10-01', incluidos: 9500, extras: 120, consumidos: 312 }
 
+  it('peça com ok:false (ex.: WhatsApp do Max) → degraded e componentes no corpo (22/10/2026)', () => {
+    const componentes = [{ nome: 'whatsapp', ok: false, detalhe: 'instância disconnected' }]
+    const payload = buildHeartbeatPayload({ dbOk: true, latencyMs: 10, version: 'v', lumis, componentes })
+    expect(payload).toEqual({ status: 'degraded', version: 'v', db_ok: true, latency_ms: 10, lumis, componentes })
+  })
+
+  it('componentes todos ok mantêm status ok', () => {
+    const payload = buildHeartbeatPayload({ dbOk: true, latencyMs: 10, version: 'v', lumis, componentes: [{ nome: 'whatsapp', ok: true }] })
+    expect(payload.status).toBe('ok')
+  })
+
   it('banco ok + lumis → status ok com os campos exatos do contrato (nada a mais)', () => {
     const payload = buildHeartbeatPayload({ dbOk: true, latencyMs: 42, version: 'v7.203', lumis })
     expect(payload).toEqual({

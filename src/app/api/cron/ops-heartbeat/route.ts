@@ -3,6 +3,8 @@ import {
   readOpsConfig, checkDatabase, collectLumisSnapshot, buildHeartbeatPayload, sendHeartbeat,
 } from '@/lib/ops-heartbeat'
 import { APP_VERSION } from '@/lib/version'
+import { readUazapiConfig } from '@/lib/max/transport'
+import { instanceConnected, failuresLast15m, maxComponents } from '@/lib/max/health'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30
@@ -28,7 +30,15 @@ export async function GET(req: NextRequest) {
   const db = await checkDatabase()
   const lumis = db.ok ? await collectLumisSnapshot().catch(logSnapshotFailure) : null
 
-  const payload = buildHeartbeatPayload({ dbOk: db.ok, latencyMs: db.latencyMs, version: APP_VERSION, lumis })
+  // Saúde do Max (22/10/2026): WhatsApp conectado e sem "deu um problema" recente.
+  const uazapi = readUazapiConfig(process.env)
+  const [connection, failures] = await Promise.all([
+    uazapi ? instanceConnected(uazapi) : Promise.resolve(null),
+    db.ok ? failuresLast15m() : Promise.resolve(0),
+  ])
+  const componentes = maxComponents({ connection, failuresLast15m: failures })
+
+  const payload = buildHeartbeatPayload({ dbOk: db.ok, latencyMs: db.latencyMs, version: APP_VERSION, lumis, componentes })
   const result = await sendHeartbeat(payload, config)
 
   return NextResponse.json({ status: payload.status, ...result })

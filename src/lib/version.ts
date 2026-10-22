@@ -1,2 +1,2 @@
-export const APP_VERSION = 'v7.232'
+export const APP_VERSION = 'v7.233'
 export const ALIAS = 'tdg-flow-carla-4643s-projects.vercel.app'

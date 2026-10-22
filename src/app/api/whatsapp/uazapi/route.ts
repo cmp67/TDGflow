@@ -1,3 +1,4 @@
+import { MAX_FAILURE_TEXT } from '@/lib/max/health'
 import Anthropic from '@anthropic-ai/sdk'
 import { NextRequest, NextResponse } from 'next/server'
 import { timingSafeEqual } from 'node:crypto'
@@ -29,7 +30,7 @@ function same(a: string, b: string): boolean {
 
 const SEM_LUMIS = 'Sua agência está sem Lumis neste ciclo. Dá pra comprar um pacote em Billing no Flow, ou esperar o dia 1.'
 const SEM_AGENCIA = 'Sua conta no Flow ainda não está ligada a uma agência — pede pro administrador ajustar, que daí eu consigo registrar as coisas no seu nome.'
-const FALHOU = 'Deu um problema aqui do meu lado. Tenta de novo em instantes?'
+const FALHOU = MAX_FAILURE_TEXT
 
 export async function POST(req: NextRequest) {
   const secret = (process.env.UAZAPI_WEBHOOK_SECRET ?? '').trim()
