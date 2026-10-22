@@ -68,6 +68,7 @@ export async function GET(req: NextRequest) {
     sql.query<PendingRow>(
       `SELECT r.id, 'review' AS content_type, r.hotel_name AS title,
               r.heads_up, r.must_experience, r.client_profile, r.highlights,
+              r.raw_answers->>'impressions' AS impressions, r.source,
               r.source_author, r.source_date::text AS source_date, r.created_at
        FROM tdg_hotel_reviews r
        WHERE r.import_approval = 'pending' ${searchClauseReview}
@@ -185,6 +186,14 @@ export async function PATCH(req: NextRequest) {
         `UPDATE tdg_hotel_reviews SET highlights = $1, client_profile = $2, must_experience = $3, heads_up = $4 WHERE id = $5`,
         [JSON.stringify(fields.highlights ?? []), fields.client_profile ?? null, fields.must_experience ?? null, fields.heads_up ?? null, id]
       )
+      // O relato anotado pelo Max (22/10/2026): a autora lapida o próprio texto
+      // antes de aprovar — é o que o card mostra primeiro.
+      if (typeof fields.impressions === 'string' && fields.impressions.trim()) {
+        await sql.query(
+          `UPDATE tdg_hotel_reviews SET raw_answers = jsonb_set(COALESCE(raw_answers, '{}'::jsonb), '{impressions}', to_jsonb($1::text)) WHERE id = $2`,
+          [fields.impressions.trim(), id]
+        )
+      }
     }
     return NextResponse.json({ ok: true })
   }

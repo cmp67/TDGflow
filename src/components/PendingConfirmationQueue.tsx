@@ -24,6 +24,8 @@ export interface PendingItem {
   must_experience?: string | null
   client_profile?: string | null
   highlights?: string[]
+  impressions?: string | null
+  source?: string | null
   // knowledge
   content?: string | null
   country?: string | null
@@ -56,21 +58,26 @@ function EditFields({ item, onChange }: { item: PendingItem; onChange: (fields: 
     )
   }
 
+  const [impressions, setImpressions] = useState(item.impressions ?? '')
   const [highlightsText, setHighlightsText] = useState((item.highlights ?? []).join('\n'))
   const [clientProfile, setClientProfile] = useState(item.client_profile ?? '')
   const [mustExperience, setMustExperience] = useState(item.must_experience ?? '')
   const [headsUp, setHeadsUp] = useState(item.heads_up ?? '')
   useEffect(() => {
     onChange({
+      ...(impressions.trim() ? { impressions } : {}),
       highlights: highlightsText.split('\n').map(t => t.trim()).filter(Boolean),
       client_profile: clientProfile || null,
       must_experience: mustExperience || null,
       heads_up: headsUp || null,
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [highlightsText, clientProfile, mustExperience, headsUp])
+  }, [impressions, highlightsText, clientProfile, mustExperience, headsUp])
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {item.impressions != null && (
+        <textarea className="input" value={impressions} onChange={e => setImpressions(e.target.value)} rows={4} style={{ fontSize: '0.8125rem', resize: 'vertical' }} placeholder="O que você contou" />
+      )}
       <textarea className="input" value={highlightsText} onChange={e => setHighlightsText(e.target.value)} rows={3} style={{ fontSize: '0.8125rem', resize: 'vertical' }} placeholder="Destaques — 1 por linha" />
       <input className="input" value={clientProfile} onChange={e => setClientProfile(e.target.value)} style={{ fontSize: '0.8125rem' }} placeholder="Perfil de cliente ideal" />
       <input className="input" value={mustExperience} onChange={e => setMustExperience(e.target.value)} style={{ fontSize: '0.8125rem' }} placeholder="Experiência que ninguém deve perder" />
@@ -107,7 +114,7 @@ export function QueueCard({ item, onActed, claimedName }: { item: PendingItem; o
 
   const snippet = item.content_type === 'knowledge'
     ? item.content
-    : [item.heads_up, item.must_experience, item.client_profile].filter(Boolean).join(' · ')
+    : item.impressions || [item.heads_up, item.must_experience, item.client_profile].filter(Boolean).join(' · ')
 
   return (
     <motion.div
@@ -127,7 +134,7 @@ export function QueueCard({ item, onActed, claimedName }: { item: PendingItem; o
               {item.content_type === 'review' ? 'Review' : 'Conhecimento'}
             </span>
             <span style={{ fontSize: '0.625rem', color: 'var(--tdgflow-text-muted)' }}>
-              {item.source_author} · {formatDate(item.source_date)}
+              {item.source === 'max_whatsapp' ? 'Anotado pelo Max' : item.source_author} · {formatDate(item.source_date)}
             </span>
           </div>
           <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--tdgflow-text-primary)', lineHeight: 1.3 }}>{item.title}</p>

@@ -16,7 +16,7 @@ export const AGENDA_TOOLS: Anthropic.Tool[] = [
   },
   {
     name: 'register_event',
-    description: 'Registra um evento na agenda da rede em nome de quem está falando. SEMPRE confirme com a pessoa antes de chamar (título, data/hora, online ou presencial). Data no formato "AAAA-MM-DD HH:MM" em horário de Brasília, ou "AAAA-MM-DD" para dia inteiro.',
+    description: 'Registra um evento na agenda da rede em nome de quem está falando. Chame direto, sem pedir confirmação; a pessoa ajusta depois no Flow. Data no formato "AAAA-MM-DD HH:MM" em horário de Brasília, ou "AAAA-MM-DD" para dia inteiro.',
     input_schema: {
       type: 'object' as const,
       properties: {
@@ -35,7 +35,7 @@ export const AGENDA_TOOLS: Anthropic.Tool[] = [
   },
   {
     name: 'update_event',
-    description: 'Corrige um evento da agenda (endereço, data/hora, título, link, descrição). Mande só os campos que mudam; o resto fica como está. Pegue o event_id em list_events. SEMPRE confirme a mudança com a pessoa antes de chamar. Só quem criou o evento (ou admin) pode editar.',
+    description: 'Corrige um evento da agenda (endereço, data/hora, título, link, descrição). Mande só os campos que mudam; o resto fica como está. Pegue o event_id em list_events. Chame direto, sem pedir confirmação. Só quem criou o evento (ou admin) pode editar.',
     input_schema: {
       type: 'object' as const,
       properties: {

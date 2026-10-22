@@ -45,7 +45,7 @@ export function maxContextBlock(input: { userName: string | null; agencyName: st
     `Calendário (use estes dias da semana, não calcule): ${maxCalendar(input.now)}.`,
     quem,
     `Canal: ${input.isGroup ? 'grupo da TDG (você foi marcado)' : 'conversa individual'}.`,
-    ...(input.isGroup ? ['No grupo, quando pedir confirmação, termine com uma pergunta curta ("Registro?"): a pessoa responde "sim" sem precisar te marcar, por 10 minutos. Evento com visibilidade rede já aparece pra rede inteira e o grupo é lembrado na véspera às 18h — "convide todo mundo do grupo" é isso, não convite individual.'] : []),
+    ...(input.isGroup ? ['No grupo, anote sem perguntar e responda uma linha com ✓. Só o cancelamento de evento pede "sim" (a pessoa responde sem te marcar, por 10 minutos). Evento com visibilidade rede já aparece pra rede inteira e o grupo é lembrado na véspera às 18h — "convide todo mundo do grupo" é isso, não convite individual.'] : []),
     input.identified ? 'Registros (register_tip) saem em nome dela; o sistema preenche agent_name e agency_name.' : 'A ferramenta register_tip não está disponível nesta chamada.',
     '</contexto_da_chamada>',
   ].join('\n')

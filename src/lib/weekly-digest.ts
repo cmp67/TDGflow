@@ -80,7 +80,7 @@ export async function buildWeeklyDigest(): Promise<WeeklyDigest> {
     SELECT hotel_name, agent_name, agency_name, country, status, overall_rating, photo_url, heads_up, created_at, source
     FROM tdg_hotel_reviews
     WHERE created_at >= ${periodStart.toISOString()}
-      AND import_approval IS NULL  -- 18/10/2026: importação do WhatsApp não é "registrado esta semana"
+      AND (import_approval IS NULL OR (source = 'max_whatsapp' AND import_approval <> 'pending'))  -- 18/10/2026: importação do WhatsApp não é "registrado esta semana"
       AND lower(coalesce(agency_name, '')) <> 'bemgsy'
       AND agency_name IS DISTINCT FROM 'TDD' AND agent_name IS DISTINCT FROM 'TDD'
       AND agency_name NOT ILIKE '\_\_TDD\_%' ESCAPE '\'
@@ -101,7 +101,7 @@ export async function buildWeeklyDigest(): Promise<WeeklyDigest> {
     WHERE updated_at >= ${periodStart.toISOString()}
       AND created_at < ${periodStart.toISOString()}
       AND status = 'published'
-      AND import_approval IS NULL
+      AND (import_approval IS NULL OR (source = 'max_whatsapp' AND import_approval <> 'pending'))
       AND agency_name IS DISTINCT FROM 'TDD' AND agent_name IS DISTINCT FROM 'TDD'
       AND agency_name NOT ILIKE '\_\_TDD\_%' ESCAPE '\'
     ORDER BY updated_at DESC
@@ -153,7 +153,7 @@ export async function buildWeeklyDigest(): Promise<WeeklyDigest> {
     HAVING COUNT(DISTINCT agency_name) >= 3
       -- Só é notícia se o consenso ganhou relato novo desde o último envio
       -- (Carla, 19/10/2026: o Txai já tinha saído em várias edições).
-      AND MAX(created_at) FILTER (WHERE import_approval IS NULL) >= ${periodStart.toISOString()}
+      AND MAX(created_at) FILTER (WHERE (import_approval IS NULL OR (source = 'max_whatsapp' AND import_approval <> 'pending'))) >= ${periodStart.toISOString()}
     ORDER BY agency_count DESC, review_count DESC
     LIMIT 1
   `
@@ -169,7 +169,7 @@ export async function buildWeeklyDigest(): Promise<WeeklyDigest> {
       SELECT hotel_name, agent_name, view_count
       FROM tdg_hotel_reviews
       WHERE status = 'published' AND view_count > 0
-        AND created_at >= ${periodStart.toISOString()} AND import_approval IS NULL
+        AND created_at >= ${periodStart.toISOString()} AND (import_approval IS NULL OR (source = 'max_whatsapp' AND import_approval <> 'pending'))
         AND agency_name IS DISTINCT FROM 'TDD' AND agent_name IS DISTINCT FROM 'TDD'
         AND agency_name NOT ILIKE '\_\_TDD\_%' ESCAPE '\'
       ORDER BY view_count DESC
@@ -188,7 +188,7 @@ export async function buildWeeklyDigest(): Promise<WeeklyDigest> {
   // Importação do WhatsApp na janela — contada à parte, nunca como "registrado esta semana".
   const { rows: importedRows } = await sql`
     SELECT count(*)::int AS n FROM tdg_hotel_reviews
-    WHERE created_at >= ${periodStart.toISOString()} AND import_approval IS NOT NULL
+    WHERE created_at >= ${periodStart.toISOString()} AND import_approval IS NOT NULL AND source IS DISTINCT FROM 'max_whatsapp'
   `
 
   // Agenda da semana que vem (eventos da rede) — 19/10/2026: wrap-up é o

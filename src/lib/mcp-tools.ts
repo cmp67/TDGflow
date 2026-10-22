@@ -431,7 +431,8 @@ export async function registerTip(args: Record<string, unknown>) {
   const { rows } = await sql`
     INSERT INTO tdg_hotel_reviews
       (hotel_name, hotel_id, country, agent_id, agent_name, agency_name, visit_date, visit_type,
-       overall_rating, highlights, client_profile, must_experience, heads_up, status, source, raw_answers)
+       overall_rating, highlights, client_profile, must_experience, heads_up, status, source, raw_answers,
+       source_author, source_date, import_approval)
     VALUES (
       ${trimmedName},
       ${hotelId},
@@ -448,7 +449,12 @@ export async function registerTip(args: Record<string, unknown>) {
       ${(heads_up as string) ?? null},
       ${reviewStatusFor(visit_type as string | undefined)},
       'max_whatsapp',
-      ${JSON.stringify({ impressions: originalText })}
+      ${JSON.stringify({ impressions: originalText })},
+      -- 22/10/2026 (Carla): o Max só anota; a autora lapida e aprova no
+      -- Flow (fila "confirme o que você disse") antes de entrar na base.
+      ${agent_name as string},
+      (now() AT TIME ZONE 'America/Sao_Paulo')::date,
+      'pending'
     )
     RETURNING id, hotel_name, agent_name, created_at
   `

@@ -1,3 +1,11 @@
+## 2026-10-22 — v3.6 — Sonnet 4.6
+Caso: a rede pediu que o Max só anote, sem "Registro assim?" nem reconfirmação.
+register_tip, register_event e update_event são chamados direto; a resposta é uma
+linha com ✓. A dica nasce pendente (import_approval='pending', source_author = quem
+falou) e a autora revisa, edita o texto e aprova em Na prática; só depois conta em
+selos e no wrap-up. Cancelar evento continua pedindo "sim". Reverter: voltar o
+prompt da v3.5 e tirar source_author/source_date/import_approval do INSERT do registerTip.
+
 ## 2026-10-19 — v3.5 — Sonnet 4.6
 Caso: "próxima quinta" virou "quinta, 23/10/2026" (23/10 é sexta) e o "sim" a "Você vai?"
 registrou a festa de novo. Contexto ganha calendário dos próximos 21 dias já resolvido

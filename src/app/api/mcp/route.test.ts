@@ -193,4 +193,13 @@ describe('MCP register_tip — palavras da pessoa sem edição (18/10/2026)', ()
     const { rows } = await sql`SELECT raw_answers FROM tdg_hotel_reviews WHERE id = ${result.review.id}`
     expect(rows[0].raw_answers).toEqual({ impressions: texto })
   })
+  it('nasce aguardando a confirmação da autora, com nome e data do relato (22/10/2026)', async () => {
+    const res = await POST(rpcReq('tools/call', { name: 'register_tip', arguments: { hotel_name: hotelName, agent_name: 'TDD Words', agency_name: agencyName, original_text: 'Quarto lindo, spa fraco' } }))
+    const result = JSON.parse((await res.json()).result.content[0].text)
+    reviewIds.push(result.review.id)
+    const { rows } = await sql`SELECT import_approval, source_author, source_date FROM tdg_hotel_reviews WHERE id = ${result.review.id}`
+    expect(rows[0].import_approval).toBe('pending')
+    expect(rows[0].source_author).toBe('TDD Words')
+    expect(rows[0].source_date).not.toBeNull()
+  })
 })

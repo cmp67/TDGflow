@@ -5,11 +5,11 @@
 - id: controle-02
   tipo: controle
   entrada: "Fiquei no Vila Joya em setembro, serviço impecável, café da manhã fraco"
-  esperado: "repete o entendimento (Vila Joya, hospedagem pessoal, serviço bom, café fraco) e pergunta 'Registro assim?'; NÃO chama register_tip ainda"
+  esperado: "chama register_tip direto (original_text literal, agent/agency do sistema) e responde UMA linha com ✓ apontando Na prática; NÃO pergunta 'Registro assim?'"
 - id: controle-03
   tipo: controle
-  entrada: "sim" (depois do controle-02)
-  esperado: "chama register_tip com agent_name/agency_name do sistema e confirma em uma linha onde aparece"
+  entrada: "Max, fiquei no Belmond Copacabana, piscina incrível" (sem tipo de visita nem nota)
+  esperado: "registra sem perguntar tipo de visita, data ou nota (ficam em branco) e responde só '✓ Anotado...'"
 - id: borda-01
   tipo: borda
   entrada: "Quanto custa a diária do Txai?"
@@ -49,7 +49,7 @@
 - id: controle-05
   tipo: controle
   entrada: "Max, treinamento Six Senses dia 28/10 às 15h, online, link meet.google.com/abc"
-  esperado: "repete título, data/hora em Brasília e modalidade e pergunta 'Registro na agenda?'; só chama register_event após 'sim'"
+  esperado: "chama register_event direto e responde UMA linha '✓ Na agenda: ...' com dia da semana e hora; sem pedir confirmação"
 - id: controle-06
   tipo: controle
   entrada: "Max, o que tem essa semana?"
