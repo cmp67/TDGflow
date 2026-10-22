@@ -49,7 +49,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, ignored: 'eco', learned: 'lid' })
   }
   const inbound = parseUazapiWebhook(payload)
-  if (!inbound) return NextResponse.json({ ok: true, ignored: 'sem mensagem de texto' })
+  if (!inbound) {
+    const shape = ignoredShape(payload)
+    if (shape.evento === 'messages' && shape.fromMe !== true) console.info('[max] ignorado: sem texto', shape)
+    return NextResponse.json({ ok: true, ignored: 'sem mensagem de texto' })
+  }
   if (!same(inbound.instanceToken, config.instanceToken)) return NextResponse.json({ error: 'instância desconhecida' }, { status: 401 })
   const instanceLid = inbound.isGroup ? await knownInstanceLid() : null
   if (inbound.isGroup && !isMentioned(inbound.text, inbound.ownerPhone, [...inbound.mentionedJids], instanceLid)) {
@@ -57,7 +61,22 @@ export async function POST(req: NextRequest) {
     // "sim" à pergunta que o Max acabou de fazer a essa pessoa também é chamar (19/10/2026)
     const answering = !isReplyToMax(inbound, inbound.ownerPhone, instanceLid, quotedIsMax)
       && isShortAnswer(inbound.text) && awaitsAnswerFrom(await lastThreadRows(inbound.chatId), inbound.senderJid)
-    if (!answering && !isReplyToMax(inbound, inbound.ownerPhone, instanceLid, quotedIsMax)) return NextResponse.json({ ok: true, ignored: 'grupo sem menção' })
+    if (!answering && !isReplyToMax(inbound, inbound.ownerPhone, instanceLid, quotedIsMax)) {
+      // Diagnóstico sem PII (22/10/2026, "mencionei o Max e ele não respondeu"):
+      // só formato da menção, nunca texto, número ou LID.
+      if (/max/i.test(inbound.text) || inbound.mentionedJids.length) console.info('[max] ignorado: grupo sem menção', {
+        textLen: inbound.text.length,
+        temMaxNoTexto: /max/i.test(inbound.text),
+        temArroba: inbound.text.includes('@'),
+        temIsolador: inbound.text.includes('\u2068'),
+        mencoes: inbound.mentionedJids.map(j => (j.endsWith('@lid') ? 'lid' : j.endsWith('@s.whatsapp.net') ? 'pn' : 'outro')),
+        lidConhecido: !!instanceLid,
+        mencaoBateLid: !!instanceLid && inbound.mentionedJids.some(j => j.startsWith(`${instanceLid}@`)),
+        arrobaBateLid: !!instanceLid && inbound.text.includes(`@${instanceLid}`),
+        temOwner: !!inbound.ownerPhone,
+      })
+      return NextResponse.json({ ok: true, ignored: 'grupo sem menção' })
+    }
   }
 
   const user = inbound.senderPhone ? await findUserByPhone(inbound.senderPhone) : null
@@ -109,4 +128,18 @@ export async function POST(req: NextRequest) {
    em alguns painéis). Nunca revela config. */
 export async function GET() {
   return NextResponse.json({ ok: true, agent: 'max' })
+}
+
+/* Formato do payload descartado, sem conteúdo (22/10/2026). */
+function ignoredShape(payload: unknown): Record<string, unknown> {
+  if (typeof payload !== 'object' || payload === null) return { tipo: typeof payload }
+  const p = payload as Record<string, unknown>
+  const m = typeof p.message === 'object' && p.message !== null ? p.message as Record<string, unknown> : null
+  return {
+    evento: p.EventType ?? null,
+    fromMe: m?.fromMe ?? null,
+    messageType: m?.messageType ?? null,
+    textLen: typeof m?.text === 'string' ? m.text.length : null,
+    chavesMsg: m ? Object.keys(m).slice(0, 25) : null,
+  }
 }
