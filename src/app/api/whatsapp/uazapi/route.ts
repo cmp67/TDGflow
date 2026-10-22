@@ -65,7 +65,8 @@ export async function POST(req: NextRequest) {
     if (!answering && !isReplyToMax(inbound, inbound.ownerPhone, instanceLid, quotedIsMax)) {
       // Diagnóstico sem PII (22/10/2026, "mencionei o Max e ele não respondeu"):
       // só formato da menção, nunca texto, número ou LID.
-      if (/max/i.test(inbound.text) || inbound.mentionedJids.length) console.info('[max] ignorado: grupo sem menção', {
+      console.info('[max] ignorado: grupo sem menção', {
+        ...mentionShape(payload),
         textLen: inbound.text.length,
         temMaxNoTexto: /max/i.test(inbound.text),
         temArroba: inbound.text.includes('@'),
@@ -143,4 +144,12 @@ function ignoredShape(payload: unknown): Record<string, unknown> {
     textLen: typeof m?.text === 'string' ? m.text.length : null,
     chavesMsg: m ? Object.keys(m).slice(0, 25) : null,
   }
+}
+
+/* Onde a uazapi pôs as menções (22/10/2026): só nomes de chave, nunca valores. */
+function mentionShape(payload: unknown): Record<string, unknown> {
+  const m = (payload as { message?: Record<string, unknown> })?.message ?? {}
+  const content = typeof m.content === 'object' && m.content !== null ? m.content as Record<string, unknown> : {}
+  const ctx = typeof content.contextInfo === 'object' && content.contextInfo !== null ? content.contextInfo as Record<string, unknown> : {}
+  return { messageType: m.messageType ?? null, chavesContent: Object.keys(content).slice(0, 20), chavesContexto: Object.keys(ctx).slice(0, 20) }
 }
